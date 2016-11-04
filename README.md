@@ -31,7 +31,20 @@ Follow the [Raspberry Pi install instructions](https://www.raspberrypi.org/docum
 
 # Notes
 
+Useful references:
+
+* https://www.pi-point.co.uk/closedcloud-walkthrough/
+* https://wiki.alpinelinux.org/wiki/Raspberry_Pi_3_-_Configuring_it_as_wireless_access_point_-AP_Mode
+* https://learn.adafruit.com/setting-up-a-raspberry-pi-as-a-wifi-access-point/install-software (uses isc-dhcp-server instead of dnsmasq)
+
+
 ## WLAN Access Point
 
 * Override SSID on ansible command line with `-e ssid="some ssid"` (or use other ansible methods like `host_vars`)
-* **Need help with hostapd.conf** (not sure which things should be enabled) e.g. (but not limited to) `country_code`, `ieee80211d`, `ieee80211h` (https://w1.fi/hostapd/)
+* **Need help with hostapd.conf** (not sure which things should be enabled) e.g. (but not limited to) `country_code`, `ieee80209d`, `ieee80211h` [hostapd doco](https://wireless.wiki.kernel.org/en/users/Documentation/hostapd)
+* Currently `hostapd` logs MAC addresses of devices that connect in `/var/log/daemon.log`. This can be incriminating, and should be scrubbed.
+
+## DHCP
+
+* The DHCP lease period is 1h. This may be too long given the device is only serving a /24.
+* Currently `dnsmasq` logs MAC addresses of devices in `/var/log/daemon.log` when it gives an address. This can be incriminating, and should be scrubbed.
