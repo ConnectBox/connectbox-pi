@@ -1,0 +1,9 @@
+---
+
+# Necessary the first time, as we'll have an empty cache
+# XXX - does this happen automatically on first use of apt?
+- name: Prep apt cache
+  apt:
+    update-cache: yes
+    cache_valid_time: 86400 # 1 day
+ 
