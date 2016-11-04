@@ -1,0 +1,11 @@
+---
+- name: Install usbmount for auto mounting of USB drives
+  apt:
+    name: usbmount
+    state: present
+
+- name: Expose usb content to the webserver
+  file:
+    src: /media/usb0
+    dest: /var/www/html/content
+    state: link
