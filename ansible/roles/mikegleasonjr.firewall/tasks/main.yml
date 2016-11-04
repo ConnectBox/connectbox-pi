@@ -1,0 +1,8 @@
+---
+- include: rules.yml
+
+- include: persist-debian.yml
+  when: ansible_os_family == 'Debian'
+
+- include: persist-redhat.yml
+  when: ansible_os_family == 'RedHat'

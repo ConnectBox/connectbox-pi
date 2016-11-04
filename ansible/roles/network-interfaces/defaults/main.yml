@@ -1,4 +1,5 @@
 ---
 wlan0_ip_address: 10.0.0.1
 wlan0_netmask: 255.255.255.0
+wlan0_network_cidr: 10.0.0.0/24
 hostname: biblebox.local

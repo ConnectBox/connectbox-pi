@@ -1,0 +1,22 @@
+---
+galaxy_info:
+  author: Mike Gleason jr Couturier
+  description: A role to manage iptables rules which doesn't suck.
+  company: N/A
+  issue_tracker_url: https://github.com/mikegleasonjr/ansible-role-firewall/issues
+  license: BSD
+  min_ansible_version: 1.2
+  platforms:
+  - name: Ubuntu
+    versions:
+      - all
+  - name: Debian
+    versions:
+      - all
+  - name: EL
+    versions:
+    - all
+  categories:
+    - networking
+    - system
+dependencies: []

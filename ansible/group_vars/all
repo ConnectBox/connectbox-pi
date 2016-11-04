@@ -21,3 +21,18 @@ nginx_vhosts:
 # We want to set the default server. Remove the default server that
 #  nginx provides.
 nginx_remove_default_vhost: true
+
+firewall_v4_group_rules:
+  150 redirect http:
+    - -t nat -A PREROUTING -s {{ wlan0_network_cidr }} tcp --dport 80 -j DNAT --to {{ wlan0_ip_address }}:80
+  # Overriding default - we only want ssh on the wired interface
+  200 allow ssh:
+    - -A INPUT -p tcp -i eth0 --dport ssh -j ACCEPT
+  300 allow dhcp:
+    - -A INPUT -p udp --dport bootps -j ACCEPT
+  350 allow dns:
+    - -A INPUT -p udp --dport domain -j ACCEPT
+    - -A INPUT -p tcp --dport domain -j ACCEPT
+  400 allow web traffic:
+    - -A INPUT -p tcp --dport http -j ACCEPT
+

@@ -32,6 +32,10 @@ Follow the [Raspberry Pi install instructions](https://www.raspberrypi.org/docum
 1. **Commands assume ssh keys are setup from here**. If you haven't set them up, just add `--ask-pass` to the `ansible` or `ansible-playbook` command line and you'll be right.
 1. Run the playbook: `ansible-playbook -i inventory site.yml`. No tasks should fail.
 
+## Use the BibleBox
+
+1. Search for, and connect to the WiFi point named "BibleBox - Free Media"
+1. Open your browser, go somewhere (anywhere)
 
 # Notes
 
@@ -43,20 +47,24 @@ Useful references:
 * https://wiki.alpinelinux.org/wiki/Raspberry_Pi_3_-_Configuring_it_as_wireless_access_point_-AP_Mode
 * https://learn.adafruit.com/setting-up-a-raspberry-pi-as-a-wifi-access-point/install-software (uses isc-dhcp-server instead of dnsmasq)
 
+## System
+
+* Alter the ipv4 config on the WLAN side by overriding the ipv4 variables in `ansible/roles/network-interfaces/defaults`
 
 ## WLAN Access Point
 
 * Override SSID on ansible command line with `-e ssid="some ssid"` (or use other ansible methods like `host_vars`)
 * Currently `hostapd` logs MAC addresses of devices that connect in `/var/log/daemon.log`. This can be incriminating, and should be scrubbed or better still, not logged at all.
 
-## DHCP
+## DHCP and DNS
 
 * The DHCP lease period is 1h. This may be too long given the device is only serving a /24.
 * Currently `dnsmasq` logs MAC addresses of the requesting device in `/var/log/daemon.log` when it receives a DHCP request. This can be incriminating, and should be scrubbed or better still, not logged at all.
+* `dnsmasq` tells the biblebox to use it as the DNS resolver, so even when you have a connection via the ethernet port, it cannot resolve names. To alter this, change `/etc/resolv.conf` and replace `127.0.0.1` with a real nameserver in the `nameserver` line.
 
 ## Web Server
 
-* d
+* Automatically redirect to content having connected to the WiFi
 
 # TODO
 

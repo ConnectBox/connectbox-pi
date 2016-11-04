@@ -1,6 +1,9 @@
 ---
+# dns-dhcp needs to come last, given it adjusts resolv.conf and breaks
+#  subsequent lookups
 dependencies:
   - bootstrap
   - wifi-ap
-  - dns-dhcp
   - geerlingguy.nginx
+  - mikegleasonjr.firewall
+  - dns-dhcp
