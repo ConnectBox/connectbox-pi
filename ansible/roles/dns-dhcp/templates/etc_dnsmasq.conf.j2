@@ -24,7 +24,7 @@ address=/#/{{ wlan0_ip_address }}
 #  or goes back to using a cellular service
 local-ttl=5
 
-domain=biblebox.local
+domain={{ hostname }}
 
 interface=wlan0
 dhcp-range={{ dhcp_range_start }},{{ dhcp_range_end }},{{ wlan0_netmask }},{{ dhcp_lease_time }}
