@@ -1,0 +1,8 @@
+---
+# Make sure this does not overlap with the host WLAN ip specified
+#  in network-interfaces/defaults/main.yml (or where-ever it might
+#  be overridden
+# Assumes dhcp is being offered on the same network as the host WLAN ip
+dhcp_range_start: 10.0.0.2
+dhcp_range_end: 10.0.0.250
+dhcp_lease_time: 1h
