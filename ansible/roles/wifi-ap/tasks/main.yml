@@ -11,7 +11,9 @@
     owner: root
     group: root
     mode: 0644
+  notify: Reload hostapd
 
+# XXX - is this needed given we're running hostapd in ifupdown mode?
 - name: Start and enable hostapd
   service:
     name: hostapd

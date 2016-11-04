@@ -1,0 +1,3 @@
+---
+lan_ip_address: 10.0.0.1
+lan_netmask: 255.255.255.0

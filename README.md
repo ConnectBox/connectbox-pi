@@ -33,4 +33,5 @@ Follow the [Raspberry Pi install instructions](https://www.raspberrypi.org/docum
 
 ## WLAN Access Point
 
-* a note
+* Override SSID on ansible command line with `-e ssid="some ssid"` (or use other ansible methods like `host_vars`)
+* **Need help with hostapd.conf** (not sure which things should be enabled) e.g. (but not limited to) `country_code`, `ieee80211d`, `ieee80211h` (https://w1.fi/hostapd/)

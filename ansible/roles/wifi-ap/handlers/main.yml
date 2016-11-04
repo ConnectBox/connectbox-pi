@@ -1,0 +1,6 @@
+---
+# We're using the ifupdown method instead of the initscript method
+#  so this is just an ifdown and ifup operation rather than a
+#  service reload hostapd
+- name: Reload hostapd
+  shell: "ifdown wlan0; sleep 1; ifup wlan0"

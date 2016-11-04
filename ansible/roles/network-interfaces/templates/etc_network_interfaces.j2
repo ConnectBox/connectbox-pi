@@ -1,0 +1,16 @@
+# {{ ansible_managed }}
+#
+# interfaces(5) file used by ifup(8) and ifdown(8)
+
+source-directory /etc/network/interfaces.d
+
+auto lo
+iface lo inet loopback
+
+iface eth0 inet manual
+
+allow-hotplug wlan0
+iface wlan0 inet static
+    address {{ lan_ip_address }}
+    netmask {{ lan_netmask }}
+    hostapd /etc/hostapd/hostapd.conf
