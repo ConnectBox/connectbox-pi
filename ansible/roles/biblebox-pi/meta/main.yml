@@ -1,5 +1,5 @@
 ---
 dependencies:
   - bootstrap
-  - network-interfaces
   - wifi-ap
+  - dns-dhcp

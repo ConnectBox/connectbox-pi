@@ -11,6 +11,6 @@ iface eth0 inet manual
 
 allow-hotplug wlan0
 iface wlan0 inet static
-    address {{ lan_ip_address }}
-    netmask {{ lan_netmask }}
+    address {{ wlan0_ip_address }}
+    netmask {{ wlan0_netmask }}
     hostapd /etc/hostapd/hostapd.conf
