@@ -3,3 +3,4 @@ dependencies:
   - bootstrap
   - wifi-ap
   - dns-dhcp
+  - webserver

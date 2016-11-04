@@ -72,12 +72,12 @@ Stuff that I need help with, or may come back to
 ## General System
 
 * set host and domain
-
+* firewall
+  * make sure http, dhcp, dns are the only services visible on wlan0 (all others should come from eth0) - document this
 
 ## Security review
 
 * change default passwords
 * disable pi account and replace with admin type account
-* make sure http is the only service visible on wlan0 (all others should come from eth0) - document this
 * make sure dnsmasq and hostapd output is scrubbed for MAC addresses, that would be incriminating
 
