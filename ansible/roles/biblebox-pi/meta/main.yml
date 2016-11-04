@@ -6,4 +6,5 @@ dependencies:
   - wifi-ap
   - geerlingguy.nginx
   - mikegleasonjr.firewall
+  - usb-content
   - dns-dhcp

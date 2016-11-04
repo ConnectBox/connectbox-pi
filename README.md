@@ -50,6 +50,8 @@ Useful references:
 ## System
 
 * Alter the ipv4 config on the WLAN side by overriding the ipv4 variables in `ansible/roles/network-interfaces/defaults`
+* Firewall rules only allow traffic from the LAN side. SSH access is denied from the WLAN
+* Firewall rules only allow http, dhcp and dns from the WLAN
 
 ## WLAN Access Point
 
@@ -59,11 +61,12 @@ Useful references:
 ## DHCP and DNS
 
 * The DHCP lease period is 1h. This may be too long given the device is only serving a /24.
-* Currently `dnsmasq` logs MAC addresses of the requesting device in `/var/log/daemon.log` when it receives a DHCP request. This can be incriminating, and should be scrubbed or better still, not logged at all.
+* Currently `dnsmasq` logs MAC addresses of the requesting device in `/var/log/daemon.log` when it receives a DHCP request. This can be incriminating, and should be scrubbed or better still, not logged at all. Also need to deal with the DHCP lease file `/var/lib/misc/dnsmasq.leases`
 * `dnsmasq` tells the biblebox to use it as the DNS resolver, so even when you have a connection via the ethernet port, it cannot resolve names. To alter this, change `/etc/resolv.conf` and replace `127.0.0.1` with a real nameserver in the `nameserver` line.
 
 ## Web Server
 
+* Content on the first usb drive is exposed to the webserver in the content directory. The drive is auto-mounted.
 * Automatically redirect to content having connected to the WiFi
 
 # TODO
@@ -80,11 +83,14 @@ Stuff that I need help with, or may come back to
 * make not about how HSTS will mean that not all sites can redirect to the portal - some will refuse to load outright
 * redirect https and http to us?
 
+
 ## General System
 
+* unmounting of USB drives... how would the user do that?
 * set host and domain
 * firewall
   * make sure http, dhcp, dns are the only services visible on wlan0 (all others should come from eth0) - document this
+  * run nmap to see what's open
 
 ## Security review
 
