@@ -1,10 +1,12 @@
 # Indigitous Hack
 
-This is a solution to the biblebox-pi challenge as a part of [Indigitous #hack[(https://indigitous.org/hack/challenges/bibleboxpi/) taking place on Nov 4-6 2016. If you're a part of the hack, and would like to collaborate, I'm _@edwin_ on Kingdom Builders slack, or via email at: edwin@wordspeak.org.
+This is a solution to the biblebox-pi challenge as a part of [Indigitous #hack](https://indigitous.org/hack/challenges/bibleboxpi/) taking place on Nov 4-6 2016. If you're a part of the hack, and would like to collaborate, I'm _@edwin_ on Kingdom Builders slack, or via email at: edwin@wordspeak.org.
 
 There's a TODO section at the bottom of this document of tasks that I still need to work through if you're looking for an area to contribute.
 
 # Quick Start
+
+How to deploy what's in this repo.
 
 ## Get Ansible
 
@@ -33,6 +35,8 @@ Follow the [Raspberry Pi install instructions](https://www.raspberrypi.org/docum
 
 # Notes
 
+The foundation of documentation and other stuff.
+
 Useful references:
 
 * https://www.pi-point.co.uk/closedcloud-walkthrough/
@@ -52,6 +56,9 @@ Useful references:
 
 
 # TODO
+
+Stuff that I need help with, or may come back to
+
 ## WLAN AP
 
 * Get help with hostapd config (not sure which things should be enabled) e.g. (but not limited to) `country_code`, `ieee80209d`, `ieee80211h` [hostapd doco](https://wireless.wiki.kernel.org/en/users/Documentation/hostapd)
