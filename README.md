@@ -1,6 +1,8 @@
 # Indigitous Hack
 
-This is a solution to the biblebox-pi challenge as a part of [Indigitous #hack[(https://indigitous.org/hack/challenges/bibleboxpi/) taking place on Nov 4-6 2016. If you're a part of the hack, and would like to collaborate, I'm _@edwin_ on Kingdom Builders slack, or via email at: edwin@wordspeak.org
+This is a solution to the biblebox-pi challenge as a part of [Indigitous #hack[(https://indigitous.org/hack/challenges/bibleboxpi/) taking place on Nov 4-6 2016. If you're a part of the hack, and would like to collaborate, I'm _@edwin_ on Kingdom Builders slack, or via email at: edwin@wordspeak.org.
+
+There's a TODO section at the bottom of this document of tasks that I still need to work through if you're looking for an area to contribute.
 
 # Quick Start
 
@@ -41,10 +43,34 @@ Useful references:
 ## WLAN Access Point
 
 * Override SSID on ansible command line with `-e ssid="some ssid"` (or use other ansible methods like `host_vars`)
-* **Need help with hostapd.conf** (not sure which things should be enabled) e.g. (but not limited to) `country_code`, `ieee80209d`, `ieee80211h` [hostapd doco](https://wireless.wiki.kernel.org/en/users/Documentation/hostapd)
 * Currently `hostapd` logs MAC addresses of devices that connect in `/var/log/daemon.log`. This can be incriminating, and should be scrubbed.
 
 ## DHCP
 
 * The DHCP lease period is 1h. This may be too long given the device is only serving a /24.
 * Currently `dnsmasq` logs MAC addresses of devices in `/var/log/daemon.log` when it gives an address. This can be incriminating, and should be scrubbed.
+
+
+# TODO
+## WLAN AP
+
+* Get help with hostapd config (not sure which things should be enabled) e.g. (but not limited to) `country_code`, `ieee80209d`, `ieee80211h` [hostapd doco](https://wireless.wiki.kernel.org/en/users/Documentation/hostapd)
+* work out how to scrub MAC addresses from daemon.log
+
+## DNS
+
+* short TTL (<60 seconds) to avoid problems when joining other APs [confirm this behaviour]
+* make not about how HSTS will mean that not all sites can redirect to the portal - some will refuse to load outright
+
+## General System
+
+* set host and domain
+
+
+## Security review
+
+* change default passwords
+* disable pi account and replace with admin type account
+* make sure http is the only service visible on wlan0 (all others should come from eth0) - document this
+* make sure dnsmasq and hostapd output is scrubbed for MAC addresses, that would be incriminating
+
