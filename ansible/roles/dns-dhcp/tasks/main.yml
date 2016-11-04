@@ -11,6 +11,7 @@
     owner: root
     group: root
     mode: 0644
+    validate: dnsmasq --test --conf-file=%s
   notify: Reload dnsmasq
 
 - name: Start and enable dnsmasq

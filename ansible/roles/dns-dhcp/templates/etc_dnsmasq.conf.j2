@@ -1,2 +1,30 @@
+# Many thanks to https://www.pi-point.co.uk/closedcloud-walkthrough/
+
+# Never forward A or AAAA queries for plain names, without dots or domain
+#  parts, to upstream nameservers. If the name is not known from /etc/hosts
+# or DHCP then a "not found" answer is returned.
+domain-needed
+# Bogus private reverse lookups. All reverse lookups for private IP ranges
+#  (ie 192.168.x.x, etc) which are not found in /etc/hosts or the DHCP leases
+#  file are answered with "no such domain" rather than being forwarded
+#  upstream.
+bogus-priv
+# Don't read /etc/resolv.conf. Get upstream servers only from the command
+#  line or the dnsmasq configuration file.
+no-resolv
+# Return the biblebox-pi address for all queries, unless they match dhcp
+#  leases or are answered from /etc/hosts
+address=/#/{{ wlan0_ip_address }}
+
+# Tell clients to cache IP addresses for 5 seconds. This overrides the 
+#  default of 0, which would place more load on this service because 
+#  queries would never be cached. By setting the TTL very low, however,
+#  we make sure that the client's resolver won't have the bogus addresses
+#  from this service in cache when it switches away to another WiFi network
+#  or goes back to using a cellular service
+local-ttl=5
+
+domain=biblebox.local
+
 interface=wlan0
 dhcp-range={{ dhcp_range_start }},{{ dhcp_range_end }},{{ wlan0_netmask }},{{ dhcp_lease_time }}
