@@ -1,8 +1,3 @@
-##### hostapd configuration file ##############################################
-# Empty lines and lines starting with # are ignored
-
-# AP netdevice name (without 'ap' postfix, i.e., wlan0 uses wlan0ap for
-# management frames); ath0 for madwifi
 interface=wlan0
 
 # In case of madwifi, atheros, and nl80211 driver interfaces, an additional
@@ -61,26 +56,13 @@ logger_stdout_level=2
 # hostapd_cli will use it when trying to connect with hostapd.
 ctrl_interface=/var/run/hostapd
 
-# Access control for the control interface can be configured by setting the
-# directory to allow only members of a group to use sockets. This way, it is
-# possible to run hostapd as root (since it needs to change network
-# configuration and open raw sockets) and still allow GUI/CLI components to be
-# run as non-root users. However, since the control interface can be used to
-# change the network configuration, this access needs to be protected in many
-# cases. By default, hostapd is configured to use gid 0 (root). If you
-# want to allow non-root users to use the contron interface, add a new group
-# and change this value to match with that group. Add users that should have
-# control interface access to this group.
-#
-# This variable can be a group name or gid.
-#ctrl_interface_group=wheel
 ctrl_interface_group=0
 
 
 ##### IEEE 802.11 related configuration #######################################
 
 # SSID to be used in IEEE 802.11 management frames
-ssid=test
+ssid={{ ssid }}
 # Alternative formats for configuring SSID
 # (double quoted string, hexdump, printf-escaped string)
 #ssid2="test"
