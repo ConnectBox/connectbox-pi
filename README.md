@@ -47,13 +47,16 @@ Useful references:
 ## WLAN Access Point
 
 * Override SSID on ansible command line with `-e ssid="some ssid"` (or use other ansible methods like `host_vars`)
-* Currently `hostapd` logs MAC addresses of devices that connect in `/var/log/daemon.log`. This can be incriminating, and should be scrubbed.
+* Currently `hostapd` logs MAC addresses of devices that connect in `/var/log/daemon.log`. This can be incriminating, and should be scrubbed or better still, not logged at all.
 
 ## DHCP
 
 * The DHCP lease period is 1h. This may be too long given the device is only serving a /24.
-* Currently `dnsmasq` logs MAC addresses of devices in `/var/log/daemon.log` when it gives an address. This can be incriminating, and should be scrubbed.
+* Currently `dnsmasq` logs MAC addresses of the requesting device in `/var/log/daemon.log` when it receives a DHCP request. This can be incriminating, and should be scrubbed or better still, not logged at all.
 
+## Web Server
+
+* d
 
 # TODO
 
@@ -64,10 +67,10 @@ Stuff that I need help with, or may come back to
 * Get help with hostapd config (not sure which things should be enabled) e.g. (but not limited to) `country_code`, `ieee80209d`, `ieee80211h` [hostapd doco](https://wireless.wiki.kernel.org/en/users/Documentation/hostapd)
 * work out how to scrub MAC addresses from daemon.log
 
-## DNS
+## Webserver
 
-* short TTL (<60 seconds) to avoid problems when joining other APs [confirm this behaviour]
 * make not about how HSTS will mean that not all sites can redirect to the portal - some will refuse to load outright
+* redirect https and http to us?
 
 ## General System
 
