@@ -7,3 +7,6 @@
     update-cache: yes
     cache_valid_time: 86400 # 1 day
  
+- name: Update existing packages
+  apt:
+    upgrade: safe
