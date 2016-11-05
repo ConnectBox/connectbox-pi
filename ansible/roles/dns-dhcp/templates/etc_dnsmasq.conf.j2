@@ -24,6 +24,10 @@ address=/#/{{ wlan0_ip_address }}
 #  or goes back to using a cellular service
 local-ttl=5
 
+# Don't log MAC addresses, as they're potentially incriminating
+quiet-dhcp
+quiet-dhcp6
+
 domain={{ hostname }}
 
 interface=wlan0
