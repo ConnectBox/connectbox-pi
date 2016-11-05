@@ -76,25 +76,22 @@ Stuff that I need help with, or may come back to
 ## WLAN AP
 
 * Get help with hostapd config (not sure which things should be enabled) e.g. (but not limited to) `country_code`, `ieee80209d`, `ieee80211h` [hostapd doco](https://wireless.wiki.kernel.org/en/users/Documentation/hostapd)
-* work out how to scrub MAC addresses from daemon.log
 
 ## Webserver
 
 * make not about how HSTS will mean that not all sites can redirect to the portal - some will refuse to load outright
 * redirect https and http to us?
 
+## DHCP
+
+* Put dhcp leases file on a ramdisk (need to make sure the ramdisk is mounted before dnsmasq starts)
 
 ## General System
 
 * unmounting of USB drives... how would the user do that?
 * set host and domain
-* firewall
-  * make sure http, dhcp, dns are the only services visible on wlan0 (all others should come from eth0) - document this
-  * run nmap to see what's open
 
 ## Security review
 
 * change default passwords
 * disable pi account and replace with admin type account
-* make sure dnsmasq and hostapd output is scrubbed for MAC addresses, that would be incriminating
-
