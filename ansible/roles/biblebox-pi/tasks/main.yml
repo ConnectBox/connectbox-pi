@@ -1,4 +1,10 @@
 ---
+# If the system is updated before any iptables modules are loaded
+#  the system can't find the modules and iptables rules can't be
+#  loaded first time. (A repeat ansible run seems to fix it, though).
+# Let's avoid a first-time failure by doing the upgrade after the
+#  iptables rules have been updated.
+# Consistent with: https://serverfault.com/questions/593263/iptables-nat-does-not-exist
 - name: Update existing packages
   apt:
     upgrade: safe
