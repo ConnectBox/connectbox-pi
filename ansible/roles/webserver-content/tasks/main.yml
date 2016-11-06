@@ -1,0 +1,66 @@
+---
+
+- name: install git for checkout of bible skeleton and biblebox admin
+  apt:
+    name: git
+    state: present
+
+- name: install php5-fpm for admin interface
+  apt:
+    name: php5-fpm
+    state: present
+
+# commented force=yes given it blows away anything that's in place
+#  and it's unclear that we actually want that
+- name: checkout biblebox skeleton and deploy as default
+  git:
+    repo: https://github.com/bbriggs/BibleBox-skeleton.git
+    dest: /tmp/BibleBox-skeleton
+    depth: 1
+    #force=yes
+
+- name: create folders for default content/shared and config
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: 0775
+  with_items:
+    - "{{ biblebox_default_content_root }}"
+    - "{{ biblebox_config_root }}"
+
+- name: move default content into place
+  shell: "cp -r /tmp/BibleBox-skeleton/content/* {{ biblebox_default_content_root }}"
+
+- name: move default shared into place
+  command: cp -r /tmp/BibleBox-skeleton/shared {{ biblebox_default_content_root }}
+
+- name: move default config into place
+  shell: "cp -r /tmp/BibleBox-skeleton/config/* {{ biblebox_config_root }}"
+
+# commented force=yes given it blows away anything that's in place
+#  and it's unclear that we actually want that
+- name: checkout biblebox php admin interface
+  git:
+   repo: https://github.com/stevish-com/bibleboxpi-interface.git
+   dest: "{{ biblebox_default_content_root }}/admin/"
+   depth: 1
+   #force: yes
+
+# Leave mode as-is. Let's set perms correctly in the admin repo itself.
+- name: fix ownership of biblebox_default
+  file:
+    path: "{{ biblebox_default_content_root }}"
+    state: directory
+    owner: www-data
+    group: www-data
+    #mode: 0775
+    recurse: yes
+
+- name: allow www-data to pumount to allow admin interface to unmount USB
+  blockinfile:
+    dest: /etc/sudoers
+    block: |
+      www-data ALL=(ALL) ALL
+      www-data ALL=(ALL) NOPASSWD: /usr/bin/pumount

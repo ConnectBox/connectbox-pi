@@ -6,12 +6,16 @@
 #  this file correspond to that group, but then the inventory is
 #  slightly more complex
 
+biblebox_default_content_root: /var/www/biblebox/biblebox_default
+biblebox_config_root: /etc/biblebox
+biblebox_usb_files_root: "{{ biblebox_default_content_root }}/shared/usb"
+
 # Make sure we show index.html for 404, given we'll be sent here by
 #  people browsing for all sorts of things
 nginx_vhosts:
   - listen: "80 default_server"
     server_name: "{{ hostname }} _"
-    root: "/var/www/html"
+    root: "{{ biblebox_default_content_root }}"
     index: "index.html"
     error_page: "404 /index.html"
     access_log: "/var/log/nginx/default-access.log"
@@ -35,4 +39,3 @@ firewall_v4_group_rules:
     - -A INPUT -p tcp --dport domain -j ACCEPT
   400 allow web traffic:
     - -A INPUT -p tcp --dport http -j ACCEPT
-

@@ -7,5 +7,5 @@
 - name: Expose usb content to the webserver
   file:
     src: /media/usb0
-    dest: /var/www/html/content
+    dest: "{{ biblebox_usb_files_root }}"
     state: link
