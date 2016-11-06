@@ -88,7 +88,6 @@ Stuff that I need help with, or may come back to
 
 ## General System
 
-* unmounting of USB drives... how would the user do that?
 * set host and domain
 
 ## Security review
