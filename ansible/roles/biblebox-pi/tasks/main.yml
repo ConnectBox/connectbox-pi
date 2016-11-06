@@ -10,4 +10,9 @@
     upgrade: safe
 - name: install php5-fpm
   apt: pkg=php5-fpm state=installed update_cache=true
-    
+- name: allow www-data to pumount
+  blockinfile:
+    dest: /etc/sudoers
+    block: |
+      www-data ALL=(ALL) ALL
+      www-data ALL=(ALL) NOPASSWD: /usr/bin/pumount
