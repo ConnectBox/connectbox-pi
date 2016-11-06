@@ -1,0 +1,23 @@
+server {
+    listen 80 default_server;
+    server_name biblebox.local;
+
+    root /var/www/biblebox/biblebox_default/content;
+
+    index index.php index.htm index.html;
+
+    error_page 404 /index.html;
+    access_log /var/log/nginx/bbox-access.log;
+    error_log /var/log/nginx/bbox-error.log error;
+
+    autoindex on;
+
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/var/run/php5-fpm.sock;
+    }
+
+    location /shared/ {
+       root /var/www/biblebox/biblebox_default;
+    }
+}
