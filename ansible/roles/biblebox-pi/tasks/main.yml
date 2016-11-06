@@ -8,3 +8,4 @@
 - name: Update existing packages
   apt:
     upgrade: safe
+
