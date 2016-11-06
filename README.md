@@ -95,4 +95,3 @@ Stuff that I need help with, or may come back to
 * change default passwords
 * disable pi account and replace with admin type account
 
-test push
