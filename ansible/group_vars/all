@@ -18,9 +18,16 @@ nginx_vhosts:
     root: "{{ biblebox_default_content_root }}"
     index: "index.html"
     error_page: "404 /index.html"
-    access_log: "/var/log/nginx/default-access.log"
-    error_log: "/var/log/nginx/default-error.log"
+    access_log: "/var/log/nginx/access.log"
+    error_log: "/var/log/nginx/error.log"
     extra_parameters: |
+      location ~ \.php$ {
+          fastcgi_split_path_info ^(.+\.php)(/.+)$;
+          fastcgi_pass unix:/var/run/php5-fpm.sock;
+          fastcgi_index index.php;
+          fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+          include fastcgi_params;
+      }
       autoindex on;
 # We want to set the default server. Remove the default server that
 #  nginx provides.

@@ -10,6 +10,12 @@
     name: php5-fpm
     state: present
 
+- name: Enable php5-fpm
+  service:
+    name: php5-fpm
+    enabled: yes
+    state: started
+
 # commented force=yes given it blows away anything that's in place
 #  and it's unclear that we actually want that
 - name: checkout biblebox skeleton and deploy as default
