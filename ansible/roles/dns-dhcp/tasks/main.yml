@@ -9,7 +9,7 @@
 #  the blacklisting isn't applied immediately)
 - name: Blacklist 127.0.0.1 as a nameserver for the system resolver
   lineinfile:
-    dest: /etc/resolv.conf
+    dest: /etc/resolvconf.conf
     line: name_server_blacklist=127.0.0.1
     state: present
 
