@@ -9,9 +9,16 @@
 #  the blacklisting isn't applied immediately)
 - name: Blacklist 127.0.0.1 as a nameserver for the system resolver
   lineinfile:
-    dest: /etc/resolvconf.conf
+    dest: /etc/resolv.conf
     line: name_server_blacklist=127.0.0.1
     state: present
+
+# Set up ramdisk for later storage of dhcp lease file
+- name: Makedir ramdisk
+  file: path=/mnt/ramdisk state=directory
+
+- name: Mount ramdisk
+  mount: name=/mnt/ramdisk src='tmpfs' fstype=tmpfs opts='size=10m' state=mounted
 
 - name: Install dnsmasq
   apt:
