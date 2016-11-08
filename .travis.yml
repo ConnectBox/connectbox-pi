@@ -1,0 +1,7 @@
+sudo: required
+install:
+- sudo apt-get install vagrant
+- sudo -H pip install ansible==2.1.2.0
+- sudo -H pip install ansible-lint==3.4.3
+script:
+- ansible-lint -x ANSIBLE0004,ANSIBLE0012 --exclude=ansible/roles/mikegleasonjr.firewall --exclude=ansible/roles/geerlingguy.nginx ansible/site.yml
