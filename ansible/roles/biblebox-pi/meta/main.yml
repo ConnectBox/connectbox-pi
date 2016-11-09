@@ -3,6 +3,7 @@
 #  subsequent lookups
 dependencies:
   - bootstrap
+  - _simulate_raspbian_with_jessie
   - wifi-ap
   - geerlingguy.nginx
   - mikegleasonjr.firewall
