@@ -5,15 +5,18 @@
     name: git
     state: present
 
-- apt:
+- name: install uwsgi for Python integration
+  apt:
     name: uwsgi
     state: present
 
-- apt:
+- name: install uwsgi-python plugin
+  apt:
     name: uwsgi-plugin-python
     state: present
 
-- apt:
+- name: install PIP for Python packages
+  apt:
     name: python-pip
     state: present
 
@@ -99,7 +102,7 @@
   shell: "cp -a /tmp/BibleBox-nextcloud/static/* {{ biblebox_default_content_root }}"
 
 - name: deploy NextCloud integration WSGI app
-  shell: "cp -a /tmp/BibleBox-nextcloud/wsgi /var/www/"
+  command: "cp -a /tmp/BibleBox-nextcloud/wsgi /var/www/"
 
 - name: Add app link to uwsgi config
   file:
