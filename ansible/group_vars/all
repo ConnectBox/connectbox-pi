@@ -28,6 +28,10 @@ nginx_vhosts:
           fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
           include fastcgi_params;
       }
+      location /app/ {
+          include         uwsgi_params;
+          uwsgi_pass      unix:/run/uwsgi/app/app/socket;
+      }
       autoindex on;
 # We want to set the default server. Remove the default server that
 #  nginx provides.
