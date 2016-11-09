@@ -90,25 +90,20 @@
    depth: 1
    #force: yes
 
-- name: checkout latest owncloud lib
-  git:
-    repo: https://github.com/owncloud/pyocclient.git
-    dest: /tmp/pyocclient
-    depth: 1
-    #force=yes
-
 - name: Pull python packages
-  shell: "pip install webapp2 webob"
+  pip:
+    name: webapp2 webob git+https://github.com/owncloud/pyocclient.git
+    state: present
 
 - name: deploy NextCloud integration static content
   shell: "cp -a /tmp/BibleBox-nextcloud/static/* {{ biblebox_default_content_root }}"
 
 - name: deploy NextCloud integration WSGI app
-  shell: "cp -a /tmp/BibleBox-nextcloud/wsgi /var/www/wsgi"
+  shell: "cp -a /tmp/BibleBox-nextcloud/wsgi /var/www/"
 
 - name: Add app link to uwsgi config
-  shell: "ln -fs /var/www/wsgi/app.ini /etc/uwsgi/apps-enabled/app.ini"
-
-- name: Copy latest owncloud lib (PIP-pulled is broken)
-  shell: "cp -a /tmp/pyocclient/owncloud/owncloud.py /var/www/wsgi/"
+  file:
+    src: /var/www/wsgi/app.ini
+    dest: /etc/uwsgi/apps-enabled/app.ini
+    state: link
 
