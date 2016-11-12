@@ -10,14 +10,15 @@ How to deploy what's in this repo.
 
 ## Get Ansible
 
-This project uses Ansible v2.1+. Install it however you wish. I use a python virtualenv:
+This project uses Ansible v2.1+ with some additional, optional tools. Install Ansible however you wish. I use a python virtualenv to install ansible and the other tools at the same time. From the directory containing this README:
 
 ```
 $ mkdir ~/.virtualenvs
-$ mkvirtualenv ~/.virtualenvs/ansible
-$ . ~/.virtualenvs/ansible/bin/activate
-$ pip install ansible==2.1.2.0
+$ mkvirtualenv ~/.virtualenvs/biblebox-pi
+$ . ~/.virtualenvs/biblebox-pi/bin/activate
+$ pip install -r requirements.txt
 ```
+
 ## On the Raspberry Pi
 
 ### Install Vanilla Raspbian-lite on Raspberry Pi
