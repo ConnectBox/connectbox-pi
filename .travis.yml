@@ -2,15 +2,12 @@ language: bash
 sudo: required
 # Need trusty for a recent-ish version of vagrant
 dist: trusty
-# ruby-dev needed to build vagrant aws
 before_install:
   - sudo apt-get -qq update
 install:
 - sudo apt-get install vagrant
-- sudo apt-get install ruby2.0-dev
-- apt search vagrant
+- sudo apt-get install build-essential libxslt-dev libxml2-dev zlib1g-dev
 - sudo pip install -r requirements.txt
-- vagrant --version
 - vagrant plugin install vagrant-aws
 script:
 - ansible-lint -x ANSIBLE0004,ANSIBLE0012 --exclude=ansible/roles/mikegleasonjr.firewall --exclude=ansible/roles/geerlingguy.nginx ansible/site.yml
