@@ -2,8 +2,10 @@ language: bash
 sudo: required
 # Need trusty for a recent-ish version of vagrant
 dist: trusty
+# ruby-dev needed to build vagrant aws
 install:
 - sudo apt-get install vagrant
+- sudo apt-get install ruby-dev
 - vagrant --version
 - vagrant plugin install vagrant-aws
 - sudo -H pip install -r requirements.txt
