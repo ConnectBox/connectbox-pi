@@ -7,7 +7,8 @@ before_install:
   - sudo apt-get -qq update
 install:
 - sudo apt-get install vagrant
-- sudo apt-get install ruby2.3.1-dev
+- apt search ruby
+- sudo apt-get install ruby2.3-dev
 - sudo pip install -r requirements.txt
 - vagrant --version
 - vagrant plugin install vagrant-aws
