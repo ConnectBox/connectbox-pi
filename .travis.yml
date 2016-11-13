@@ -8,7 +8,7 @@ before_install:
 install:
 - sudo apt-get install vagrant
 - sudo apt-get install ruby-dev
-- pip install -r requirements.txt
+- sudo pip install -r requirements.txt
 - vagrant --version
 - vagrant plugin install vagrant-aws
 script:
