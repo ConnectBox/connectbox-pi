@@ -10,8 +10,9 @@ install:
 - sudo pip install -r requirements.txt
 - gem install --verbose vagrant-aws
 - gem env gemdir
-- vagrant plugin install /home.travis/.rvm/gems/ruby-2.3.1/cache/vagrant-aws-0.7.2.gem
+- find `gem env gemdir` -name "*.gem" 
 - ls -l `gem env gemdir`/cache/vagrant-aws*.gem
+- vagrant plugin install /home.travis/.rvm/gems/ruby-2.3.1/cache/vagrant-aws-0.7.2.gem
 - vagrant plugin list
 script:
 - ansible-lint -x ANSIBLE0004,ANSIBLE0012 --exclude=ansible/roles/mikegleasonjr.firewall --exclude=ansible/roles/geerlingguy.nginx ansible/site.yml
