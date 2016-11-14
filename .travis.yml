@@ -17,7 +17,7 @@ script:
 - pushd $TRAVIS_BUILD_DIR && ansible-lint -x ANSIBLE0004,ANSIBLE0012 --exclude=ansible/roles/mikegleasonjr.firewall
   --exclude=ansible/roles/geerlingguy.nginx ansible/site.yml && popd
 after_script:
-- pushd $TRAVIS_BUILD_DIR/ci && vagrant destroy && popd
+- pushd $TRAVIS_BUILD_DIR/ci && vagrant destroy -f && popd
 env:
   global:
   - secure: g2dL7VaYHf0r00QfMYDearAraTmuMB3G+JsH1Anqv7mM82/X4/8UpDERLmHnlLkqyjqMtvWYObt+L8oSXsIsOLRBoMX5DmZQpx7SXz/GdIslnjOfx+Ne9ExJzQWAvIUTbYELEpQLB3eFYdGn02Ar6gY1CP8FgNQy32sMdEVPgI025JZJp04xcbLmqcg2ldjGQSDwjcx7q+LGfG4aoETvladdCxEWKaeOrSEsx3g//LhwgYDJkZEsa0X1eQJGiee1kolc4RPFNad93sBqNfaAKpcF1G10oMS2Z42yfI3fu1FhSxQypfb3NhKkH+20XpXDkcItj601IqhZCk/EBmC55LWffLInZjYTNtHWE+4m43SC7YmZyBQB7R1HEPUpXZis8wFnpzkgLonKzkgBe6qOYTehJOXMbGAKnD1XNhUqsmPYDsYWBI4oXeS3O+INXBgxgk/Fhzmie12NwVOCWbfc/eIu18PbXkLyo7RRg2QFBK1cdIAQzPS+C3l9OzUu3LZgf7GPqV/SbV4hPtppdqMPq1pkdFftHLuPZDSBEjlB8gJ1AUx7inRR9cNcq8z4+RoCUTQsZ2gULYUt6ujL4oqD45P76/VMZ0UPT0+BD4o3mbfm/MnLq4/qicVDfY8bfWmRpvDqiQAM6ByezrGAgAQW7fSbUKhFSK3xWkbYkOSx76o=
