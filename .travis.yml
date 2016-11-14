@@ -8,9 +8,10 @@ install:
 - sudo apt-get install vagrant
 - sudo apt-get install build-essential libxslt-dev libxml2-dev zlib1g-dev
 - sudo pip install -r requirements.txt
-- gem install vagrant-aws
-- find /var/lib/gems
-- vagrant plugin install /var/lib/gems/*/vagrant-aws*.gem
+- gem install --verbose vagrant-aws
+- gem env gemdir
+- find / -name "*.gem"
+- vagrant plugin install `gem env gemdir`/cache/*/vagrant-aws*.gem
 - vagrant plugin list
 script:
 - ansible-lint -x ANSIBLE0004,ANSIBLE0012 --exclude=ansible/roles/mikegleasonjr.firewall --exclude=ansible/roles/geerlingguy.nginx ansible/site.yml
