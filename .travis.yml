@@ -6,14 +6,18 @@ before_install:
   -in ci/travis-ci-biblebox.pem.enc -out ci/travis-ci-biblebox.pem -d
 - sudo apt-get -qq update
 install:
+- ruby -v
 - sudo apt-get install vagrant
+- ruby -v
 - sudo apt-get install build-essential libxslt-dev libxml2-dev zlib1g-dev ruby-dev
+- ruby -v
+- vagrant plugin list
+- vagrant plugin install vagrant-aws
+#- gem install vagrant-aws
+#- ls -l `gem env gemdir`/cache/vagrant-aws*.gem
+#- pushd `gem env gemdir`/cache && vagrant plugin install vagrant-aws-0.7.2.gem && popd
+- vagrant plugin list
 - sudo pip install -r requirements.txt
-- gem install vagrant-aws
-- ls -l `gem env gemdir`/cache/vagrant-aws*.gem
-- vagrant plugin list
-- pushd `gem env gemdir`/cache && vagrant plugin install vagrant-aws-0.7.2.gem && popd
-- vagrant plugin list
 script:
 - ansible-lint -x ANSIBLE0004,ANSIBLE0012 --exclude=ansible/roles/mikegleasonjr.firewall
   --exclude=ansible/roles/geerlingguy.nginx ansible/site.yml
