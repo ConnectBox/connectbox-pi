@@ -8,7 +8,10 @@
 
 # Extract Encrypted ssh key
 cd $TRAVIS_BUILD_DIR;
-openssl aes-256-cbc -K $encrypted_22a22c63eb0e_key -iv $encrypted_22a22c63eb0e_iv -in ci/travis-ci-biblebox.pem.enc -out ci/travis-ci-biblebox.pem -d;
+PEM_OUT=$TRAVIS_BUILD_DIR; ci/travis-ci-biblebox.pem;
+touch $PEM_OUT;
+chmod 600 $PEM_OUT;
+openssl aes-256-cbc -K $encrypted_22a22c63eb0e_key -iv $encrypted_22a22c63eb0e_iv -in ci/travis-ci-biblebox.pem.enc -d >> $PEM_OUT;
 
 ls -l ci;
 md5sum ci/*.pem;
