@@ -1,6 +1,5 @@
 ---
 - hosts: all
-  user: pi
   become: yes
   roles:
     - biblebox-pi
