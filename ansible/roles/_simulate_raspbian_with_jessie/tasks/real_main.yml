@@ -1,4 +1,11 @@
 ---
+# Needed by Debian Official AMI
+- name: Install aptitude
+  apt:
+    name: aptitude
+    state: present
+
+# Needed by Jessie
 - name: Install openresolv
   apt:
     name: openresolv
