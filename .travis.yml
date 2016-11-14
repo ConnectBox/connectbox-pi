@@ -7,7 +7,7 @@ before_install:
 - sudo apt-get -qq update
 install:
 - sudo apt-get install vagrant
-- sudo apt-get install build-essential libxslt-dev libxml2-dev zlib1g-dev
+- sudo apt-get install build-essential libxslt-dev libxml2-dev zlib1g-dev ruby-dev
 - sudo pip install -r requirements.txt
 - gem install vagrant-aws
 - ls -l `gem env gemdir`/cache/vagrant-aws*.gem
