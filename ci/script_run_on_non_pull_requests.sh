@@ -18,7 +18,15 @@ openssl aes-256-cbc -K $encrypted_22a22c63eb0e_key -iv $encrypted_22a22c63eb0e_i
 cd $TRAVIS_BUILD_DIR/ci;
 vagrant up;
 
-cat /home/travis/build/edwinsteele/biblebox-pi/ci/.vagrant/provisioners/ansible/inventory/vagrant_ansible_inventory
-
 ansible-playbook -vvvv -i .vagrant/provisioners/ansible/inventory/vagrant_ansible_inventory ../ansible/site.yml
 
+vagrant_inv=/home/travis/build/edwinsteele/biblebox-pi/ci/.vagrant/provisioners/ansible/inventory/vagrant_ansible_inventory
+cat $vagrant_inv
+
+aws_host=$(cut -d" " -f2 $vagrant_inv | cut -d"=" -f2)
+echo "aws host"
+echo $aws_host
+
+ssh -C -vvv -o ControlMaster=auto -o ControlPersist=60s -o StrictHostKeyChecking=no -o BatchMode=yes -o Port=22 -o 'IdentityFile="/home/travis/build/edwinsteele/biblebox-pi/ci/travis-ci-biblebox.pem"' -o KbdInteractiveAuthentication=no -o PreferredAuthentications=gssapi-with-mic,gssapi-keyex,hostbased,publickey -o PasswordAuthentication=no -o User=admin -o ConnectTimeout=10 -o ControlPath=/home/travis/.ansible/cp/%C $aws_host "hostname"
+
+ssh -C -vvv -o ControlMaster=auto -o ControlPersist=60s -o StrictHostKeyChecking=no -o BatchMode=yes -o Port=22 -i $PEM_OUT -o KbdInteractiveAuthentication=no -o PreferredAuthentications=gssapi-with-mic,gssapi-keyex,hostbased,publickey -o PasswordAuthentication=no -o User=admin -o ConnectTimeout=10 -o ControlPath=/home/travis/.ansible/cp/%C $aws_host "hostname"
