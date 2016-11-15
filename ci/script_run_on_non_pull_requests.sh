@@ -15,6 +15,11 @@ openssl aes-256-cbc -K $encrypted_22a22c63eb0e_key -iv $encrypted_22a22c63eb0e_i
 
 ls -l ci;
 md5sum ci/*.pem;
+cat /home/travis/build/edwinsteele/biblebox-pi/ci/.vagrant/provisioners/ansible/inventory/vagrant_ansible_inventory
+echo "AWS_ACCESS_KEY_ID"
+echo $AWS_ACCESS_KEY_ID | md5sum
+echo "AWS_SECRET_ACCESS_KEY"
+echo $AWS_SECRET_ACCESS_KEY | md5sum
 
 # Run CI build on AWS. This uses protected variables
 cd $TRAVIS_BUILD_DIR/ci;
