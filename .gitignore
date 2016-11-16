@@ -3,3 +3,4 @@
 *.swp
 *.retry
 .vagrant
+*.pem
