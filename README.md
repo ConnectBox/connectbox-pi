@@ -10,11 +10,11 @@ How to deploy what's in this repo.
 
 ## Get Ansible
 
-This project uses Ansible v2.1+ with some additional, optional tools. Install Ansible however you wish. I use a python virtualenv to install ansible and the other tools at the same time. From the directory containing this README:
+This project uses Ansible v2.1+ with some additional, optional tools. Ansible does not run on the Raspberry Pi itself, but is instead run from a different machine like a separate server or a workstation. There are many ways to install Ansible, but package managers normally have an outdated version that is not suitable. Steps for installing to a python virtualenv are included below, as one way to install a suitable version and some additional tools. From the directory containing this README, run:
 
 ```
 $ mkdir ~/.virtualenvs
-$ mkvirtualenv ~/.virtualenvs/biblebox-pi
+$ virtualenv ~/.virtualenvs/biblebox-pi
 $ . ~/.virtualenvs/biblebox-pi/bin/activate
 $ pip install -r requirements.txt
 ```
