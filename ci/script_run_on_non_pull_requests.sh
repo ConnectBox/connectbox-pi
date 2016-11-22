@@ -19,4 +19,4 @@ vagrant up;
 
 # Perform a re-run of the playbooks, to see whether they run cleanly and
 #  without marking any task as changed
-# vagrant provision
+vagrant provision
