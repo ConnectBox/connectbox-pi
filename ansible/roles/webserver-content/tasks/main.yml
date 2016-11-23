@@ -78,7 +78,7 @@
       recursive: yes
   delegate_to: "{{ inventory_hostname }}"
 
-# This makes the config files executable but 
+# This makes the config files executable but
 # it seems like the only other option is to separately
 # set permissions on directory in an additional task
 # Since the config files will probably be going away
