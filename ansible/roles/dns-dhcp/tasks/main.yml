@@ -19,6 +19,8 @@
 - name: Reload openresolv with config
   command: /sbin/resolvconf -u
   when: resolvconf_conf_changed.changed
+  tags:
+  - skip_ansible_lint
 
 - name: Install dnsmasq
   apt:
