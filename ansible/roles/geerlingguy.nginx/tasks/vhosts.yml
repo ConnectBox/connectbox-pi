@@ -26,13 +26,3 @@
     state: absent
   when: nginx_vhosts|length == 0
   notify: reload nginx
-
-- name: Add managed biblebox config file
-  template:
-    src: biblebox.j2
-    dest: "{{ nginx_sites_available }}/biblebox"
-    mode: 0644
-  notify: reload nginx
-
-- name: symlink biblebox config to sites-enabled
-  file: "src={{ nginx_sites_available }}/biblebox dest={{ nginx_sites_enabled }}/biblebox state=link"
