@@ -1,17 +1,26 @@
 ---
+# Openresolv, by default, wants to update /etc/resolv.conf to use dnsmasq
+#  as a local resolver. We stop it from doing that with resolvconf=NO
 # If 127.0.0.1 is a system resolver when dnsmasq is running, all on-box
 #  queries are answered with the local wlan ip address. This breaks apt
-#  updates and other stuff that needs a working resolver. This tells
-#  resolvconf to avoid setting 127.0.0.1 as a nameserver in /etc/resolv.conf
-# This doesn't affect our ability to answer queries from wlan in the way
-#  that we wish to i.e. answer everything with the local address
-# This blacklisting task must be before dnsmasq is installed (or somehow
-#  the blacklisting isn't applied immediately)
-- name: Blacklist 127.0.0.1 as a nameserver for the system resolver
+#  updates and other stuff that needs a working resolver. This means that
+#  clients get different results to their DNS queries (which are served
+#  from dnsmasq) from queries run on-box i.e. using system resolver
+- name: Tell openresolv not to touch /etc/resolv.conf
   lineinfile:
     dest: /etc/resolvconf.conf
-    line: name_server_blacklist=127.0.0.1
+    line: resolvconf=NO
     state: present
+  register: resolvconf_conf_changed
+
+# This can't be a handler, as we need this config to be in place when
+#  we install and start dnsmasq. If it is not, then openresolv removes
+#  the entries in /etc/resolv.conf and breaks DNS
+- name: Reload openresolv with config
+  command: /sbin/resolvconf -u
+  when: resolvconf_conf_changed.changed
+  tags:
+  - skip_ansible_lint
 
 - name: Install dnsmasq
   apt:
