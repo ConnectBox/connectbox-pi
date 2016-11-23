@@ -17,7 +17,7 @@ nginx_vhosts:
     server_name: "{{ hostname }} _"
     root: "{{ biblebox_default_content_root }}"
     index: "index.html index.php"
-    error_page: "404 /index.html"
+    error_page: "404 /404.html"
     access_log: "/var/log/nginx/access.log"
     error_log: "/var/log/nginx/error.log"
     extra_parameters: |
