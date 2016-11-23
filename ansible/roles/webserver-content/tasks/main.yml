@@ -58,23 +58,38 @@
     - "{{ biblebox_config_root }}"
 
 - name: move default content into place
-  shell: "cp -r /tmp/BibleBox-skeleton/content {{ biblebox_default_content_root }}"
+  synchronize:
+      src: /tmp/BibleBox-skeleton/content
+      dest: "{{ biblebox_default_content_root }}"
+      recursive: yes
+  delegate_to: "{{ inventory_hostname }}"
 
 - name: move default shared into place
-  command: "cp -r /tmp/BibleBox-skeleton/shared {{ biblebox_default_content_root }}"
+  synchronize:
+      src: /tmp/BibleBox-skeleton/shared
+      dest: "{{ biblebox_default_content_root }}"
+      recursive: yes
+  delegate_to: "{{ inventory_hostname }}"
 
 - name: move default config into place
-  shell: "cp -r /tmp/BibleBox-skeleton/config/* {{ biblebox_config_root }}"
+  synchronize:
+      src: /tmp/BibleBox-skeleton/config/
+      dest: "{{ biblebox_config_root }}"
+      recursive: yes
+  delegate_to: "{{ inventory_hostname }}"
 
+# This makes the config files executable but 
+# it seems like the only other option is to separately
+# set permissions on directory in an additional task
+# Since the config files will probably be going away
+# I think this is fine for now.
 - name: update permissions on biblebox config files
   file:
-    path: "{{ item }}"
-    state: directory
+    dest: "{{ biblebox_config_root }}"
     owner: www-data
     group: www-data
-    mode: 0775
-  with_items:
-    - "{{ biblebox_config_root }}"
+    mode: 0755
+    recurse: yes
 
 # commented force=yes given it blows away anything that's in place
 #  and it's unclear that we actually want that
