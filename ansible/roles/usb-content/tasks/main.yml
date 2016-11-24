@@ -9,3 +9,12 @@
     src: /media/usb0
     dest: "{{ biblebox_usb_files_root }}"
     state: link
+
+# When the admin interface is refactored to
+# not update config on the USB drive
+# this can be removed
+- name: modify usbmount to mount as www-data
+  lineinfile:
+    dest: /etc/usbmount/usbmount.conf
+    regexp: 'FS_MOUNTOPTIONS=""'
+    line: 'FS_MOUNTOPTIONS="-fstype=vfat,gid=www-data,uid=www-data"'

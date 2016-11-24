@@ -13,26 +13,52 @@ biblebox_usb_files_root: "{{ biblebox_default_content_root }}/shared/usb"
 # Make sure we show index.html for 404, given we'll be sent here by
 #  people browsing for all sorts of things
 nginx_vhosts:
-  - listen: "80 default_server"
-    server_name: "{{ hostname }} _"
-    root: "{{ biblebox_default_content_root }}"
-    index: "index.html index.php"
-    error_page: "404 /index.html"
-    access_log: "/var/log/nginx/access.log"
-    error_log: "/var/log/nginx/error.log"
+  - listen: "*:80 default_server"
+    server_name: "_"
+    return: "302 http://biblebox.local"
+  - listen: "80"
+    server_name: "biblebox.local"
+    index: "index.php index.htm index.html"
+    root: "/var/www/biblebox"
+    error_page: "404 /biblebox_default/content/index.html"
+    access_log: "/var/log/nginx/biblebox-access.log"
+    error_log: "/var/log/nginx/biblebox-error.log"
     extra_parameters: |
+      rewrite ^([^\.]*[^\/])$ $1/ break;
+      rewrite_log on;
+
+      # pass the PHP scripts to FastCGI server listening on 127.0.0.1:9000
       location ~ \.php$ {
-          fastcgi_split_path_info ^(.+\.php)(/.+)$;
-          fastcgi_pass unix:/var/run/php5-fpm.sock;
-          fastcgi_index index.php;
-          fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-          include fastcgi_params;
+        root /var/www/biblebox/biblebox_default/content;
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/var/run/php5-fpm.sock;
       }
-      location /app/ {
-          include         uwsgi_params;
-          uwsgi_pass      unix:/run/uwsgi/app/app/socket;
+
+      location /shared/ {
+        autoindex on;
+        root /media/usb0;
+        try_files $uri $uri/ @sharedfallback;
       }
-      autoindex on;
+
+      location @sharedfallback {
+        autoindex on;
+        root /var/www/biblebox/biblebox_default;
+        try_files $uri $uri/ =404;
+      }
+
+      location /admin {
+        root /var/www/biblebox/biblebox_default/content;
+      }
+
+      location / {
+        root /media/usb0/content;
+        try_files $uri $uri/index.html @fallback;
+      }
+
+      location @fallback {
+        root /var/www/biblebox/biblebox_default/content;
+        try_files $uri $uri/ =404;
+      }
 # We want to set the default server. Remove the default server that
 #  nginx provides.
 nginx_remove_default_vhost: true
