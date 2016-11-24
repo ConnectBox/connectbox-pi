@@ -40,12 +40,6 @@
     depth: 1
     #force=yes
 
-- name: modify usbmount to mount as www-data
-  lineinfile:
-    dest: /etc/usbmount/usbmount.conf
-    regexp: 'FS_MOUNTOPTIONS=""'
-    line: 'FS_MOUNTOPTIONS="-fstype=vfat,gid=www-data,uid=www-data"'
-
 - name: create folders for default content/shared and config
   file:
     path: "{{ item }}"
