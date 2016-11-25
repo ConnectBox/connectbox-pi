@@ -25,9 +25,11 @@ vagrant up --no-provision;
 #  the remote endpoint requires an ssh connection, and because keys aren't
 #  accessible, the connection fails.
 # So we assemble an inventory file ourselves.
-target_host=$(vagrant ssh-config | awk '$1 ~ /HostName/ { print $2; }')
-ssh_user=$(vagrant ssh-config | awk '$1 ~ /User/ { print $2; }')
-echo "$target_host ansible_ssh_user=$ssh_user ansible_ssh_private_key_file=$PEM_OUT" > $INVENTORY_FILE;
+target_host=$(vagrant ssh-config | awk '$1 ~ /HostName/ { print $2; }');
+ssh_user=$(vagrant ssh-config | awk '$1 ~ /User/ { print $2; }');
+echo "$target_host ansible_ssh_user=$ssh_user ansible_ssh_private_key_file=$PEM_OUT" > ci/inventory;
+
+cat ci/inventory;
 
 # Now do our initial provisioning run
 vagrant provision
