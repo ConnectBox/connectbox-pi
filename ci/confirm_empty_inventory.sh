@@ -9,7 +9,7 @@
 
 echo "Confirming inventory file only contains comments."
 count=$(grep -c -v "^#" ansible/inventory);
-if [[ $count -gt 0 ]]; then
+if [ $count -gt 0 ]; then
     echo "FAIL: Inventory file contains ${count} non-comment lines";
     exit 1;
 else
