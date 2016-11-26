@@ -32,3 +32,7 @@ domain={{ hostname }}
 
 interface=wlan0
 dhcp-range={{ dhcp_range_start }},{{ dhcp_range_end }},{{ wlan0_netmask }},{{ dhcp_lease_time }}
+
+# Place dhcp leases in ramdisk
+# TODO: look into --leasefile-ro option as well
+dhcp-leasefile=/mnt/ramdisk/dnsmasq.leases
