@@ -6,12 +6,21 @@
 #  updates and other stuff that needs a working resolver. This means that
 #  clients get different results to their DNS queries (which are served
 #  from dnsmasq) from queries run on-box i.e. using system resolver
+#  
+#  This does not work with the openresolv that ships with raspbian-lite
+#   based on jessie, which is why we need to upgrade it below
 - name: Tell openresolv not to touch /etc/resolv.conf
   lineinfile:
     dest: /etc/resolvconf.conf
     line: resolvconf=NO
     state: present
   register: resolvconf_conf_changed
+
+- name: Upgrade openresolv to a version that supports resolvconf=NO
+  apt:
+    name: openresolv
+    state: latest
+    default_release: jessie-backports
 
 # This can't be a handler, as we need this config to be in place when
 #  we install and start dnsmasq. If it is not, then openresolv removes
