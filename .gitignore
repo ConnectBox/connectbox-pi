@@ -5,3 +5,4 @@
 .vagrant
 *.pem
 ci/inventory
+ghostdriver.log
