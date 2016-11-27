@@ -37,3 +37,10 @@ vagrant provision
 # Perform a re-run of the playbooks, to see whether they run cleanly and
 #  without marking any task as changed
 vagrant provision
+
+# Run selenium tests
+
+# Tell the test running host how to find the biblebox by name
+echo "${TEST_IP} biblebox.local" | sudo tee -a /etc/hosts > /dev/null
+cat /etc/hosts
+TEST_IP=$target_host nose2
