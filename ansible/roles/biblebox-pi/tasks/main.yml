@@ -8,3 +8,61 @@
 - name: Update existing packages
   apt:
     upgrade: safe
+
+- name: Create biblebox group
+  group:
+    name: biblebox
+
+# Not strictly necessary but can be used for testing
+- name: Create biblebox user and to biblebox group
+  user:
+    name: biblebox
+    group: biblebox
+    createhome: no
+
+# TODO confirm this works as expected
+- name: Add www-data to biblebox group
+  user:
+    name: www-data
+    groups: biblebox
+    append: yes
+
+- name: Make scripts directory
+  file:
+    state: directory
+    path: /usr/local/biblebox/bin
+    owner: biblebox
+    group: biblebox
+    recurse: yes
+    mode: 0775
+
+- name: Make etc directory
+  file:
+    state: directory
+    path: /usr/local/biblebox/etc
+    owner: biblebox
+    group: biblebox
+    recurse: yes
+    mode: 0775
+
+- name: Copy biblebox scripts
+  copy:
+    src: ../scripts/
+    dest: /usr/local/biblebox/bin/
+    owner: biblebox
+    group: biblebox
+    mode: 0775
+
+- name: Copy biblebox basic auth credentials
+  copy:
+    content: admin:$apr1$BBOXFOO2$3rz0Up2HMEfrmGB0YCXzr/
+    dest: /usr/local/biblebox/etc/basicauth
+    owner: biblebox
+    group: biblebox
+    mode: 0660
+
+- name: allow biblebox group to execute biblebox scripts
+  blockinfile:
+    dest: /etc/sudoers
+    block: |
+      %biblebox ALL=(ALL) NOPASSWD: /usr/local/biblebox/bin/

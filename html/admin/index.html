@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>BibleboxPi Admin Dashboard</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/bootstrap-theme.min.css" rel="stylesheet">
+
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <link href="css/ie10-viewport-bug-workaround.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="css/sticky-footer-navbar.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="js/html5shiv-3.7.3.min.js"></script>
+      <script src="js/respond-1.4.2/.min.js"></script>
+    <![endif]-->
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-default navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="#">BibleBoxPi</a>
+        </div>
+        <div id="navbar" class="collapse navbar-collapse">
+          <ul class="nav navbar-nav">
+            <li><a href="#home" id="menu_home">Home</a></li>
+            <li><a href="#about" id="menu_about">About</a></li>
+            <li><a href="#contact" id="menu_contact">Contact</a></li>
+            <li class="dropdown">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Configure <span class="caret"></span></a>
+              <ul class="dropdown-menu">
+                <li><a href="#" id="menu_password">Password</a></li>
+                <li><a href="#" id="menu_system">System</a></li>
+                <li role="separator" class="divider"></li>
+                <li class="dropdown-header">Wireless Access Point</li>
+                <li><a href="#" id="menu_ssid">SSID</a></li>
+                <li><a href="#" id="menu_hostname">Hostname</a></li>
+                <li><a href="#" id="menu_channel">Channel</a></li>
+                <li><a href="#" id="menu_txpower">TX Power</a></li>
+              </ul>
+            </li>
+          </ul>
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <!-- Begin page content -->
+    <div class="container" id="home" style="display: none;">
+      <div class="page-header">
+        <h1>BibleBox Pi Admin Dashboard</h1>
+      </div>
+      <p class="lead">Configure this BibleBox Pi. Default user id and password: ('admin'/'bibleboxpi')</p>
+    </div>
+
+    <div class="container" id="contact" style="display: none;">
+      <div class="page-header">
+        <h1>BibleBox Pi Project</h1>
+      </div>
+      <p class="lead">Add contact info here</p>
+    </div>
+
+    <div class="container" id="about" style="display: none;">
+      <div class="page-header">
+        <h1>BibleBox Pi About</h1>
+      </div>
+      <p class="lead">Add about the BibleBox Pi Project Here</p>
+    </div>
+
+    <div class="container" id="password" style="display: none;">
+      <div class="page-header">
+        <h1>Admin Password</h1>
+      </div>
+      <p class="lead">Configure the admin dashboard password</p>
+          <form class="simple_form form-inline" id="form_password">
+              <div class="form-group required"><label class="required sr-only" for="password"><abbr title="required">*</abbr> Password</label><input class="string required form-control" id="input_password" name="password" placeholder="Enter Password" type="text"></div>
+
+              <div class="form-group required"><label class="required sr-only" for="password_confirm"><abbr title="required">*</abbr> Confirm Password</label><input class="string required form-control" id="input_password_confirm" name="password_confirm" placeholder="Confirm Password" type="text"></div>
+
+              <input class="btn btn-default" name="update_password" type="submit" value="Update">
+              <div style="display:none" id="update_password_success">✓</div>
+              <div style="display:none" id="update_password_failure">&times;</div>
+        </form>
+    </div>
+
+    <div class="container" id="ssid" style="display: none;">
+      <div class="page-header">
+        <h1>Wireless Access Point</h1>
+      </div>
+      <p class="lead">Configure the SSID broadcast by the Wireless Access Point</p>
+          <form class="simple_form form-inline" id="form_ssid">
+              <div class="form-group required"><label class="required sr-only" for="ssid"><abbr title="required">*</abbr> SSID</label><input class="string required form-control" id="input_ssid" name="ssid" placeholder="Enter SSID" type="text"></div>
+
+              <input class="btn btn-default" name="update_ssid" type="submit" value="Update">
+              <div style="display:none" id="update_ssid_success">✓</div>
+              <div style="display:none" id="update_ssid_failure">&times;</div>
+        </form>
+    </div>
+
+    <div class="container" id="channel" style="display: none;">
+      <div class="page-header">
+        <h1>Wireless Access Point</h1>
+      </div>
+      <p class="lead">Configure the channel used by the Wireless Access Point</p>
+          <form class="simple_form form-inline" id="form_channel">
+              <div class="form-group required"><label class="required sr-only" for="channel"><abbr title="required">*</abbr> Channel</label><input class="string required form-control" id="input_channel" name="channel" placeholder="Enter Channel" type="text"></div>
+
+              <input class="btn btn-default" name="update_channel" type="submit" value="Update">
+              <div style="display:none" id="update_channel_success">✓</div>
+              <div style="display:none" id="update_channel_failure">&times;</div>
+        </form>
+    </div>
+
+    <div class="container" id="system" style="display: none;">
+      <div class="page-header">
+        <h1>System</h1>
+      </div>
+      <p class="lead">System Functions</p>
+        <form class="simple_form form-inline" id="form_unmountusb">
+            <input class="btn btn-default" name="unmountusb" type="submit" value="Unmount USB">
+            <div style="display:none" id="unmountusb_success">✓</div>
+            <div style="display:none" id="unmountusb_failure">&times;</div>
+        </form>
+
+        <form class="simple_form form-inline" id="form_shutdown">
+            <input class="btn btn-default" name="shutdown" type="submit" value="Shutdown">
+            <div style="display:none" id="shutdown_success">✓</div>
+            <div style="display:none" id="shutdown_failure">&times;</div>
+        </form>
+
+        <form class="simple_form form-inline" id="form_reboot">
+            <input class="btn btn-default" name="reboot" type="submit" value="Reboot">
+            <div style="display:none" id="reboot_success">✓</div>
+            <div style="display:none" id="reboot_failure">&times;</div>
+        </form>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <p class="text-muted">BibleBox - share the cross with wifi</p>
+      </div>
+    </footer>
+
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="js/jquery-1.12.4.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="js/ie10-viewport-bug-workaround.js"></script>
+    <script src="js/biblebox-api.js"></script>
+    <script src="js/biblebox-ui.js"></script>
+    <script>BibleBoxApp.ui.init();</script>
+  </body>
+</html>
