@@ -2,8 +2,8 @@
 # Openresolv, by default, wants to update /etc/resolv.conf to use dnsmasq
 #  as a local resolver. We stop it from doing that with resolvconf=NO
 # If 127.0.0.1 is a system resolver when dnsmasq is running, all on-box
-#  queries are answered with the local wlan ip address. This breaks apt
-#  updates and other stuff that needs a working resolver. This means that
+#  queries are answered with the local client-facing ip address. This breaks
+#  apt updates and other stuff that needs a working resolver. This means that
 #  clients get different results to their DNS queries (which are served
 #  from dnsmasq) from queries run on-box i.e. using system resolver
 #
