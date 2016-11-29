@@ -6,6 +6,10 @@
 #  this file correspond to that group, but then the inventory is
 #  slightly more complex
 
+# Parameterised to allow overriding during CI builds, where we want to
+#  test some client-facing capabilities but do not have a wifi interface
+client_facing_if: "wlan0"
+
 biblebox_default_content_root: /var/www/biblebox/biblebox_default
 biblebox_config_root: /etc/biblebox
 biblebox_usb_files_root: "{{ biblebox_default_content_root }}/shared/usb"
@@ -67,7 +71,7 @@ nginx_default_release: jessie-backports
 
 firewall_v4_group_rules:
   150 redirect http:
-    - -t nat -A PREROUTING -s {{ wlan0_network_cidr }} tcp --dport 80 -j DNAT --to {{ wlan0_ip_address }}:80
+    - -t nat -A PREROUTING -s {{ client_facing_if_network_cidr }} tcp --dport 80 -j DNAT --to {{ client_facing_if_ip_address }}:80
   # Overriding default - we only want ssh on the wired interface
   200 allow ssh:
     - -A INPUT -p tcp -i eth0 --dport ssh -j ACCEPT

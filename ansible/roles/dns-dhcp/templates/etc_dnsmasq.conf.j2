@@ -14,7 +14,7 @@ bogus-priv
 no-resolv
 # Return the biblebox-pi address for all queries, unless they match dhcp
 #  leases or are answered from /etc/hosts
-address=/#/{{ wlan0_ip_address }}
+address=/#/{{ client_facing_if_ip_address }}
 
 # Tell clients to cache IP addresses for 5 seconds. This overrides the 
 #  default of 0, which would place more load on this service because 
@@ -30,5 +30,5 @@ quiet-dhcp6
 
 domain={{ hostname }}
 
-interface=wlan0
-dhcp-range={{ dhcp_range_start }},{{ dhcp_range_end }},{{ wlan0_netmask }},{{ dhcp_lease_time }}
+interface={{ client_facing_if }}
+dhcp-range={{ dhcp_range_start }},{{ dhcp_range_end }},{{ client_facing_if_netmask }},{{ dhcp_lease_time }}
