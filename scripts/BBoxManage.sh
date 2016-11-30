@@ -88,6 +88,26 @@ function backup_nginx_config () {
   fi
 }
 
+function restore_nginx_config () {
+  config_file=".$(basename $NGINX_CONFIG)"
+  config_path="${NGINX_CONFIG:0:${#NGINX_CONFIG}-${#config_file}}"
+
+  if [ -e "${config_path}/${config_file}" ]; then
+    if [ $DEBUG == 1 ]; then
+      echo 'Restoring $NGINX_CONFIG from ${config_path}/${config_file}'
+    fi
+
+    cp "${config_path}/${config_file}" $NGINX_CONFIG 2>&1 | logger -t $(basename $0)
+
+    if [ ${PIPESTATUS[0]} -ne 0 ]
+    then
+      failure
+    else
+      reload_nginx
+    fi
+  fi
+}
+
 function backup_hostapd_config () {
   # Backup the original configuration file
   if [ ! -e "$HOSTAPD_CONFIG.original" ]; then
@@ -100,6 +120,24 @@ function backup_hostapd_config () {
     if [ ${PIPESTATUS[0]} -ne 0 ]
     then
       failure
+    fi
+  fi
+}
+
+function restore_hostapd_config () {
+  # Restore the original configuration file
+  if [ -e "$HOSTAPD_CONFIG.original" ]; then
+    if [ $DEBUG == 1 ]; then
+      echo 'Restoring $HOSTAPD_CONFIG from $HOSTAPD_CONFIG.original'
+    fi
+
+    cp $HOSTAPD_CONFIG.original $HOSTAPD_CONFIG 2>&1 | logger -t $(basename $0)
+
+    if [ ${PIPESTATUS[0]} -ne 0 ]
+    then
+      failure
+    else
+      restart_hostapd
     fi
   fi
 }
@@ -132,6 +170,30 @@ function backup_password_config () {
       failure
     fi
   fi
+}
+
+function restore_password_config () {
+  # Backup the original configuration file
+  if [ -e "$PASSWORD_CONFIG.original" ]; then
+    if [ $DEBUG == 1 ]; then
+      echo 'Restoring $PASSWORD_CONFIG from $PASSWORD_CONFIG.original'
+    fi
+
+    cp $PASSWORD_CONFIG.original $PASSWORD_CONFIG 2>&1 | logger -t $(basename $0)
+
+    if [ ${PIPESTATUS[0]} -ne 0 ]
+    then
+      failure
+    else
+      reload_nginx
+    fi
+  fi
+}
+
+function reset () {
+  restore_password_config
+  restore_hostapd_config
+  restore_nginx_config
 }
 
 function success () {
@@ -405,6 +467,8 @@ elif [ "$action" = "shutdown" ]; then
   doshutdown
 elif [ "$action" = "reboot" ]; then
   doreboot
+elif [ "$action" = "reset" ]; then
+  reset
 else
   usage
 fi

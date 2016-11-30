@@ -45,6 +45,8 @@ var BibleBoxApp = (function (BibleBoxApp, $) {
         $('#reboot_failure').hide();
         $('#shutdown_success').hide();
         $('#shutdown_failure').hide();
+        $('#reset_success').hide();
+        $('#reset_failure').hide();
     }
 
     function systemLoad(event) {
@@ -68,6 +70,19 @@ var BibleBoxApp = (function (BibleBoxApp, $) {
                 $('#unmountusb_success').show();
             } else {
                 $('#unmountusb_failure').show();
+            }
+        });
+    }
+
+    function reset(event) {
+        event.preventDefault();
+        clearSystemStatus();
+
+        BibleBoxApp.api.triggerEvent('system', 'reset', function(result, code, message) {
+            if (result !== undefined) {
+                $('#reset_success').show();
+            } else {
+                $('#reset_failure').show();
             }
         });
     }
@@ -256,6 +271,7 @@ var BibleBoxApp = (function (BibleBoxApp, $) {
             $('#form_unmountusb').on('submit', unmountusb);
             $('#form_shutdown').on('submit', shutdown);
             $('#form_reboot').on('submit', reboot);
+            $('#form_reset').on('submit', reset);
         }
     };
     
