@@ -196,6 +196,39 @@ var BibleBoxApp = (function (BibleBoxApp, $) {
         });
     }
 
+    function hostnameLoad(event) {
+        $('#' + currentItem).toggle();
+
+        currentItem = 'hostname';
+
+        $('.active').toggleClass('active');
+        $('#menu_home').parent().toggleClass('active');
+
+        $('#hostname').toggle();
+        $('#update_hostname_success').hide();
+        $('#update_hostname_failure').hide();
+
+        BibleBoxApp.api.getProperty('hostname', function (result, code, message) {
+            if (result !== undefined) {
+                $('#input_hostname').val(result[0]);
+            } else {
+                //TODO display a proper error message
+            }
+        });
+    }
+
+    function hostnameSave(event) {
+        event.preventDefault();
+
+        BibleBoxApp.api.setProperty('hostname', $('#input_hostname').val(), function(result, code, message) {
+            if (result !== undefined) {
+                $('#update_hostname_success').show();
+            } else {
+                $('#update_hostname_failure').show();
+            }
+        });
+    }
+
     BibleBoxApp.ui = {
         init: function () {
             var selectedMenuItem = '#menu_home';
@@ -215,53 +248,14 @@ var BibleBoxApp = (function (BibleBoxApp, $) {
             $('#form_ssid').on('submit', ssidSave);
             $('#menu_channel').on('click', channelLoad);
             $('#form_channel').on('submit', channelSave);
+            $('#menu_hostname').on('click', hostnameLoad);
+            $('#form_hostname').on('submit', hostnameSave);
             $('#menu_password').on('click', passwordLoad);
             $('#form_password').on('submit', passwordSave);
             $('#menu_system').on('click', systemLoad);
             $('#form_unmountusb').on('submit', unmountusb);
             $('#form_shutdown').on('submit', shutdown);
             $('#form_reboot').on('submit', reboot);
-            //$("#form_password").on('submit', passwordSave);
-
-            // //handler to load more transactions on scroll
-            // $('#transactions-list-container').on('scroll', handleTransactionListScroll);
-
-            // //Login button handler
-            // $('#login-button').on('click', doLogin);
-
-            // //Login on enter key
-            // $('#login-dialog').on('keydown', function (evt) {
-            //     if (evt.which === 13) {
-            //         evt.preventDefault();
-            //         doLogin();
-            //     }
-            // });
-
-            // //Logout button
-            // $('#logout-button').on('click', doLogout);
-
-            // //Open txn create dialog
-            // $("#txn-open-dialog-button").on('click', function () {
-            //     $('#txn-create-dialog').removeClass('hidden');
-            // });
-
-            // //Create txn button
-            // $('#txn-create-button').on('click', doTxnCreate);
-
-            // //Cancel create txn button
-            // $('#txn-create-cancel-button').on('click', function () {
-            //     $('#txn-create-dialog').addClass('hidden');
-            // });
-
-            // //Default date
-            // $("#txn-date-input").val(BibleBoxApp.util.formatDate());
-
-            // if (BibleBoxApp.api.isAuthenticated()) {
-            //     showTransactions();
-            // } else {
-            //     $('.loading').hide();
-            //     showLogin();
-            // }
         }
     };
     

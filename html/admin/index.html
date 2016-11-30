@@ -28,7 +28,6 @@
   </head>
 
   <body>
-
     <!-- Fixed navbar -->
     <nav class="navbar navbar-default navbar-fixed-top">
       <div class="container">
@@ -52,9 +51,10 @@
                 <li><a href="#" id="menu_password">Password</a></li>
                 <li><a href="#" id="menu_system">System</a></li>
                 <li role="separator" class="divider"></li>
+                <li class="dropdown-header">Web Server</li>
+                <li><a href="#" id="menu_hostname">Hostname</a></li>
                 <li class="dropdown-header">Wireless Access Point</li>
                 <li><a href="#" id="menu_ssid">SSID</a></li>
-                <li><a href="#" id="menu_hostname">Hostname</a></li>
                 <li><a href="#" id="menu_channel">Channel</a></li>
                 <li><a href="#" id="menu_txpower">TX Power</a></li>
               </ul>
@@ -127,6 +127,20 @@
               <input class="btn btn-default" name="update_channel" type="submit" value="Update">
               <div style="display:none" id="update_channel_success">✓</div>
               <div style="display:none" id="update_channel_failure">&times;</div>
+        </form>
+    </div>
+
+    <div class="container" id="hostname" style="display: none;">
+      <div class="page-header">
+        <h1>Web Server</h1>
+      </div>
+      <p class="lead">Web server hostname</p>
+          <form class="simple_form form-inline" id="form_hostname">
+              <div class="form-group required"><label class="required sr-only" for="hostname"><abbr title="required">*</abbr> Hostname</label><input class="string required form-control" id="input_hostname" name="hostname" placeholder="Enter Hostname" type="text"></div>
+
+              <input class="btn btn-default" name="update_hostname" type="submit" value="Update">
+              <div style="display:none" id="update_hostname_success">✓</div>
+              <div style="display:none" id="update_hostname_failure">&times;</div>
         </form>
     </div>
 

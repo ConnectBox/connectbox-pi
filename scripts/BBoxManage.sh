@@ -6,17 +6,18 @@
 
 VERSION=0.1.0
 SUBJECT=biblebox_control_ssid_script
-USAGE="Usage: BBoxManage.sh -ihv [get|set] [ssid|channel] <value>"
-HOSTAPD_CONFIG=/etc/hostapd/hostapd.conf
-PASSWORD_CONFIG=/usr/local/biblebox/etc/basicauth
-PASSWORD_SALT=BBOXFOO2016
+USAGE="Usage: BBoxManage.sh -dhv [get|set] [ssid|channel|hostname] <value>"
+NGINX_CONFIG="/etc/nginx/sites-enabled/vhosts.conf"
+HOSTAPD_CONFIG="/etc/hostapd/hostapd.conf"
+PASSWORD_CONFIG="/usr/local/biblebox/etc/basicauth"
+PASSWORD_SALT="BBOXFOO2016"
 DEBUG=0
 SUCCESS="SUCCESS"
 FAILURE="FAILURE"
 
 # --- Options processing -------------------------------------------
 
-while getopts ":i:dvhg" optname
+while getopts ":dvhg" optname
   do
     case "$optname" in
       "d")
@@ -25,9 +26,6 @@ while getopts ":i:dvhg" optname
       "v")
         echo "Version $VERSION"
         exit 0;
-        ;;
-      "i")
-        echo "-i argument: $OPTARG"
         ;;
       "h")
         echo $USAGE
@@ -69,6 +67,25 @@ touch $LOCK_FILE
 function usage () {
   echo $USAGE
   exit 1;
+}
+
+function backup_nginx_config () {
+  config_file=".$(basename $NGINX_CONFIG)"
+  config_path="${NGINX_CONFIG:0:${#NGINX_CONFIG}-${#config_file}}"
+
+  # Backup the original configuration file
+  if [ ! -e "${config_path}/${config_file}" ]; then
+    if [ $DEBUG == 1 ]; then
+      echo 'Backing up $NGINX_CONFIG to ${config_path}/${config_file}'
+    fi
+
+    cp $NGINX_CONFIG "${config_path}/${config_file}" 2>&1 | logger -t $(basename $0)
+
+    if [ ${PIPESTATUS[0]} -ne 0 ]
+    then
+      failure
+    fi
+  fi
 }
 
 function backup_hostapd_config () {
@@ -231,8 +248,42 @@ function set_password () {
   fi
 }
 
+function get_hostname () {
+  local hostname=`grep 'bbox_server_name=' $NGINX_CONFIG`
+  local idx=`expr index "$hostname" =`
+
+  web_hostname="${hostname:$idx:${#hostname}-$idx}"
+
+  echo $web_hostname;
+}
+
+function set_hostname () {
+  if [[ -z "${val// }" ]]; then
+    echo 'Missing hostname value'
+    exit 1;
+  fi
+
+  backup_nginx_config
+
+  # Update the hostname in the nginx config
+  if [ $DEBUG == 1 ]; then
+    echo "Updating hostname to '$val'"
+  fi
+
+  get_hostname > /dev/null #suppress output
+
+  sed -i "s/$web_hostname/$val/g" $NGINX_CONFIG 2>&1 | logger -t $(basename $0)
+
+  if [ ${PIPESTATUS[0]} -eq 0 ]
+  then
+    reload_nginx
+  else
+    failure
+  fi
+}
+
 function get_channel () {
-  local channel=`grep '^channel=' $CONFIG_FILE`
+  local channel=`grep '^channel=' $HOSTAPD_CONFIG`
   if [[ $channel == channel=\"* ]]; then
     echo ${channel:9:${#channel}-10};
   else
@@ -253,7 +304,7 @@ function set_channel () {
     echo "Updating channel to '$val'"
   fi
 
-  sed -i "s/^channel=.*/channel=$val/g" $CONFIG_FILE 2>&1 | logger -t $(basename $0)
+  sed -i "s/^channel=.*/channel=$val/g" $HOSTAPD_CONFIG 2>&1 | logger -t $(basename $0)
 
   if [ ${PIPESTATUS[0]} -eq 0 ]
   then
@@ -264,7 +315,7 @@ function set_channel () {
 }
 
 function get_ssid () {
-  local ssid=`grep '^ssid=' $CONFIG_FILE`
+  local ssid=`grep '^ssid=' $HOSTAPD_CONFIG`
   if [[ $ssid == ssid=\"* ]]; then
     echo ${ssid:6:${#ssid}-7};
   else
@@ -285,7 +336,7 @@ function set_ssid () {
     echo "Updating ssid to '$val'"
   fi
 
-  sed -i "s/^ssid=.*/ssid=\"$val\"/g" $CONFIG_FILE 2>&1 | logger -t $(basename $0)
+  sed -i "s/^ssid=.*/ssid=\"$val\"/g" $HOSTAPD_CONFIG 2>&1 | logger -t $(basename $0)
 
   if [ ${PIPESTATUS[0]} -eq 0 ]
   then
@@ -311,6 +362,11 @@ if [ "$action" = "get" ]; then
       exit 0;
       ;;
 
+    "hostname")
+      get_hostname
+      exit 0;
+      ;;
+
     *)
       usage
       ;;
@@ -325,6 +381,11 @@ elif [ "$action" = "set" ]; then
 
     "channel")
       set_channel
+      exit 0;
+      ;;
+
+    "hostname")
+      set_hostname
       exit 0;
       ;;
 

@@ -28,6 +28,8 @@ nginx_vhosts:
     access_log: "/var/log/nginx/biblebox-access.log"
     error_log: "/var/log/nginx/biblebox-error.log"
     extra_parameters: |
+      ##DO NOT DELETE bbox_server_name=biblebox.local
+
       rewrite ^([^\.]*[^\/])$ $1/ break;
       rewrite_log on;
 

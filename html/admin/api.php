@@ -12,7 +12,7 @@ if ( count( $path_info ) < 1 ) {
 
 $property = $path_info[0];
 
-$valid_properties = array("ssid", "channel", "password", "system");
+$valid_properties = array("ssid", "channel", "hostname", "password", "system");
 if ( in_array($property, $valid_properties) ) {
     if ($method == 'GET') {
         exec(sprintf('%s get %s', _CMD, $property), $return_text, $result_int);
