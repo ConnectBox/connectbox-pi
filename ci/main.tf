@@ -60,29 +60,45 @@ resource "aws_subnet" "default" {
 
 resource "aws_security_group" "default" {
 	description = "default security group for travis-ci jobs"
-	vpc_id			= "${aws_vpc.default.id}"
+	vpc_id = "${aws_vpc.default.id}"
 
 	# SSH access from anywhere
 	ingress {
-		from_port	 = 0
-		to_port		 = 22
-		protocol		= "tcp"
+		from_port = 0
+		to_port = 22
+		protocol = "tcp"
 		cidr_blocks = ["0.0.0.0/0"]
 	}
 
 	# HTTP access from anywhere
 	ingress {
-		from_port	 = 0
-		to_port		 = 80
-		protocol		= "tcp"
+		from_port = 0
+		to_port = 80
+		protocol = "tcp"
+		cidr_blocks = ["0.0.0.0/0"]
+	}
+
+	# ICMP Unreachable
+	ingress {
+		from_port = 3
+		to_port = 0
+		protocol = "icmp"
+		cidr_blocks = ["0.0.0.0/0"]
+	}
+
+	# ICMP Echo Request
+	ingress {
+		from_port = 8
+		to_port = 0
+		protocol = "icmp"
 		cidr_blocks = ["0.0.0.0/0"]
 	}
 
 	# outbound internet access
 	egress {
-		from_port	 = 0
-		to_port		 = 0
-		protocol		= "-1"
+		from_port = 0
+		to_port = 0
+		protocol = "-1"
 		cidr_blocks = ["0.0.0.0/0"]
 	}
 
