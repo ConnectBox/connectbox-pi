@@ -6,3 +6,4 @@
 *.pem
 ci/inventory
 ghostdriver.log
+ci/terraform.tfstate*
