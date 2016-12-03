@@ -6,18 +6,13 @@
 # - see whether I must specific AZ, and whether it can be externalised
 # - DHCP options on client-facing VPC so as not to provide addresses?
 
-# add ingress ping to default SG?
-
-# To not add:
-# - any ELB stuff
-
 provider "aws" {
-	region = "us-east-1"
+	region = "${var.region}"
 }
 
 # Shared by all travis-ci jobs
 resource "aws_vpc" "default" {
-	cidr_block = "10.0.0.0/16"
+	cidr_block = "${var.default_vpc_cidr}"
 	tags {
 		Name = "default-travis-ci-vpc"
 		project = "biblebox"
@@ -47,8 +42,8 @@ resource "aws_route" "internet_access" {
 # A subnet in the default VPC for our instances
 resource "aws_subnet" "default" {
 	vpc_id = "${aws_vpc.default.id}"
-	cidr_block = "10.0.1.0/24"
-	availability_zone = "us-east-1b"
+	cidr_block = "${var.default_subnet_cidr}"
+	availability_zone = "${lookup(var.preferred_az, var.region)}"
 	map_public_ip_on_launch = true
 	tags {
 		Name = "default-travis-ci-vpc-subnet"
@@ -113,8 +108,8 @@ resource "aws_security_group" "default" {
 
 resource "aws_subnet" "client-facing-subnet" {
 	vpc_id = "${aws_vpc.default.id}"
-	cidr_block = "10.0.2.0/24"
-	availability_zone = "us-east-1b"
+	cidr_block = "${var.client_facing_subnet_cidr}"
+	availability_zone = "${lookup(var.preferred_az, var.region)}"
 	tags {
 		Name = "client-facing-subnet"
 		project = "biblebox"
@@ -127,7 +122,7 @@ resource "aws_network_interface" "client-facing-server" {
 	subnet_id = "${aws_subnet.client-facing-subnet.id}"
 	# AWS reserves the bottom four addresses in each subnet
 	#  so this is the lowest available
-	private_ips = ["10.0.2.5"]
+	private_ips = ["${var.server_client_facing_ip}"]
 	attachment {
 		instance = "${aws_instance.biblebox-server.id}"
 		device_index = 1
@@ -159,8 +154,8 @@ resource "aws_network_interface" "client-facing-server" {
 #}
 
 resource "aws_instance" "biblebox-server" {
-	ami = "ami-9d6c128a"
-	instance_type = "t2.nano"
+	ami = "${lookup(var.amis, var.region)}"
+	instance_type = "${var.instance_type}"
 	key_name = "travis-ci-biblebox"
 	subnet_id = "${aws_subnet.default.id}"
 	security_groups = ["${aws_security_group.default.id}"]
@@ -171,8 +166,3 @@ resource "aws_instance" "biblebox-server" {
 		creator = "terraform"
 	}
 }
-
-output "biblebox-server-public-ip" {
-	value = "${aws_instance.biblebox-server.public_ip}"
-}
-
