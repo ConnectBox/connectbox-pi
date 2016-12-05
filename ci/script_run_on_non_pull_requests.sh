@@ -22,6 +22,9 @@ terraform apply;
 echo "$(terraform output biblebox-server-public-ip) ansible_ssh_user=admin ansible_ssh_private_key_file=$PEM_OUT" > inventory;
 cat inventory;
 
+# Wait for ssh to become available
+sleep 90;
+
 # Now do our initial provisioning run
 ansible-playbook -i inventory ../ansible/site.yml;
 
