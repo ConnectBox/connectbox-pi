@@ -1,8 +1,5 @@
 language: python
-dist: trusty
 sudo: false
-before_install:
-- sudo apt-get -qq update
 install:
 - wget -O /tmp/terraform.zip https://releases.hashicorp.com/terraform/0.7.13/terraform_0.7.13_linux_amd64.zip
 # Unpack terraform and put it on the path
