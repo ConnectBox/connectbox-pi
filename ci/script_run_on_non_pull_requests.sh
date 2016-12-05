@@ -23,8 +23,8 @@ echo "$(terraform output biblebox-server-public-ip) ansible_ssh_user=admin ansib
 cat inventory;
 
 # Now do our initial provisioning run
-ansible-playbook -i inventory ../site.yml;
+ansible-playbook -i inventory ../ansible/site.yml;
 
 # Perform a re-run of the playbooks, to see whether they run cleanly and
 #  without marking any task as changed
-ansible-playbook -i inventory ../site.yml;
+ansible-playbook -i inventory ../ansible/site.yml;
