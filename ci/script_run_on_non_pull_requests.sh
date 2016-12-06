@@ -35,6 +35,6 @@ ansible-playbook -i inventory ../ansible/site.yml;
 ansible-playbook -i inventory ../ansible/site.yml;
 
 # Tell the test running host how to find the biblebox by name
-echo "\n$(dig +short ${target_host}) biblebox.local" | sudo tee -a /etc/hosts > /dev/null
+echo "\n${target_host} biblebox.local" | sudo tee -a /etc/hosts > /dev/null
 # Run web/selenium tests
 TEST_IP=$target_host nose2
