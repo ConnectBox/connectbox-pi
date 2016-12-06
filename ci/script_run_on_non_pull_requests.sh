@@ -28,11 +28,11 @@ cat inventory;
 sleep 90;
 
 # Now do our initial provisioning run
-ansible-playbook -i inventory ../site.yml;
+ansible-playbook -i inventory ../ansible/site.yml;
 
 # Perform a re-run of the playbooks, to see whether they run cleanly and
 #  without marking any task as changed
-ansible-playbook -i inventory ../site.yml;
+ansible-playbook -i inventory ../ansible/site.yml;
 
 # Tell the test running host how to find the biblebox by name
 echo "\n$(dig +short ${target_host}) biblebox.local" | sudo tee -a /etc/hosts > /dev/null
