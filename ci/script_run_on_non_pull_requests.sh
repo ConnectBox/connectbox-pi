@@ -15,31 +15,26 @@ openssl aes-256-cbc -K $encrypted_22a22c63eb0e_key -iv $encrypted_22a22c63eb0e_i
 
 # Run CI build on AWS. This uses protected variables
 cd $TRAVIS_BUILD_DIR/ci;
-vagrant up --no-provision;
 
-# We need to assemble an inventory file ourselves. If we use the one that
-#  vagrant automatically creates, it has the hostname as "default" which
-#  confuses the ansible synchronize task. The synchronize task has some
-#  logic that determines whether the rsync arguments involve a remote host
-#  and because "default" doesn't match the machine name, it thinks that
-#  the remote endpoint requires an ssh connection, and because keys aren't
-#  accessible, the connection fails.
-# So we assemble an inventory file ourselves.
-target_host=$(vagrant ssh-config | awk '$1 ~ /HostName$/ { print $2; }');
-ssh_user=$(vagrant ssh-config | awk '$1 ~ /User$/ { print $2; }');
-echo "$target_host ansible_ssh_user=$ssh_user ansible_ssh_private_key_file=$PEM_OUT" > inventory;
+terraform apply;
 
+target_host=$(terraform output biblebox-server-public-ip);
+
+# Create an inventory file suitable for ansible
+echo "${target_host} ansible_ssh_user=admin ansible_ssh_private_key_file=$PEM_OUT" > inventory;
 cat inventory;
 
+# Wait for ssh to become available
+sleep 90;
+
 # Now do our initial provisioning run
-vagrant provision
+ansible-playbook -i inventory ../ansible/site.yml;
 
 # Perform a re-run of the playbooks, to see whether they run cleanly and
 #  without marking any task as changed
-vagrant provision
-
+ansible-playbook -i inventory ../ansible/site.yml;
 
 # Tell the test running host how to find the biblebox by name
-echo "\n$(dig +short ${target_host}) biblebox.local" | sudo tee -a /etc/hosts > /dev/null
+echo "\n${target_host} biblebox.local" | sudo tee -a /etc/hosts > /dev/null
 # Run web/selenium tests
 TEST_IP=$target_host nose2
