@@ -276,7 +276,7 @@ function restart_hostapd () {
     echo "Restarting hostapd"
   fi
 
-  /etc/init.d/hostapd restart
+  ifdown wlan0; sleep 1; ifup wlan0
 
   if [ $? -eq 0 ]
   then
