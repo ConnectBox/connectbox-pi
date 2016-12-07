@@ -300,7 +300,7 @@ function set_password () {
   fi
 
   local new_hash=`echo $val | openssl passwd -apr1 -salt $PASSWORD_SALT -stdin`
-  echo "biblebox:$new_hash" > $PASSWORD_CONFIG 2>&1 | logger -t $(basename $0)
+  echo "admin:$new_hash" > $PASSWORD_CONFIG 2>&1 | logger -t $(basename $0)
 
   if [ ${PIPESTATUS[0]} -eq 0 ]
   then
