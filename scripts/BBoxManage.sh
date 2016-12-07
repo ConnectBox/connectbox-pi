@@ -212,7 +212,7 @@ function reload_nginx () {
     echo "Reloading nginx configuration"
   fi
 
-  /etc/init.d/nginx reload
+  systemctl reload nginx
 
   if [ $? -eq 0 ]
   then
