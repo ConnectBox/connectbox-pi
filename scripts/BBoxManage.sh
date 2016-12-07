@@ -163,7 +163,7 @@ function backup_password_config () {
       failure
     fi
 
-    chown biblebox:biblebox $PASSWORD_CONFIG.original 2>&1 | logger -t $(basename $0)
+    chown _biblebox:_biblebox $PASSWORD_CONFIG.original 2>&1 | logger -t $(basename $0)
 
     if [ ${PIPESTATUS[0]} -ne 0 ]
     then

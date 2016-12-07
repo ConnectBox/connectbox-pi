@@ -11,58 +11,62 @@
 
 - name: Create biblebox group
   group:
-    name: biblebox
+    name: _biblebox
+    system: yes
 
 # Not strictly necessary but can be used for testing
-- name: Create biblebox user and to biblebox group
+- name: Create _biblebox user and to _biblebox group
   user:
-    name: biblebox
-    group: biblebox
+    name: _biblebox
+    group: _biblebox
+    system: yes
     createhome: no
 
 # TODO confirm this works as expected
-- name: Add www-data to biblebox group
+- name: Add www-data to _biblebox group
   user:
     name: www-data
-    groups: biblebox
+    groups: _biblebox
     append: yes
 
 - name: Make scripts directory
   file:
     state: directory
     path: /usr/local/biblebox/bin
-    owner: biblebox
-    group: biblebox
+    owner: _biblebox
+    group: _biblebox
     recurse: yes
-    mode: 0775
+    mode: 0755
 
 - name: Make etc directory
   file:
     state: directory
     path: /usr/local/biblebox/etc
-    owner: biblebox
-    group: biblebox
+    owner: _biblebox
+    group: _biblebox
     recurse: yes
-    mode: 0775
+    mode: 0755
 
 - name: Copy biblebox scripts
   copy:
     src: ../scripts/
     dest: /usr/local/biblebox/bin/
-    owner: biblebox
-    group: biblebox
-    mode: 0775
+    owner: _biblebox
+    group: _biblebox
+    mode: 0755
 
 - name: Copy biblebox basic auth credentials
   copy:
-    content: admin:$apr1$BBOXFOO2$3rz0Up2HMEfrmGB0YCXzr/
+    content: "{{ biblebox_admin_credentials }}"
     dest: /usr/local/biblebox/etc/basicauth
-    owner: biblebox
-    group: biblebox
+    owner: _biblebox
+    group: _biblebox
     mode: 0660
 
 - name: allow biblebox group to execute biblebox scripts
   blockinfile:
     dest: /etc/sudoers
+    validate: /usr/sbin/visudo --check --file="%s"
     block: |
-      %biblebox ALL=(ALL) NOPASSWD: /usr/local/biblebox/bin/
+      %_biblebox ALL=(ALL) NOPASSWD: /usr/local/biblebox/bin/
+  notify: reload php5-fpm
