@@ -30,11 +30,11 @@ nginx_vhosts:
     extra_parameters: |
       ##DO NOT DELETE bbox_server_name=biblebox.local
 
-      rewrite ^([^\.]*[^\/])$ $1/ break;
       rewrite_log on;
 
       # pass the PHP scripts to FastCGI server listening on 127.0.0.1:9000
-      location ~ ^(?<script_name>.+\.php)(?<path_info>/.+)$ {
+      location ~ ^/admin/(?<script_name>.+\.php)(?<path_info>/.+)$ {
+        index index.html;
         root /var/www/biblebox/biblebox_default/content;
         include fastcgi_params;
         fastcgi_param SCRIPT_FILENAME $document_root$script_name;
@@ -56,13 +56,6 @@ nginx_vhosts:
         autoindex on;
         root /var/www/biblebox/biblebox_default;
         try_files $uri $uri/ =404;
-      }
-
-      location /admin {
-        index index.html;
-        root /var/www/biblebox/biblebox_default/content;
-        auth_basic "Access Denied";
-        auth_basic_user_file /usr/local/biblebox/etc/basicauth;
       }
 
       location / {
