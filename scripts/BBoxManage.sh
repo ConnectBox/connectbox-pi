@@ -1,14 +1,15 @@
 #!/bin/bash
 # ------------------------------------------------------------------
-# [Kelly Davis] ssid.sh
-#               Script for configuring the ssid in hostapd
+# [Kelly Davis] BBoxManage.sh
+#               Script for configuring the BibleBoxPi
 # ------------------------------------------------------------------
 
 VERSION=0.1.0
 SUBJECT=biblebox_control_ssid_script
 USAGE="Usage: BBoxManage.sh -dhv [get|set] [ssid|channel|hostname] <value>"
-NGINX_CONFIG="/etc/nginx/sites-enabled/vhosts.conf"
 HOSTAPD_CONFIG="/etc/hostapd/hostapd.conf"
+HOSTNAME_CONFIG="/etc/hostname"
+NGINX_CONFIG="/etc/nginx/sites-enabled/vhosts.conf"
 PASSWORD_CONFIG="/usr/local/biblebox/etc/basicauth"
 PASSWORD_SALT="BBOXFOO2016"
 DEBUG=0
@@ -69,6 +70,45 @@ function usage () {
   exit 1;
 }
 
+function backup_hostname_config () {
+  # Backup the original configuration file
+  if [ ! -e "$HOSTNAME_CONFIG.original" ]; then
+    if [ $DEBUG == 1 ]; then
+      echo "Backing up $HOSTNAME_CONFIG to $HOSTNAME_CONFIG.original"
+    fi
+
+    cp $HOSTNAME_CONFIG $HOSTNAME_CONFIG.original 2>&1 | logger -t $(basename $0)
+
+    if [ ${PIPESTATUS[0]} -ne 0 ]
+    then
+      failure
+    fi
+  fi
+}
+
+function restore_hostname_config () {
+  # Restore the original configuration file
+  if [ -e "$HOSTNAME_CONFIG.original" ]; then
+    if [ $DEBUG == 1 ]; then
+      echo "Restoring $HOSTNAME_CONFIG from $HOSTNAME_CONFIG.original"
+    fi
+
+    cp $HOSTNAME_CONFIG.original $HOSTNAME_CONFIG 2>&1 | logger -t $(basename $0)
+
+    if [ ${PIPESTATUS[0]} -ne 0 ]
+    then
+      failure
+    else
+      hostname `cat $HOSTNAME_CONFIG` 2>&1 | logger -t $(basename $0)
+
+      if [ ${PIPESTATUS[0]} -ne 0 ]
+      then
+        failure
+      fi
+    fi
+  fi
+}
+
 function backup_nginx_config () {
   config_file=`basename $NGINX_CONFIG`
   config_path=`dirname $NGINX_CONFIG`
@@ -76,7 +116,7 @@ function backup_nginx_config () {
   # Backup the original configuration file
   if [ ! -e "${config_path}/.${config_file}" ]; then
     if [ $DEBUG == 1 ]; then
-      echo 'Backing up $NGINX_CONFIG to ${config_path}/.${config_file}'
+      echo "Backing up $NGINX_CONFIG to ${config_path}/.${config_file}"
     fi
 
     cp $NGINX_CONFIG "${config_path}/.${config_file}" 2>&1 | logger -t $(basename $0)
@@ -92,18 +132,16 @@ function restore_nginx_config () {
   config_file=`basename $NGINX_CONFIG`
   config_path=`dirname $NGINX_CONFIG`
 
-  if [ -e "${config_path}/${config_file}" ]; then
+  if [ -e "${config_path}/.${config_file}" ]; then
     if [ $DEBUG == 1 ]; then
-      echo 'Restoring $NGINX_CONFIG from ${config_path}/${config_file}'
+      echo "Restoring $NGINX_CONFIG from ${config_path}/.${config_file}"
     fi
 
-    cp "${config_path}/${config_file}" $NGINX_CONFIG 2>&1 | logger -t $(basename $0)
+    cp "${config_path}/.${config_file}" $NGINX_CONFIG 2>&1 | logger -t $(basename $0)
 
     if [ ${PIPESTATUS[0]} -ne 0 ]
     then
       failure
-    else
-      reload_nginx
     fi
   fi
 }
@@ -112,7 +150,7 @@ function backup_hostapd_config () {
   # Backup the original configuration file
   if [ ! -e "$HOSTAPD_CONFIG.original" ]; then
     if [ $DEBUG == 1 ]; then
-      echo 'Backing up $HOSTAPD_CONFIG to $HOSTAPD_CONFIG.original'
+      echo "Backing up $HOSTAPD_CONFIG to $HOSTAPD_CONFIG.original"
     fi
 
     cp $HOSTAPD_CONFIG $HOSTAPD_CONFIG.original 2>&1 | logger -t $(basename $0)
@@ -128,7 +166,7 @@ function restore_hostapd_config () {
   # Restore the original configuration file
   if [ -e "$HOSTAPD_CONFIG.original" ]; then
     if [ $DEBUG == 1 ]; then
-      echo 'Restoring $HOSTAPD_CONFIG from $HOSTAPD_CONFIG.original'
+      echo "Restoring $HOSTAPD_CONFIG from $HOSTAPD_CONFIG.original"
     fi
 
     cp $HOSTAPD_CONFIG.original $HOSTAPD_CONFIG 2>&1 | logger -t $(basename $0)
@@ -136,8 +174,6 @@ function restore_hostapd_config () {
     if [ ${PIPESTATUS[0]} -ne 0 ]
     then
       failure
-    else
-      restart_hostapd
     fi
   fi
 }
@@ -146,7 +182,7 @@ function backup_password_config () {
   # Backup the original configuration file
   if [ ! -e "$PASSWORD_CONFIG.original" ]; then
     if [ $DEBUG == 1 ]; then
-      echo 'Backing up $PASSWORD_CONFIG to $PASSWORD_CONFIG.original'
+      echo "Backing up $PASSWORD_CONFIG to $PASSWORD_CONFIG.original"
     fi
 
     cp $PASSWORD_CONFIG $PASSWORD_CONFIG.original 2>&1 | logger -t $(basename $0)
@@ -176,7 +212,7 @@ function restore_password_config () {
   # Backup the original configuration file
   if [ -e "$PASSWORD_CONFIG.original" ]; then
     if [ $DEBUG == 1 ]; then
-      echo 'Restoring $PASSWORD_CONFIG from $PASSWORD_CONFIG.original'
+      echo "Restoring $PASSWORD_CONFIG from $PASSWORD_CONFIG.original"
     fi
 
     cp $PASSWORD_CONFIG.original $PASSWORD_CONFIG 2>&1 | logger -t $(basename $0)
@@ -184,8 +220,6 @@ function restore_password_config () {
     if [ ${PIPESTATUS[0]} -ne 0 ]
     then
       failure
-    else
-      reload_nginx
     fi
   fi
 }
@@ -194,6 +228,10 @@ function reset () {
   restore_password_config
   restore_hostapd_config
   restore_nginx_config
+  restore_hostname_config
+  reload_nginx
+  restart_hostapd
+  success
 }
 
 function success () {
@@ -214,10 +252,8 @@ function reload_nginx () {
 
   systemctl reload nginx
 
-  if [ $? -eq 0 ]
+  if [ $? -ne 0 ]
   then
-    success
-  else
     failure
   fi
 }
@@ -276,19 +312,25 @@ function restart_hostapd () {
     echo "Restarting hostapd"
   fi
 
-  ifdown wlan0; sleep 1; ifup wlan0
-
-  if [ $? -eq 0 ]
+  ifdown wlan0  2>&1 | logger -t $(basename $0)
+  if [ ${PIPESTATUS[0]} -eq 0 ]
   then
-    success
-  else
+    failure
+  fi
+
+  sleep 1
+
+  ifup wlan0  2>&1 | logger -t $(basename $0)
+
+  if [ ${PIPESTATUS[0]} -eq 0 ]
+  then
     failure
   fi
 }
 
 function set_password () {
   if [[ -z "${val// }" ]]; then
-    echo 'Missing password value'
+    echo "Missing password value"
     exit 1;
   fi
 
@@ -305,40 +347,47 @@ function set_password () {
   if [ ${PIPESTATUS[0]} -eq 0 ]
   then
     reload_nginx
+    success
   else
     failure
   fi
 }
 
 function get_hostname () {
-  local hostname=`grep 'bbox_server_name=' $NGINX_CONFIG`
-  local idx=`expr index "$hostname" =`
-
-  web_hostname="${hostname:$idx:${#hostname}-$idx}"
-
-  echo $web_hostname;
+  local host_name=`hostname`
+  echo $host_name;
 }
 
 function set_hostname () {
   if [[ -z "${val// }" ]]; then
-    echo 'Missing hostname value'
+    echo "Missing hostname value"
     exit 1;
   fi
 
-  backup_nginx_config
+  backup_hostname_config
 
-  # Update the hostname in the nginx config
+  # Update the hostname in the hostname config
   if [ $DEBUG == 1 ]; then
     echo "Updating hostname to '$val'"
   fi
 
-  get_hostname > /dev/null #suppress output
+  host_name=`cat $HOSTNAME_CONFIG`
 
-  sed -i "s/$web_hostname/$val/g" $NGINX_CONFIG 2>&1 | logger -t $(basename $0)
+  # Update /etc/hostname
+  sed -i "s/$host_name/$val/g" $HOSTNAME_CONFIG 2>&1 | logger -t $(basename $0)
 
   if [ ${PIPESTATUS[0]} -eq 0 ]
   then
-    reload_nginx
+    # Update hostname
+    hostname $val 2>&1 | logger -t $(basename $0)
+
+    if [ ${PIPESTATUS[0]} -eq 0 ]
+    then
+      reload_nginx
+      success
+    else
+      failure
+    fi
   else
     failure
   fi
@@ -351,7 +400,7 @@ function get_channel () {
 
 function set_channel () {
   if [[ -z "${val// }" ]]; then
-    echo 'Missing channel value'
+    echo "Missing channel value"
     exit 1;
   fi
 
@@ -367,6 +416,7 @@ function set_channel () {
   if [ ${PIPESTATUS[0]} -eq 0 ]
   then
     restart_hostapd
+    success
   else
     failure
   fi
@@ -379,7 +429,7 @@ function get_ssid () {
 
 function set_ssid () {
   if [[ -z "${val// }" ]]; then
-    echo 'Missing ssid value'
+    echo "Missing ssid value"
     exit 1;
   fi
 
@@ -395,6 +445,7 @@ function set_ssid () {
   if [ ${PIPESTATUS[0]} -eq 0 ]
   then
     restart_hostapd
+    success
   else
     failure
   fi

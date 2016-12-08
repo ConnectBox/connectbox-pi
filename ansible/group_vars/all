@@ -20,17 +20,15 @@ biblebox_admin_credentials: admin:$apr1$BBOXFOO2$3rz0Up2HMEfrmGB0YCXzr/
 nginx_vhosts:
   - listen: "*:80 default_server"
     server_name: "_"
-    return: "302 http://biblebox.local"
+    return: "302 http://$hostname"
   - listen: "80"
-    server_name: "biblebox.local"
+    server_name: "$hostname"
     index: "index.php index.htm index.html"
     root: "/var/www/biblebox"
     error_page: "404 /biblebox_default/content/index.html"
     access_log: "/var/log/nginx/biblebox-access.log"
     error_log: "/var/log/nginx/biblebox-error.log"
     extra_parameters: |
-      ##DO NOT DELETE bbox_server_name=biblebox.local
-
       rewrite_log on;
 
       # pass the PHP scripts to FastCGI server listening on 127.0.0.1:9000
