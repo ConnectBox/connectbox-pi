@@ -52,13 +52,13 @@
     - "{{ biblebox_config_root }}"
 
 - name: move default content into place
-  command: rsync -a /tmp/BibleBox-skeleton/content/ {{ biblebox_default_content_root }}
+  command: rsync -a /tmp/BibleBox-skeleton/content {{ biblebox_default_content_root }}
 
-# Trailing slash deliberately absent... we want the shared directory and
-#  it's contents in the target directory.
 - name: move default shared into place
   command: rsync -a /tmp/BibleBox-skeleton/shared {{ biblebox_default_content_root }}
 
+# Trailing slash deliberately present... we want the contents of the config
+#  directory, but not the directory itself in the target.
 - name: move default config into place
   command: rsync -a /tmp/BibleBox-skeleton/config/ {{ biblebox_config_root }}
 
