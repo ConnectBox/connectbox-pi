@@ -70,16 +70,16 @@ function usage () {
 }
 
 function backup_nginx_config () {
-  config_file=".$(basename $NGINX_CONFIG)"
-  config_path="${NGINX_CONFIG:0:${#NGINX_CONFIG}-${#config_file}}"
+  config_file=`basename $NGINX_CONFIG`
+  config_path=`dirname $NGINX_CONFIG`
 
   # Backup the original configuration file
-  if [ ! -e "${config_path}/${config_file}" ]; then
+  if [ ! -e "${config_path}/.${config_file}" ]; then
     if [ $DEBUG == 1 ]; then
-      echo 'Backing up $NGINX_CONFIG to ${config_path}/${config_file}'
+      echo 'Backing up $NGINX_CONFIG to ${config_path}/.${config_file}'
     fi
 
-    cp $NGINX_CONFIG "${config_path}/${config_file}" 2>&1 | logger -t $(basename $0)
+    cp $NGINX_CONFIG "${config_path}/.${config_file}" 2>&1 | logger -t $(basename $0)
 
     if [ ${PIPESTATUS[0]} -ne 0 ]
     then
@@ -89,8 +89,8 @@ function backup_nginx_config () {
 }
 
 function restore_nginx_config () {
-  config_file=".$(basename $NGINX_CONFIG)"
-  config_path="${NGINX_CONFIG:0:${#NGINX_CONFIG}-${#config_file}}"
+  config_file=`basename $NGINX_CONFIG`
+  config_path=`dirname $NGINX_CONFIG`
 
   if [ -e "${config_path}/${config_file}" ]; then
     if [ $DEBUG == 1 ]; then
@@ -345,12 +345,8 @@ function set_hostname () {
 }
 
 function get_channel () {
-  local channel=`grep '^channel=' $HOSTAPD_CONFIG`
-  if [[ $channel == channel=\"* ]]; then
-    echo ${channel:9:${#channel}-10};
-  else
-    echo ${channel:8:${#channel}-8};
-  fi
+  local channel=`grep '^channel=' $HOSTAPD_CONFIG | cut -d"=" -f2`
+  echo ${channel}
 }
 
 function set_channel () {
@@ -377,12 +373,8 @@ function set_channel () {
 }
 
 function get_ssid () {
-  local ssid=`grep '^ssid=' $HOSTAPD_CONFIG`
-  if [[ $ssid == ssid=\"* ]]; then
-    echo ${ssid:6:${#ssid}-7};
-  else
-    echo ${ssid:5:${#ssid}-5};
-  fi
+  local ssid=`grep '^ssid=' $HOSTAPD_CONFIG | cut -d"=" -f2`
+  echo ${ssid};
 }
 
 function set_ssid () {
@@ -398,7 +390,7 @@ function set_ssid () {
     echo "Updating ssid to '$val'"
   fi
 
-  sed -i "s/^ssid=.*/ssid=\"$val\"/g" $HOSTAPD_CONFIG 2>&1 | logger -t $(basename $0)
+  sed -i "s/^ssid=.*/ssid=$val/g" $HOSTAPD_CONFIG 2>&1 | logger -t $(basename $0)
 
   if [ ${PIPESTATUS[0]} -eq 0 ]
   then
