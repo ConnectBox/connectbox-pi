@@ -1,6 +1,6 @@
 ---
 
-- name: install git for checkout of bible skeleton and biblebox admin
+- name: install git for checkout of bible skeleton
   apt:
     name: git
     state: present
@@ -85,31 +85,21 @@
     mode: 0755
     recurse: yes
 
-# commented force=yes given it blows away anything that's in place
-#  and it's unclear that we actually want that
-- name: checkout biblebox php admin interface
-  git:
-   repo: https://github.com/stevish-com/bibleboxpi-interface.git
-   dest: "{{ biblebox_default_content_root }}/content/admin/"
-   depth: 1
-   #force: yes
+- name: Copy biblebox admin ui
+  copy:
+    src: ../html/
+    dest: "{{ biblebox_default_content_root }}/content/"
+    owner: www-data
+    group: www-data
+    mode: 0644
 
-# Leave mode as-is. Let's set perms correctly in the admin repo itself.
 - name: fix ownership of biblebox_default
   file:
     path: "{{ biblebox_default_content_root }}"
     state: directory
     owner: www-data
     group: www-data
-    #mode: 0775
     recurse: yes
-
-- name: allow www-data to pumount to allow admin interface to unmount USB
-  blockinfile:
-    dest: /etc/sudoers
-    block: |
-      www-data ALL=(ALL) ALL
-      www-data ALL=(ALL) NOPASSWD: /usr/bin/pumount
 
 - name: checkout NextCloud integration
   git:
