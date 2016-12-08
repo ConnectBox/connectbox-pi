@@ -11,7 +11,7 @@ script:
   fi
 - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then $TRAVIS_BUILD_DIR/ci/script_run_on_non_pull_requests.sh;
   fi
-- pushd $TRAVIS_BUILD_DIR && ansible-lint -x ANSIBLE0004,ANSIBLE0010,ANSIBLE0012 --exclude=ansible/roles/mikegleasonjr.firewall
+- pushd $TRAVIS_BUILD_DIR && ansible-lint -x ANSIBLE0004,ANSIBLE0006,ANSIBLE0010,ANSIBLE0012 --exclude=ansible/roles/mikegleasonjr.firewall
   --exclude=ansible/roles/geerlingguy.nginx ansible/site.yml && popd
 after_script:
 - pushd $TRAVIS_BUILD_DIR/ci && terraform destroy --force && popd
