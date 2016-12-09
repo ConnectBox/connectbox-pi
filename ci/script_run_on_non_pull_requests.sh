@@ -41,4 +41,4 @@ time ansible-playbook -i inventory ../ansible/site.yml;
 # Tell the test running host how to find the biblebox by name
 echo "\n${target_host} biblebox.local" | sudo tee -a /etc/hosts > /dev/null
 # Run web/selenium tests
-time TEST_IP=$target_host python -m unittest discover ../tests
+TEST_IP=$target_host time python -m unittest discover ../tests
