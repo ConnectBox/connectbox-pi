@@ -16,7 +16,7 @@ openssl aes-256-cbc -K $encrypted_22a22c63eb0e_key -iv $encrypted_22a22c63eb0e_i
 # Run CI build on AWS. This uses protected variables
 cd $TRAVIS_BUILD_DIR/ci;
 
-time terraform apply;
+TF_VAR_instance_type="t2.small" time terraform apply;
 
 target_host=$(terraform output biblebox-server-public-ip);
 
