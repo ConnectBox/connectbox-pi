@@ -28,7 +28,7 @@ cat inventory;
 
 # Wait for ssh to become available
 date
-while ! (ssh -o ConnectTimeout=2 -o StrictHostKeyChecking=no -i ${PEM_OUT} admin@${target_host} /usr/bin/true 2> /dev/null); do
+while ! (ssh -o ConnectTimeout=2 -o StrictHostKeyChecking=no -i ${PEM_OUT} admin@${target_host} true 2> /dev/null); do
   echo -n ".";
 done
 echo "OK";
