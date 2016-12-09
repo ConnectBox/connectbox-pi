@@ -20,19 +20,6 @@ date
 terraform apply;
 date
 
-ping -c 5 dynamodb.us-east-1.amazonaws.com
-ping -c 5 dynamodb.us-west-1.amazonaws.com
-ping -c 5 dynamodb.us-west-2.amazonaws.com
-ping -c 5 dynamodb.eu-west-1.amazonaws.com
-ping -c 5 dynamodb.eu-central-1.amazonaws.com
-ping -c 5 dynamodb.ap-south-1.amazonaws.com
-ping -c 5 dynamodb.ap-northeast-2.amazonaws.com
-ping -c 5 dynamodb.ap-southeast-1.amazonaws.com
-ping -c 5 dynamodb.ap-southeast-2.amazonaws.com
-ping -c 5 dynamodb.ap-northeast-1.amazonaws.com
-ping -c 5 dynamodb.sa-east-1.amazonaws.com
-ping -c 5 dynamodb.cn-north-1.amazonaws.com.cn
-
 target_host=$(terraform output biblebox-server-public-ip);
 
 # Create an inventory file suitable for ansible
@@ -40,10 +27,12 @@ echo "${target_host} ansible_ssh_user=admin ansible_ssh_private_key_file=$PEM_OU
 cat inventory;
 
 # Wait for ssh to become available
-while ! (ssh -o ConnectTimeout=2 -i ${PEM_OUT} admin@${target_host} /usr/bin/true 2> /dev/null); do
+date
+while ! (ssh -o ConnectTimeout=2 -o StrictHostKeyChecking=no -i ${PEM_OUT} admin@${target_host} /usr/bin/true 2> /dev/null); do
   echo -n ".";
 done
 echo "OK";
+date
 
 # Now do our initial provisioning run
 date
