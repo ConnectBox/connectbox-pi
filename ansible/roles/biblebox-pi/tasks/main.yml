@@ -81,4 +81,4 @@
   apt:
     upgrade: safe
   tags:
-  - full_build_only
+  - full-build-only
