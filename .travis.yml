@@ -1,6 +1,13 @@
 language: python
 dist: trusty
 sudo: true
+cache:
+  directories:
+    - $HOME/.cache/pip
+  pip: true
+  timeout: 86400  # 1 day
+before_cache:
+  - rm -f $HOME/.cache/pip/log/debug.log
 install:
 - wget -O /tmp/terraform.zip https://releases.hashicorp.com/terraform/0.7.13/terraform_0.7.13_linux_amd64.zip
 # Unpack terraform and put it on the path
