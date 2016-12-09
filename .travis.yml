@@ -1,4 +1,5 @@
 language: python
+dist: trusty
 sudo: true
 install:
 - wget -O /tmp/terraform.zip https://releases.hashicorp.com/terraform/0.7.13/terraform_0.7.13_linux_amd64.zip
