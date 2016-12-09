@@ -9,6 +9,16 @@
   apt:
     upgrade: safe
 
+- name: Configure hostname
+  hostname:
+    name: "{{ biblebox_default_hostname }}"
+
+- name: Add hosts entry
+  blockinfile:
+    dest: /etc/hosts
+    block: |
+      127.0.0.1 {{ biblebox_default_hostname }}
+
 - name: Create biblebox group
   group:
     name: _biblebox
