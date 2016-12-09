@@ -61,12 +61,11 @@
     recurse: yes
 
 - name: Copy biblebox admin ui
-  copy:
+  synchronize:
     src: ../html/
     dest: "{{ biblebox_default_content_root }}/content/"
     owner: www-data
     group: www-data
-    mode: 0644
 
 - name: fix ownership of biblebox_default
   file:
