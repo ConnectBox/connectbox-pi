@@ -1,1 +1,3 @@
+# Example entry. Replace the IP address with the address of your pi
+#
 #192.168.20.183 ansible_user=pi
