@@ -31,12 +31,21 @@ while ! (ssh -o ConnectTimeout=2 -o StrictHostKeyChecking=no -i ${PEM_OUT} admin
 done
 echo "OK";
 
-# Now do our initial provisioning run
-time ansible-playbook -i inventory ../ansible/site.yml;
+# For builds not triggered by a pull request $TRAVIS_BRANCH is the name
+#  of the branch currently being built
+if [ "$TRAVIS_BRANCH" = "master" ]; then
+  # Do a full deploy and redeploy
+  # Now do our initial provisioning run
+  time ansible-playbook -i inventory ../ansible/site.yml;
 
-# Perform a re-run of the playbooks, to see whether they run cleanly and
-#  without marking any task as changed
-time ansible-playbook -i inventory ../ansible/site.yml;
+  # Perform a re-run of the playbooks, to see whether they run cleanly and
+  #  without marking any task as changed
+  time ansible-playbook -i inventory ../ansible/site.yml;
+else
+  # Do essential steps of a deployment to keep things fast
+  time ansible-playbook -i inventory --skip-tags=full-build-only ../ansible/site.yml;
+fi
+
 
 # Tell the test running host how to find the biblebox by name
 echo "\n${target_host} biblebox.local" | sudo tee -a /etc/hosts > /dev/null
