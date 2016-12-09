@@ -36,18 +36,18 @@ echo "OK";
 if [ "$TRAVIS_BRANCH" = "master" ]; then
   # Do a full deploy and redeploy
   # Now do our initial provisioning run
-  time ansible-playbook -i inventory ../ansible/site.yml;
+  ansible-playbook -i inventory ../ansible/site.yml;
 
   # Perform a re-run of the playbooks, to see whether they run cleanly and
   #  without marking any task as changed
-  time ansible-playbook -i inventory ../ansible/site.yml;
+  ansible-playbook -i inventory ../ansible/site.yml;
 else
   # Do essential steps of a deployment to keep things fast
-  time ansible-playbook -i inventory --skip-tags=full-build-only ../ansible/site.yml;
+  ansible-playbook -i inventory --skip-tags=full-build-only ../ansible/site.yml;
 fi
 
 
 # Tell the test running host how to find the biblebox by name
 echo "\n${target_host} biblebox.local" | sudo tee -a /etc/hosts > /dev/null
 # Run web/selenium tests
-TEST_IP=$target_host time python -m unittest discover ../tests
+TEST_IP=$target_host python -m unittest discover ../tests
