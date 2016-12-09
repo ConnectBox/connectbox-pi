@@ -19,13 +19,15 @@ $ . ~/.virtualenvs/biblebox-pi/bin/activate
 $ pip install -r requirements.txt
 ```
 
-## On the Raspberry Pi
+## Option 1: Running on a Raspberry Pi
 
-### Install Vanilla Raspbian-lite on Raspberry Pi
+## Install Vanilla Raspbian-lite on Raspberry Pi
 
 Follow the [Raspberry Pi install instructions](https://www.raspberrypi.org/documentation/installation/installing-images/). Boot the Raspberry Pi with the image. This assumes that your Pi is attached to the network via its ethernet port, so that the wifi interface can be configured as an AP. Make a note of the IP address associated with the ethernet interface when it boots.
 
-### Run Ansible
+## Run Ansible
+
+Note that this should be run on the same machine where you setup your virtualenv - don't try to run it on the Raspberry Pi
 
 1. cd into the `ansible` directory in this project.
 1. Edit `inventory` and add a line with the IP address of the Raspberry Pi ethernet interface and `user=pi` (copy the format of the example line)
@@ -39,7 +41,7 @@ Follow the [Raspberry Pi install instructions](https://www.raspberrypi.org/docum
 1. Search for, and connect to the WiFi point named "BibleBox - Free Media"
 1. Open your browser, go somewhere (anywhere)
 
-## On a virtual machine
+## Options 2: Running on a virtual machine
 
 It's often faster to do development on a virtual machine and do final validation against a Raspberry Pi. A `Vagrantfile` exists in this directory.
 
@@ -47,9 +49,17 @@ It's often faster to do development on a virtual machine and do final validation
 
 With Vagrant installed, run `vagrant up` in this directory and the VM will start and have the ansible playbooks applied to them. You can reapply the playbooks with `vagrant provision` to test ansible playbook development. Have a look at [Vagrant - Getting Started](https://www.vagrantup.com/docs/getting-started/) for more details.
 
+1. Install Vagrant
+1. Run `vagrant up` in this directory. Vagrant takes care of starting the VM and applying the playbooks. You can ssh to the VM using `vagrant ssh`. The webserver is accessible on the VM on the IP `172.28.128.3`
+1. (Optionally) run the tests. In this directory: `TEST_IP=172.28.128.3 python -m unittest discover tests`
+
+
 ### Browse the BibleBox Site
 
-The WiFi Point is not active when running from a virtual machine, but you can still view the BibleBox Site. From the machine where you ran vagrant, open `http://127.0.0.1:8080` in your browser.
+The WiFi Point is not active when running from a virtual machine, but you can still view the BibleBox Site. On the machine where you ran vagrant:
+
+1. To `/etc/hosts` on the machine where you ran vagrant, add the line `172.28.128.3 biblebox.local`
+1. Browse to http://biblebox.local
 
 # Notes
 

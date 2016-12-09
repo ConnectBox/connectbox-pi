@@ -3,9 +3,7 @@
 
 Vagrant.configure(2) do |config|
   config.vm.box = "debian/jessie64"
-  # Make nginx available on this box, albeit without the captive
-  #  portal behaviour
-  config.vm.network "forwarded_port", guest: 80, host: 8080
+  config.vm.network "private_network", ip: "172.28.128.3"
 
   config.vm.provider "virtualbox" do |vb|
     vb.memory = "1024"
