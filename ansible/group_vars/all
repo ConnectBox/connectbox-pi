@@ -14,6 +14,7 @@ biblebox_default_content_root: /var/www/biblebox/biblebox_default
 biblebox_config_root: /etc/biblebox
 biblebox_usb_files_root: "{{ biblebox_default_content_root }}/shared/usb"
 biblebox_admin_credentials: admin:$apr1$BBOXFOO2$3rz0Up2HMEfrmGB0YCXzr/
+biblebox_default_hostname: biblebox.local
 
 # Make sure we show index.html for 404, given we'll be sent here by
 #  people browsing for all sorts of things
