@@ -60,12 +60,11 @@
     mode: 0755
     recurse: yes
 
+# Permissions are correctly set in the subsequent task
 - name: Copy biblebox admin ui
   synchronize:
     src: ../html/
     dest: "{{ biblebox_default_content_root }}/content/"
-    owner: www-data
-    group: www-data
 
 - name: fix ownership of biblebox_default
   file:
