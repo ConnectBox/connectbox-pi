@@ -26,15 +26,27 @@
   with_items:
     - "{{ biblebox_default_content_root }}"
 
+- name: Create placeholder index file
+  copy:
+    dest: "{{ biblebox_default_content_root }}/index.html"
+    owner: www-data
+    group: www-data
+    mode: 0644
+    content: |
+      <html>
+      <head><title>The BibleBox</title></head>
+      <body>Placeholder. <a href="/content">content</a> <a href="/admin">admin</a></body>
+      </html>
+
 # Permissions are correctly set in the subsequent task
 - name: Copy biblebox admin ui
   synchronize:
     src: ../html/
-    dest: "{{ biblebox_default_content_root }}/content/"
+    dest: "{{ biblebox_admin_root }}"
 
 - name: fix ownership of biblebox_default
   file:
-    path: "{{ biblebox_default_content_root }}"
+    path: "{{ biblebox_admin_root }}"
     state: directory
     owner: www-data
     group: www-data

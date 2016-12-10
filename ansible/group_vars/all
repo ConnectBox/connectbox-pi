@@ -11,6 +11,7 @@
 client_facing_if: "wlan0"
 
 biblebox_default_content_root: /var/www/biblebox/biblebox_default
+biblebox_admin_root: /var/www/biblebox/admin
 biblebox_config_root: /etc/biblebox
 biblebox_usb_files_root: /media/usb0
 biblebox_admin_credentials: admin:$apr1$BBOXFOO2$3rz0Up2HMEfrmGB0YCXzr/
@@ -24,18 +25,26 @@ nginx_vhosts:
     return: "302 http://$hostname"
   - listen: "80"
     server_name: "$hostname"
-    index: "index.php index.htm index.html"
-    root: "/var/www/biblebox"
-    error_page: "404 /biblebox_default/content/index.html"
+    index: "index.html"
+    root: "{{ biblebox_default_content_root }}"
+    error_page: "404 /index.html"
     access_log: "/var/log/nginx/biblebox-access.log"
     error_log: "/var/log/nginx/biblebox-error.log"
     extra_parameters: |
       rewrite_log on;
 
+      # Admin interface
+      location /admin/ {
+        index index.html;
+        alias {{ biblebox_admin_root }};
+        auth_basic "Access Denied";
+        auth_basic_user_file /usr/local/biblebox/etc/basicauth;
+      }
+
+      # Admin worker scripts
       # pass the PHP scripts to FastCGI server listening on 127.0.0.1:9000
       location ~ ^/admin/(?<script_name>.+\.php)(?<path_info>/.+)$ {
-        index index.html;
-        root /var/www/biblebox/biblebox_default/content;
+        alias {{ biblebox_admin_root }};
         include fastcgi_params;
         fastcgi_param SCRIPT_FILENAME $document_root$script_name;
         fastcgi_param PATH_INFO $path_info;

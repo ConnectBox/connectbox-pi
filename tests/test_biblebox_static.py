@@ -18,18 +18,30 @@ def getTestTarget():
 
 class BibleBoxStaticTestCase(unittest.TestCase):
 
+    def testBaseRedirect(self):
+        r = requests.get("http://%s" % (getTestTarget(),),
+                         allow_redirects=False)
+        self.assertTrue(r.is_redirect)
+        self.assertEqual(r.headers["Location"], TEST_BASE_URL)
+
+    def testAdminAuthPrompt(self):
+        r = requests.get("%s/admin/" % (TEST_BASE_URL,),
+                         allow_redirects=False)
+        self.assertEquals(r.status_code, 401)
+
+    def testContentResponseType(self):
+        # Content should return json
+        r = requests.get("%s/content/" % (TEST_BASE_URL,))
+        self.assertIsInstance(r.json(), list)
+
+
+class BibleBoxWebDriverTestCase(unittest.TestCase):
+
     def setUp(self):
         self.testTarget = getTestTarget()
         self.browser = webdriver.PhantomJS()
         self.addCleanup(self.browser.quit)
 
-    @unittest.skip("Base content page content being redefined")
     def testPageTitle(self):
         self.browser.get(TEST_BASE_URL)
         self.assertIn("The BibleBox", self.browser.title)
-
-    def testBaseRedirect(self):
-        r = requests.get("http://%s" % (self.testTarget,),
-                         allow_redirects=False)
-        self.assertTrue(r.is_redirect)
-        self.assertEqual(r.headers["Location"], TEST_BASE_URL)
