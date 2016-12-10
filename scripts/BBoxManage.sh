@@ -9,6 +9,7 @@ SUBJECT=biblebox_control_ssid_script
 USAGE="Usage: BBoxManage.sh -dhv [get|set] [ssid|channel|hostname] <value>"
 HOSTAPD_CONFIG="/etc/hostapd/hostapd.conf"
 HOSTNAME_CONFIG="/etc/hostname"
+HOSTS_CONFIG="/etc/hosts"
 NGINX_CONFIG="/etc/nginx/sites-enabled/vhosts.conf"
 PASSWORD_CONFIG="/usr/local/biblebox/etc/basicauth"
 PASSWORD_SALT="BBOXFOO2016"
@@ -105,6 +106,38 @@ function restore_hostname_config () {
       then
         failure
       fi
+    fi
+  fi
+}
+
+function backup_hosts_config () {
+  # Backup the original configuration file
+  if [ ! -e "$HOSTS_CONFIG.original" ]; then
+    if [ $DEBUG == 1 ]; then
+      echo "Backing up $HOSTS_CONFIG to $HOSTS_CONFIG.original"
+    fi
+
+    cp $HOSTS_CONFIG $HOSTS_CONFIG.original 2>&1 | logger -t $(basename $0)
+
+    if [ ${PIPESTATUS[0]} -ne 0 ]
+    then
+      failure
+    fi
+  fi
+}
+
+function restore_hosts_config () {
+  # Restore the original configuration file
+  if [ -e "$HOSTS_CONFIG.original" ]; then
+    if [ $DEBUG == 1 ]; then
+      echo "Restoring $HOSTS_CONFIG from $HOSTS_CONFIG.original"
+    fi
+
+    cp $HOSTS_CONFIG.original $HOSTS_CONFIG 2>&1 | logger -t $(basename $0)
+
+    if [ ${PIPESTATUS[0]} -ne 0 ]
+    then
+      failure
     fi
   fi
 }
@@ -229,6 +262,7 @@ function reset () {
   restore_hostapd_config
   restore_nginx_config
   restore_hostname_config
+  restore_hosts_config
   reload_nginx
   restart_hostapd
   success
@@ -365,6 +399,7 @@ function set_hostname () {
   fi
 
   backup_hostname_config
+  backup_hosts_config
 
   # Update the hostname in the hostname config
   if [ $DEBUG == 1 ]; then
@@ -378,13 +413,21 @@ function set_hostname () {
 
   if [ ${PIPESTATUS[0]} -eq 0 ]
   then
-    # Update hostname
-    hostname $val 2>&1 | logger -t $(basename $0)
+    # Update /etc/hosts
+    sed -i "s/$host_name/$val/g" $HOSTS_CONFIG 2>&1 | logger -t $(basename $0)
 
     if [ ${PIPESTATUS[0]} -eq 0 ]
     then
-      reload_nginx
-      success
+      # Update hostname
+      hostname $val 2>&1 | logger -t $(basename $0)
+
+      if [ ${PIPESTATUS[0]} -eq 0 ]
+      then
+        reload_nginx
+        success
+      else
+        failure
+      fi
     else
       failure
     fi
