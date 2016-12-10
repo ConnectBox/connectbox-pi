@@ -1,0 +1,3 @@
+---
+#XXX - should be false once we have layout sorted
+deploy_sample_content: true

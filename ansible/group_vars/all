@@ -12,7 +12,7 @@ client_facing_if: "wlan0"
 
 biblebox_default_content_root: /var/www/biblebox/biblebox_default
 biblebox_config_root: /etc/biblebox
-biblebox_usb_files_root: "{{ biblebox_default_content_root }}/shared/usb"
+biblebox_usb_files_root: /media/usb0
 biblebox_admin_credentials: admin:$apr1$BBOXFOO2$3rz0Up2HMEfrmGB0YCXzr/
 biblebox_default_hostname: biblebox.local
 
@@ -46,27 +46,15 @@ nginx_vhosts:
         auth_basic_user_file /usr/local/biblebox/etc/basicauth;
       }
 
-      location /shared/ {
+      location /content/ {
         autoindex on;
-        root /media/usb0;
-        try_files $uri $uri/ @sharedfallback;
+        autoindex_format json;
+        charset utf-8;
+        charset_types application/json;
+
+        alias {{ biblebox_usb_files_root }}/;
       }
 
-      location @sharedfallback {
-        autoindex on;
-        root /var/www/biblebox/biblebox_default;
-        try_files $uri $uri/ =404;
-      }
-
-      location / {
-        root /media/usb0/content;
-        try_files $uri $uri/index.html @fallback;
-      }
-
-      location @fallback {
-        root /var/www/biblebox/biblebox_default/content;
-        try_files $uri $uri/ =404;
-      }
 # We want to set the default server. Remove the default server that
 #  nginx provides.
 nginx_remove_default_vhost: true

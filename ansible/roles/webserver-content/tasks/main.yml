@@ -16,15 +16,6 @@
     enabled: yes
     state: started
 
-# commented force=yes given it blows away anything that's in place
-#  and it's unclear that we actually want that
-- name: checkout biblebox skeleton and deploy as default
-  git:
-    repo: https://github.com/bbriggs/BibleBox-skeleton.git
-    dest: /tmp/BibleBox-skeleton
-    depth: 1
-    #force=yes
-
 - name: create folders for default content/shared and config
   file:
     path: "{{ item }}"
@@ -34,31 +25,6 @@
     mode: 0775
   with_items:
     - "{{ biblebox_default_content_root }}"
-    - "{{ biblebox_config_root }}"
-
-- name: move default content into place
-  command: rsync -a /tmp/BibleBox-skeleton/content {{ biblebox_default_content_root }}
-
-- name: move default shared into place
-  command: rsync -a /tmp/BibleBox-skeleton/shared {{ biblebox_default_content_root }}
-
-# Trailing slash deliberately present... we want the contents of the config
-#  directory, but not the directory itself in the target.
-- name: move default config into place
-  command: rsync -a /tmp/BibleBox-skeleton/config/ {{ biblebox_config_root }}
-
-# This makes the config files executable but
-# it seems like the only other option is to separately
-# set permissions on directory in an additional task
-# Since the config files will probably be going away
-# I think this is fine for now.
-- name: update permissions on biblebox config files
-  file:
-    dest: "{{ biblebox_config_root }}"
-    owner: www-data
-    group: www-data
-    mode: 0755
-    recurse: yes
 
 # Permissions are correctly set in the subsequent task
 - name: Copy biblebox admin ui

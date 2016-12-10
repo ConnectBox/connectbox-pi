@@ -23,6 +23,7 @@ class BibleBoxStaticTestCase(unittest.TestCase):
         self.browser = webdriver.PhantomJS()
         self.addCleanup(self.browser.quit)
 
+    @unittest.skip("Base content page content being redefined")
     def testPageTitle(self):
         self.browser.get(TEST_BASE_URL)
         self.assertIn("The BibleBox", self.browser.title)
