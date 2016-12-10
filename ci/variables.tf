@@ -5,6 +5,7 @@ variable "region" { default = "us-east-1" }
 variable "preferred_az" {
 	default = {
 		"us-east-1" = "us-east-1b"
+		"ap-southeast-1" = "ap-southeast-1a"
 	}
 }
 
@@ -14,6 +15,7 @@ variable "instance_type" { default = "t2.nano" }
 variable "amis" {
 	default = {
 		"us-east-1" = "ami-9d6c128a"
+		"ap-southeast-1" = "ami-0e6dce6d"
 	}
 }
 

@@ -5,21 +5,6 @@
     name: git
     state: present
 
-- name: install uwsgi for Python integration
-  apt:
-    name: uwsgi
-    state: present
-
-- name: install uwsgi-python plugin
-  apt:
-    name: uwsgi-plugin-python
-    state: present
-
-- name: install PIP for Python packages
-  apt:
-    name: python-pip
-    state: present
-
 - name: install php5-fpm for admin interface
   apt:
     name: php5-fpm
@@ -75,13 +60,11 @@
     mode: 0755
     recurse: yes
 
+# Permissions are correctly set in the subsequent task
 - name: Copy biblebox admin ui
-  copy:
+  synchronize:
     src: ../html/
     dest: "{{ biblebox_default_content_root }}/content/"
-    owner: www-data
-    group: www-data
-    mode: 0644
 
 - name: fix ownership of biblebox_default
   file:
@@ -90,28 +73,3 @@
     owner: www-data
     group: www-data
     recurse: yes
-
-- name: checkout NextCloud integration
-  git:
-   repo: https://github.com/adavenpo/BibleBox-python-app.git
-   dest: "/tmp/BibleBox-nextcloud"
-   depth: 1
-   #force: yes
-
-- name: Pull python packages
-  pip:
-    name: webapp2 webob git+https://github.com/owncloud/pyocclient.git
-    state: present
-
-- name: deploy NextCloud integration static content
-  shell: "cp -a /tmp/BibleBox-nextcloud/static/* {{ biblebox_default_content_root }}"
-
-- name: deploy NextCloud integration WSGI app
-  command: "cp -a /tmp/BibleBox-nextcloud/wsgi /var/www/"
-
-- name: Add app link to uwsgi config
-  file:
-    src: /var/www/wsgi/app.ini
-    dest: /etc/uwsgi/apps-enabled/app.ini
-    state: link
-
