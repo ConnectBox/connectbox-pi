@@ -41,7 +41,7 @@
 # Permissions are correctly set in the subsequent task
 - name: Copy biblebox admin ui
   synchronize:
-    src: ../html/
+    src: ../html/admin/
     dest: "{{ biblebox_admin_root }}"
 
 - name: fix ownership of biblebox_default

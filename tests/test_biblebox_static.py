@@ -5,6 +5,10 @@ from selenium import webdriver
 
 TEST_IP_ENV_VAR = "TEST_IP"
 TEST_BASE_URL = "http://biblebox.local"
+ADMIN_BASE_URL = "http://biblebox.local/admin"
+# Default creds. Will need a way to override these when it changes
+ADMIN_USER = "admin"
+ADMIN_PASSWORD = "bibleboxpi"
 
 
 def getTestTarget():
@@ -16,7 +20,11 @@ def getTestTarget():
         raise RuntimeError(error_msg)
 
 
-class BibleBoxStaticTestCase(unittest.TestCase):
+def getAdminAuth():
+    return requests.auth.HTTPBasicAuth(ADMIN_USER, ADMIN_PASSWORD)
+
+
+class BibleBoxBasicTestCase(unittest.TestCase):
 
     def testBaseRedirect(self):
         r = requests.get("http://%s" % (getTestTarget(),),
@@ -24,15 +32,25 @@ class BibleBoxStaticTestCase(unittest.TestCase):
         self.assertTrue(r.is_redirect)
         self.assertEqual(r.headers["Location"], TEST_BASE_URL)
 
-    def testAdminAuthPrompt(self):
-        r = requests.get("%s/admin/" % (TEST_BASE_URL,),
-                         allow_redirects=False)
-        self.assertEquals(r.status_code, 401)
-
     def testContentResponseType(self):
-        # Content should return json
+        # URLs under content should return json
         r = requests.get("%s/content/" % (TEST_BASE_URL,))
         self.assertIsInstance(r.json(), list)
+
+    def testAdminNeedsAuth(self):
+        r = requests.get("%s/" % (ADMIN_BASE_URL,))
+        self.assertEquals(r.status_code, 401)
+
+    def testAdminPageTitle(self):
+        r = requests.get("%s/" % (ADMIN_BASE_URL,), auth=getAdminAuth())
+        self.assertIn("BibleboxPi Admin Dashboard", r.text)
+
+    def testAdminApiSmoketest(self):
+        # To catch where there is a gross misconfiguration that breaks
+        #  nginx/php
+        r = requests.get("%s/api.php/hostname" % (ADMIN_BASE_URL,),
+                         auth=getAdminAuth())
+        self.assertEquals(r.json()["code"], 0)
 
 
 class BibleBoxWebDriverTestCase(unittest.TestCase):

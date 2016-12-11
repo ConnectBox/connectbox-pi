@@ -36,7 +36,7 @@ nginx_vhosts:
       # Admin interface
       location /admin/ {
         index index.html;
-        alias {{ biblebox_admin_root }};
+        alias {{ biblebox_admin_root }}/;
         auth_basic "Access Denied";
         auth_basic_user_file /usr/local/biblebox/etc/basicauth;
       }
