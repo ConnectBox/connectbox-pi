@@ -35,7 +35,7 @@
     content: |
       <html>
       <head><title>The BibleBox</title></head>
-      <body>Placeholder. <a href="/content">content</a> <a href="/admin">admin</a></body>
+      <body>Placeholder. <a href="/content">content</a> <a href="/admin/">admin</a></body>
       </html>
 
 # Permissions are correctly set in the subsequent task

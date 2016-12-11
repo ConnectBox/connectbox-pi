@@ -10,8 +10,9 @@
 #  test some client-facing capabilities but do not have a wifi interface
 client_facing_if: "wlan0"
 
-biblebox_default_content_root: /var/www/biblebox/biblebox_default
-biblebox_admin_root: /var/www/biblebox/admin
+biblebox_web_root: /var/www/biblebox
+biblebox_default_content_root: "{{ biblebox_web_root }}/biblebox_default"
+biblebox_admin_root: "{{ biblebox_web_root }}/admin"
 biblebox_config_root: /etc/biblebox
 biblebox_usb_files_root: /media/usb0
 biblebox_admin_credentials: admin:$apr1$BBOXFOO2$3rz0Up2HMEfrmGB0YCXzr/
@@ -25,7 +26,7 @@ nginx_vhosts:
     return: "302 http://$hostname"
   - listen: "80"
     server_name: "$hostname"
-    index: "index.html"
+    index: index.html
     root: "{{ biblebox_default_content_root }}"
     error_page: "404 /index.html"
     access_log: "/var/log/nginx/biblebox-access.log"
@@ -35,16 +36,15 @@ nginx_vhosts:
 
       # Admin interface
       location /admin/ {
-        index index.html;
-        alias {{ biblebox_admin_root }}/;
+        root {{ biblebox_web_root }};
         auth_basic "Access Denied";
         auth_basic_user_file /usr/local/biblebox/etc/basicauth;
       }
 
       # Admin worker scripts
-      # pass the PHP scripts to FastCGI server listening on 127.0.0.1:9000
+      # pass the PHP scripts to FastCGI server via unix domain socket
       location ~ ^/admin/(?<script_name>.+\.php)(?<path_info>/.+)$ {
-        alias {{ biblebox_admin_root }};
+        root {{ biblebox_web_root }};
         include fastcgi_params;
         fastcgi_param SCRIPT_FILENAME $document_root$script_name;
         fastcgi_param PATH_INFO $path_info;
@@ -56,12 +56,11 @@ nginx_vhosts:
       }
 
       location /content/ {
+        alias {{ biblebox_usb_files_root }}/;
         autoindex on;
         autoindex_format json;
         charset utf-8;
         charset_types application/json;
-
-        alias {{ biblebox_usb_files_root }}/;
       }
 
 # We want to set the default server. Remove the default server that
