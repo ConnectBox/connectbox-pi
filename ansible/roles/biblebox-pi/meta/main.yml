@@ -9,4 +9,5 @@ dependencies:
   - mikegleasonjr.firewall
   - webserver-content
   - usb-content
+  - sample-content
   - dns-dhcp

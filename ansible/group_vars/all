@@ -10,9 +10,11 @@
 #  test some client-facing capabilities but do not have a wifi interface
 client_facing_if: "wlan0"
 
-biblebox_default_content_root: /var/www/biblebox/biblebox_default
+biblebox_web_root: /var/www/biblebox
+biblebox_default_content_root: "{{ biblebox_web_root }}/biblebox_default"
+biblebox_admin_root: "{{ biblebox_web_root }}/admin"
 biblebox_config_root: /etc/biblebox
-biblebox_usb_files_root: "{{ biblebox_default_content_root }}/shared/usb"
+biblebox_usb_files_root: /media/usb0
 biblebox_admin_credentials: admin:$apr1$BBOXFOO2$3rz0Up2HMEfrmGB0YCXzr/
 biblebox_default_hostname: biblebox.local
 
@@ -24,18 +26,25 @@ nginx_vhosts:
     return: "302 http://$hostname"
   - listen: "80"
     server_name: "$hostname"
-    index: "index.php index.htm index.html"
-    root: "/var/www/biblebox"
-    error_page: "404 /biblebox_default/content/index.html"
+    index: index.html
+    root: "{{ biblebox_default_content_root }}"
+    error_page: "404 /index.html"
     access_log: "/var/log/nginx/biblebox-access.log"
     error_log: "/var/log/nginx/biblebox-error.log"
     extra_parameters: |
       rewrite_log on;
 
-      # pass the PHP scripts to FastCGI server listening on 127.0.0.1:9000
+      # Admin interface
+      location /admin/ {
+        root {{ biblebox_web_root }};
+        auth_basic "Access Denied";
+        auth_basic_user_file /usr/local/biblebox/etc/basicauth;
+      }
+
+      # Admin worker scripts
+      # pass the PHP scripts to FastCGI server via unix domain socket
       location ~ ^/admin/(?<script_name>.+\.php)(?<path_info>/.+)$ {
-        index index.html;
-        root /var/www/biblebox/biblebox_default/content;
+        root {{ biblebox_web_root }};
         include fastcgi_params;
         fastcgi_param SCRIPT_FILENAME $document_root$script_name;
         fastcgi_param PATH_INFO $path_info;
@@ -46,27 +55,14 @@ nginx_vhosts:
         auth_basic_user_file /usr/local/biblebox/etc/basicauth;
       }
 
-      location /shared/ {
+      location /content/ {
+        alias {{ biblebox_usb_files_root }}/;
         autoindex on;
-        root /media/usb0;
-        try_files $uri $uri/ @sharedfallback;
+        autoindex_format json;
+        charset utf-8;
+        charset_types application/json;
       }
 
-      location @sharedfallback {
-        autoindex on;
-        root /var/www/biblebox/biblebox_default;
-        try_files $uri $uri/ =404;
-      }
-
-      location / {
-        root /media/usb0/content;
-        try_files $uri $uri/index.html @fallback;
-      }
-
-      location @fallback {
-        root /var/www/biblebox/biblebox_default/content;
-        try_files $uri $uri/ =404;
-      }
 # We want to set the default server. Remove the default server that
 #  nginx provides.
 nginx_remove_default_vhost: true
