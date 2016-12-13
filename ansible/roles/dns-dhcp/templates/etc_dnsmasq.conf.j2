@@ -28,6 +28,10 @@ local-ttl=5
 quiet-dhcp
 quiet-dhcp6
 
+# Don't keep a leasefile, as leases contain MAC addresses and they're
+#  potentially incriminating
+leasefile-ro
+
 domain={{ hostname }}
 
 interface={{ client_facing_if }}
