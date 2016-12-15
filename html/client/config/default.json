@@ -1,0 +1,8 @@
+{
+	"Content":{
+		"contentRoute":"/content"
+	},
+	"Client":{
+		"tail_slash":false
+	}
+}

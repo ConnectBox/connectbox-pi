@@ -1,0 +1,366 @@
+<!DOCTYPE HTML>
+<html ng-app="index">
+    <head>
+        <title>ConnectBox</title>
+        <script src="lib/angular.min.js"></script>
+        <link type="text/css" rel="stylesheet" href="lib/bootstrap.min.css" />
+        <link type="text/css" rel="stylesheet" href="lib/font-awesome.min.css" />
+        <meta charset="utf-8" />
+        <style>
+            .ng-cloak { display: none !important; }
+            table.table tr a { display: block; }
+            @keyframes rotate {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+            .loader {
+                animation: rotate 1s infinite linear;
+            }
+
+            #scroll-to-top {
+                position: fixed;
+                z-index: 2000;
+                right: 30px;
+                top: 1.25em;
+            }
+
+            .breadcrumb {
+                background-color: #CCEFEB;
+            }
+
+            /* Top-level collapsed table */
+            table.collapsed {
+                background-color: #CCEFEB;
+            }
+            table.collapsed span.row_name {
+                display: none;
+            }
+            table span.row_name.directory {
+                font-weight: bold;
+            }
+            table.collapsed > tbody > tr {
+                float: left;
+            }
+            table.collapsed > tbody td {
+                padding: 10px !important;
+                line-height: normal !important;
+                vertical-align: bottom;
+                border-top: 0 !important;
+            }
+}
+        </style>
+    </head>
+    <body style="margin: 10px 20px">
+        <div ng-controller="ScrollToTopController as scroll" class="pull-right" id="scroll-to-top" ng-show="scroll.show"><a href="" ng-click="scroll.to_top(); $event.preventDefault()"><i class="fa fa-long-arrow-up"></i> to top</a></div>
+        <div ng-controller="IndexController as index" class="container-fluid ng-cloak">
+            <div class="row">
+                <ol class="breadcrumb" style="left: 20px; right: 20px; position: fixed; z-index: 1000;">
+                    <li><a href="" ng-click="index.reload()" title="Reload"><i ng-class="{'loader': index.reloading.running || index.loading.running}" class="fa fa-refresh"></i></a></li>
+                    <li ng-class="::{'active': $last}" ng-repeat="part in index.path_parts"><span ng-if="::$last">{{:: part.name }} </span><a ng-if="::!$last" href="#{{:: part.path }}" ng-bind="::part.name"></a></li>
+                </ol>
+            </div>
+
+            <div class="row" style="margin-top: 3em;" ng-hide="index.error">
+                <div class="table-responsive">
+                <table class="table" ng-class="index.isTopLevel ? 'collapsed':''">
+                    <tbody>
+                        <tr ng-hide="index.path == '' || index.path == '/'">
+                            <td ng-click="index.go_up()"><a href=""><i class="fa fa-level-up"></i> ..</a></td>
+                        </tr>
+                        <tr ng-repeat="row in index.files | orderBy:index.sort.name:index.sort.rev">
+                            <td><a href="{{:: row.type == 'directory' ? '#' : index.config.Content.contentRoute }}{{:: index.path }}/{{:: row.name }}"><i class="fa {{:: row.name | topLevelCategory }}"></i><i class="fa {{:: row.ext | mediaTypes }}"></i><span class='row_name {{:: row.type}}'>&nbsp;{{:: row.name }}</span></a></td>
+                        </tr>
+                    </tbody>
+                </table>
+                </div>
+            </div>
+            <div class="row" style="margin-top: 60px;" ng-show="index.error">
+                <div class="alert alert-danger" role="alert">
+                    <big>
+                        <strong>Oh snap!</strong>
+                        Error {{ index.error.status }} occurred, and it means “{{ index.error.statusText || 'Server is out of reach' }}”.
+                    </big>
+                </div>
+            </div>
+        </div>
+        <script>
+angular.module('index', ['ng'])
+    .controller('IndexController', ['$http', '$location', '$scope', '$window', '$timeout',
+        function($http, $location, $scope, window, $timeout, FILES_BASE_URL) {
+            var self = this;
+
+            this.config = null;
+            this.files = [];
+            this.loading = {
+                running: false,
+                timer: null,
+                start:
+                    function(timeout) {
+                        if (timeout === undefined) {
+                            timeout = 500;
+                        }
+                        var self = this;
+                        this.stop();
+
+                        if (timeout > 0) {
+                            this.timer = $timeout(
+                                function () {
+                                    self.running = true;
+                                }, timeout
+                            );
+                        } else {
+                            this.running = true;
+                        }
+                    },
+                stop:
+                    function() {
+                        this.timer && $timeout.cancel(this.timer);
+                        this.timer = null;
+                        this.running = false;
+                    }
+            };
+
+            this.go_up =
+                function () {
+                    var lastSlash = self.path.lastIndexOf('/');
+                    if (lastSlash < 0) {
+                        $location.path('');
+                    } else {
+                        $location.path(self.path.substring(0, lastSlash));
+                    }
+                };
+
+            this.reloading = {
+                running: false,
+                start:
+                    function(timeout) {
+                        this.timer && $timeout.cancel(this.timer);
+                        this.running = true;
+
+                        var self = this;
+                        this.timer = $timeout(
+                            function () {
+                                self.running = false;
+                            }, timeout || 1000
+                        );
+                    }
+            };
+
+            this.reload =
+                function() {
+                    self.reloading.start();
+                    load_folder(self.path);
+                };
+
+            function load_folder(path) {
+                self.error = null;
+                self.loading.start();
+
+                return $http(
+                    {
+                        method: 'GET',
+                        url: self.config.Content.contentRoute + (path || '') + (self.config.Client.tail_slash? '/': '')
+                    }
+                ).then(
+                    function(response) {
+                        var files = response.data || [];
+
+                        for (var i = 0, l = files.length; i < l; i++) {
+                            files[i].mtime = new Date(files[i].mtime);
+                        }
+
+                        self.files = files;
+                        self.loading.stop();
+                        self.isTopLevel = path === '';
+                        window.localStorage.setItem('lastPath', path);
+                        window.scrollTo(0, 0);
+                    },
+                    function (response) {
+                        self.error = response;
+                        self.loading.stop();
+                        window.scrollTo(0, 0);
+                    }
+                );
+            }
+
+            function path_parts(path) {
+                var parts = (path === '/'? '': path).split('/'), up = '';
+                for (var i = 0, l = parts.length; i < l; i++) {
+                    path = up + parts[i];
+                    up = path + '/';
+                    parts[i] = { path: path, name: parts[i] || '<root>' };
+                }
+                return parts;
+            }
+
+            function initialize(config) {
+                self.loading.start();
+
+                $http(
+                    {
+                        url: config || 'config/default.json',
+                        method: 'GET'
+                    }
+                ).then(
+                    function(response) {
+                        self.loading.stop();
+                        self.config = response.data ||
+                            {
+                                base_index_url: "",
+                                tail_slash: false
+                            };
+
+                        $scope.$on('$locationChangeSuccess',
+                            function() {
+                                self.path_parts = path_parts(self.path = $location.path());
+                                if (self.path === '/') {
+                                    self.path = '';
+                                }
+                                load_folder(self.path);
+                            }
+                        );
+
+                        var path;
+                        if ($location.path() === '' && (path = window.localStorage.getItem('lastPath'))) {
+                            $location.path(path);
+                        } else {
+                            $scope.$broadcast('$locationChangeSuccess');
+                        }
+                    },
+                    function(response) {
+                        self.loading.stop();
+                        self.error = response;
+                    }
+                );
+            }
+            initialize($location.search().config);
+        }
+    ])
+    .controller('ScrollToTopController', ['$window', '$scope',
+        function(window, $scope) {
+            var self = this;
+            this.show = false;
+
+            var scrollDebounce = null;
+            window.addEventListener('scroll',
+                function () {
+                    scrollDebounce && clearTimeout(scrollDebounce);
+                    self.show = window.scrollY > 150;
+                    scrollDebounce = setTimeout(
+                        function () {
+                            $scope.$digest();
+                        }, 500
+                    );
+                }
+            );
+
+            var scrollTicker;
+            this.to_top =
+                function () {
+                    scrollTicker && clearInterval(scrollTicker);
+                    scrollTicker = setInterval(
+                        function () {
+                            var y = 0.6 * window.scrollY;
+                            if (y < 100) {
+                                y = 0;
+                                clearInterval(scrollTicker);
+                            }
+                            window.scrollTo(0, y);
+                        }, 10
+                    );
+                };
+        }
+    ])
+    .filter('humanize',
+        function() {
+            return function humanize(number) {
+                if (number < 1024) {
+                    return number + ' bytes';
+                }
+                var si = ['K', 'M', 'G', 'T', 'P', 'H'];
+                var exp = Math.floor(Math.log(number) / Math.log(1024));
+                var result = number / Math.pow(1024, exp);
+                result = (result % 1 > (1 / Math.pow(1024, exp - 1))) ? result.toFixed(2) : result.toFixed(0);
+                return result + ' ' + si[exp - 1] + 'b';
+            };
+        }
+    )
+    .filter('topLevelCategory',
+        function() {
+            return function topLevelCategory(dirName) {
+                var picto='';
+                switch (dirName) {
+                    case 'medical':
+                        picto = 'fa-medkit';
+                        break;
+                    case 'video':
+                        picto = 'fa-video-camera';
+                        break;
+                    case 'wifi':
+                        picto = 'fa-wifi';
+                        break;
+                    case 'music':
+                        picto = 'fa-music';
+                        break;
+                    case 'government':
+                        picto = 'fa-university';
+                        break;
+                    case 'water':
+                        picto = 'fa-tint';
+                        break;
+                    case 'food':
+                        picto = 'fa-cutlery';
+                        break;
+                    case 'written':
+                        picto = 'fa-book';
+                        break;
+                    case 'power':
+                        picto = 'fa-bolt';
+                        break;
+                    case 'maps':
+                        picto = 'fa-map';
+                        break;
+                }
+                return picto + ' fa-5x';
+            };
+        }
+    ).filter('mediaTypes',
+        function() {
+			return function mediaTypes(ext) {
+                var picto = '';
+                switch (ext) {
+					case '.txt':
+                        picto = 'fa-file-text-o'
+						break;
+                    case '.mov':
+                    case '.mp4':
+                    case '.flv':
+                    case '.mkv':
+                    case '.avi':
+                    case '.wmv':
+                    case '.mpeg':
+                    case '.mpg':
+                    case '.3gp':
+                        picto = 'fa-file-video-o'
+						break;
+                    case '.mp3':
+                    case '.ogg':
+                    case '.ra':
+                    case '.wav':
+                        picto = 'fa-file-sound-o'
+						break;
+                    case '.jpeg':
+                    case '.jpg':
+                    case '.gif':
+                    case '.png':
+                    case '.tiff':
+                        picto = 'fa-file-photo-o'
+						break;
+				}
+				return picto;
+			};
+		}
+    );
+        </script>
+    </body>
+</html>
