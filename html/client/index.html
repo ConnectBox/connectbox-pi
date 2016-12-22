@@ -77,8 +77,7 @@
             <div class="row" style="margin-top: 60px;" ng-show="index.error">
                 <div class="alert alert-danger" role="alert">
                     <big>
-                        <strong>Oh snap!</strong>
-                        Error {{ index.error.status }} occurred, and it means “{{ index.error.statusText || 'Server is out of reach' }}”.
+                        Error {{ index.error.status }} occurred: "{{ index.error.statusText || 'Server is out of reach' }}"
                     </big>
                 </div>
             </div>

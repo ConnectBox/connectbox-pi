@@ -40,7 +40,7 @@
 
 - name: fix ownership of biblebox_web_root
   file:
-    path: "{{ bbiblebox_web_root }}"
+    path: "{{ biblebox_web_root }}"
     state: directory
     owner: www-data
     group: www-data

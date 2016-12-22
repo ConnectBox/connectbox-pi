@@ -62,4 +62,4 @@ class BibleBoxWebDriverTestCase(unittest.TestCase):
 
     def testPageTitle(self):
         self.browser.get(TEST_BASE_URL)
-        self.assertIn("The BibleBox", self.browser.title)
+        self.assertIn("ConnectBox", self.browser.title)

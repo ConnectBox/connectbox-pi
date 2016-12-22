@@ -3,6 +3,6 @@
 		"contentRoute":"/content"
 	},
 	"Client":{
-		"tail_slash":false
+		"tail_slash":true
 	}
 }
