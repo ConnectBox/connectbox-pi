@@ -1,4 +1,4 @@
-var BibleBoxApp = (function (App, $) {
+var ConnectBoxApp = (function (App, $) {
     'use strict';
     
     var apiEnum = {
@@ -96,4 +96,4 @@ var BibleBoxApp = (function (App, $) {
     };
     
     return App;
-}(BibleBoxApp || {}, jQuery));
+}(ConnectBoxApp || {}, jQuery));

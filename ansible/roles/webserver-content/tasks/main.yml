@@ -1,6 +1,6 @@
 ---
 
-- name: install git for checkout of bible skeleton
+- name: install git for checkout of default content
   apt:
     name: git
     state: present
@@ -24,23 +24,23 @@
     group: www-data
     mode: 0775
   with_items:
-    - "{{ biblebox_default_content_root }}"
+    - "{{ connectbox_default_content_root }}"
 
 # Copy client interface files
-- name: Copy biblebox client interface
+- name: Copy connectbox client interface
   synchronize:
     src: ../html/client/
-    dest: "{{ biblebox_default_content_root }}"
+    dest: "{{ connectbox_default_content_root }}"
 
 # Permissions are correctly set in the subsequent task
-- name: Copy biblebox admin ui
+- name: Copy connectbox admin ui
   synchronize:
     src: ../html/admin/
-    dest: "{{ biblebox_admin_root }}"
+    dest: "{{ connectbox_admin_root }}"
 
-- name: fix ownership of biblebox_web_root
+- name: fix ownership of connectbox_web_root
   file:
-    path: "{{ biblebox_web_root }}"
+    path: "{{ connectbox_web_root }}"
     state: directory
     owner: www-data
     group: www-data

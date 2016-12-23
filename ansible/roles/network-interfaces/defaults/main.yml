@@ -2,4 +2,4 @@
 client_facing_if_ip_address: 10.0.0.1
 client_facing_if_netmask: 255.255.255.0
 client_facing_if_network_cidr: 10.0.0.0/24
-hostname: biblebox.local
+hostname: connectbox.local

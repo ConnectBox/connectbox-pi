@@ -1,3 +1,3 @@
-output "biblebox-server-public-ip" {
-	value = "${aws_instance.biblebox-server.public_ip}"
+output "connectbox-server-public-ip" {
+	value = "${aws_instance.connectbox-server.public_ip}"
 }

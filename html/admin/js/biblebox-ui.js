@@ -1,4 +1,4 @@
-var BibleBoxApp = (function (BibleBoxApp, $) {
+var ConnectBoxApp = (function (ConnectBoxApp, $) {
     'use strict';
     
     var currentItem = 'home';
@@ -65,7 +65,7 @@ var BibleBoxApp = (function (BibleBoxApp, $) {
         event.preventDefault();
         clearSystemStatus();
 
-        BibleBoxApp.api.triggerEvent('system', 'unmountusb', function(result, code, message) {
+        ConnectBoxApp.api.triggerEvent('system', 'unmountusb', function(result, code, message) {
             if (result !== undefined) {
                 $('#unmountusb_success').show();
             } else {
@@ -78,7 +78,7 @@ var BibleBoxApp = (function (BibleBoxApp, $) {
         event.preventDefault();
         clearSystemStatus();
 
-        BibleBoxApp.api.triggerEvent('system', 'reset', function(result, code, message) {
+        ConnectBoxApp.api.triggerEvent('system', 'reset', function(result, code, message) {
             if (result !== undefined) {
                 $('#reset_success').show();
             } else {
@@ -91,7 +91,7 @@ var BibleBoxApp = (function (BibleBoxApp, $) {
         event.preventDefault();
         clearSystemStatus();
 
-        BibleBoxApp.api.triggerEvent('system', 'shutdown', function(result, code, message) {
+        ConnectBoxApp.api.triggerEvent('system', 'shutdown', function(result, code, message) {
             if (result !== undefined) {
                 $('#shutdown_success').show();
             } else {
@@ -104,7 +104,7 @@ var BibleBoxApp = (function (BibleBoxApp, $) {
         event.preventDefault();
         clearSystemStatus();
 
-        BibleBoxApp.api.triggerEvent('system', 'reboot', function(result, code, message) {
+        ConnectBoxApp.api.triggerEvent('system', 'reboot', function(result, code, message) {
             if (result !== undefined) {
                 $('#reboot_success').show();
             } else {
@@ -135,7 +135,7 @@ var BibleBoxApp = (function (BibleBoxApp, $) {
         if (password !== confirm) {
             alert("Password doesn't match!");
         } else {
-            BibleBoxApp.api.setProperty('password', $('#input_password').val(), function(result, code, message) {
+            ConnectBoxApp.api.setProperty('password', $('#input_password').val(), function(result, code, message) {
                 if (result !== undefined) {
                     $('#update_password_success').show();
                 } else {
@@ -157,7 +157,7 @@ var BibleBoxApp = (function (BibleBoxApp, $) {
         $('#update_ssid_success').hide();
         $('#update_ssid_failure').hide();
 
-        BibleBoxApp.api.getProperty('ssid', function (result, code, message) {
+        ConnectBoxApp.api.getProperty('ssid', function (result, code, message) {
             if (result !== undefined) {
                 $('#input_ssid').val(result[0]);
             } else {
@@ -169,7 +169,7 @@ var BibleBoxApp = (function (BibleBoxApp, $) {
     function ssidSave(event) {
         event.preventDefault();
 
-        BibleBoxApp.api.setProperty('ssid', $('#input_ssid').val(), function(result, code, message) {
+        ConnectBoxApp.api.setProperty('ssid', $('#input_ssid').val(), function(result, code, message) {
             if (result !== undefined) {
                 $('#update_ssid_success').show();
             } else {
@@ -190,7 +190,7 @@ var BibleBoxApp = (function (BibleBoxApp, $) {
         $('#update_channel_success').hide();
         $('#update_channel_failure').hide();
 
-        BibleBoxApp.api.getProperty('channel', function (result, code, message) {
+        ConnectBoxApp.api.getProperty('channel', function (result, code, message) {
             if (result !== undefined) {
                 $('#input_channel').val(result[0]);
             } else {
@@ -202,7 +202,7 @@ var BibleBoxApp = (function (BibleBoxApp, $) {
     function channelSave(event) {
         event.preventDefault();
 
-        BibleBoxApp.api.setProperty('channel', $('#input_channel').val(), function(result, code, message) {
+        ConnectBoxApp.api.setProperty('channel', $('#input_channel').val(), function(result, code, message) {
             if (result !== undefined) {
                 $('#update_channel_success').show();
             } else {
@@ -223,7 +223,7 @@ var BibleBoxApp = (function (BibleBoxApp, $) {
         $('#update_hostname_success').hide();
         $('#update_hostname_failure').hide();
 
-        BibleBoxApp.api.getProperty('hostname', function (result, code, message) {
+        ConnectBoxApp.api.getProperty('hostname', function (result, code, message) {
             if (result !== undefined) {
                 $('#input_hostname').val(result[0]);
             } else {
@@ -235,7 +235,7 @@ var BibleBoxApp = (function (BibleBoxApp, $) {
     function hostnameSave(event) {
         event.preventDefault();
 
-        BibleBoxApp.api.setProperty('hostname', $('#input_hostname').val(), function(result, code, message) {
+        ConnectBoxApp.api.setProperty('hostname', $('#input_hostname').val(), function(result, code, message) {
             if (result !== undefined) {
                 $('#update_hostname_success').show();
             } else {
@@ -244,7 +244,7 @@ var BibleBoxApp = (function (BibleBoxApp, $) {
         });
     }
 
-    BibleBoxApp.ui = {
+    ConnectBoxApp.ui = {
         init: function () {
             var selectedMenuItem = '#menu_home';
             var selectedItem = '#home';
@@ -275,5 +275,5 @@ var BibleBoxApp = (function (BibleBoxApp, $) {
         }
     };
     
-    return BibleBoxApp;
-}(BibleBoxApp || {}, jQuery));
+    return ConnectBoxApp;
+}(ConnectBoxApp || {}, jQuery));

@@ -10,13 +10,13 @@
 #  test some client-facing capabilities but do not have a wifi interface
 client_facing_if: "wlan0"
 
-biblebox_web_root: /var/www/biblebox
-biblebox_default_content_root: "{{ biblebox_web_root }}/biblebox_default"
-biblebox_admin_root: "{{ biblebox_web_root }}/admin"
-biblebox_config_root: /etc/biblebox
-biblebox_usb_files_root: /media/usb0
-biblebox_admin_credentials: admin:$apr1$BBOXFOO2$3rz0Up2HMEfrmGB0YCXzr/
-biblebox_default_hostname: biblebox.local
+connectbox_web_root: /var/www/connectbox
+connectbox_default_content_root: "{{ connectbox_web_root }}/connectbox_default"
+connectbox_admin_root: "{{ connectbox_web_root }}/admin"
+connectbox_config_root: /etc/connectbox
+connectbox_usb_files_root: /media/usb0
+connectbox_admin_credentials: admin:$apr1$BBOXFOO2$3rz0Up2HMEfrmGB0YCXzr/
+connectbox_default_hostname: connectbox.local
 
 # Make sure we show index.html for 404, given we'll be sent here by
 #  people browsing for all sorts of things
@@ -27,24 +27,24 @@ nginx_vhosts:
   - listen: "80"
     server_name: "$hostname"
     index: index.html
-    root: "{{ biblebox_default_content_root }}"
+    root: "{{ connectbox_default_content_root }}"
     error_page: "404 /index.html"
-    access_log: "/var/log/nginx/biblebox-access.log"
-    error_log: "/var/log/nginx/biblebox-error.log"
+    access_log: "/var/log/nginx/connectbox-access.log"
+    error_log: "/var/log/nginx/connectbox-error.log"
     extra_parameters: |
       rewrite_log on;
 
       # Admin interface
       location /admin/ {
-        root {{ biblebox_web_root }};
+        root {{ connectbox_web_root }};
         auth_basic "Access Denied";
-        auth_basic_user_file /usr/local/biblebox/etc/basicauth;
+        auth_basic_user_file /usr/local/connectbox/etc/basicauth;
       }
 
       # Admin worker scripts
       # pass the PHP scripts to FastCGI server via unix domain socket
       location ~ ^/admin/(?<script_name>.+\.php)(?<path_info>/.+)$ {
-        root {{ biblebox_web_root }};
+        root {{ connectbox_web_root }};
         include fastcgi_params;
         fastcgi_param SCRIPT_FILENAME $document_root$script_name;
         fastcgi_param PATH_INFO $path_info;
@@ -52,11 +52,11 @@ nginx_vhosts:
         include snippets/fastcgi-php.conf;
         fastcgi_pass unix:/var/run/php5-fpm.sock;
         auth_basic "Access Denied";
-        auth_basic_user_file /usr/local/biblebox/etc/basicauth;
+        auth_basic_user_file /usr/local/connectbox/etc/basicauth;
       }
 
       location /content/ {
-        alias {{ biblebox_usb_files_root }}/;
+        alias {{ connectbox_usb_files_root }}/;
         autoindex on;
         autoindex_format json;
         charset utf-8;
