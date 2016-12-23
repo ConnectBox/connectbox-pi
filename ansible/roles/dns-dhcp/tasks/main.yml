@@ -46,6 +46,17 @@
     validate: dnsmasq --test --conf-file=%s
   notify: Reload dnsmasq
 
+# This is necessary because nginx redirects to the hostname, but the hostname
+#  is listed in /etc/hosts and associated with 127.0.0.1 (so dnsmasq uses it
+#  when answering queries). By adding this, and the localise-queries option
+#  to dnsmasq, we answer with the address of the wifi interface. There's no
+#  need to do this for the ethernet interface, as we're not answering queries
+#  on that interface (we're not even listening)
+- name: Add /etc/hosts entry for wifi interface
+  lineinfile:
+    dest: /etc/hosts
+    line: "{{ client_facing_if_ip_address }} {{ biblebox_default_hostname }}"
+
 - name: Start and enable dnsmasq
   service:
     name: dnsmasq

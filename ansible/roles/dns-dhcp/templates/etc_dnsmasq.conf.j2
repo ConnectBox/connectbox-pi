@@ -4,20 +4,27 @@
 #  parts, to upstream nameservers. If the name is not known from /etc/hosts
 # or DHCP then a "not found" answer is returned.
 domain-needed
+
 # Bogus private reverse lookups. All reverse lookups for private IP ranges
 #  (ie 192.168.x.x, etc) which are not found in /etc/hosts or the DHCP leases
 #  file are answered with "no such domain" rather than being forwarded
 #  upstream.
 bogus-priv
+
 # Don't read /etc/resolv.conf. Get upstream servers only from the command
 #  line or the dnsmasq configuration file.
 no-resolv
+
 # Return the biblebox-pi address for all queries, unless they match dhcp
 #  leases or are answered from /etc/hosts
 address=/#/{{ client_facing_if_ip_address }}
 
-# Tell clients to cache IP addresses for 5 seconds. This overrides the 
-#  default of 0, which would place more load on this service because 
+# When a host is listed in /etc/hosts with multiple addresses, return the
+#  on associated with the interface on which the query was received.
+localise-queries
+
+# Tell clients to cache IP addresses for 5 seconds. This overrides the
+#  default of 0, which would place more load on this service because
 #  queries would never be cached. By setting the TTL very low, however,
 #  we make sure that the client's resolver won't have the bogus addresses
 #  from this service in cache when it switches away to another WiFi network
