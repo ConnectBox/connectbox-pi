@@ -1,12 +1,12 @@
 #!/bin/bash
 # ------------------------------------------------------------------
-# [Kelly Davis] BBoxManage.sh
+# [Kelly Davis] ConnectBoxManage.sh
 #               Script for configuring the ConnectBox
 # ------------------------------------------------------------------
 
 VERSION=0.1.0
 SUBJECT=connectbox_control_ssid_script
-USAGE="Usage: BBoxManage.sh -dhv [get|set] [ssid|channel|hostname] <value>"
+USAGE="Usage: ConnectBoxManage.sh -dhv [get|set] [ssid|channel|hostname] <value>"
 HOSTAPD_CONFIG="/etc/hostapd/hostapd.conf"
 HOSTNAME_CONFIG="/etc/hostname"
 HOSTS_CONFIG="/etc/hosts"
