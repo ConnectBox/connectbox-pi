@@ -15,7 +15,7 @@ connectbox_default_content_root: "{{ connectbox_web_root }}/connectbox_default"
 connectbox_admin_root: "{{ connectbox_web_root }}/admin"
 connectbox_config_root: /etc/connectbox
 connectbox_usb_files_root: /media/usb0
-connectbox_admin_credentials: admin:$apr1$BBOXFOO2$3rz0Up2HMEfrmGB0YCXzr/
+connectbox_admin_credentials: admin:$apr1$CBOXFOO2$usYeNWIKOX910UnI/jugh.
 connectbox_default_hostname: connectbox.local
 
 # Make sure we show index.html for 404, given we'll be sent here by

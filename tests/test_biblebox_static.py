@@ -8,7 +8,7 @@ TEST_BASE_URL = "http://connectbox.local"
 ADMIN_BASE_URL = "http://connectbox.local/admin"
 # Default creds. Will need a way to override these when it changes
 ADMIN_USER = "admin"
-ADMIN_PASSWORD = "bibleboxpi"
+ADMIN_PASSWORD = "connectbox"
 
 
 def getTestTarget():
