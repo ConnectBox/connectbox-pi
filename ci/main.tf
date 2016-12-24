@@ -156,7 +156,7 @@ resource "aws_network_interface" "client-facing-server" {
 resource "aws_instance" "connectbox-server" {
 	ami = "${lookup(var.amis, var.region)}"
 	instance_type = "${var.instance_type}"
-	key_name = "travis-ci-connectbox"
+	key_name = "travis-ci-biblebox"
 	subnet_id = "${aws_subnet.default.id}"
 	security_groups = ["${aws_security_group.default.id}"]
 	tags {
