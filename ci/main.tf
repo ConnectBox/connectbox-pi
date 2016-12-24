@@ -1,5 +1,4 @@
 # To add:
-# - travis-ci keypair?
 # - network interface on client-facing-network for server
 # - second instance for testing
 # - network interface for testing machine
@@ -8,6 +7,11 @@
 
 provider "aws" {
 	region = "${var.region}"
+}
+
+resource "aws_key_pair" "travis-ci-connectbox" {
+	key_name = "travis-ci-connectbox"
+	public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDLZ3ql+Vh/93Fk/hxeynMm0DbQGJZzf9rpn2sXgDqAw0K30V9DxUm9aur4xrqlC2JMVwQKfm+DJ0fLWwMSsrXE4opJQgiEFNl4OKdxHEXyODruxoxCqRnAS9/Z578nqUdfPUXNWuF/JH2KTlcG/35k0gzEDeQ7Ltjutn8Wd1jYWkNdrp1Fi6PtGUy4n1rqZwlsDq7A13LyNz7T8ZJnMK95fIrZZEVhHvj6bXN+6Dcjfg/IyIZmsMd5+4FVDkiJ7O31kaAPc2YdiLncWvZCuNNUf88f1MqzbQcZfn75pif84IAlzgn4ruKqGxzhdadtcij+vEuPi23aOqhF3tUUE96/ esteele@box"
 }
 
 # Shared by all travis-ci jobs
@@ -156,7 +160,7 @@ resource "aws_network_interface" "client-facing-server" {
 resource "aws_instance" "connectbox-server" {
 	ami = "${lookup(var.amis, var.region)}"
 	instance_type = "${var.instance_type}"
-	key_name = "travis-ci-biblebox"
+	key_name = "travis-ci-connectbox"
 	subnet_id = "${aws_subnet.default.id}"
 	security_groups = ["${aws_security_group.default.id}"]
 	tags {
