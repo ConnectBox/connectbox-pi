@@ -11,7 +11,7 @@ provider "aws" {
 
 resource "aws_key_pair" "travis-ci-connectbox" {
 	key_name = "travis-ci-connectbox"
-	public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDLZ3ql+Vh/93Fk/hxeynMm0DbQGJZzf9rpn2sXgDqAw0K30V9DxUm9aur4xrqlC2JMVwQKfm+DJ0fLWwMSsrXE4opJQgiEFNl4OKdxHEXyODruxoxCqRnAS9/Z578nqUdfPUXNWuF/JH2KTlcG/35k0gzEDeQ7Ltjutn8Wd1jYWkNdrp1Fi6PtGUy4n1rqZwlsDq7A13LyNz7T8ZJnMK95fIrZZEVhHvj6bXN+6Dcjfg/IyIZmsMd5+4FVDkiJ7O31kaAPc2YdiLncWvZCuNNUf88f1MqzbQcZfn75pif84IAlzgn4ruKqGxzhdadtcij+vEuPi23aOqhF3tUUE96/ esteele@box"
+	public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCqWQb/Iv6kos8F/f9CEiXorP61L+nPemJFI1ML9OsBabN9e5PGII6xStEa6aDUPFqKB1ysMiYEaSn6hH3SzV5GD0/tWkLncHrJKAZ+FuXeOgAINU4TJnnspZhlsVrfEVp2moBQZfGPNpFmRJz4sn5xXHj2sWpozcxdEvC08ipE1yE4Vz10eicY500QUpJlPvHYxMaLeD7Znl68gAtQbuAPtKGvoxzf9fQlAGwBEuWnEs35NSh+WNqYr/yi7jAPiN6JrXK0y1TBhauiYN8HZ0JaeMjGIUY+Wntvm3jaWLOKc1f2ZHrKdaydZ8Jl8wTsq8pZf7BKuWD7rYqiVGdRRqQ1"
 }
 
 # Shared by all travis-ci jobs
