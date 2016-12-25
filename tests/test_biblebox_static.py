@@ -4,11 +4,11 @@ import requests
 from selenium import webdriver
 
 TEST_IP_ENV_VAR = "TEST_IP"
-TEST_BASE_URL = "http://biblebox.local"
-ADMIN_BASE_URL = "http://biblebox.local/admin"
+TEST_BASE_URL = "http://connectbox.local"
+ADMIN_BASE_URL = "http://connectbox.local/admin"
 # Default creds. Will need a way to override these when it changes
 ADMIN_USER = "admin"
-ADMIN_PASSWORD = "bibleboxpi"
+ADMIN_PASSWORD = "connectbox"
 
 
 def getTestTarget():
@@ -24,7 +24,7 @@ def getAdminAuth():
     return requests.auth.HTTPBasicAuth(ADMIN_USER, ADMIN_PASSWORD)
 
 
-class BibleBoxBasicTestCase(unittest.TestCase):
+class ConnectBoxBasicTestCase(unittest.TestCase):
 
     def testBaseRedirect(self):
         r = requests.get("http://%s" % (getTestTarget(),),
@@ -43,7 +43,7 @@ class BibleBoxBasicTestCase(unittest.TestCase):
 
     def testAdminPageTitle(self):
         r = requests.get("%s/" % (ADMIN_BASE_URL,), auth=getAdminAuth())
-        self.assertIn("BibleboxPi Admin Dashboard", r.text)
+        self.assertIn("ConnectBox Admin Dashboard", r.text)
 
     def testAdminApiSmoketest(self):
         # To catch where there is a gross misconfiguration that breaks
@@ -53,7 +53,7 @@ class BibleBoxBasicTestCase(unittest.TestCase):
         self.assertEquals(r.json()["code"], 0)
 
 
-class BibleBoxWebDriverTestCase(unittest.TestCase):
+class ConnectBoxWebDriverTestCase(unittest.TestCase):
 
     def setUp(self):
         self.testTarget = getTestTarget()

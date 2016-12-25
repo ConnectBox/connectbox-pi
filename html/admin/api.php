@@ -1,6 +1,6 @@
 <?php
 header('Content-Type: application/json; charset=UTF8');
-define("_CMD", "sudo /usr/local/biblebox/bin/BBoxManage.sh");
+define("_CMD", "sudo /usr/local/connectbox/bin/ConnectBoxManage.sh");
 $method = $_SERVER['REQUEST_METHOD'];
 $path_info = explode('/', trim($_SERVER['PATH_INFO'],'/'));
 $request_body = json_decode(file_get_contents('php://input'),true);

@@ -1,8 +1,6 @@
-# Indigitous Hack
+# ConnectBox
 
-This is a solution to the biblebox-pi challenge as a part of [Indigitous #hack](https://indigitous.org/hack/challenges/bibleboxpi/) taking place on Nov 4-6 2016. If you're a part of the hack, and would like to collaborate, I'm _@edwin_ on Kingdom Builders slack, or via email at: edwin@wordspeak.org.
-
-There's a TODO section at the bottom of this document of tasks that I still need to work through if you're looking for an area to contribute.
+ConnectBox is a media sharing device based on small form factor computers like the Raspberry Pi.
 
 # Quick Start
 
@@ -14,8 +12,8 @@ This project uses Ansible v2.1+ with some additional, optional tools. Ansible do
 
 ```
 $ mkdir ~/.virtualenvs
-$ virtualenv ~/.virtualenvs/biblebox-pi
-$ . ~/.virtualenvs/biblebox-pi/bin/activate
+$ virtualenv ~/.virtualenvs/connectbox-pi
+$ . ~/.virtualenvs/connectbox-pi/bin/activate
 $ pip install -r requirements.txt
 ```
 
@@ -36,9 +34,9 @@ Note that this should be run on the same machine where you setup your virtualenv
 1. **Commands assume ssh keys are setup from here**. If you haven't set them up, just add `--ask-pass` to the `ansible` or `ansible-playbook` command line and you'll be right.
 1. Run the playbook: `ansible-playbook -i inventory site.yml`. No tasks should fail.
 
-### Use the BibleBox
+### Use the ConnectBox
 
-1. Search for, and connect to the WiFi point named "BibleBox - Free Media"
+1. Search for, and connect to the WiFi point named "ConnectBox - Free Media"
 1. Open your browser, go somewhere (anywhere)
 
 ## Options 2: Running on a virtual machine
@@ -51,15 +49,16 @@ With Vagrant installed, run `vagrant up` in this directory and the VM will start
 
 1. Install Vagrant
 1. Run `vagrant up` in this directory. Vagrant takes care of starting the VM and applying the playbooks. You can ssh to the VM using `vagrant ssh`. The webserver is accessible on the VM on the IP `172.28.128.3`
+1. Add a line in `/etc/hosts` on your host (the machine running Vagrant): `172.28.128.3 connectbox.local` . This is required because the webserver redirects to `http://connectbox.local`.
 1. (Optionally) run the tests. In this directory: `TEST_IP=172.28.128.3 python -m unittest discover tests`
 
 
-### Browse the BibleBox Site
+### Browse the ConnectBox Site
 
-The WiFi Point is not active when running from a virtual machine, but you can still view the BibleBox Site. On the machine where you ran vagrant:
+The WiFi Point is not active when running from a virtual machine, but you can still view the ConnectBox Site. On the machine where you ran vagrant:
 
-1. To `/etc/hosts` on the machine where you ran vagrant, add the line `172.28.128.3 biblebox.local`
-1. Browse to http://biblebox.local
+1. To `/etc/hosts` on the machine where you ran vagrant, add the line `172.28.128.3 connectbox.local`
+1. Browse to http://connectbox.local
 
 # Notes
 
@@ -85,13 +84,9 @@ Useful references:
 
 * The DHCP lease period is 1h. This may be too long given the device is only serving a /24.
 * Currently `dnsmasq` logs MAC addresses of the requesting device in `/var/log/daemon.log` when it receives a DHCP request. This can be incriminating, and should be scrubbed or better still, not logged at all. Also need to deal with the DHCP lease file `/var/lib/misc/dnsmasq.leases` and `/var/log/syslog`
-* `dnsmasq` tells the biblebox to use it as the DNS resolver, so even when you have a connection via the ethernet port, it cannot resolve names. To alter this, change `/etc/resolv.conf` and replace `127.0.0.1` with a real nameserver in the `nameserver` line.
+* `dnsmasq` tells the connectbox to use it as the DNS resolver, so even when you have a connection via the ethernet port, it cannot resolve names. To alter this, change `/etc/resolv.conf` and replace `127.0.0.1` with a real nameserver in the `nameserver` line.
 
 ## Web Server
 
 * Content on the first usb drive is exposed to the webserver in the content directory. The drive is auto-mounted.
 * Automatically redirect to content having connected to the WiFi
-
-# TODO
-
-All moved to https://trello.com/b/mX028IJz/hack-on-bibleboxpi

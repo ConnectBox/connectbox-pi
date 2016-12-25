@@ -1,84 +1,84 @@
 ---
 - name: Configure hostname
   hostname:
-    name: "{{ biblebox_default_hostname }}"
+    name: "{{ connectbox_default_hostname }}"
 
 - name: Add hosts entry
   blockinfile:
     dest: /etc/hosts
     block: |
-      127.0.0.1 {{ biblebox_default_hostname }}
+      127.0.0.1 {{ connectbox_default_hostname }}
 
 - name: Configure hostname
   hostname:
-    name: "{{ biblebox_default_hostname }}"
+    name: "{{ connectbox_default_hostname }}"
 
 - name: Add hosts entry
   blockinfile:
     dest: /etc/hosts
     block: |
-      127.0.0.1 {{ biblebox_default_hostname }}
+      127.0.0.1 {{ connectbox_default_hostname }}
 
-- name: Create biblebox group
+- name: Create connectbox group
   group:
-    name: _biblebox
+    name: _connectbox
     system: yes
 
 # Not strictly necessary but can be used for testing
-- name: Create _biblebox user and to _biblebox group
+- name: Create _connectbox user and to _connectbox group
   user:
-    name: _biblebox
-    group: _biblebox
+    name: _connectbox
+    group: _connectbox
     system: yes
     createhome: no
 
 # TODO confirm this works as expected
-- name: Add www-data to _biblebox group
+- name: Add www-data to _connectbox group
   user:
     name: www-data
-    groups: _biblebox
+    groups: _connectbox
     append: yes
 
 - name: Make scripts directory
   file:
     state: directory
-    path: /usr/local/biblebox/bin
-    owner: _biblebox
-    group: _biblebox
+    path: /usr/local/connectbox/bin
+    owner: _connectbox
+    group: _connectbox
     recurse: yes
     mode: 0755
 
 - name: Make etc directory
   file:
     state: directory
-    path: /usr/local/biblebox/etc
-    owner: _biblebox
-    group: _biblebox
+    path: /usr/local/connectbox/etc
+    owner: _connectbox
+    group: _connectbox
     recurse: yes
     mode: 0755
 
-- name: Copy biblebox scripts
+- name: Copy connectbox scripts
   copy:
     src: ../scripts/
-    dest: /usr/local/biblebox/bin/
-    owner: _biblebox
-    group: _biblebox
+    dest: /usr/local/connectbox/bin/
+    owner: _connectbox
+    group: _connectbox
     mode: 0755
 
-- name: Copy biblebox basic auth credentials
+- name: Copy connectbox basic auth credentials
   copy:
-    content: "{{ biblebox_admin_credentials }}"
-    dest: /usr/local/biblebox/etc/basicauth
-    owner: _biblebox
-    group: _biblebox
+    content: "{{ connectbox_admin_credentials }}"
+    dest: /usr/local/connectbox/etc/basicauth
+    owner: _connectbox
+    group: _connectbox
     mode: 0660
 
-- name: allow biblebox group to execute biblebox scripts
+- name: allow connectbox group to execute connectbox scripts
   blockinfile:
     dest: /etc/sudoers
     validate: /usr/sbin/visudo --check --file="%s"
     block: |
-      %_biblebox ALL=(ALL) NOPASSWD: /usr/local/biblebox/bin/
+      %_connectbox ALL=(ALL) NOPASSWD: /usr/local/connectbox/bin/
   notify: reload php5-fpm
 
 # If the system is updated before any iptables modules are loaded

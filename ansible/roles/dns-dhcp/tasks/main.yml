@@ -55,7 +55,7 @@
 - name: Add /etc/hosts entry for wifi interface
   lineinfile:
     dest: /etc/hosts
-    line: "{{ client_facing_if_ip_address }} {{ biblebox_default_hostname }}"
+    line: "{{ client_facing_if_ip_address }} {{ connectbox_default_hostname }}"
 
 - name: Start and enable dnsmasq
   service:

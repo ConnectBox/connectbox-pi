@@ -1,18 +1,18 @@
 #!/bin/bash
 # ------------------------------------------------------------------
-# [Kelly Davis] BBoxManage.sh
-#               Script for configuring the BibleBoxPi
+# [Kelly Davis] ConnectBoxManage.sh
+#               Script for configuring the ConnectBox
 # ------------------------------------------------------------------
 
 VERSION=0.1.0
-SUBJECT=biblebox_control_ssid_script
-USAGE="Usage: BBoxManage.sh -dhv [get|set] [ssid|channel|hostname] <value>"
+SUBJECT=connectbox_control_ssid_script
+USAGE="Usage: ConnectBoxManage.sh -dhv [get|set] [ssid|channel|hostname] <value>"
 HOSTAPD_CONFIG="/etc/hostapd/hostapd.conf"
 HOSTNAME_CONFIG="/etc/hostname"
 HOSTS_CONFIG="/etc/hosts"
 NGINX_CONFIG="/etc/nginx/sites-enabled/vhosts.conf"
-PASSWORD_CONFIG="/usr/local/biblebox/etc/basicauth"
-PASSWORD_SALT="BBOXFOO2016"
+PASSWORD_CONFIG="/usr/local/connectbox/etc/basicauth"
+PASSWORD_SALT="CBOXFOO2016"
 DEBUG=0
 SUCCESS="SUCCESS"
 FAILURE="FAILURE"
@@ -232,7 +232,7 @@ function backup_password_config () {
       failure
     fi
 
-    chown _biblebox:_biblebox $PASSWORD_CONFIG.original 2>&1 | logger -t $(basename $0)
+    chown _connectbox:_connectbox $PASSWORD_CONFIG.original 2>&1 | logger -t $(basename $0)
 
     if [ ${PIPESTATUS[0]} -ne 0 ]
     then

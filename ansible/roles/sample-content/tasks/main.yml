@@ -3,10 +3,10 @@
   - name: Checkout sample content
     git:
       repo: https://github.com/edwinsteele/biblebox-sample-content.git
-      dest: /tmp/biblebox-sample-content
+      dest: /tmp/connectbox-sample-content
       depth: 1
 
   - name: Place sample content at USB drive location
-    command: rsync -a /tmp/biblebox-sample-content/content/ {{ biblebox_usb_files_root }}
+    command: rsync -a /tmp/connectbox-sample-content/content/ {{ connectbox_usb_files_root }}
 
   when: deploy_sample_content == True

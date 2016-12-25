@@ -8,17 +8,17 @@
 
 # Extract Encrypted ssh key
 cd $TRAVIS_BUILD_DIR;
-PEM_OUT=$TRAVIS_BUILD_DIR/ci/travis-ci-biblebox.pem;
+PEM_OUT=$TRAVIS_BUILD_DIR/ci/travis-ci-connectbox.pem;
 touch $PEM_OUT;
 chmod 600 $PEM_OUT;
-openssl aes-256-cbc -K $encrypted_22a22c63eb0e_key -iv $encrypted_22a22c63eb0e_iv -in ci/travis-ci-biblebox.pem.enc -d >> $PEM_OUT;
+openssl aes-256-cbc -K $encrypted_22a22c63eb0e_key -iv $encrypted_22a22c63eb0e_iv -in ci/travis-ci-connectbox.pem.enc -d >> $PEM_OUT;
 
 # Run CI build on AWS. This uses protected variables
 cd $TRAVIS_BUILD_DIR/ci;
 
 time terraform apply;
 
-target_host=$(terraform output biblebox-server-public-ip);
+target_host=$(terraform output connectbox-server-public-ip);
 
 # Create an inventory file suitable for ansible
 echo "${target_host} ansible_ssh_user=admin ansible_ssh_private_key_file=$PEM_OUT" > inventory;
@@ -47,7 +47,7 @@ else
 fi
 
 
-# Tell the test running host how to find the biblebox by name
-echo "\n${target_host} biblebox.local" | sudo tee -a /etc/hosts > /dev/null
+# Tell the test running host how to find the connectbox by name
+echo "\n${target_host} connectbox.local" | sudo tee -a /etc/hosts > /dev/null
 # Run web/selenium tests
 TEST_IP=$target_host python -m unittest discover ../tests
