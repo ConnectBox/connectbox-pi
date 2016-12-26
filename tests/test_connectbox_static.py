@@ -113,6 +113,47 @@ class ConnectBoxAPITestCase(unittest.TestCase):
         self.assertEqual(cm.exception.response.status_code, 400)
         self.assertEqual(cm.exception.response.text, self.BAD_REQUEST_TEXT)
 
+    def ssidSuccessfullySet(self, ssid_str):
+        r = requests.put(self.ADMIN_SSID_URL, auth=getAdminAuth(),
+                         data=json.dumps({"value": ssid_str}))
+        try:
+            # This assumes there's not a better method to test whether
+            #  the SSID was of a valid length...
+            r.raise_for_status()
+        except requests.HTTPError:
+            return False
+
+        if r.json()["result"] != self.SUCCESS_RESPONSE:
+            return False
+
+        r = requests.get(self.ADMIN_SSID_URL, auth=getAdminAuth())
+        # Finally, check whether it was actually set
+        return r.json()["result"][0] == ssid_str
+
+    def _testSSIDSetWithLength(self, ssid_str):
+        # SSIDs have a maximum length of 32 octets
+        # http://standards.ieee.org/getieee802/download/802.11-2007.pdf
+        valid_ssid_length = len(ssid_str.encode("utf-8")) <= 32
+        self.assertEqual(valid_ssid_length, self.ssidSuccessfullySet(ssid_str))
+
+    def test32CharacterPlainSSIDSet(self):
+        self._testSSIDSetWithLength("a" * 32)
+
+    def test32CharacterUnicodeSSIDSet(self):
+        # ENG codepoint is a 2 byte character
+        self._testSSIDSetWithLength(u'\N{LATIN SMALL LETTER ENG}' * 16)
+
+    @unittest.skip("SSID Length checking not yet implemented")
+    def test33CharacterPlainSSIDSet(self):
+        # This SSID set should be rejected
+        self._testSSIDSetWithLength("a" * 33)
+
+    @unittest.skip("SSID Length checking not yet implemented")
+    def test33CharacterUnicodeSSIDSet(self):
+        # EM DASH codepoint is a 3 byte character
+        # This SSID set should be rejected
+        self._testSSIDSetWithLength(u'\N{EM DASH}' * 11)
+
 
 class ConnectBoxWebDriverTestCase(unittest.TestCase):
 
