@@ -2,7 +2,7 @@
 - block:
   - name: Checkout sample content
     git:
-      repo: https://github.com/edwinsteele/biblebox-sample-content.git
+      repo: https://github.com/ConnectBox/connectbox-sample-content.git
       dest: /tmp/connectbox-sample-content
       depth: 1
 
