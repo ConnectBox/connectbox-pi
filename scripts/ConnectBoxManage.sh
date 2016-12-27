@@ -347,7 +347,7 @@ function restart_hostapd () {
   fi
 
   ifdown wlan0  2>&1 | logger -t $(basename $0)
-  if [ ${PIPESTATUS[0]} -eq 0 ]
+  if [ ${PIPESTATUS[0]} -ne 0 ]
   then
     failure
   fi
@@ -356,7 +356,7 @@ function restart_hostapd () {
 
   ifup wlan0  2>&1 | logger -t $(basename $0)
 
-  if [ ${PIPESTATUS[0]} -eq 0 ]
+  if [ ${PIPESTATUS[0]} -ne 0 ]
   then
     failure
   fi
