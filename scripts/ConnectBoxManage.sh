@@ -476,6 +476,13 @@ function set_ssid () {
     exit 1;
   fi
 
+  local ssid_length=`printf "%s" "$val" | wc -c`
+
+  if [[ $ssid_length -gt 32 ]]; then
+    echo "SSID must be 32 octets or less"
+    exit 1;
+  fi
+
   backup_hostapd_config
 
   # Update the ssid property in the hostapd configuration file
