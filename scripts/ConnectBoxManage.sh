@@ -15,7 +15,7 @@ PASSWORD_CONFIG="/usr/local/connectbox/etc/basicauth"
 PASSWORD_SALT="CBOXFOO2016"
 DEBUG=0
 SUCCESS="SUCCESS"
-FAILURE="FAILURE"
+FAILURE="Unexpected Error"
 
 # --- Options processing -------------------------------------------
 

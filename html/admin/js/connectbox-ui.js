@@ -3,31 +3,44 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
     
     var currentItem = 'home';
 
-    // //Hide the message dialog
-    // function hideMessageDialog() {
-    //     $("#msg-dialog").addClass("hidden");
-    //     $("#msg-dialog").removeClass("error");
-    //     $("#msg-dialog #msg-title").html('');
-    //     $("#msg-dialog #msg-body").html('');
-    // }
+    //Hide the message dialog
+    function hideMessageDialog() {
+        $("#msg-dialog").addClass("hidden");
+        $("#msg-dialog").removeClass("error");
+        $("#msg-dialog #msg-title").html('');
+        $("#msg-dialog #msg-body").html('');
+    }
     
-    // //Show error dialog
-    // function showError(title, message, callback) {
-    //     $("#msg-dialog").addClass("error");
-    //     $("#msg-dialog #msg-title").html(title);
-    //     $("#msg-dialog #msg-body").html(message);
-    //     $("#msg-dialog").removeClass("hidden");
+    //Show error dialog
+    function showError(title, message, callback) {
+        $("#msg-dialog").addClass("error");
+        $("#msg-dialog #msg-title").html(title);
+        $("#msg-dialog #msg-body").html(message);
+        $("#msg-dialog").removeClass("hidden");
                 
-    //     $("#msg-dialog button").on('click', function () {
-    //         hideMessageDialog();
+        $("#msg-dialog button").on('click', function () {
+            hideMessageDialog();
             
-    //         if (callback) {
-    //             callback();
-    //         }
+            if (callback) {
+                callback();
+            }
             
-    //         $("#msg-dialog button").off('click');
-    //     });
-    // }
+            $("#msg-dialog button").off('click');
+        });
+    }
+
+    function parseErrorMessage(message) {
+        if (message) {
+            if (Array.isArray(message)) {
+                if (message.length > 0) {
+                    return message[message.length-1];
+                }
+            } else {
+                return message;
+            }
+        }
+        return "Unknown Error";
+    }
 
     function menuClick(event) {
         $('#' + currentItem).toggle();
@@ -40,13 +53,9 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
 
     function clearSystemStatus() {
         $('#unmountusb_success').hide();
-        $('#unmountusb_failure').hide();
         $('#reboot_success').hide();
-        $('#reboot_failure').hide();
         $('#shutdown_success').hide();
-        $('#shutdown_failure').hide();
         $('#reset_success').hide();
-        $('#reset_failure').hide();
     }
 
     function systemLoad(event) {
@@ -69,7 +78,7 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
             if (result !== undefined) {
                 $('#unmountusb_success').show();
             } else {
-                $('#unmountusb_failure').show();
+                showError('Error unmounting usb', parseErrorMessage(message));
             }
         });
     }
@@ -82,7 +91,7 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
             if (result !== undefined) {
                 $('#reset_success').show();
             } else {
-                $('#reset_failure').show();
+                showError('Error performing reset', parseErrorMessage(message));
             }
         });
     }
@@ -95,7 +104,7 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
             if (result !== undefined) {
                 $('#shutdown_success').show();
             } else {
-                $('#shutdown_failure').show();
+                showError('Error performing shutdown', parseErrorMessage(message));
             }
         });
     }
@@ -108,7 +117,7 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
             if (result !== undefined) {
                 $('#reboot_success').show();
             } else {
-                $('#reboot_failure').show();
+                showError('Error performing reboot', parseErrorMessage(message));
             }
         });
     }
@@ -123,7 +132,6 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
 
         $('#password').toggle();
         $('#update_password_success').hide();
-        $('#update_password_failure').hide();
     }
 
     function passwordSave(event) {
@@ -135,11 +143,12 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
         if (password !== confirm) {
             alert("Password doesn't match!");
         } else {
+            $('#update_password_success').hide();
             ConnectBoxApp.api.setProperty('password', $('#input_password').val(), function(result, code, message) {
                 if (result !== undefined) {
                     $('#update_password_success').show();
                 } else {
-                    $('#update_password_failure').show();
+                    showError('Error updating password', parseErrorMessage(message));
                 }
             });
         }
@@ -155,13 +164,12 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
 
         $('#ssid').toggle();
         $('#update_ssid_success').hide();
-        $('#update_ssid_failure').hide();
 
         ConnectBoxApp.api.getProperty('ssid', function (result, code, message) {
             if (result !== undefined) {
                 $('#input_ssid').val(result[0]);
             } else {
-                //TODO display a proper error message
+                showError('Error loading ssid', parseErrorMessage(message));
             }
         });
     }
@@ -169,11 +177,12 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
     function ssidSave(event) {
         event.preventDefault();
 
+        $('#update_ssid_success').hide();
         ConnectBoxApp.api.setProperty('ssid', $('#input_ssid').val(), function(result, code, message) {
             if (result !== undefined) {
                 $('#update_ssid_success').show();
             } else {
-                $('#update_ssid_failure').show();
+                showError('Error updating SSID', parseErrorMessage(message));
             }
         });
     }
@@ -188,13 +197,12 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
 
         $('#channel').toggle();
         $('#update_channel_success').hide();
-        $('#update_channel_failure').hide();
 
         ConnectBoxApp.api.getProperty('channel', function (result, code, message) {
             if (result !== undefined) {
                 $('#input_channel').val(result[0]);
             } else {
-                //TODO display a proper error message
+                showError('Error reading channel', parseErrorMessage(message));
             }
         });
     }
@@ -202,11 +210,12 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
     function channelSave(event) {
         event.preventDefault();
 
+        $('#update_channel_success').hide();
         ConnectBoxApp.api.setProperty('channel', $('#input_channel').val(), function(result, code, message) {
             if (result !== undefined) {
                 $('#update_channel_success').show();
             } else {
-                $('#update_channel_failure').show();
+                showError('Error updating channel', parseErrorMessage(message));
             }
         });
     }
@@ -221,13 +230,12 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
 
         $('#hostname').toggle();
         $('#update_hostname_success').hide();
-        $('#update_hostname_failure').hide();
 
         ConnectBoxApp.api.getProperty('hostname', function (result, code, message) {
             if (result !== undefined) {
                 $('#input_hostname').val(result[0]);
             } else {
-                //TODO display a proper error message
+                showError('Error reading hostname', parseErrorMessage(message));
             }
         });
     }
@@ -235,11 +243,12 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
     function hostnameSave(event) {
         event.preventDefault();
 
+        $('#update_hostname_success').hide();
         ConnectBoxApp.api.setProperty('hostname', $('#input_hostname').val(), function(result, code, message) {
             if (result !== undefined) {
                 $('#update_hostname_success').show();
             } else {
-                $('#update_hostname_failure').show();
+                showError('Error updating hostname', parseErrorMessage(message));
             }
         });
     }
