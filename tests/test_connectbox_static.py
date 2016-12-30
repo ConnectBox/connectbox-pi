@@ -43,6 +43,10 @@ class ConnectBoxBasicTestCase(unittest.TestCase):
         r = requests.get("%s/" % (ADMIN_BASE_URL,))
         self.assertEquals(r.status_code, 401)
 
+    def testAdminNoTrailingSlashRequired(self):
+        r = requests.get("%s" % (ADMIN_BASE_URL,), auth=getAdminAuth())
+        self.assertIn("ConnectBox Admin Dashboard", r.text)
+
     def testAdminPageTitle(self):
         r = requests.get("%s/" % (ADMIN_BASE_URL,), auth=getAdminAuth())
         self.assertIn("ConnectBox Admin Dashboard", r.text)
