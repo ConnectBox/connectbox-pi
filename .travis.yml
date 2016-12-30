@@ -3,15 +3,14 @@ dist: trusty
 sudo: true
 cache:
   directories:
-    - $HOME/.cache/pip
+  - $HOME/.cache/pip
   pip: true
-  timeout: 86400  # 1 day
+  timeout: 86400
 before_cache:
-  - rm -f $HOME/.cache/pip/log/debug.log
+- rm -f $HOME/.cache/pip/log/debug.log
 install:
 - wget -O /tmp/terraform.zip https://releases.hashicorp.com/terraform/0.7.13/terraform_0.7.13_linux_amd64.zip
-# Unpack terraform and put it on the path
-- unzip /tmp/terraform.zip
+- unzip /tmp/terraform.zip  # Unpack terraform and put it on the path
 - export PATH=$PATH:$PWD
 - pip install -r requirements.txt
 script:
@@ -19,11 +18,15 @@ script:
   fi
 - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then $TRAVIS_BUILD_DIR/ci/script_run_on_non_pull_requests.sh;
   fi
-- pushd $TRAVIS_BUILD_DIR && ansible-lint -x ANSIBLE0004,ANSIBLE0006,ANSIBLE0010,ANSIBLE0012 --exclude=ansible/roles/mikegleasonjr.firewall
-  --exclude=ansible/roles/geerlingguy.nginx ansible/site.yml && popd
+- pushd $TRAVIS_BUILD_DIR && ansible-lint -x ANSIBLE0004,ANSIBLE0006,ANSIBLE0010,ANSIBLE0012
+  --exclude=ansible/roles/mikegleasonjr.firewall --exclude=ansible/roles/geerlingguy.nginx
+  ansible/site.yml && popd
 after_script:
 - pushd $TRAVIS_BUILD_DIR/ci && terraform destroy --force && popd
 env:
   global:
   - secure: g2dL7VaYHf0r00QfMYDearAraTmuMB3G+JsH1Anqv7mM82/X4/8UpDERLmHnlLkqyjqMtvWYObt+L8oSXsIsOLRBoMX5DmZQpx7SXz/GdIslnjOfx+Ne9ExJzQWAvIUTbYELEpQLB3eFYdGn02Ar6gY1CP8FgNQy32sMdEVPgI025JZJp04xcbLmqcg2ldjGQSDwjcx7q+LGfG4aoETvladdCxEWKaeOrSEsx3g//LhwgYDJkZEsa0X1eQJGiee1kolc4RPFNad93sBqNfaAKpcF1G10oMS2Z42yfI3fu1FhSxQypfb3NhKkH+20XpXDkcItj601IqhZCk/EBmC55LWffLInZjYTNtHWE+4m43SC7YmZyBQB7R1HEPUpXZis8wFnpzkgLonKzkgBe6qOYTehJOXMbGAKnD1XNhUqsmPYDsYWBI4oXeS3O+INXBgxgk/Fhzmie12NwVOCWbfc/eIu18PbXkLyo7RRg2QFBK1cdIAQzPS+C3l9OzUu3LZgf7GPqV/SbV4hPtppdqMPq1pkdFftHLuPZDSBEjlB8gJ1AUx7inRR9cNcq8z4+RoCUTQsZ2gULYUt6ujL4oqD45P76/VMZ0UPT0+BD4o3mbfm/MnLq4/qicVDfY8bfWmRpvDqiQAM6ByezrGAgAQW7fSbUKhFSK3xWkbYkOSx76o=
   - secure: JmlzPnAsYC5KRNsQ+IttNT5X3zBLpbayDizIcmymfwpGJftRN6WSu91sHtRTGvw9owndy1mjFDhbSTuPa4WokxRCoSuz+ER5onXook9gM/vQCUYXyjy9pwE7KPasT3AZos46+bJSeLpizVKK86InpwbTWort51kkCsvveNaVJ8D7NII45C/nbcq1oA5QMlntOGiLRtD0tUyMuEqtyJjp5PkdA3aVpCj86VSK8TT3+UM0drakvI0VepesTeWUJUHrYlYLfeiML3uV88e8uYN+o+XIdprgd3GDvljJd4AX9urPFIoB5M57IUvzFPq8vxo+YBqg7WYDGJmTLpcqrz+3hV6lIuGPxcG+uxAaC6jeJtTddHWBa5QSUZ1l8nHzpK+8xPLK00S2nuloyKfE40ozSatT9UMZdnJX7pHfGiMZdhQH3/ab4x+HMsfSye+wPh68KrZk11PXKuP9+ZlhBkzEtIavJqXnaaKFvpiYGSEeA896sCoiGyhMj+cr8RggbSs+/lwBiki9tq3WntH9S8bggKmXdxgZNXwbdff+OU3dKPf0xKMgMGNNWbhvttht7L+7parQ8rm1c5sNzd4p48+nqqGPto6dlX/2Jq18peO6hVlPLRXhFaV4e1R4xA97hd5F64bwIW7RndSHhwwkfsRdrI0otZJRj2gR5EeQRf5Gwx0=
+notifications:
+  slack:
+    secure: Zq6rtpxzo6c9rmF+ZV9HYH1fq/ifigFhfJLZ2TIznxRM9CLoI7BiqVdY1OI28xMpo9IwcTahIKMp8jvbXNkOOtelariB43ywyiNz/s5GTB+Rk1KqdOVjhEkmVhlU2XgXa5whot59z6Vc6mTKXTc/KbGZmY+XUzybR7UWnx3UvduxSAzVKqPC1mFp2moGL6hurzVp+9FnFHvFKm4UCLJG7qO3IwlQN+E9d/oXeqQ1A1MWp5sekAGi+ShHQWQmShDE0F22Kj/X9Pa1/YW8maj3Q96hYs/gcetrPF0yElgHLPz3aiABGWx0NauiGIYFgPWpJsoE8i5vWt++CvNbH1FM086CRLP6YT0YFAUwn7uaniYJg92sEP4pEQg3Z/DASsl55WLY2Hpw26GlWmbFcJWNVvTw+rjQC4q3vQJm6CJp7CaO0+DepUTPXSoWMl3N3mmLkl6zEfFFGE0ZDJJNkEsS7OofpQgqetYInuHG2f14LHFZtlWgjAJ5pulvhlQlfeCctzqb7XtS1m/u5e7CnL/HJ8f5i6Rl1OGWsxWRV5x6+60LxxsxXgZkrpXi7CBYeoJLh9WV6ZwS3xjq3k88TxYS09np9RWPE4ynwINU12FjxJPqJdVxL3BOvYRE8yiIHl94XCRk9Jn5fx3eDbIdWCmMHaOCENbLyIuWOWaQpdgGV18=
