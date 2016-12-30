@@ -38,6 +38,13 @@ nginx_vhosts:
     extra_parameters: |
       rewrite_log on;
 
+      # Simulate internet access for iOS and MacOSX so we can exit
+      #  their captive portal browser.
+      #  See: https://forum.piratebox.cc/read.php?9,8927
+      if ($http_user_agent ~ CaptiveNetworkSupport) {
+        rewrite / /success.html;
+      }
+
       # Admin interface
       location /admin/ {
         root {{ connectbox_web_root }};

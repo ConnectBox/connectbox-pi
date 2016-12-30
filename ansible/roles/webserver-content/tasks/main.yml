@@ -32,6 +32,11 @@
     src: ../html/client/
     dest: "{{ connectbox_default_content_root }}"
 
+- name: Copy iOS captive portal response page
+  copy:
+    src: success.html
+    dest: "{{ connectbox_default_content_root }}"
+
 # Permissions are correctly set in the subsequent task
 - name: Copy connectbox admin ui
   synchronize:
