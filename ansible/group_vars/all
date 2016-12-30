@@ -46,7 +46,7 @@ nginx_vhosts:
       }
 
       # Admin interface
-      location /admin/ {
+      location /admin {
         root {{ connectbox_web_root }};
         auth_basic "Access Denied";
         auth_basic_user_file /usr/local/connectbox/etc/basicauth;
