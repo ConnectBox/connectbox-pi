@@ -47,6 +47,19 @@ class ConnectBoxBasicTestCase(unittest.TestCase):
         r = requests.get("%s/" % (ADMIN_BASE_URL,), auth=getAdminAuth())
         self.assertIn("ConnectBox Admin Dashboard", r.text)
 
+    def testIOSCaptivePortalResponseForIOS(self):
+        """Return a the success.html page for iOS captive portal login"""
+        headers = requests.utils.default_headers()
+        # MacOS and iOS send something of this form
+        headers.update({"User-Agent": "CaptiveNetworkSupport-346 wispr"})
+        r = requests.get("%s/" % (TEST_BASE_URL,), headers=headers)
+        self.assertIn("<BODY>\nSuccess\n</BODY>", r.text)
+
+    def testIOSCaptivePortalResponseForNonIOS(self):
+        """Do not return the success.html page for normal root requests"""
+        r = requests.get("%s/" % (TEST_BASE_URL,))
+        self.assertNotIn("<BODY>\nSuccess\n</BODY>", r.text)
+
 
 class ConnectBoxAPITestCase(unittest.TestCase):
 
