@@ -15,7 +15,7 @@ PASSWORD_CONFIG="/usr/local/connectbox/etc/basicauth"
 PASSWORD_SALT="CBOXFOO2016"
 DEBUG=0
 SUCCESS="SUCCESS"
-FAILURE="FAILURE"
+FAILURE="Unexpected Error"
 
 # --- Options processing -------------------------------------------
 
@@ -473,6 +473,13 @@ function get_ssid () {
 function set_ssid () {
   if [[ -z "${val// }" ]]; then
     echo "Missing ssid value"
+    exit 1;
+  fi
+
+  local ssid_length=`printf "%s" "$val" | wc -c`
+
+  if [[ $ssid_length -gt 32 ]]; then
+    echo "SSID must be 32 octets or less"
     exit 1;
   fi
 

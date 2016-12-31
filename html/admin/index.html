@@ -20,6 +20,8 @@
     <!-- Custom styles for this template -->
     <link href="css/sticky-footer-navbar.css" rel="stylesheet">
 
+    <link href="css/style.css" rel="stylesheet">
+
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!--[if lt IE 9]>
       <script src="js/html5shiv-3.7.3.min.js"></script>
@@ -98,7 +100,6 @@
 
               <input class="btn btn-default" name="update_password" type="submit" value="Update">
               <div style="display:none" id="update_password_success">✓</div>
-              <div style="display:none" id="update_password_failure">&times;</div>
         </form>
     </div>
 
@@ -112,7 +113,6 @@
 
               <input class="btn btn-default" name="update_ssid" type="submit" value="Update">
               <div style="display:none" id="update_ssid_success">✓</div>
-              <div style="display:none" id="update_ssid_failure">&times;</div>
         </form>
     </div>
 
@@ -126,7 +126,6 @@
 
               <input class="btn btn-default" name="update_channel" type="submit" value="Update">
               <div style="display:none" id="update_channel_success">✓</div>
-              <div style="display:none" id="update_channel_failure">&times;</div>
         </form>
     </div>
 
@@ -140,7 +139,6 @@
 
               <input class="btn btn-default" name="update_hostname" type="submit" value="Update">
               <div style="display:none" id="update_hostname_success">✓</div>
-              <div style="display:none" id="update_hostname_failure">&times;</div>
         </form>
     </div>
 
@@ -152,26 +150,28 @@
         <form class="simple_form form-inline" id="form_unmountusb">
             <input class="btn btn-default" name="unmountusb" type="submit" value="Unmount USB">
             <div style="display:none" id="unmountusb_success">✓</div>
-            <div style="display:none" id="unmountusb_failure">&times;</div>
         </form>
 
         <form class="simple_form form-inline" id="form_shutdown">
             <input class="btn btn-default" name="shutdown" type="submit" value="Shutdown">
             <div style="display:none" id="shutdown_success">✓</div>
-            <div style="display:none" id="shutdown_failure">&times;</div>
         </form>
 
         <form class="simple_form form-inline" id="form_reboot">
             <input class="btn btn-default" name="reboot" type="submit" value="Reboot">
             <div style="display:none" id="reboot_success">✓</div>
-            <div style="display:none" id="reboot_failure">&times;</div>
         </form>
 
         <form class="simple_form form-inline" id="form_reset">
             <input class="btn btn-default" name="reset" type="submit" value="Reset">
             <div style="display:none" id="reset_success">✓</div>
-            <div style="display:none" id="reset_failure">&times;</div>
         </form>
+    </div>
+
+    <div id="msg-dialog" class="dialog hidden">
+        <div id="msg-title"></div>
+        <div id="msg-body"></div>
+        <button id="close-msg-dialog">Ok</button>
     </div>
 
     <footer class="footer">

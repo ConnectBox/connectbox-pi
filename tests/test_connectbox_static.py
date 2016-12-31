@@ -160,12 +160,10 @@ class ConnectBoxAPITestCase(unittest.TestCase):
         # ENG codepoint is a 2 byte character
         self._testSSIDSetWithLength(u'\N{LATIN SMALL LETTER ENG}' * 16)
 
-    @unittest.skip("SSID Length checking not yet implemented")
     def test33CharacterPlainSSIDSet(self):
         # This SSID set should be rejected
         self._testSSIDSetWithLength("a" * 33)
 
-    @unittest.skip("SSID Length checking not yet implemented")
     def test33CharacterUnicodeSSIDSet(self):
         # EM DASH codepoint is a 3 byte character
         # This SSID set should be rejected
