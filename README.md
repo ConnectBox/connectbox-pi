@@ -30,7 +30,7 @@ Follow the [Raspberry Pi install instructions](https://www.raspberrypi.org/docum
 Note that this should be run on the same machine where you setup your virtualenv - don't try to run it on the Raspberry Pi
 
 1. cd into the `ansible` directory in this project.
-1. Edit `inventory` and add a line with the IP address of the Raspberry Pi ethernet interface and `user=pi` (copy the format of the example line)
+1. Copy `inventory.example` to `inventory` (in the same directory) and follow the instructions in that file so that ansible can deploy to your Raspberry Pi
 1. Confirm connectivity by running `ansible --ask-pass -i inventory all -m ping` . You will be prompted for the password for the pi user, which is still the default of _raspberry_ . If you do not see a **pong** response, then you'll have to revisit your connectivity before continuing.
 1. _Optional_: If you're developing and want to avoid entering the password for each ansible run, use/reuse an ssh key pair. I'm reusing one: `ssh pi@192.168.20.183 "mkdir /home/pi/.ssh; chmod 700 /home/pi/.ssh"` and `scp ~/.ssh/id_rsa.pub pi@192.168.20.183:/home/pi/.ssh/authorized_keys` (`192.168.20.183` is the IP of my Pi)
 1. **Commands assume ssh keys are setup from here**. If you haven't set them up, just add `--ask-pass` to the `ansible` or `ansible-playbook` command line and you'll be right.
