@@ -1,4 +1,9 @@
 ---
+- hosts: debian_jessie
+  become: yes
+  roles:
+    - _simulate_raspbian_with_jessie
+
 - hosts: all
   become: yes
   roles:

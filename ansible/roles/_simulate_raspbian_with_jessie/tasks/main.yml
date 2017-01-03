@@ -1,3 +1,23 @@
 ---
-- include: real_main.yml
-  when: "'arm' not in ansible_architecture"
+# Needed by Debian Official AMI
+- name: Install aptitude
+  apt:
+    name: aptitude
+    state: present
+
+# Needed by Jessie
+- name: Install openresolv
+  apt:
+    name: openresolv
+    state: present
+
+# See if we need to create a wlan0 interface
+- name: Check if wlan0 exists
+  command: /sbin/ip link show wlan0
+  register: ip_show_wlan0
+  changed_when: False
+  ignore_errors: True
+
+- name: Create a wlan0 interface
+  command: /sbin/ip link add wlan0 type dummy
+  when: ip_show_wlan0.rc != 0

@@ -1,6 +1,25 @@
-# Uncomment the line below, replacing the first field with the IP address
-#  of your Raspberry Pi, and replacing the wireless_country_code with your
-#  two-letter country code (see https://git.kernel.org/cgit/linux/kernel/git/sforshee/wireless-regdb.git/tree/db.txt
-#  for a list of valid values)
+# Ansible Inventory File
 #
+# Groups are defined in square brackets
+# Hosts are defined inside groups, one per line
+#
+# Uncomment the host line in the group that reflects the hardware you are using
+#  and replace the first field with the IP address of your device.
+#
+# If your device has a WiFi access point, replace the wireless_country_code
+# with your two-letter country code (see https://git.kernel.org/cgit/linux/kernel/git/sforshee/wireless-regdb.git/tree/db.txt for a list of valid values)
+#
+[debian_jessie]
+#172.28.128.3 ansible_user=admin
+
+[raspberry_pi_3]
 #192.168.20.183 ansible_user=pi wireless_country_code=AU
+
+[orange_pi]
+#192.168.20.184 ansible_user=pi wireless_country_code=AU
+
+[raspbian:children]
+raspberry_pi_3
+
+[armbian:children]
+orange_pi
