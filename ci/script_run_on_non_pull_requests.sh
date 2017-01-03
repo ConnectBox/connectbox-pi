@@ -21,8 +21,7 @@ time terraform apply;
 target_host=$(terraform output connectbox-server-public-ip);
 
 # Create an inventory file suitable for ansible
-echo "[debian_jessie]" > inventory
-echo "${target_host} ansible_ssh_user=admin ansible_ssh_private_key_file=$PEM_OUT" >> inventory;
+echo "${target_host} ansible_ssh_user=admin ansible_ssh_private_key_file=$PEM_OUT" > inventory;
 
 # Wait for ssh to become available
 echo -n "Waiting for ssh to become available "

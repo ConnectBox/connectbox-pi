@@ -12,8 +12,5 @@ Vagrant.configure(2) do |config|
 
   config.vm.provision "ansible" do |ansible|
     ansible.playbook = "ansible/site.yml"
-    ansible.groups = {
-	"debian_jessie"  => ["connectbox"]
-    }
   end
 end

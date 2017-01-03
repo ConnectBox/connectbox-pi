@@ -1,4 +1,36 @@
 ---
+
+
+# Needed by Debian Official AMI
+- name: Install aptitude
+  apt:
+    name: aptitude
+    state: present
+  when: ansible_distribution == "Debian"
+
+# Needed by Debian Jessie
+- name: Install openresolv
+  apt:
+    name: openresolv
+    state: present
+  when: ansible_distribution == "Debian"
+
+# See if we need to create a wlan0 interface when we're running in a sim
+#  environment i.e. running Debian
+- block:
+  - name: Check if wlan0 exists
+    command: /sbin/ip link show wlan0
+    register: ip_show_wlan0
+    changed_when: False
+    ignore_errors: True
+
+  - name: Create a wlan0 interface
+    command: /sbin/ip link add wlan0 type dummy
+    when: ip_show_wlan0.rc != 0
+
+  when: ansible_distribution == "Debian"
+
+# Backports repo is used by Debian and Raspbian
 - name: Add debian signing keys, necessary for backports repo
   apt_key:
     keyserver: hkp://keyserver.ubuntu.com:80
@@ -12,6 +44,7 @@
   apt:
     update-cache: yes
 
+# Backports repo is used by Debian and Raspbian
 - name: Enable Jessie backport repo
   apt_repository:
     repo: deb http://httpredir.debian.org/debian jessie-backports main contrib non-free
