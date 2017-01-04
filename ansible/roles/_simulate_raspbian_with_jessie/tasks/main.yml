@@ -1,3 +1,0 @@
----
-- include: real_main.yml
-  when: "'arm' not in ansible_architecture"
