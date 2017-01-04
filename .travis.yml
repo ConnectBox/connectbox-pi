@@ -9,7 +9,7 @@ cache:
 before_cache:
 - rm -f $HOME/.cache/pip/log/debug.log
 install:
-- wget -O /tmp/terraform.zip https://releases.hashicorp.com/terraform/0.7.13/terraform_0.7.13_linux_amd64.zip
+- wget -O /tmp/terraform.zip https://releases.hashicorp.com/terraform/0.8.2/terraform_0.8.2_linux_amd64.zip
 - unzip /tmp/terraform.zip
 - export PATH=$PATH:$PWD
 - pip install -r requirements.txt

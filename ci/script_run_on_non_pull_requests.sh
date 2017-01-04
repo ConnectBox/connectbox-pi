@@ -23,6 +23,9 @@ target_host=$(terraform output connectbox-server-public-ip);
 # Create an inventory file suitable for ansible
 echo "${target_host} ansible_ssh_user=admin ansible_ssh_private_key_file=$PEM_OUT" > inventory;
 
+echo "Inventory follows:"
+cat inventory
+
 # Wait for ssh to become available
 echo -n "Waiting for ssh to become available "
 while ! (ssh -o ConnectTimeout=2 -o StrictHostKeyChecking=no -i ${PEM_OUT} admin@${target_host} true 2> /dev/null); do
@@ -48,6 +51,7 @@ fi
 
 
 # Tell the test running host how to find the connectbox by name
-echo "\n${target_host} connectbox.local" | sudo tee -a /etc/hosts > /dev/null
+# Use tee rather than trying to redirect using sudo
+printf "\n%s connectbox.local" ${target_host} | sudo tee -a /etc/hosts > /dev/null
 # Run web/selenium tests
 TEST_IP=$target_host python -m unittest discover ../tests
