@@ -1,3 +1,4 @@
+/*global ConnectBoxApp*/
 var ConnectBoxApp = (function (App, $) {
     'use strict';
     
@@ -30,13 +31,13 @@ var ConnectBoxApp = (function (App, $) {
                         }
                     } else {
                         if (callback) {
-                            callback(undefined, data.code, data.result);
+                            callback(null, data.code, data.result);
                         }
                     }
                 },
                 error: function (jqXHR, textStatus, errorThrown) {
                     if (callback) {
-                        callback(undefined, 500, 'Unexpected error getting property: ' + textStatus);
+                        callback(null, 500, 'Unexpected error getting property: ' + textStatus);
                     }
                 }
                 });
@@ -56,13 +57,13 @@ var ConnectBoxApp = (function (App, $) {
                         }
                     } else {
                         if (callback) {
-                            callback(undefined, data.code, data.result);
+                            callback(null, data.code, data.result);
                         }
                     }
                 },
                 error: function (jqXHR, textStatus, errorThrown) {
                     if (callback) {
-                        callback(undefined, 500, 'Unexpected error setting property: ' + textStatus);
+                        callback(null, 500, 'Unexpected error setting property: ' + textStatus);
                     }
                 }
             });
@@ -82,13 +83,13 @@ var ConnectBoxApp = (function (App, $) {
                         }
                     } else {
                         if (callback) {
-                            callback(undefined, data.code, data.result);
+                            callback(null, data.code, data.result);
                         }
                     }
                 },
                 error: function (jqXHR, textStatus, errorThrown) {
                     if (callback) {
-                        callback(undefined, 500, 'Unexpected error triggering event: ' + textStatus);
+                        callback(null, 500, 'Unexpected error triggering event: ' + textStatus);
                     }
                 }
             });
