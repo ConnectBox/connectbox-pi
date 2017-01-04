@@ -6,29 +6,7 @@
   apt:
     name: aptitude
     state: present
-  when: ansible_distribution == "Debian"
-
-# Needed by Debian Jessie
-- name: Install openresolv
-  apt:
-    name: openresolv
-    state: present
-  when: ansible_distribution == "Debian"
-
-# See if we need to create a wlan0 interface when we're running in a sim
-#  environment i.e. running Debian
-- block:
-  - name: Check if wlan0 exists
-    command: /sbin/ip link show wlan0
-    register: ip_show_wlan0
-    changed_when: False
-    ignore_errors: True
-
-  - name: Create a wlan0 interface
-    command: /sbin/ip link add wlan0 type dummy
-    when: ip_show_wlan0.rc != 0
-
-  when: ansible_distribution == "Debian"
+  when: ansible_lsb["id"] == "Debian"
 
 # Backports repo is used by Debian and Raspbian
 - name: Add debian signing keys, necessary for backports repo
@@ -55,3 +33,26 @@
   apt:
     update-cache: yes
 #    cache_valid_time: 86400 # 1 day
+
+# Needed by Debian Jessie
+- name: Install openresolv
+  apt:
+    name: openresolv
+    state: present
+  when: ansible_lsb["id"] == "Debian"
+
+# See if we need to create a wlan0 interface when we're running in a sim
+#  environment i.e. running Debian
+- block:
+  - name: Check if wlan0 exists
+    command: /sbin/ip link show wlan0
+    register: ip_show_wlan0
+    changed_when: False
+    ignore_errors: True
+
+  - name: Create a wlan0 interface
+    command: /sbin/ip link add wlan0 type dummy
+    when: ip_show_wlan0.rc != 0
+
+  when: ansible_lsb["id"] == "Debian"
+
