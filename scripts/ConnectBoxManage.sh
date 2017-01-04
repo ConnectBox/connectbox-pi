@@ -48,7 +48,7 @@ while getopts ":dvhg" optname
     esac
   done
 
-shift $(($OPTIND - 1))
+shift $((OPTIND - 1))
 
 action=$1
 module=$2

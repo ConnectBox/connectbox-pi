@@ -1,3 +1,4 @@
+/*global ConnectBoxApp*/
 var ConnectBoxApp = (function (ConnectBoxApp, $) {
     'use strict';
     
@@ -75,7 +76,7 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
         clearSystemStatus();
 
         ConnectBoxApp.api.triggerEvent('system', 'unmountusb', function(result, code, message) {
-            if (result !== undefined) {
+            if (result) {
                 $('#unmountusb_success').show();
             } else {
                 showError('Error unmounting usb', parseErrorMessage(message));
@@ -88,7 +89,7 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
         clearSystemStatus();
 
         ConnectBoxApp.api.triggerEvent('system', 'reset', function(result, code, message) {
-            if (result !== undefined) {
+            if (result) {
                 $('#reset_success').show();
             } else {
                 showError('Error performing reset', parseErrorMessage(message));
@@ -101,7 +102,7 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
         clearSystemStatus();
 
         ConnectBoxApp.api.triggerEvent('system', 'shutdown', function(result, code, message) {
-            if (result !== undefined) {
+            if (result) {
                 $('#shutdown_success').show();
             } else {
                 showError('Error performing shutdown', parseErrorMessage(message));
@@ -114,7 +115,7 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
         clearSystemStatus();
 
         ConnectBoxApp.api.triggerEvent('system', 'reboot', function(result, code, message) {
-            if (result !== undefined) {
+            if (result) {
                 $('#reboot_success').show();
             } else {
                 showError('Error performing reboot', parseErrorMessage(message));
@@ -145,7 +146,7 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
         } else {
             $('#update_password_success').hide();
             ConnectBoxApp.api.setProperty('password', $('#input_password').val(), function(result, code, message) {
-                if (result !== undefined) {
+                if (result) {
                     $('#update_password_success').show();
                 } else {
                     showError('Error updating password', parseErrorMessage(message));
@@ -166,7 +167,7 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
         $('#update_ssid_success').hide();
 
         ConnectBoxApp.api.getProperty('ssid', function (result, code, message) {
-            if (result !== undefined) {
+            if (result) {
                 $('#input_ssid').val(result[0]);
             } else {
                 showError('Error loading ssid', parseErrorMessage(message));
@@ -179,7 +180,7 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
 
         $('#update_ssid_success').hide();
         ConnectBoxApp.api.setProperty('ssid', $('#input_ssid').val(), function(result, code, message) {
-            if (result !== undefined) {
+            if (result) {
                 $('#update_ssid_success').show();
             } else {
                 showError('Error updating SSID', parseErrorMessage(message));
@@ -199,7 +200,7 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
         $('#update_channel_success').hide();
 
         ConnectBoxApp.api.getProperty('channel', function (result, code, message) {
-            if (result !== undefined) {
+            if (result) {
                 $('#input_channel').val(result[0]);
             } else {
                 showError('Error reading channel', parseErrorMessage(message));
@@ -212,7 +213,7 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
 
         $('#update_channel_success').hide();
         ConnectBoxApp.api.setProperty('channel', $('#input_channel').val(), function(result, code, message) {
-            if (result !== undefined) {
+            if (result) {
                 $('#update_channel_success').show();
             } else {
                 showError('Error updating channel', parseErrorMessage(message));
@@ -232,7 +233,7 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
         $('#update_hostname_success').hide();
 
         ConnectBoxApp.api.getProperty('hostname', function (result, code, message) {
-            if (result !== undefined) {
+            if (result) {
                 $('#input_hostname').val(result[0]);
             } else {
                 showError('Error reading hostname', parseErrorMessage(message));
@@ -245,7 +246,7 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
 
         $('#update_hostname_success').hide();
         ConnectBoxApp.api.setProperty('hostname', $('#input_hostname').val(), function(result, code, message) {
-            if (result !== undefined) {
+            if (result) {
                 $('#update_hostname_success').show();
             } else {
                 showError('Error updating hostname', parseErrorMessage(message));
