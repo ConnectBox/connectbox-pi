@@ -6,12 +6,12 @@ ConnectBox is a media sharing device based on small form factor computers like t
 
 # Making a ConnectBox
 
-See [docs/deployment.md]
+See [docs/deployment.md](docs/deployment.md)
 
 # Connectbox setup and administration
 
-See [docs/administration.md]
+See [docs/administration.md](docs/administration.md)
 
 # Developing the ConnectBox Software
 
-See [docs/development.md]
+See [docs/development.md](docs/development.md)
