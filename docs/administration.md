@@ -6,11 +6,13 @@ This document describes how to administer a ConnectBox
 
 1. ConnectBox comes with system software. No content is included.
 1. Plug into a power source and wait 1 minute for startup.
-1. Locate Wireless network called _ConnectBox - Free Content_ __XXX__
+1. Locate Wireless network called _ConnectBox - Free Content_ __(will this be a different default?)__
 1. Join to Wireless Network (no password required)
 1. Navigate to the Administration area: http://connectbox.local/admin and login (username and password are case sensitive):
+
 - username: admin
 - password: connectbox
+
 1. Change the password for the Adminsitration Area. Go to the Configure Menu and select Password. Enter a new password and press submit. When you next try to change the system, you will be prompted to login again. Use the new password when that happens.
 1. _Optional_: Change the name of the system (Configure -> System). This only appears in the location bar of the browser. If you change this, you will need to login again __Check if the redirect works immediately__
 1. _Optional_: Change the name of the wireless network. (Configure -> SSID). When you do this, you will be disconnected from the wireless network and will need to localte and join the newly named wireless network
