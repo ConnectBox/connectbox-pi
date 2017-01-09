@@ -167,7 +167,7 @@ resource "aws_instance" "connectbox-server" {
 	instance_type = "${var.instance_type}"
 	key_name = "travis-ci-connectbox"
 	subnet_id = "${aws_subnet.default.id}"
-	security_groups = ["${aws_security_group.default.id}"]
+	vpc_security_group_ids = ["${aws_security_group.default.id}"]
 	tags {
 		Name = "connectbox-server"
 		project = "connectbox"
