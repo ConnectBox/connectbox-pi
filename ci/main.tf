@@ -9,10 +9,15 @@ provider "aws" {
 	region = "${var.region}"
 }
 
-resource "aws_key_pair" "travis-ci-connectbox" {
-	key_name = "travis-ci-connectbox"
-	public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCqWQb/Iv6kos8F/f9CEiXorP61L+nPemJFI1ML9OsBabN9e5PGII6xStEa6aDUPFqKB1ysMiYEaSn6hH3SzV5GD0/tWkLncHrJKAZ+FuXeOgAINU4TJnnspZhlsVrfEVp2moBQZfGPNpFmRJz4sn5xXHj2sWpozcxdEvC08ipE1yE4Vz10eicY500QUpJlPvHYxMaLeD7Znl68gAtQbuAPtKGvoxzf9fQlAGwBEuWnEs35NSh+WNqYr/yi7jAPiN6JrXK0y1TBhauiYN8HZ0JaeMjGIUY+Wntvm3jaWLOKc1f2ZHrKdaydZ8Jl8wTsq8pZf7BKuWD7rYqiVGdRRqQ1"
-}
+# Key pairs aren't removed when a terraform destroy is performed, so having
+#  this resource definition causes warnings on every terraform apply. This
+#  is left here to make it easier to do the first run in a new region, or
+#  the first run after a complete cleanup or in a new account.
+#
+#resource "aws_key_pair" "travis-ci-connectbox" {
+#	key_name = "travis-ci-connectbox"
+#	public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCqWQb/Iv6kos8F/f9CEiXorP61L+nPemJFI1ML9OsBabN9e5PGII6xStEa6aDUPFqKB1ysMiYEaSn6hH3SzV5GD0/tWkLncHrJKAZ+FuXeOgAINU4TJnnspZhlsVrfEVp2moBQZfGPNpFmRJz4sn5xXHj2sWpozcxdEvC08ipE1yE4Vz10eicY500QUpJlPvHYxMaLeD7Znl68gAtQbuAPtKGvoxzf9fQlAGwBEuWnEs35NSh+WNqYr/yi7jAPiN6JrXK0y1TBhauiYN8HZ0JaeMjGIUY+Wntvm3jaWLOKc1f2ZHrKdaydZ8Jl8wTsq8pZf7BKuWD7rYqiVGdRRqQ1"
+#}
 
 # Shared by all travis-ci jobs
 resource "aws_vpc" "default" {
