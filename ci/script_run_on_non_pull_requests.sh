@@ -31,6 +31,7 @@ setup_and_verify_infra( ) {
       if [ $conn_attempt_count -gt $MAX_SSH_CONNECT_ATTEMPTS ]; then
 	# Something has gone wrong. Bail (don't even attempt to connect to
 	#  any other hosts provisioned in the same terraform apply).
+	echo "Unable to connect in $conn_attempt_count attempts.";
 	exit 1;
       fi
       echo -n ".";
@@ -60,11 +61,12 @@ cd $TRAVIS_BUILD_DIR/ci;
 setup_and_verify_infra $PROVISIONED_TARGET_IP_VARIABLES;
 if [ $? -ne 0 ]; then
   # Try again.
+  echo "Tearing down freshly provisioned infrastructure and trying again.";
   terraform destroy --force;
   setup_and_verify_infra $PROVISIONED_TARGET_IP_VARIABLES;
   if [ $? -ne 0 ]; then
     # Something is seriously wrong, and we should bail
-    echo "Unable to connect to AWS infrastructure after two attempts. Cleaning up and bailing."
+    echo "Unable to connect to AWS infrastructure after two attempts. Tearing down freshly provisioned infrastructure and bailing."
     terraform destroy --force;
     exit 1;
   fi
