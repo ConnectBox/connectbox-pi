@@ -6,6 +6,35 @@
 # Makes no assumptions about working directory on entry, or the working
 #  directory left for subsequent scripts
 
+# Terraform output variables that define endpoints we'll sshe to
+PROVISIONED_TARGET_IP_VARIABLES="connectbox-server-public-ip";
+
+setup_and_verify_infra( ) {
+  # Expects arg of PROVISIONED_TARGET_IP_VARIABLES
+  # Make sure we don't have an inventory file, as we're going to append to it
+  #  as we run this function.
+  rm -f inventory;
+  terraform apply;
+
+  for target_host_var in $1; do
+    target_host=$(terraform output $target_host_var);
+
+    # Wait for ssh to become available on the target host
+    echo -n "Waiting for ssh to become available on $target_host "
+    while ! (ssh -o ConnectTimeout=2 -o StrictHostKeyChecking=no -i $PEM_OUT admin@$target_host true 2> /dev/null); do
+      echo -n ".";
+      sleep 1;
+    done
+    echo "OK";
+    echo "Adding $target_host to inventory";
+    echo "$target_host ansible_ssh_user=admin ansible_ssh_private_key_file=$PEM_OUT" > inventory;
+  done
+
+  echo "Inventory follows:";
+  cat inventory;
+  exit 0;
+}
+
 # Extract Encrypted ssh key
 cd $TRAVIS_BUILD_DIR;
 PEM_OUT=$TRAVIS_BUILD_DIR/ci/travis-ci-connectbox.pem;
@@ -16,23 +45,17 @@ openssl aes-256-cbc -K $encrypted_22a22c63eb0e_key -iv $encrypted_22a22c63eb0e_i
 # Run CI build on AWS. This uses protected variables
 cd $TRAVIS_BUILD_DIR/ci;
 
-time terraform apply;
-
-target_host=$(terraform output connectbox-server-public-ip);
-
-# Create an inventory file suitable for ansible
-echo "${target_host} ansible_ssh_user=admin ansible_ssh_private_key_file=$PEM_OUT" > inventory;
-
-echo "Inventory follows:"
-cat inventory
-
-# Wait for ssh to become available
-echo -n "Waiting for ssh to become available "
-while ! (ssh -o ConnectTimeout=2 -o StrictHostKeyChecking=no -i ${PEM_OUT} admin@${target_host} true 2> /dev/null); do
-  echo -n ".";
-  sleep 1;
-done
-echo "OK";
+setup_and_verify_infra $PROVISIONED_TARGET_IP_VARIABLES;
+if [ $? -ne 0 ]; then
+  # Try again.
+  terraform destroy --force;
+  setup_and_verify_infra $PROVISIONED_TARGET_IP_VARIABLES;
+  if [ $? -ne 0 ]; then
+    # Something is seriously wrong, and we should bail
+    echo "Unable to connect to AWS infrastructure after two attempts. Bailing."
+    exit 1;
+  fi
+fi
 
 # For builds not triggered by a pull request $TRAVIS_BRANCH is the name
 #  of the branch currently being built
