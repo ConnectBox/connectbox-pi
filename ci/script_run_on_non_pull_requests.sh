@@ -11,8 +11,7 @@ PROVISIONED_TARGET_IP_VARIABLES="connectbox-server-public-ip";
 
 # Servers should take 3 minutes max to become accessible over ssh, and as
 #  we wait for 1 second between attempts, this is our max attempt count
-#MAX_SSH_CONNECT_ATTEMPTS=180;
-MAX_SSH_CONNECT_ATTEMPTS=10;
+MAX_SSH_CONNECT_ATTEMPTS=180;
 
 setup_and_verify_infra( ) {
   # Expects arg of PROVISIONED_TARGET_IP_VARIABLES
@@ -31,7 +30,7 @@ setup_and_verify_infra( ) {
       if [ $conn_attempt_count -ge $MAX_SSH_CONNECT_ATTEMPTS ]; then
 	# Something has gone wrong. Bail (don't even attempt to connect to
 	#  any other hosts provisioned in the same terraform apply).
-	echo "Unable to connect in $conn_attempt_count attempts.";
+	echo " unable to connect in $conn_attempt_count attempts.";
 	return 1;
       fi
       echo -n ".";
