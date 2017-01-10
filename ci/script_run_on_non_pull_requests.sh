@@ -9,6 +9,11 @@
 # Terraform output variables that define endpoints we'll sshe to
 PROVISIONED_TARGET_IP_VARIABLES="connectbox-server-public-ip";
 
+# Servers should take 3 minutes max to become accessible over ssh, and as
+#  we wait for 1 second between attempts, this is our max attempt count
+#MAX_SSH_CONNECT_ATTEMPTS=180;
+MAX_SSH_CONNECT_ATTEMPTS=10;
+
 setup_and_verify_infra( ) {
   # Expects arg of PROVISIONED_TARGET_IP_VARIABLES
   # Make sure we don't have an inventory file, as we're going to append to it
@@ -17,12 +22,19 @@ setup_and_verify_infra( ) {
   terraform apply;
 
   for target_host_var in $1; do
+    conn_attempt_count=0;
     target_host=$(terraform output $target_host_var);
 
     # Wait for ssh to become available on the target host
     echo -n "Waiting for ssh to become available on $target_host "
     while ! (ssh -o ConnectTimeout=2 -o StrictHostKeyChecking=no -i $PEM_OUT admin@$target_host true 2> /dev/null); do
+      if [ $conn_attempt_count -gt $MAX_SSH_CONNECT_ATTEMPTS ]; then
+	# Something has gone wrong. Bail (don't even attempt to connect to
+	#  any other hosts provisioned in the same terraform apply).
+	exit 1;
+      fi
       echo -n ".";
+      conn_attempt_count=$(( $conn_attempt_count + 1 ));
       sleep 1;
     done
     echo "OK";
