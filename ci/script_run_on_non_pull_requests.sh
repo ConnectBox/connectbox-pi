@@ -64,7 +64,8 @@ if [ $? -ne 0 ]; then
   setup_and_verify_infra $PROVISIONED_TARGET_IP_VARIABLES;
   if [ $? -ne 0 ]; then
     # Something is seriously wrong, and we should bail
-    echo "Unable to connect to AWS infrastructure after two attempts. Bailing."
+    echo "Unable to connect to AWS infrastructure after two attempts. Cleaning up and bailing."
+    terraform destroy --force;
     exit 1;
   fi
 fi
