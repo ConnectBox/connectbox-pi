@@ -28,11 +28,11 @@ setup_and_verify_infra( ) {
     # Wait for ssh to become available on the target host
     echo -n "Waiting for ssh to become available on $target_host "
     while ! (ssh -o ConnectTimeout=2 -o StrictHostKeyChecking=no -i $PEM_OUT admin@$target_host true 2> /dev/null); do
-      if [ $conn_attempt_count -gt $MAX_SSH_CONNECT_ATTEMPTS ]; then
+      if [ $conn_attempt_count -ge $MAX_SSH_CONNECT_ATTEMPTS ]; then
 	# Something has gone wrong. Bail (don't even attempt to connect to
 	#  any other hosts provisioned in the same terraform apply).
 	echo "Unable to connect in $conn_attempt_count attempts.";
-	exit 1;
+	return 1;
       fi
       echo -n ".";
       conn_attempt_count=$(( $conn_attempt_count + 1 ));
@@ -45,7 +45,7 @@ setup_and_verify_infra( ) {
 
   echo "Inventory follows:";
   cat inventory;
-  exit 0;
+  return 0;
 }
 
 # Extract Encrypted ssh key
