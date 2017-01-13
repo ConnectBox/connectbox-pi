@@ -55,8 +55,18 @@
         <div ng-controller="IndexController as index" class="container-fluid ng-cloak">
             <div class="row">
                 <ol class="breadcrumb" style="left: 20px; right: 20px; position: fixed; z-index: 1000;">
-                    <li><a href="" ng-click="index.reload()" title="Reload"><i ng-class="{'loader': index.reloading.running || index.loading.running}" class="fa fa-refresh"></i></a></li>
-                    <li ng-class="::{'active': $last}" ng-repeat="part in index.path_parts"><span ng-if="::$last">{{:: part.name }} </span><a ng-if="::!$last" href="#{{:: part.path }}" ng-bind="::part.name"></a></li>
+                    <li>
+                        <a href="" ng-click="index.reload()" title="Reload">
+                            <i ng-class="{'loader': index.reloading.running || index.loading.running}" class="fa fa-refresh"></i>
+                        </a>
+                    </li>
+                    <li ng-repeat="part in index.path_parts" ng-class="::{'active': $last}">
+                        <span ng-if="part.name == '<root>'">
+                            <a href="#{{:: part.path }}"><i class="fa fa-home fa-lg"></i></a>
+                        </span>
+                        <span ng-if="::$last && part.name != '<root>'">{{:: part.name }}</span>
+                        <a ng-if="::!$last && part.name != '<root>'" href="#{{:: part.path }}" ng-bind="::part.name"></a>
+                    </li>
                 </ol>
             </div>
 
