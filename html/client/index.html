@@ -61,7 +61,8 @@
     <script type='text/ng-template' id="fileRenderer"> 
         <td ng-class="::{'centered': row.isTopLevel}">
             <a href="{{:: row.type == 'directory' ? '#' : index.config.Content.contentRoute }}{{:: index.path }}/{{:: row.name }}">
-                <i class="fa {{:: row | topLevelCategory }}"></i>
+                <i ng-hide="row.icon_file" class="fa {{:: row | topLevelCategory }}"></i>
+                <img ng-if="row.icon_file" ng-src="{{:: index.config.Content.contentRoute}}{{:: index.path }}/{{:: row.icon_file}}"/>
                 <i ng-hide="row.isTopLevel" class="fa {{:: row | mediaTypes }}"></i>
                 <span ng-class="::{'row_name': !index.config.Client.display_root_folder_names, 'directory': row.type == 'directory'}">
                     <span ng-if="!row.isTopLevel">&nbsp;</span>
@@ -210,7 +211,8 @@ angular.module('index', ['ng'])
                 ).then(
                     function(response) {
                         self.isTopLevel = path === '';
-                        self.files = (response.data || []).map(function(f) {
+                        var dirMap = {}
+                        self.files = (response.data || []).map(function (f) {
                             f.mtime = new Date(f.mtime);
                             f.isTopLevel = self.isTopLevel;
                             if (f.type === 'file') {
@@ -218,8 +220,20 @@ angular.module('index', ['ng'])
                                 if (f.isTopLevel) {
                                     f.isTopLevel = false;
                                 }
+                            } else {
+                                dirMap[f.name] = f;
                             }
                             return f;
+                        });
+
+                        //Remove icon files
+                        self.files = self.files.filter(function (f) {
+                            if (f.name.startsWith(self.config.Client.icon_prefix)) {
+                                parse_ico_metadata(self.config.Client.icon_prefix, f.name, dirMap);
+                                return false;
+                            } else {
+                                return true;
+                            }
                         });
 
                         if (self.isTopLevel) {
@@ -252,6 +266,31 @@ angular.module('index', ['ng'])
 
             function file_extension(fname) {
                 return fname.substr((~-fname.lastIndexOf(".") >>> 0) + 2);
+            }
+
+            function parse_ico_metadata(prefix, filename, dirMap) {
+
+                var ext = file_extension(filename),
+                    metadata, parts, dirName, dir, ico;
+
+                metadata = filename.substring(prefix.length);
+                
+                if (ext) {
+                    dirName = metadata.substring(0, metadata.lastIndexOf('.'));
+                    if (dirMap[dirName]) {
+                        dir = dirMap[dirName];
+                        dir.icon_file = filename;
+                    }
+                } else {
+                    parts = metadata.split("_");
+                    dirName = parts[0];
+                    ico = parts[1];
+
+                    if (dirMap[dirName]) {
+                        dir = dirMap[dirName];
+                        dir.icon_class = ico;
+                    }
+                }
             }
 
             function initialize(config) {
@@ -353,6 +392,10 @@ angular.module('index', ['ng'])
                 if (file.type != 'directory' || !file.isTopLevel) {
                     return '';
                 }
+                if (file.icon_class) {
+                    return file.icon_class + ' fa-5x';
+                }
+
                 var picto='';
                 if (this.iconMetadata.ids.indexOf(file.name) != -1) {
                     picto = file.name;
@@ -386,6 +429,7 @@ angular.module('index', ['ng'])
                     case 'mpeg':
                     case 'mpg':
                     case '3gp':
+                    case 'm4v':
                         picto = 'fa-file-video-o'
 						break;
                     case 'mp3':
