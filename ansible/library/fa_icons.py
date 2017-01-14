@@ -1,8 +1,8 @@
 #!/usr/bin/python
 
-DOCUMENTATION = '''  
+DOCUMENTATION = '''
 ---
-module: fa_icons  
+module: fa_icons
 short_description: Generate font awesome metadata in Javascript
 '''
 
@@ -53,5 +53,5 @@ def main():
         module.params['output_dir'], module.params['output_filename'], module.params['var_name'])
     module.exit_json(changed=True, meta={"status": 0, "data": "SUCCESS"})
 
-if __name__ == '__main__':  
+if __name__ == '__main__':
     main()
