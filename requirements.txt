@@ -2,3 +2,4 @@ ansible==2.1.2.0
 ansible-lint==3.4.3
 requests==2.12.1
 selenium==3.0.1
+PyYAML==3.12
