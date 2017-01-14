@@ -62,8 +62,9 @@
         <td ng-class="::{'centered': row.isTopLevel}">
             <a href="{{:: row.type == 'directory' ? '#' : index.config.Content.contentRoute }}{{:: index.path }}/{{:: row.name }}">
                 <i ng-hide="row.icon_file" class="fa {{:: row | topLevelCategory }}"></i>
-                <img ng-if="row.icon_file" ng-src="{{:: index.config.Content.contentRoute}}{{:: index.path }}/{{:: row.icon_file}}"/>
-                <i ng-hide="row.isTopLevel" class="fa {{:: row | mediaTypes }}"></i>
+                <img ng-if="row.icon_file && row.isTopLevel" ng-src="{{:: index.config.Content.contentRoute}}{{:: index.path }}/{{:: row.icon_file}}"/>
+                <i ng-hide="row.isTopLevel || row.icon_file" class="fa {{:: row | mediaTypes }}"></i>
+                <img ng-hide="row.isTopLevel" ng-if="row.icon_file" ng-src="{{:: index.config.Content.contentRoute}}{{:: index.path }}/{{:: row.icon_file}}"/>
                 <span ng-class="::{'row_name': !index.config.Client.display_root_folder_names, 'directory': row.type == 'directory'}">
                     <span ng-if="!row.isTopLevel">&nbsp;</span>
                     <span ng-if="row.isTopLevel && index.config.Client.display_root_folder_names"><br/></span>
@@ -410,7 +411,9 @@ angular.module('index', ['ng'])
     ).filter('mediaTypes',
         function() {
 			return function mediaTypes(file) {
-                if (file.type == 'directory') {
+                if (file.icon_class) {
+                    return file.icon_class;
+                } else if (file.type == 'directory') {
                     return 'fa-folder-o';
                 }
                 var picto,
