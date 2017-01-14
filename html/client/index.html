@@ -57,6 +57,20 @@
 }
         </style>
     </head>
+    <script type='text/ng-template' id="fileRenderer"> 
+        <td ng-class="::{'centered': row.isTopLevel}">
+            <a href="{{:: row.type == 'directory' ? '#' : index.config.Content.contentRoute }}{{:: index.path }}/{{:: row.name }}">
+                <i class="fa {{:: row.name | topLevelCategory }}"></i>
+                <i ng-hide="row.isTopLevel" class="fa {{:: row | mediaTypes }}"></i>
+                <span ng-class="::{'row_name': !index.config.Client.display_root_folder_names, 'directory': row.type == 'directory'}">
+                    <span ng-if="!row.isTopLevel">&nbsp;</span>
+                    <span ng-if="row.isTopLevel && index.config.Client.display_root_folder_names"><br/></span>
+                    {{:: row.name }}
+                </span>
+            </a>
+        </td>
+    </script> 
+
     <body style="margin: 10px 20px">
         <div ng-controller="ScrollToTopController as scroll" class="pull-right" id="scroll-to-top" ng-show="scroll.show"><a href="" ng-click="scroll.to_top(); $event.preventDefault()"><i class="fa fa-long-arrow-up"></i> to top</a></div>
         <div ng-controller="IndexController as index" class="container-fluid ng-cloak">
@@ -84,23 +98,27 @@
                         <tr ng-hide="index.path == '' || index.path == '/'">
                             <td ng-click="index.go_up()"><a href=""><i class="fa fa-level-up"></i> ..</a></td>
                         </tr>
-                        <tr ng-repeat="row in index.files | orderBy:index.sort.name:index.sort.rev">
-                            <td ng-class="::{'centered': index.isTopLevel}">
-                                <a href="{{:: row.type == 'directory' ? '#' : index.config.Content.contentRoute }}{{:: index.path }}/{{:: row.name }}">
-                                    <i class="fa {{:: row.name | topLevelCategory }}"></i>
-                                    <i ng-hide="index.isTopLevel" class="fa {{:: row | mediaTypes }}"></i>
-                                    <span ng-class="::{'row_name': !index.config.Client.display_root_folder_names, 'directory': row.type == 'directory'}">
-                                        <span ng-if="!index.isTopLevel">&nbsp;</span>
-                                        <span ng-if="index.isTopLevel && index.config.Client.display_root_folder_names"><br/></span>
-                                        {{:: row.name }}
-                                    </span>
-                                </a>
-                            </td>
+                        <tr ng-repeat="row in index.files | orderBy:index.sort.name:index.sort.rev"
+                            ng-include="'fileRenderer'">
                         </tr>
                     </tbody>
                 </table>
                 </div>
             </div>
+
+            <div class="row" ng-hide="index.error || !index.topLevelFiles || !index.isTopLevel">
+                <div class="table-responsive">
+                <table class="table">
+                    <tbody>
+                        <tr ng-repeat="row in index.topLevelFiles | orderBy:index.sort.name:index.sort.rev"
+                            ng-include="'fileRenderer'">
+                        </tr>
+                    </tbody>
+                </table>
+                </div>
+            </div>
+
+            <ng-include src="'mySnippet'"></ng-include>
             <div class="row" style="margin-top: 60px;" ng-show="index.error">
                 <div class="alert alert-danger" role="alert">
                     <big>
@@ -117,6 +135,7 @@ angular.module('index', ['ng'])
 
             this.config = null;
             this.files = [];
+            this.topLevelFiles = [];
             this.loading = {
                 running: false,
                 timer: null,
@@ -189,16 +208,26 @@ angular.module('index', ['ng'])
                     }
                 ).then(
                     function(response) {
+                        self.isTopLevel = path === '';
                         self.files = (response.data || []).map(function(f) {
                             f.mtime = new Date(f.mtime);
+                            f.isTopLevel = self.isTopLevel;
                             if (f.type === 'file') {
                                 f.ext = file_extension(f.name);
+                                if (f.isTopLevel) {
+                                    f.isTopLevel = false;
+                                }
                             }
                             return f;
                         });
 
+                        if (self.isTopLevel) {
+                            //Top-level so partition to allow separate rendering of files / directories
+                            self.topLevelFiles = self.files.filter(function(f) { return f.type === 'file';});
+                            self.files = self.files.filter(function(f) { return f.type === 'directory';});
+                        }
+
                         self.loading.stop();
-                        self.isTopLevel = path === '';
                         window.localStorage.setItem('lastPath', path);
                         window.scrollTo(0, 0);
                     },
