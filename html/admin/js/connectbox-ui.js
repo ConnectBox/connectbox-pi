@@ -1,4 +1,6 @@
-/*global ConnectBoxApp*/
+/* eslint-env browser */
+/* global ConnectBoxApp */
+/* eslint no-use-before-define: "off" */
 var ConnectBoxApp = (function (ConnectBoxApp, $) {
     'use strict';
     
