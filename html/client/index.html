@@ -28,6 +28,10 @@
                 background-color: #CCEFEB;
             }
 
+            .centered {
+                text-align: center;
+            }
+
             /* Top-level collapsed table */
             table.collapsed {
                 background-color: #CCEFEB;
@@ -35,7 +39,7 @@
             table.collapsed span.row_name {
                 display: none;
             }
-            table span.row_name.directory {
+            table span.directory {
                 font-weight: bold;
             }
             table.collapsed > tbody > tr {
@@ -78,7 +82,17 @@
                             <td ng-click="index.go_up()"><a href=""><i class="fa fa-level-up"></i> ..</a></td>
                         </tr>
                         <tr ng-repeat="row in index.files | orderBy:index.sort.name:index.sort.rev">
-                            <td><a href="{{:: row.type == 'directory' ? '#' : index.config.Content.contentRoute }}{{:: index.path }}/{{:: row.name }}"><i class="fa {{:: row.name | topLevelCategory }}"></i><i class="fa {{:: row.ext | mediaTypes }}"></i><span class='row_name {{:: row.type}}'>&nbsp;{{:: row.name }}</span></a></td>
+                            <td ng-class="::{'centered': index.isTopLevel}">
+                                <a href="{{:: row.type == 'directory' ? '#' : index.config.Content.contentRoute }}{{:: index.path }}/{{:: row.name }}">
+                                    <i class="fa {{:: row.name | topLevelCategory }}"></i>
+                                    <i ng-hide="index.isTopLevel" class="fa {{:: row | mediaTypes }}"></i>
+                                    <span ng-class="::{'row_name': !index.config.Client.display_root_folder_names, 'directory': row.type == 'directory'}">
+                                        <span ng-if="!index.isTopLevel">&nbsp;</span>
+                                        <span ng-if="index.isTopLevel && index.config.Client.display_root_folder_names"><br/></span>
+                                        {{:: row.name }}
+                                    </span>
+                                </a>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
@@ -172,13 +186,14 @@ angular.module('index', ['ng'])
                     }
                 ).then(
                     function(response) {
-                        var files = response.data || [];
+                        self.files = (response.data || []).map(function(f) {
+                            f.mtime = new Date(f.mtime);
+                            if (f.type === 'file') {
+                                f.ext = file_extension(f.name);
+                            }
+                            return f;
+                        });
 
-                        for (var i = 0, l = files.length; i < l; i++) {
-                            files[i].mtime = new Date(files[i].mtime);
-                        }
-
-                        self.files = files;
                         self.loading.stop();
                         self.isTopLevel = path === '';
                         window.localStorage.setItem('lastPath', path);
@@ -202,6 +217,10 @@ angular.module('index', ['ng'])
                 return parts;
             }
 
+            function file_extension(fname) {
+                return fname.substr((~-fname.lastIndexOf(".") >>> 0) + 2);
+            }
+
             function initialize(config) {
                 self.loading.start();
 
@@ -216,7 +235,8 @@ angular.module('index', ['ng'])
                         self.config = response.data ||
                             {
                                 base_index_url: "",
-                                tail_slash: false
+                                tail_slash: false,
+                                display_root_folder_names: true
                             };
 
                         $scope.$on('$locationChangeSuccess',
@@ -335,37 +355,45 @@ angular.module('index', ['ng'])
         }
     ).filter('mediaTypes',
         function() {
-			return function mediaTypes(ext) {
-                var picto = '';
+			return function mediaTypes(file) {
+                if (file.type == 'directory') {
+                    return 'fa-folder-o';
+                }
+                var picto,
+                    ext = file.ext;
                 switch (ext) {
-					case '.txt':
+					case 'txt':
+                    case 'pdf':
                         picto = 'fa-file-text-o'
 						break;
-                    case '.mov':
-                    case '.mp4':
-                    case '.flv':
-                    case '.mkv':
-                    case '.avi':
-                    case '.wmv':
-                    case '.mpeg':
-                    case '.mpg':
-                    case '.3gp':
+                    case 'mov':
+                    case 'mp4':
+                    case 'flv':
+                    case 'mkv':
+                    case 'avi':
+                    case 'wmv':
+                    case 'mpeg':
+                    case 'mpg':
+                    case '3gp':
                         picto = 'fa-file-video-o'
 						break;
-                    case '.mp3':
-                    case '.ogg':
-                    case '.ra':
-                    case '.wav':
+                    case 'mp3':
+                    case 'ogg':
+                    case 'ra':
+                    case 'wav':
                         picto = 'fa-file-sound-o'
 						break;
-                    case '.jpeg':
-                    case '.jpg':
-                    case '.gif':
-                    case '.png':
-                    case '.tiff':
+                    case 'jpeg':
+                    case 'jpg':
+                    case 'gif':
+                    case 'png':
+                    case 'tiff':
                         picto = 'fa-file-photo-o'
 						break;
 				}
+                if (!picto) {
+                    picto = 'fa-file-text-o';
+                }
 				return picto;
 			};
 		}
