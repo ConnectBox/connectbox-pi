@@ -22,6 +22,8 @@ connectbox_usb_files_root: /media/usb0
 connectbox_admin_credentials: admin:$apr1$CBOXFOO2$usYeNWIKOX910UnI/jugh.
 connectbox_default_hostname: connectbox.local
 
+fa_icons_url: https://raw.githubusercontent.com/FortAwesome/Font-Awesome/master/src/icons.yml
+
 # Make sure we show index.html for 404, given we'll be sent here by
 #  people browsing for all sorts of things
 nginx_vhosts:

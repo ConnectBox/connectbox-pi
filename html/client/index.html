@@ -3,6 +3,7 @@
     <head>
         <title>ConnectBox</title>
         <script src="lib/angular.min.js"></script>
+        <script src="lib/fa-icon-metadata.js"></script>
         <link type="text/css" rel="stylesheet" href="lib/bootstrap.min.css" />
         <link type="text/css" rel="stylesheet" href="lib/font-awesome.min.css" />
         <meta charset="utf-8" />
@@ -60,7 +61,7 @@
     <script type='text/ng-template' id="fileRenderer"> 
         <td ng-class="::{'centered': row.isTopLevel}">
             <a href="{{:: row.type == 'directory' ? '#' : index.config.Content.contentRoute }}{{:: index.path }}/{{:: row.name }}">
-                <i class="fa {{:: row.name | topLevelCategory }}"></i>
+                <i class="fa {{:: row | topLevelCategory }}"></i>
                 <i ng-hide="row.isTopLevel" class="fa {{:: row | mediaTypes }}"></i>
                 <span ng-class="::{'row_name': !index.config.Client.display_root_folder_names, 'directory': row.type == 'directory'}">
                     <span ng-if="!row.isTopLevel">&nbsp;</span>
@@ -69,7 +70,7 @@
                 </span>
             </a>
         </td>
-    </script> 
+    </script>
 
     <body style="margin: 10px 20px">
         <div ng-controller="ScrollToTopController as scroll" class="pull-right" id="scroll-to-top" ng-show="scroll.show"><a href="" ng-click="scroll.to_top(); $event.preventDefault()"><i class="fa fa-long-arrow-up"></i> to top</a></div>
@@ -132,6 +133,7 @@ angular.module('index', ['ng'])
         function($http, $location, $scope, window, $timeout, FILES_BASE_URL) {
             var self = this;
 
+            this.iconMetadata = window.iconMetadata;
             this.config = null;
             this.files = [];
             this.topLevelFiles = [];
@@ -347,41 +349,19 @@ angular.module('index', ['ng'])
     )
     .filter('topLevelCategory',
         function() {
-            return function topLevelCategory(dirName) {
-                var picto='';
-                switch (dirName) {
-                    case 'medical':
-                        picto = 'fa-medkit';
-                        break;
-                    case 'video':
-                        picto = 'fa-video-camera';
-                        break;
-                    case 'wifi':
-                        picto = 'fa-wifi';
-                        break;
-                    case 'music':
-                        picto = 'fa-music';
-                        break;
-                    case 'government':
-                        picto = 'fa-university';
-                        break;
-                    case 'water':
-                        picto = 'fa-tint';
-                        break;
-                    case 'food':
-                        picto = 'fa-cutlery';
-                        break;
-                    case 'written':
-                        picto = 'fa-book';
-                        break;
-                    case 'power':
-                        picto = 'fa-bolt';
-                        break;
-                    case 'maps':
-                        picto = 'fa-map';
-                        break;
+            return function topLevelCategory(file) {
+                if (file.type != 'directory' || !file.isTopLevel) {
+                    return '';
                 }
-                return picto + ' fa-5x';
+                var picto='';
+                if (this.iconMetadata.ids.indexOf(file.name) != -1) {
+                    picto = file.name;
+                } else if (this.iconMetadata.names[file.name]) {
+                    picto = this.iconMetadata.names[file.name];
+                } else {
+                    picto = 'folder';
+                }
+                return 'fa-' + picto + ' fa-5x';
             };
         }
     ).filter('mediaTypes',

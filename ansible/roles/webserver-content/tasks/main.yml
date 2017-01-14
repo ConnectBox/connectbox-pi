@@ -26,6 +26,10 @@
   with_items:
     - "{{ connectbox_default_content_root }}"
 
+- name: Process fa-icon metadata
+  fa_icons:
+    icons_url: "{{ fa_icons_url }}"
+
 # Copy client interface files
 - name: Copy connectbox client interface
   synchronize:
