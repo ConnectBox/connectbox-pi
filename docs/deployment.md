@@ -6,6 +6,8 @@ The ConnectBox runs on Raspbian Lite and is setup using Ansible.
 
 Follow the [Raspberry Pi install instructions](https://www.raspberrypi.org/documentation/installation/installing-images/). Boot the Raspberry Pi with the image. This assumes that your Pi is attached to the network via its ethernet port, so that the wifi interface can be configured as an AP. Make a note of the IP address associated with the ethernet interface when it boots.
 
+Until [Issue 43](https://github.com/ConnectBox/connectbox-pi/issues/43) is resolved, use Raspbian 2016-09-27.
+
 ## Get Ansible
 
 This project uses Ansible v2.1+ with some additional, optional tools. Ansible connects to the Raspberry Pi to perform setup activities but is actually run from a different machine, like a separate server or a workstation. There are many ways to install Ansible, but package managers normally have an outdated version that is not suitable. Steps for installing to a python virtualenv are included below, as one way to install a suitable version and some additional tools. From the directory containing this README, run:
