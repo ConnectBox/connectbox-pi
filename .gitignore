@@ -8,4 +8,3 @@ ci/inventory
 ghostdriver.log
 ci/terraform.tfstate*
 ansible/inventory
-html/client/lib/fa-icon-metadata.js
