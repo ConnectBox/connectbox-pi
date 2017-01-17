@@ -1,4 +1,11 @@
 ---
+- name: Stop NetworkManager
+  service: name=network-manager state=stopped enabled=no
+
+- name: Remove NetworkManager
+  apt: pkg=network-manager
+       state=absent
+
 - name: Configure network interfaces
   template:
     src: etc_network_interfaces.j2
