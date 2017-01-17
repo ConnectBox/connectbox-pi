@@ -7,7 +7,8 @@ source-directory /etc/network/interfaces.d
 auto lo
 iface lo inet loopback
 
-iface eth0 inet manual
+allow-hotplug eth0
+iface eth0 inet dhcp
 
 allow-hotplug {{ client_facing_if }}
 iface {{ client_facing_if }} inet static
