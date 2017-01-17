@@ -18,7 +18,7 @@ hw_mode=g
 ieee80211n={{ ieee80211n_enabled }}
 
 # ACS is not supported on the brcmfmac driver (onboard wifi in rpi3)
-channel=1
+channel={{ wireless_channel }}
 macaddr_acl=0 # accept unless in deny list
 
 # IEEE 802.11 specifies two authentication algorithms. hostapd can be
