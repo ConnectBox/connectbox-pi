@@ -400,8 +400,8 @@ angular.module('index', ['ng'])
                 var picto='';
                 if (this.iconMetadata.ids.indexOf(file.name) != -1) {
                     picto = file.name;
-                } else if (this.iconMetadata.names[file.name]) {
-                    picto = this.iconMetadata.names[file.name];
+                } else if (this.iconMetadata.names[file.name.toLowerCase()]) {
+                    picto = this.iconMetadata.names[file.name.toLowerCase()];
                 } else {
                     picto = 'folder';
                 }
@@ -421,6 +421,8 @@ angular.module('index', ['ng'])
                 switch (ext) {
 					case 'txt':
                     case 'pdf':
+                    case 'epub':
+                    case 'mobi':
                         picto = 'fa-file-text-o'
 						break;
                     case 'mov':
