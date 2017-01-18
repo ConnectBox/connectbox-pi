@@ -12,9 +12,9 @@ This document describes how to administer a ConnectBox
 - username: admin
 - password: connectbox
 
-1. _Recommended_: Change the password for the Adminsitration Area. Go to the Configure Menu and select Password. Enter a new password and press submit. When you next try to change the system, you will be prompted to login again. Use the new password when that happens.
+1. _Recommended_: Change the password for the Administration area. Go to the Configure Menu and select Password. Enter a new password and press submit. When you next try to change the system, you will be prompted to login again. Use the new password when that happens.
 1. _Optional_: Change the name of the system (Configure -> System). This only appears in the location bar of the browser. If you change this, you will need to login again __Check if the redirect works immediately__
-1. _Optional_: Change the name of the wireless network. (Configure -> SSID). When you do this, you will be disconnected from the wireless network and will need to localte and join the newly named wireless network
+1. _Optional_: Change the name of the wireless network. (Configure -> SSID). When you do this, you will be disconnected from the wireless network and will need to locate and join the newly named wireless network
 1. _Optional_: Change the WiFi channel. (Configure -> Channel)
 
 # Content
