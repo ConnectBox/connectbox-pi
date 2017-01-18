@@ -25,6 +25,31 @@
                 top: 1.25em;
             }
 
+            .home-icon-container {
+                width: 65px;
+                height: 70px;
+            }
+
+            .home-icon-container img {
+              display: block;
+              width: 100%;
+              height: auto;
+            }
+
+            .subfolder-icon-container {
+                margin-left: 5px;
+                width: 14px;
+                height: 14px;
+                display: inline-block;
+                white-space: nowrap;
+            }
+
+            .subfolder-icon-container img {
+              display: block;
+              width: 100%;
+              height: auto;
+            }
+
             .breadcrumb {
                 background-color: #CCEFEB;
             }
@@ -62,13 +87,19 @@
         <td ng-class="::{'centered': row.isTopLevel}">
             <a href="{{:: row.type == 'directory' ? '#' : index.config.Content.contentRoute }}{{:: index.path }}/{{:: row.name }}">
                 <i ng-hide="row.icon_file" class="fa {{:: row | topLevelCategory }}"></i>
-                <img ng-if="row.icon_file && row.isTopLevel" ng-src="{{:: index.config.Content.contentRoute}}{{:: index.path }}/{{:: row.icon_file}}"/>
-                <i ng-hide="row.isTopLevel || row.icon_file" class="fa {{:: row | mediaTypes }}"></i>
-                <img ng-hide="row.isTopLevel" ng-if="row.icon_file" ng-src="{{:: index.config.Content.contentRoute}}{{:: index.path }}/{{:: row.icon_file}}"/>
-                <span ng-class="::{'row_name': !index.config.Client.display_root_folder_names, 'directory': row.type == 'directory'}">
-                    <span ng-if="!row.isTopLevel">&nbsp;</span>
-                    <span ng-if="row.isTopLevel && index.config.Client.display_root_folder_names"><br/></span>
+                <div ng-if="row.icon_file && row.isTopLevel" class="home-icon-container">
+                    <img ng-src="{{:: index.config.Content.contentRoute}}{{:: index.path }}/{{:: row.icon_file}}" />
+                </div>
+                <span ng-if="row.isTopLevel && index.config.Client.display_root_folder_names">
+                    <br ng-if="!row.icon_file && row.isTopLevel"/>
                     {{:: row.name }}
+                </span>
+                <i ng-hide="row.isTopLevel || row.icon_file" class="fa {{:: row | mediaTypes }}"></i>
+                <div ng-hide="row.isTopLevel" ng-if="row.icon_file" class="subfolder-icon-container">
+                    <img ng-src="{{:: index.config.Content.contentRoute}}{{:: index.path }}/{{:: row.icon_file}}"/>
+                </div>
+                <span ng-class="::{'row_name': !index.config.Client.display_root_folder_names, 'directory': row.type == 'directory'}">
+                    <span ng-if="!row.isTopLevel">&nbsp;{{:: row.name }}</span>
                 </span>
             </a>
         </td>
