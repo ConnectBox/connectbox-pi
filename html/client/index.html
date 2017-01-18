@@ -3,6 +3,7 @@
     <head>
         <title>ConnectBox</title>
         <script src="lib/angular.min.js"></script>
+        <script src="lib/fa-icon-metadata.js"></script>
         <link type="text/css" rel="stylesheet" href="lib/bootstrap.min.css" />
         <link type="text/css" rel="stylesheet" href="lib/font-awesome.min.css" />
         <meta charset="utf-8" />
@@ -24,8 +25,37 @@
                 top: 1.25em;
             }
 
+            .home-icon-container {
+                width: 65px;
+                height: 70px;
+            }
+
+            .home-icon-container img {
+              display: block;
+              width: 100%;
+              height: auto;
+            }
+
+            .subfolder-icon-container {
+                margin-left: 5px;
+                width: 14px;
+                height: 14px;
+                display: inline-block;
+                white-space: nowrap;
+            }
+
+            .subfolder-icon-container img {
+              display: block;
+              width: 100%;
+              height: auto;
+            }
+
             .breadcrumb {
                 background-color: #CCEFEB;
+            }
+
+            .centered {
+                text-align: center;
             }
 
             /* Top-level collapsed table */
@@ -35,7 +65,7 @@
             table.collapsed span.row_name {
                 display: none;
             }
-            table span.row_name.directory {
+            table span.directory {
                 font-weight: bold;
             }
             table.collapsed > tbody > tr {
@@ -47,16 +77,51 @@
                 vertical-align: bottom;
                 border-top: 0 !important;
             }
+            a {
+                text-decoration: none !important;
+            }
 }
         </style>
     </head>
+    <script type='text/ng-template' id="fileRenderer"> 
+        <td ng-class="::{'centered': row.isTopLevel}">
+            <a href="{{:: row.type == 'directory' ? '#' : index.config.Content.contentRoute }}{{:: index.path }}/{{:: row.name }}">
+                <i ng-hide="row.icon_file" class="fa {{:: row | topLevelCategory }}"></i>
+                <div ng-if="row.icon_file && row.isTopLevel" class="home-icon-container">
+                    <img ng-src="{{:: index.config.Content.contentRoute}}{{:: index.path }}/{{:: row.icon_file}}" />
+                </div>
+                <span ng-if="row.isTopLevel && index.config.Client.display_root_folder_names">
+                    <br ng-if="!row.icon_file && row.isTopLevel"/>
+                    {{:: row.name }}
+                </span>
+                <i ng-hide="row.isTopLevel || row.icon_file" class="fa {{:: row | mediaTypes }}"></i>
+                <div ng-hide="row.isTopLevel" ng-if="row.icon_file" class="subfolder-icon-container">
+                    <img ng-src="{{:: index.config.Content.contentRoute}}{{:: index.path }}/{{:: row.icon_file}}"/>
+                </div>
+                <span ng-class="::{'row_name': !index.config.Client.display_root_folder_names, 'directory': row.type == 'directory'}">
+                    <span ng-if="!row.isTopLevel">&nbsp;{{:: row.name }}</span>
+                </span>
+            </a>
+        </td>
+    </script>
+
     <body style="margin: 10px 20px">
         <div ng-controller="ScrollToTopController as scroll" class="pull-right" id="scroll-to-top" ng-show="scroll.show"><a href="" ng-click="scroll.to_top(); $event.preventDefault()"><i class="fa fa-long-arrow-up"></i> to top</a></div>
         <div ng-controller="IndexController as index" class="container-fluid ng-cloak">
             <div class="row">
                 <ol class="breadcrumb" style="left: 20px; right: 20px; position: fixed; z-index: 1000;">
-                    <li><a href="" ng-click="index.reload()" title="Reload"><i ng-class="{'loader': index.reloading.running || index.loading.running}" class="fa fa-refresh"></i></a></li>
-                    <li ng-class="::{'active': $last}" ng-repeat="part in index.path_parts"><span ng-if="::$last">{{:: part.name }} </span><a ng-if="::!$last" href="#{{:: part.path }}" ng-bind="::part.name"></a></li>
+                    <li>
+                        <a href="" ng-click="index.reload()" title="Reload">
+                            <i ng-class="{'loader': index.reloading.running || index.loading.running}" class="fa fa-refresh"></i>
+                        </a>
+                    </li>
+                    <li ng-repeat="part in index.path_parts" ng-class="::{'active': $last}">
+                        <span ng-if="part.name == '<root>'">
+                            <a href="#{{:: part.path }}"><i class="fa fa-home fa-lg"></i></a>
+                        </span>
+                        <span ng-if="::$last && part.name != '<root>'">{{:: part.name }}</span>
+                        <a ng-if="::!$last && part.name != '<root>'" href="#{{:: part.path }}" ng-bind="::part.name"></a>
+                    </li>
                 </ol>
             </div>
 
@@ -67,13 +132,26 @@
                         <tr ng-hide="index.path == '' || index.path == '/'">
                             <td ng-click="index.go_up()"><a href=""><i class="fa fa-level-up"></i> ..</a></td>
                         </tr>
-                        <tr ng-repeat="row in index.files | orderBy:index.sort.name:index.sort.rev">
-                            <td><a href="{{:: row.type == 'directory' ? '#' : index.config.Content.contentRoute }}{{:: index.path }}/{{:: row.name }}"><i class="fa {{:: row.name | topLevelCategory }}"></i><i class="fa {{:: row.ext | mediaTypes }}"></i><span class='row_name {{:: row.type}}'>&nbsp;{{:: row.name }}</span></a></td>
+                        <tr ng-repeat="row in index.files | orderBy:index.sort.name:index.sort.rev"
+                            ng-include="'fileRenderer'">
                         </tr>
                     </tbody>
                 </table>
                 </div>
             </div>
+
+            <div class="row" ng-hide="index.error || !index.topLevelFiles || !index.isTopLevel">
+                <div class="table-responsive">
+                <table class="table">
+                    <tbody>
+                        <tr ng-repeat="row in index.topLevelFiles | orderBy:index.sort.name:index.sort.rev"
+                            ng-include="'fileRenderer'">
+                        </tr>
+                    </tbody>
+                </table>
+                </div>
+            </div>
+
             <div class="row" style="margin-top: 60px;" ng-show="index.error">
                 <div class="alert alert-danger" role="alert">
                     <big>
@@ -88,8 +166,10 @@ angular.module('index', ['ng'])
         function($http, $location, $scope, window, $timeout, FILES_BASE_URL) {
             var self = this;
 
+            this.iconMetadata = window.iconMetadata;
             this.config = null;
             this.files = [];
+            this.topLevelFiles = [];
             this.loading = {
                 running: false,
                 timer: null,
@@ -162,15 +242,39 @@ angular.module('index', ['ng'])
                     }
                 ).then(
                     function(response) {
-                        var files = response.data || [];
+                        self.isTopLevel = path === '';
+                        var dirMap = {}
+                        self.files = (response.data || []).map(function (f) {
+                            f.mtime = new Date(f.mtime);
+                            f.isTopLevel = self.isTopLevel;
+                            if (f.type === 'file') {
+                                f.ext = file_extension(f.name);
+                                if (f.isTopLevel) {
+                                    f.isTopLevel = false;
+                                }
+                            } else {
+                                dirMap[f.name] = f;
+                            }
+                            return f;
+                        });
 
-                        for (var i = 0, l = files.length; i < l; i++) {
-                            files[i].mtime = new Date(files[i].mtime);
+                        //Remove icon files
+                        self.files = self.files.filter(function (f) {
+                            if (f.name.startsWith(self.config.Client.icon_prefix)) {
+                                parse_ico_metadata(self.config.Client.icon_prefix, f.name, dirMap);
+                                return false;
+                            } else {
+                                return true;
+                            }
+                        });
+
+                        if (self.isTopLevel) {
+                            //Top-level so partition to allow separate rendering of files / directories
+                            self.topLevelFiles = self.files.filter(function(f) { return f.type === 'file';});
+                            self.files = self.files.filter(function(f) { return f.type === 'directory';});
                         }
 
-                        self.files = files;
                         self.loading.stop();
-                        self.isTopLevel = path === '';
                         window.localStorage.setItem('lastPath', path);
                         window.scrollTo(0, 0);
                     },
@@ -192,6 +296,35 @@ angular.module('index', ['ng'])
                 return parts;
             }
 
+            function file_extension(fname) {
+                return fname.substr((~-fname.lastIndexOf(".") >>> 0) + 2);
+            }
+
+            function parse_ico_metadata(prefix, filename, dirMap) {
+
+                var ext = file_extension(filename),
+                    metadata, parts, dirName, dir, ico;
+
+                metadata = filename.substring(prefix.length);
+                
+                if (ext) {
+                    dirName = metadata.substring(0, metadata.lastIndexOf('.'));
+                    if (dirMap[dirName]) {
+                        dir = dirMap[dirName];
+                        dir.icon_file = filename;
+                    }
+                } else {
+                    parts = metadata.split("_");
+                    dirName = parts[0];
+                    ico = parts[1];
+
+                    if (dirMap[dirName]) {
+                        dir = dirMap[dirName];
+                        dir.icon_class = ico;
+                    }
+                }
+            }
+
             function initialize(config) {
                 self.loading.start();
 
@@ -206,7 +339,8 @@ angular.module('index', ['ng'])
                         self.config = response.data ||
                             {
                                 base_index_url: "",
-                                tail_slash: false
+                                tail_slash: false,
+                                display_root_folder_names: true
                             };
 
                         $scope.$on('$locationChangeSuccess',
@@ -286,76 +420,71 @@ angular.module('index', ['ng'])
     )
     .filter('topLevelCategory',
         function() {
-            return function topLevelCategory(dirName) {
-                var picto='';
-                switch (dirName) {
-                    case 'medical':
-                        picto = 'fa-medkit';
-                        break;
-                    case 'video':
-                        picto = 'fa-video-camera';
-                        break;
-                    case 'wifi':
-                        picto = 'fa-wifi';
-                        break;
-                    case 'music':
-                        picto = 'fa-music';
-                        break;
-                    case 'government':
-                        picto = 'fa-university';
-                        break;
-                    case 'water':
-                        picto = 'fa-tint';
-                        break;
-                    case 'food':
-                        picto = 'fa-cutlery';
-                        break;
-                    case 'written':
-                        picto = 'fa-book';
-                        break;
-                    case 'power':
-                        picto = 'fa-bolt';
-                        break;
-                    case 'maps':
-                        picto = 'fa-map';
-                        break;
+            return function topLevelCategory(file) {
+                if (file.type != 'directory' || !file.isTopLevel) {
+                    return '';
                 }
-                return picto + ' fa-5x';
+                if (file.icon_class) {
+                    return file.icon_class + ' fa-5x';
+                }
+
+                var picto='';
+                if (this.iconMetadata.ids.indexOf(file.name) != -1) {
+                    picto = file.name;
+                } else if (this.iconMetadata.names[file.name.toLowerCase()]) {
+                    picto = this.iconMetadata.names[file.name.toLowerCase()];
+                } else {
+                    picto = 'folder';
+                }
+                return 'fa-' + picto + ' fa-5x';
             };
         }
     ).filter('mediaTypes',
         function() {
-			return function mediaTypes(ext) {
-                var picto = '';
+			return function mediaTypes(file) {
+                if (file.icon_class) {
+                    return file.icon_class;
+                } else if (file.type == 'directory') {
+                    return 'fa-folder-o';
+                }
+                var picto,
+                    ext = file.ext;
                 switch (ext) {
-					case '.txt':
+					case 'txt':
+                    case 'pdf':
+                    case 'epub':
+                    case 'mobi':
                         picto = 'fa-file-text-o'
 						break;
-                    case '.mov':
-                    case '.mp4':
-                    case '.flv':
-                    case '.mkv':
-                    case '.avi':
-                    case '.wmv':
-                    case '.mpeg':
-                    case '.mpg':
-                    case '.3gp':
+                    case 'mov':
+                    case 'mp4':
+                    case 'flv':
+                    case 'mkv':
+                    case 'avi':
+                    case 'wmv':
+                    case 'mpeg':
+                    case 'mpg':
+                    case '3gp':
+                    case 'm4v':
                         picto = 'fa-file-video-o'
 						break;
-                    case '.mp3':
-                    case '.ogg':
-                    case '.ra':
-                    case '.wav':
+                    case 'mp3':
+                    case 'ogg':
+                    case 'ra':
+                    case 'wav':
                         picto = 'fa-file-sound-o'
 						break;
-                    case '.jpeg':
-                    case '.jpg':
-                    case '.gif':
-                    case '.png':
-                    case '.tiff':
+                    case 'jpeg':
+                    case 'jpg':
+                    case 'gif':
+                    case 'png':
+                    case 'tiff':
                         picto = 'fa-file-photo-o'
 						break;
 				}
+                if (!picto) {
+                    picto = 'fa-file-text-o';
+                }
 				return picto;
 			};
 		}
