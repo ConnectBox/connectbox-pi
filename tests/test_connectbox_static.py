@@ -52,17 +52,30 @@ class ConnectBoxBasicTestCase(unittest.TestCase):
         self.assertIn("ConnectBox Admin Dashboard", r.text)
 
     def testIOSCaptivePortalResponseForIOS(self):
-        """Return a the success.html page for iOS captive portal login"""
+        """Return the success.html page to bypass iOS captive portal login"""
+        # Strictly this should be requesting an Apple page, but DNS.
+        # See comments on testAndroidCaptivePortalResponse below
         headers = requests.utils.default_headers()
         # MacOS and iOS send something of this form
         headers.update({"User-Agent": "CaptiveNetworkSupport-346 wispr"})
-        r = requests.get("%s/" % (TEST_BASE_URL,), headers=headers)
+        r = requests.get("http://%s/" % (getTestTarget(),), headers=headers)
         self.assertIn("<BODY>\nSuccess\n</BODY>", r.text)
 
     def testIOSCaptivePortalResponseForNonIOS(self):
         """Do not return the success.html page for normal root requests"""
-        r = requests.get("%s/" % (TEST_BASE_URL,))
+        r = requests.get("http://%s/" % (getTestTarget(),))
         self.assertNotIn("<BODY>\nSuccess\n</BODY>", r.text)
+
+    def testAndroidCaptivePortalResponse(self):
+        """Return a 204 status code to bypass Android captive portal login"""
+        # Strictly this should be requesting
+        #  http://clients3.google.com/generate_204 but answering requests for
+        #  that site requires DNS mods, which can't be assumed for all
+        #  people running these tests, so let's just poke for the page using
+        #  the IP address of the server so we hit the default server, where
+        #  this 204 redirection is active.
+        r = requests.get("http://%s/generate_204" % (getTestTarget(),))
+        self.assertEquals(r.status_code, 204)
 
 
 class ConnectBoxAPITestCase(unittest.TestCase):
