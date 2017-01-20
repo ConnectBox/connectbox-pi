@@ -36,7 +36,7 @@ nginx_vhosts:
         rewrite /.* /success.html;
       }
       location /success.html {
-        root: "{{ connectbox_default_content_root }}"
+        root "{{ connectbox_default_content_root }}";
       }
       # Simulate internet access for Android so we can exit their
       #  captive portal.
