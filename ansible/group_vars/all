@@ -27,7 +27,28 @@ connectbox_default_hostname: connectbox.local
 nginx_vhosts:
   - listen: "*:80 default_server"
     server_name: "_"
-    return: "302 http://$hostname"
+    extra_parameters: |
+      rewrite_log on;
+      # Simulate internet access for iOS and MacOSX so we can exit
+      #  their captive portal browser.
+      #  See: https://forum.piratebox.cc/read.php?9,8927
+      if ($http_user_agent ~ CaptiveNetworkSupport) {
+        rewrite /.* /success.html;
+      }
+      location /success.html {
+        root: "{{ connectbox_default_content_root }}"
+      }
+      # Simulate internet access for Android so we can exit their
+      #  captive portal.
+      #  See: https://www.chromium.org/chromium-os/chromiumos-design-docs/network-portal-detection
+      # Required in the default_server to avoid sending a 302 when we
+      #  actually need a 204
+      location /generate_204 {
+        return 204;
+      }
+      location / {
+        return 302 http://$hostname;
+      }
   - listen: "80"
     server_name: "$hostname"
     index: index.html
@@ -37,13 +58,6 @@ nginx_vhosts:
     error_log: "/var/log/nginx/connectbox-error.log"
     extra_parameters: |
       rewrite_log on;
-
-      # Simulate internet access for iOS and MacOSX so we can exit
-      #  their captive portal browser.
-      #  See: https://forum.piratebox.cc/read.php?9,8927
-      if ($http_user_agent ~ CaptiveNetworkSupport) {
-        rewrite / /success.html;
-      }
 
       # Admin interface
       location /admin {
