@@ -30,6 +30,11 @@ Note that this should be run on the same machine where you setup your virtualenv
 1. **Commands assume ssh keys are setup from here**. If you haven't set them up, just add `--ask-pass` to the `ansible` or `ansible-playbook` command line and you'll be right.
 1. Run the playbook: `ansible-playbook -i inventory site.yml`. No tasks should fail.
 
+### Optional Ansible Arguments
+
+- Sample content is deployed by default. To prevent sample content being deployed, add `-e deploy_sample_content=False` to the `ansible-playbook` commandline.
+- The Wireless SSID can be changed from the admin interface but it can also be changed at deployment time. To specify a different ssid, add `-e ssid="<new ssid>"` to the `ansible-playbook` commandline e.g. `-e ssid="My Connectbox"`.
+
 ## Use the ConnectBox
 
 1. Search for, and connect to the WiFi point named "ConnectBox - Free Media"
