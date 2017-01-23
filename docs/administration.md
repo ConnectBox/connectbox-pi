@@ -28,4 +28,3 @@ This document describes how to administer a ConnectBox
 
 - When you insert your USB stick into the ConnectBox, content will automatically be visible in the ConnectBox web interface (this is http://connectbox.local unless the system name has been changed during Initial Administration)
 - To update the files on the USB stick, go to the Configure Menu in Administration area, then go to System and press "Unmount USB", then remove the USB stick from the ConnectBox
-
