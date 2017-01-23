@@ -10,3 +10,20 @@
     command: rsync -a /tmp/connectbox-sample-content/content/ {{ connectbox_usb_files_root }}
 
   when: deploy_sample_content == True
+
+- block:
+  - name: Create instructions in web root if USB stick not mounted
+    copy:
+      src: ../../../../docs/administration.md
+      dest: "{{ connectbox_usb_files_root }}/README.txt"
+
+  - name: Insert context into instructions
+    blockinfile:
+      name: "{{ connectbox_usb_files_root }}/README.txt"
+      insertbefore: BOF
+      marker: "---"
+      block: |
+        This file will be hidden when a USB stick is inserted.
+        The original of this file can be found at https://github.com/ConnectBox/connectbox-pi/blob/master/docs/administration.md
+
+  when: "{{ '/media/usb0' not in ansible_mounts|map(attribute='mount') }}"
