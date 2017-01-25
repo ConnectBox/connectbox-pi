@@ -6,7 +6,7 @@ This document describes how to administer a ConnectBox
 
 1. ConnectBox comes with system software. No content is included.
 2. Plug into a power source and wait 1 minute for startup.
-3. Locate and join the wireless network called _ConnectBox - Free Media_ 
+3. Locate and join the wireless network called _ConnectBox - Free Media_
 4. Navigate to the Administration area: http://connectbox.local/admin and login (username and password are case sensitive):
 
 - username: admin
