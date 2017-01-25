@@ -4,9 +4,9 @@ The ConnectBox runs on Raspbian Lite and is setup using Ansible.
 
 ## Install Vanilla Raspbian-lite on Raspberry Pi
 
-Follow the [Raspberry Pi install instructions](https://www.raspberrypi.org/documentation/installation/installing-images/). Boot the Raspberry Pi with the image. This assumes that your Pi is attached to the network via its ethernet port, so that the wifi interface can be configured as an AP. Make a note of the IP address associated with the ethernet interface when it boots.
+Download the [current Raspbian Jessie Lite](https://www.raspberrypi.org/downloads/raspbian/). The Nov 2016 introduced a security update that disables the SSH daemon by default. The connectbox is deployed using Ansible, which connects to the Raspberry Pi over SSH, so ssh needs to be enabled by mounting the downloaded image and creating a file called ssh in the `/boot` directory. The [security update](https://www.raspberrypi.org/blog/a-security-update-for-raspbian-pixel/) describes other ways to enable ssh. Once the image has been updated to enabled ssh, [put the image on an SD card](https://www.raspberrypi.org/documentation/installation/installing-images/) and boot the Raspberry Pi from it.
 
-Until [Issue 43](https://github.com/ConnectBox/connectbox-pi/issues/43) is resolved, use Raspbian 2016-09-27.
+The rest of this guide assumes that your Pi is attached to the network via its ethernet port, so that the wifi interface can be configured as an AP. Make a note of the IP address associated with the ethernet interface when it boots.
 
 ## Get Ansible
 
