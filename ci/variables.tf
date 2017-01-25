@@ -1,21 +1,24 @@
-variable "region" { default = "us-east-1" }
+variable "region" { default = "ap-east-1" }
 
 # Seemingly required so subnets are not necessarily created in the same AZ as
 #  the network interfaces
 variable "preferred_az" {
 	default = {
 		"us-east-1" = "us-east-1b"
-		"ap-southeast-1" = "ap-southeast-1a"
+		"ap-southeast-2" = "ap-southeast-2a"
+		"us-west-2" = "us-west-2a"
 	}
 }
 
-variable "instance_type" { default = "t2.nano" } 
+variable "instance_type" { default = "t2.nano" }
 
 # Debian Jessie AMIs by region1
 variable "amis" {
 	default = {
-		"us-east-1" = "ami-9d6c128a"
-		"ap-southeast-1" = "ami-0e6dce6d"
+		"us-east-1" = "ami-b14ba7a7"
+		"ap-southeast-1" = "ami-0842e96b"
+		"ap-southeast-2" = "ami-881317eb"
+		"us-west-2" = "ami-221ea342"
 	}
 }
 
