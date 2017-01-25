@@ -20,3 +20,4 @@ Whether you're using Vagrant or developing directly against a Raspberry Pi, you'
 1. You can access the ConnectBox site by connecting to a WiFi point named "ConnectBox - Free Media", but as the ssh port is not accessible from the WiFi network on the Pi, you may want to use a different device. Once connected to the WiFi point, go somewhere (anywhere) in your browser and you should be redirected to the ConnectBox site.
 1. You can also access the ConnectBox Site over ethernet. To do so add an entry in `/etc/hosts` on the machine where you ran Ansible, add the line `<ip-of-your-raspberry-pi> connectbox.local` . Then browse to http://connectbox.local
 1. Run the tests. In this directory: `TEST_IP=<ip-of-your-raspberry-pi> python -m unittest discover tests` . All the tests should pass.
+
