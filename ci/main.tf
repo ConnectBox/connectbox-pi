@@ -14,10 +14,10 @@ provider "aws" {
 #  is left here to make it easier to do the first run in a new region, or
 #  the first run after a complete cleanup or in a new account.
 #
-#resource "aws_key_pair" "travis-ci-connectbox" {
-#	key_name = "travis-ci-connectbox"
-#	public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCqWQb/Iv6kos8F/f9CEiXorP61L+nPemJFI1ML9OsBabN9e5PGII6xStEa6aDUPFqKB1ysMiYEaSn6hH3SzV5GD0/tWkLncHrJKAZ+FuXeOgAINU4TJnnspZhlsVrfEVp2moBQZfGPNpFmRJz4sn5xXHj2sWpozcxdEvC08ipE1yE4Vz10eicY500QUpJlPvHYxMaLeD7Znl68gAtQbuAPtKGvoxzf9fQlAGwBEuWnEs35NSh+WNqYr/yi7jAPiN6JrXK0y1TBhauiYN8HZ0JaeMjGIUY+Wntvm3jaWLOKc1f2ZHrKdaydZ8Jl8wTsq8pZf7BKuWD7rYqiVGdRRqQ1"
-#}
+resource "aws_key_pair" "travis-ci-connectbox-20170126" {
+	key_name = "travis-ci-connectbox-20170126"
+	public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCpGLG32t7stqIIU1MiRWMSpb4Cm3iOSJCX+G6BtOLu5RwpVR8/fE/w0ZlVpu3CWTtYRohqVUNGew8g9uSdt6aR/i1G3vmp2eyrfkV/R/ITt2rM4zzl8yGc5N5rlLzvem36Q1Z77UEZqXBqDnbZIH4tZw3IzKpk0RB2anGSzQ2NYn2gzW63KU4RcQY9Fg6A45qC5CFa6beF9l5epHB2AsO2N7x8aoPnmdRC/5Qej5kIxIgscZd4JHq8q3gpBYVVAucCp7Xmp3jiFLAvYAdVbTeIymDaWCvhAGTpweWod7Nu/sMUJ2l0IP9hVkd/ToapPOm3I1W+4rRjItbHK4BZsKYX"
+}
 
 # Shared by all travis-ci jobs
 resource "aws_vpc" "default" {
@@ -165,7 +165,7 @@ resource "aws_network_interface" "client-facing-server" {
 resource "aws_instance" "connectbox-server" {
 	ami = "${lookup(var.amis, var.region)}"
 	instance_type = "${var.instance_type}"
-	key_name = "travis-ci-connectbox"
+	key_name = "travis-ci-connectbox-20170126"
 	subnet_id = "${aws_subnet.default.id}"
 	vpc_security_group_ids = ["${aws_security_group.default.id}"]
 	tags {
