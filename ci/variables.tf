@@ -1,4 +1,4 @@
-variable "region" { default = "ap-east-1" }
+variable "region" { default = "us-east-1" }
 
 # Seemingly required so subnets are not necessarily created in the same AZ as
 #  the network interfaces
