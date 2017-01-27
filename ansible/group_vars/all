@@ -46,6 +46,12 @@ nginx_vhosts:
       location /generate_204 {
         return 204;
       }
+      # Android 7 introduced a fallback method for captive portal detection.
+      # Let's support that too.
+      # https://android.googlesource.com/platform/frameworks/base/+/master/services/core/java/com/android/server/connectivity/NetworkMonitor.java#92
+      location /gen_204 {
+        return 204;
+      }
       location / {
         return 302 http://$hostname;
       }
