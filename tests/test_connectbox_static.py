@@ -74,8 +74,16 @@ class ConnectBoxBasicTestCase(unittest.TestCase):
         #  people running these tests, so let's just poke for the page using
         #  the IP address of the server so we hit the default server, where
         #  this 204 redirection is active.
+        # gen_204 is also a fallback (see group_vars/all)
         r = requests.get("http://%s/generate_204" % (getTestTarget(),))
         self.assertEquals(r.status_code, 204)
+        r = requests.get("http://%s/gen_204" % (getTestTarget(),))
+        self.assertEquals(r.status_code, 204)
+
+    def testWindowsCaptivePortalResponse(self):
+        """Return ncsi.txt to bypass windows captive portal login page"""
+        r = requests.get("http://%s/ncsi.txt" % (getTestTarget(),))
+        self.assertEquals("Microsoft NCSI", r.text)
 
 
 class ConnectBoxAPITestCase(unittest.TestCase):

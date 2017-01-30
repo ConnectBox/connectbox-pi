@@ -37,6 +37,11 @@
     src: success.html
     dest: "{{ connectbox_default_content_root }}"
 
+- name: Copy Windows captive portal response page
+  copy:
+    src: ncsi.txt
+    dest: "{{ connectbox_default_content_root }}"
+
 # Permissions are correctly set in the subsequent task
 - name: Copy connectbox admin ui
   synchronize:
