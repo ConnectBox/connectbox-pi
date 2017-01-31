@@ -52,6 +52,12 @@ nginx_vhosts:
       location /gen_204 {
         return 204;
       }
+
+      # Exit Amazon kindle captive portal detection
+      location = /kindle-wifi/wifistub.html {
+        root "/var/www/connectbox/connectbox_default";
+      }
+
       location / {
         return 302 http://$hostname;
       }

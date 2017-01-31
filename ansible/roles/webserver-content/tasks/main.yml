@@ -37,6 +37,11 @@
     src: success.html
     dest: "{{ connectbox_default_content_root }}"
 
+- name: Copy Amazon Fire OS captive portal response page
+  copy:
+    src: wifistub.html
+    dest: "{{ connectbox_default_content_root }}/kindle-wifi/"
+
 # Permissions are correctly set in the subsequent task
 - name: Copy connectbox admin ui
   synchronize:
