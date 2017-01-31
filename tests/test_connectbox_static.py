@@ -85,6 +85,15 @@ class ConnectBoxBasicTestCase(unittest.TestCase):
         r = requests.get("http://%s/ncsi.txt" % (getTestTarget(),))
         self.assertEquals("Microsoft NCSI", r.text)
 
+    def testAmazonKindleCaptivePortalResponse(self):
+        """Return wifistub.html to bypass kindle captive portal login page"""
+        r = requests.get("http://%s/kindle-wifi/wifistub.html" % (getTestTarget(),))
+        self.assertIn("81ce4465-7167-4dcb-835b-dcc9e44c112a", r.text)
+
+    def testFacebookMessengerConnectivityResponse(self):
+        """Return a 204 status code to bypass FB messenger connectivity check"""
+        r = requests.get("http://%s/mobile/status.php" % (getTestTarget(),))
+        self.assertEquals(r.status_code, 204)
 
 class ConnectBoxAPITestCase(unittest.TestCase):
 
