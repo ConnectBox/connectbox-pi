@@ -63,6 +63,12 @@ nginx_vhosts:
       location /ncsi.txt {
         root "{{ connectbox_default_content_root }}";
       }
+
+      # Disable Facebook messenger connectivity check
+      location /mobile/status.php {
+        return 204;
+      }
+
       # Default - bounce to the real server definition
       location / {
         return 302 http://$hostname;
