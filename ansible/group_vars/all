@@ -52,12 +52,18 @@ nginx_vhosts:
       location /gen_204 {
         return 204;
       }
-
       # Exit Amazon kindle captive portal detection
       location = /kindle-wifi/wifistub.html {
         root "/var/www/connectbox/connectbox_default";
       }
 
+      # Simulate interet access for Windows so we can exit their captive
+      #  portal browser.
+      # See: https://technet.microsoft.com/en-us/library/cc766017(v=ws.10).aspx
+      location /ncsi.txt {
+        root "{{ connectbox_default_content_root }}";
+      }
+      # Default - bounce to the real server definition
       location / {
         return 302 http://$hostname;
       }
