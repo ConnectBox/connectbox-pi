@@ -39,7 +39,7 @@ setup_and_verify_infra( ) {
     done
     echo "OK";
     echo "Adding $target_host to inventory";
-    echo "$target_host ansible_ssh_user=admin ansible_ssh_private_key_file=$PEM_OUT" > inventory;
+    echo "$target_host disable_sshd_after_run=False ansible_ssh_user=admin ansible_ssh_private_key_file=$PEM_OUT" > inventory;
   done
 
   echo "Inventory follows:";

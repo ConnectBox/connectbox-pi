@@ -92,3 +92,20 @@
     upgrade: safe
   tags:
   - full-build-only
+
+# Run in a handler so sshd is disabled right at the end, at least to the
+#  extent that we can influence it. While handlers are run in the order that
+#  they are defined within a role, it's unclear how handlers are ordered
+#  when multiple roles fire handlers.
+# sshd forks child processes to handle connections, so stopping sshd doesn't
+#  disconnect the session that's stopping sshd (or the control session if
+#  pipelining is in use), so we can just use a regular service task.
+#
+# This is a no-op force the handler to run (assuming the conditional passes)
+- name: Schedule disabling of sshd
+  assert:
+    that:
+      - True
+  changed_when: True
+  when: disable_sshd_after_run==True
+  notify: Disable sshd

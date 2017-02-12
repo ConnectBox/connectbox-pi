@@ -12,5 +12,8 @@ Vagrant.configure(2) do |config|
 
   config.vm.provision "ansible" do |ansible|
     ansible.playbook = "ansible/site.yml"
+    ansible.extra_vars = {
+      disable_sshd_after_run: false
+    }
   end
 end
