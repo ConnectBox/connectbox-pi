@@ -93,6 +93,12 @@
   tags:
   - full-build-only
 
+- name: Make sure /boot/ssh does not exist on Raspbian so sshd isn't re-enabled on boot
+  file:
+    path: /boot/ssh
+    state: absent
+  when: disable_sshd_after_run==True and ansible_lsb["id"] == "Raspbian"
+
 # Run in a handler so sshd is disabled right at the end, at least to the
 #  extent that we can influence it. While handlers are run in the order that
 #  they are defined within a role, it's unclear how handlers are ordered
@@ -110,4 +116,4 @@
       - True
   changed_when: True
   when: disable_sshd_after_run==True
-  notify: Disable sshd
+  notify: Stop and Disable sshd
