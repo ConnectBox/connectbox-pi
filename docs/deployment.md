@@ -34,7 +34,7 @@ Note that this should be run on the same machine where you setup your virtualenv
 
 - Sample content is deployed by default. To prevent sample content being deployed, add `-e deploy_sample_content=False` to the `ansible-playbook` commandline.
 - The Wireless SSID can be changed from the admin interface but it can also be changed at deployment time. To specify a different ssid, add `-e ssid="<new ssid>"` to the `ansible-playbook` commandline e.g. `-e ssid="My Connectbox"`.
-- sshd is disabled by default at the end of the ansible playbook run. This is done because it addresses the problem of unauthorised remote access when default passwords are not changed, but does so in a way that it's easy to restore access if it was done by mistake. To leave sshd running at the end of the playbook run add `-e disable_sshd_after_run=False` to the `ansible-playbook` commandline.
+- sshd is stopped and disabled by default at the end of the ansible playbook run. This is done to addresses the problem of unauthorised remote access when default passwords are not changed, but does so in a way that it's easy to restore access if it was done by mistake. To leave sshd running at the end of the playbook run add `-e disable_sshd_after_run=False` to the `ansible-playbook` commandline. The [Raspbian security update](https://www.raspberrypi.org/blog/a-security-update-for-raspbian-pixel/) describes how to re-enable sshd if it was disabled by mistake.
 
 ## Use the ConnectBox
 

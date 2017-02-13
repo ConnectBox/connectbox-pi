@@ -2,7 +2,7 @@
 - name: reload php5-fpm
   service: name=php5-fpm state=restarted
 
-- name: Disable sshd
+- name: Stop and Disable sshd
   service:
     name: sshd
     state: stopped
