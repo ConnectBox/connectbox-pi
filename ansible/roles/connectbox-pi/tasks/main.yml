@@ -92,3 +92,28 @@
     upgrade: safe
   tags:
   - full-build-only
+
+- name: Make sure /boot/ssh does not exist on Raspbian so sshd isn't re-enabled on boot
+  file:
+    path: /boot/ssh
+    state: absent
+  when: disable_sshd_after_run==True and ansible_lsb["id"] == "Raspbian"
+
+# Run in a handler so sshd is disabled right at the end, at least to the
+#  extent that we can influence it. While handlers are run in the order that
+#  they are defined within a role, it's unclear how handlers are ordered
+#  when multiple roles fire handlers.
+# sshd forks child processes to handle connections, so stopping and disabling
+#  sshd doesn't disconnect the session that's actually doing the stopping and
+#  disabling (or the control session if pipelining is in use). This means we
+#  we can use a regular ansible service task rather than needing to background
+#  the command that does the work.
+#
+# This is a no-op force the handler to run (assuming the conditional passes)
+- name: Schedule task to stop and disable sshd
+  assert:
+    that:
+      - True
+  changed_when: True
+  when: disable_sshd_after_run==True
+  notify: Stop and Disable sshd
