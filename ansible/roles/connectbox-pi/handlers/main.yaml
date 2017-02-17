@@ -4,6 +4,6 @@
 
 - name: Stop and Disable sshd
   service:
-    name: sshd
+    name: ssh
     state: stopped
     enabled: no
