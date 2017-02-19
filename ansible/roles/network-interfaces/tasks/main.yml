@@ -10,7 +10,7 @@
     name: network-manager
     state: stopped
     enabled: no
-  when: nm_installed_check == 0
+  when: nm_installed_check.rc == 0
 
 - name: Remove NetworkManager
   apt:
