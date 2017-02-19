@@ -4,6 +4,5 @@
 wireless_channel: 3
 
 # Ansible doesn't detect CPU core count correctly, so override it here
-# (Also 1 worker process might perform better given the resource limitations)
-nginx_worker_processes: 1
+nginx_worker_processes: 4
 
