@@ -2,8 +2,13 @@
 - name: reload php5-fpm
   service: name=php5-fpm state=restarted
 
+# Skip lint because there's no way that ansible-lint can know at build time
+#  that we're legitimately use shell because of the && that is always
+#  present when this is run.
 - name: Run final disabling commands
   shell: "'{{ final_command | quote }}'"
   args:
     warn: no
   when: final_command != ""
+  tags:
+  - skip_ansible_lint
