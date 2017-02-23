@@ -2,8 +2,8 @@
 - name: reload php5-fpm
   service: name=php5-fpm state=restarted
 
-- name: Stop and Disable sshd
-  service:
-    name: ssh
-    state: stopped
-    enabled: no
+- name: Run final disabling commands
+  shell: "'{{ final_command | quote }}'"
+  args:
+    warn: no
+  when: final_command != ""

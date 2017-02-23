@@ -25,6 +25,8 @@ $ pip install -r requirements.txt
 
 Note that this should be run on the same machine where you setup your virtualenv - don't try to run it on the device itself.
 
+__A default ansible-playbook run will disable sshd and lock out the default user account on the Raspberry Pi. Read "Optional Ansible Arguments" if you don't want this__
+
 The rest of this guide assumes that your device is attached to the network via its ethernet port, so that the wifi interface can be configured as an AP. Make a note of the IP address associated with the ethernet interface when it boots.
 
 1. cd into the `ansible` directory in this project.
@@ -39,6 +41,7 @@ The rest of this guide assumes that your device is attached to the network via i
 - Sample content is deployed by default. To prevent sample content being deployed, add `-e deploy_sample_content=False` to the `ansible-playbook` commandline.
 - The Wireless SSID can be changed from the admin interface but it can also be changed at deployment time. To specify a different ssid, add `-e ssid="<new ssid>"` to the `ansible-playbook` commandline e.g. `-e ssid="My Connectbox"`.
 - sshd is stopped and disabled by default at the end of the ansible playbook run. This is done to addresses the problem of unauthorised remote access when default passwords are not changed, but does so in a way that it's easy to restore access if it was done by mistake. To leave sshd running at the end of the playbook run add `-e disable_sshd_after_run=False` to the `ansible-playbook` commandline. The [Raspbian security update](https://www.raspberrypi.org/blog/a-security-update-for-raspbian-pixel/) describes how to re-enable sshd if it was disabled by mistake.
+- The default user account is locked at the end of the ansible playbook run. This is done to prevent unauthorised access to the console via ssh using the default Raspbian username and password. To prevent the account being locked, generate a crypt(3) password hash and add `-e 'user_account_pw_hash=your-hash-string'` to the `ansible-playbook` commandline. The [Ansible documentation](http://docs.ansible.com/ansible/faq.html#how-do-i-generate-crypted-passwords-for-the-user-module) provides instructions on generating crypt(3) format hashes. Raspbian expects hashes in sha-512 format. If you mistakenly lock your account follow the instructions at [Reset a lost Raspberry Pi password)[http://www.raspberrypi-spy.co.uk/2014/08/how-to-reset-a-forgotten-raspberry-pi-password/)
 
 ## Use the ConnectBox
 
