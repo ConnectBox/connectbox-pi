@@ -14,3 +14,7 @@
 
 [orange_pi_zero]
 #192.168.20.184 ansible_user=pi wireless_country_code=AU
+
+[pine64]
+#192.168.20.185 ansible_user=root wireless_country_code=AU
+

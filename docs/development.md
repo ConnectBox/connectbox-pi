@@ -1,10 +1,10 @@
 # Developing the ConnectBox software
 
-If you're developing the interface, it's often faster to do development on a virtual machine and do final validation against a Raspberry Pi. If you want to do this, a `Vagrantfile` exists to allow [Vagrant](https://www.vagrantup.com) to automatically provision a virtual machine (running Debian Jessie) that behaves like a ConnectBox in all areas except the provision of a wireless network. It's also easy to develop against a Raspberry Pi.
+If you're developing the interface, it's often faster to do development on a virtual machine and do final validation against a real device (Raspberry Pi/Orange Pi Zero/Pine64). If you want to do this, a `Vagrantfile` exists to allow [Vagrant](https://www.vagrantup.com) to automatically provision a virtual machine (running Debian Jessie) that behaves like a ConnectBox in all areas except the provision of a wireless network. It's also easy to directly develop against a device, but it's often a little slower because of the limited resources on the device itself.
 
 ## Get Ansible
 
-Whether you're using Vagrant or developing directly against a Raspberry Pi, you'll need Ansible to perform the setup, so follow the _Get Ansible_ instructions in the [deployment.md](deployment.md) documentation.
+Whether you're using Vagrant or developing directly against a device, you'll need Ansible to perform the setup, so follow the _Get Ansible_ instructions in the [deployment.md](deployment.md) documentation.
 
 ## Developing against a VM
 
@@ -14,10 +14,11 @@ Whether you're using Vagrant or developing directly against a Raspberry Pi, you'
 1. Run the tests. In this directory: `TEST_IP=172.28.128.3 python -m unittest discover tests` . All the tests should pass.
 1. The WiFi Point is not active when running from a virtual machine, but you can still view the ConnectBox Site by browsing to http://connectbox.local
 
-## Developing against a Raspberry Pi
+## Developing against a Device
 
-1. This is identical to deploying a new Raspberry pi, so follow the instructions in the [deployment.md](deployment.md) documentation
-1. You can access the ConnectBox site by connecting to a WiFi point named "ConnectBox - Free Media", but as the ssh port is not accessible from the WiFi network on the Pi, you may want to use a different device. Once connected to the WiFi point, go somewhere (anywhere) in your browser and you should be redirected to the ConnectBox site.
-1. You can also access the ConnectBox Site over ethernet. To do so add an entry in `/etc/hosts` on the machine where you ran Ansible, add the line `<ip-of-your-raspberry-pi> connectbox.local` . Then browse to http://connectbox.local
-1. Run the tests. In this directory: `TEST_IP=<ip-of-your-raspberry-pi> python -m unittest discover tests` . All the tests should pass.
+1. This is identical to deploying a new device, so follow the instructions in the [deployment.md](deployment.md) documentation. You probably want to run the Ansible playbook many times as you do your development, so you will likely want to specify the `disable_sshd_after_run` variable.
+
+1. You can access the ConnectBox site by connecting to a WiFi point named "ConnectBox - Free Media". Once connected to the WiFi point, go somewhere (anywhere) in your browser and you should be redirected to the ConnectBox site.
+1. You can also access the ConnectBox Site over ethernet. To do so add an entry in `/etc/hosts` on the machine where you ran Ansible, add the line `<ip-of-your-device> connectbox.local` . Then browse to http://connectbox.local
+1. Run the tests. In this directory: `TEST_IP=<ip-of-your-device> python -m unittest discover tests` . All the tests should pass.
 

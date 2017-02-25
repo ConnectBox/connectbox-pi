@@ -1,10 +1,7 @@
 ---
 # These parameters apply to all hosts. While this would normally be
-#  put in as host_vars, the IP address of the Pi will be different
-#  for each deployment, so it's easier to put it here. We could also
-#  have the pi in a specific group in the inventory file, and make
-#  this file correspond to that group, but then the inventory is
-#  slightly more complex
+#  put in as host_vars, the IP address of the device will be different
+#  for each deployment, so it's easier to put it here.
 
 # Parameterised to allow overriding during CI builds, where we want to
 #  test some client-facing capabilities but do not have a wifi interface
