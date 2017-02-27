@@ -1,3 +1,5 @@
 ---
 ieee80211n_enabled: 1
 
+# Ansible doesn't detect CPU core count correctly, so override it here
+nginx_worker_processes: 4
