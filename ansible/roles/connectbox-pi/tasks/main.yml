@@ -97,20 +97,13 @@
   file:
     path: /boot/ssh
     state: absent
-  when: disable_sshd_after_run == True and ansible_lsb["id"] == "Raspbian"
+  when: not developer_mode and ansible_lsb["id"] == "Raspbian"
 
 # Disable the main user account unless as password hash is provided
 - name: Schedule disabling of user account
   set_fact:
-    final_command: "/usr/sbin/usermod --lock --shell /usr/sbin/nologin {{ user_account_to_disable }}"
-  when: user_account_to_disable != "" and user_account_pw_hash == ""
-
-# Set the password on the user account
-- name: Set user account password with supplied hash
-  user:
-    name: "{{ user_account_to_disable }}"
-    password: "{{ user_account_pw_hash }}"
-  when: user_account_to_disable != "" and user_account_pw_hash != ""
+    final_command: "/usr/sbin/usermod --lock --shell /usr/sbin/nologin {{ ansible_user }}"
+  when: not developer_mode
 
 # sshd forks child processes to handle connections, so stopping and disabling
 #  sshd doesn't disconnect the session that's actually doing the stopping and
@@ -119,7 +112,7 @@
 - name: Schedule disabling of sshd
   set_fact:
     final_command: "{{ (final_command == '') | ternary('systemctl disable ssh && systemctl stop ssh', ['systemctl disable ssh && systemctl stop ssh', final_command] | join(' && ')) }}"
-  when: disable_sshd_after_run == True
+  when: not developer_mode
 
 # Run the final commands in a handler so any disabling is performed right at
 #  the end of the playbook run, to extent that we can influence it. While

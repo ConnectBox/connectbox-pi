@@ -12,7 +12,7 @@ Download the [Debian Jessie Pine64 Armbian Server Legacy Image](https://www.armb
 
 ## Get Ansible
 
-This project uses Ansible v2.1+ with some additional, optional tools. Ansible connects to the Raspberry Pi to perform setup activities but is actually run from a different machine, like a separate server or a workstation. There are many ways to install Ansible, but package managers normally have an outdated version that is not suitable. Steps for installing to a python virtualenv are included below, as one way to install a suitable version and some additional tools. From the directory containing this README, run:
+This project uses Ansible v2.1+ with some additional, optional tools. Ansible connects to the device to perform setup activities but is actually run from a different machine, like a separate server or a workstation. There are many ways to install Ansible, but package managers normally have an outdated version that is not suitable. Steps for installing to a python virtualenv are included below, as one way to install a suitable version and some additional tools. From the directory containing this README, run:
 
 ```
 $ mkdir ~/.virtualenvs
@@ -25,7 +25,7 @@ $ pip install -r requirements.txt
 
 Note that this should be run on the same machine where you setup your virtualenv - don't try to run it on the device itself.
 
-__A default ansible-playbook run will disable sshd and lock out the default user account on the Raspberry Pi. Read "Optional Ansible Arguments" if you don't want this__
+__A default ansible-playbook run will disable sshd and lock out the default user account. Read "Optional Ansible Arguments" if you don't want this__
 
 The rest of this guide assumes that your device is attached to the network via its ethernet port, so that the wifi interface can be configured as an AP. Make a note of the IP address associated with the ethernet interface when it boots.
 
@@ -40,8 +40,7 @@ The rest of this guide assumes that your device is attached to the network via i
 
 - Sample content is deployed by default. To prevent sample content being deployed, add `-e deploy_sample_content=False` to the `ansible-playbook` commandline.
 - The Wireless SSID can be changed from the admin interface but it can also be changed at deployment time. To specify a different ssid, add `-e ssid="<new ssid>"` to the `ansible-playbook` commandline e.g. `-e ssid="My Connectbox"`.
-- sshd is stopped and disabled by default at the end of the ansible playbook run. This is done to addresses the problem of unauthorised remote access when default passwords are not changed, but does so in a way that it's easy to restore access if it was done by mistake. To leave sshd running at the end of the playbook run add `-e disable_sshd_after_run=False` to the `ansible-playbook` commandline. The [Raspbian security update](https://www.raspberrypi.org/blog/a-security-update-for-raspbian-pixel/) describes how to re-enable sshd if it was disabled by mistake.
-- The default user account is locked at the end of the ansible playbook run. This is done to prevent unauthorised access to the console via ssh using the default Raspbian username and password. To prevent the account being locked, generate a crypt(3) password hash and add `-e 'user_account_pw_hash=your-hash-string'` to the `ansible-playbook` commandline. The [Ansible documentation](http://docs.ansible.com/ansible/faq.html#how-do-i-generate-crypted-passwords-for-the-user-module) provides instructions on generating crypt(3) format hashes. Raspbian expects hashes in sha-512 format. If you mistakenly lock your account follow the instructions at [Reset a lost Raspberry Pi password)[http://www.raspberrypi-spy.co.uk/2014/08/how-to-reset-a-forgotten-raspberry-pi-password/)
+- sshd is stopped and disabled by default at the end of the ansible playbook run, and the user account is locked (with `usermod -L`). This is done to prevent unauthorised remote access and console access, particularly if operating system default passwords are not changed. If you do not want this to happen add `-e developer_mode=False` to the `ansible-playbook` commandline, but realise that this leaves the device in an insecure mode. If you have inadvertently locked yourself out, the [Raspbian security update](https://www.raspberrypi.org/blog/a-security-update-for-raspbian-pixel/) describes how to re-enable sshd and you can re-enable the account using information at RaspberryPi Spy - [Reset a lost Raspberry Pi password)[http://www.raspberrypi-spy.co.uk/2014/08/how-to-reset-a-forgotten-raspberry-pi-password/)
 
 ## Use the ConnectBox
 

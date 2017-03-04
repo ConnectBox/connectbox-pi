@@ -1,9 +1,5 @@
 ---
-disable_sshd_after_run: True
-# Overridden in group_vars.
-user_account_to_disable: ""
-# Disables account unless overridden
-user_account_pw_hash: ""
+developer_mode: False
 # Command to run at the end of the playbook run to potentially disable
 # accounts and sshd
 final_command: ""

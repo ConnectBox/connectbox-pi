@@ -1,3 +1,2 @@
 ---
 ansible_user: root
-user_account_to_disable: root

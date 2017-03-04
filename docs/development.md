@@ -16,7 +16,7 @@ Whether you're using Vagrant or developing directly against a device, you'll nee
 
 ## Developing against a Device
 
-1. This is identical to deploying a new device, so follow the instructions in the [deployment.md](deployment.md) documentation. You probably want to run the Ansible playbook many times as you do your development, so you will likely want to specify the `disable_sshd_after_run` variable.
+1. This is identical to deploying a new device, so follow the instructions in the [deployment.md](deployment.md) documentation. You probably want to run the Ansible playbook many times as you do your development, so you will likely want to specify the `developer_mode` variable on your commandline on in the Ansible inventory.
 
 1. You can access the ConnectBox site by connecting to a WiFi point named "ConnectBox - Free Media". Once connected to the WiFi point, go somewhere (anywhere) in your browser and you should be redirected to the ConnectBox site.
 1. You can also access the ConnectBox Site over ethernet. To do so add an entry in `/etc/hosts` on the machine where you ran Ansible, add the line `<ip-of-your-device> connectbox.local` . Then browse to http://connectbox.local

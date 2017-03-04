@@ -38,11 +38,10 @@ setup_and_verify_infra( ) {
       sleep 1;
     done
     echo "OK";
-    # We do not specify a user_account_pw_hash (to prevent account locking)
-    #  because debian group_vars do not specify a user_account to lock which
-    #  means the account won't be locked.
+    # Specify developer mode so the machine isn't locked down (we need access
+    #  (to run the tests)
     echo "Adding $target_host to inventory";
-    echo "$target_host disable_sshd_after_run=False ansible_ssh_user=admin ansible_ssh_private_key_file=$PEM_OUT" > inventory;
+    echo "$target_host developer_mode=True ansible_ssh_user=admin ansible_ssh_private_key_file=$PEM_OUT" > inventory;
   done
 
   echo "Inventory follows:";
