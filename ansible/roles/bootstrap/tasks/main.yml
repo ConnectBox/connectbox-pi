@@ -55,4 +55,3 @@
     when: ip_show_wlan0.rc != 0
 
   when: ansible_lsb["id"] == "Debian"
-

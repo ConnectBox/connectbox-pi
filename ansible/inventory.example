@@ -9,11 +9,18 @@
 # If your device has a WiFi access point, replace the wireless_country_code
 # with your two-letter country code (see https://git.kernel.org/cgit/linux/kernel/git/sforshee/wireless-regdb.git/tree/db.txt for a list of valid values)
 #
+[raspbian:children]
+raspberry_pi_3
+
+[armbian:children]
+orange_pi_zero
+pine64
+
 [raspberry_pi_3]
 #192.168.20.183 ansible_user=pi wireless_country_code=AU
 
 [orange_pi_zero]
-#192.168.20.184 ansible_user=pi wireless_country_code=AU
+#192.168.20.184 ansible_user=root wireless_country_code=AU
 
 [pine64]
 #192.168.20.185 ansible_user=root wireless_country_code=AU
