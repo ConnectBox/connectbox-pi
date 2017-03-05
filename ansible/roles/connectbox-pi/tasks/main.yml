@@ -54,7 +54,6 @@
     path: /usr/local/connectbox/etc
     owner: _connectbox
     group: _connectbox
-    recurse: yes
     mode: 0755
 
 - name: Copy connectbox scripts
