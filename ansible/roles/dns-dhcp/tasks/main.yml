@@ -1,41 +1,4 @@
 ---
-# Openresolv, by default, wants to update /etc/resolv.conf to use dnsmasq
-#  as a local resolver. We stop it from doing that with resolvconf=NO
-# If 127.0.0.1 is a system resolver when dnsmasq is running, all on-box
-#  queries are answered with the local client-facing ip address. This breaks
-#  apt updates and other stuff that needs a working resolver. This means that
-#  clients get different results to their DNS queries (which are served
-#  from dnsmasq) from queries run on-box i.e. using system resolver
-#
-#  This does not work with the openresolv that ships with raspbian-lite
-#   based on jessie, which is why we need to upgrade it below
-- name: Tell openresolv not to touch /etc/resolv.conf
-  lineinfile:
-    dest: /etc/resolvconf.conf
-    line: resolvconf=NO
-    state: present
-  register: resolvconf_conf_changed
-
-- name: Upgrade openresolv to a version that supports resolvconf=NO
-  apt:
-    name: openresolv
-    state: latest
-    default_release: jessie-backports
-
-# This can't be a handler, as we need this config to be in place when
-#  we install and start dnsmasq. If it is not, then openresolv removes
-#  the entries in /etc/resolv.conf and breaks DNS
-- name: Reload openresolv with config
-  command: /sbin/resolvconf -u
-  when: resolvconf_conf_changed.changed
-  tags:
-  - skip_ansible_lint
-
-- name: Install dnsmasq
-  apt:
-    name: dnsmasq
-    state: present
-
 - name: Copy dnsmasq configuration
   template:
     src: etc_dnsmasq.conf.j2
@@ -43,8 +6,15 @@
     owner: root
     group: root
     mode: 0644
-    validate: dnsmasq --test --conf-file=%s
-  notify: Reload dnsmasq
+  notify: Restart dnsmasq
+
+# Note that the handler must do a restart instead of a reload as some of
+#  these defaults are only read at startup
+- name: Create defaults for dnsmasq used when starting dnsmasq (including not adding the local machine as a resolver)
+  copy:
+    src: etc_default_dnsmasq
+    dest: /etc/default/dnsmasq
+  notify: Restart dnsmasq
 
 # This is necessary because nginx redirects to the hostname, but the hostname
 #  is listed in /etc/hosts and associated with 127.0.0.1 (so dnsmasq uses it
@@ -56,6 +26,18 @@
   lineinfile:
     dest: /etc/hosts
     line: "{{ client_facing_if_ip_address }} {{ connectbox_default_hostname }}"
+
+# Install dnsmasq after the config files are in place.
+# Installation of dnsmasq starts the service, and if the config files aren't
+#  correct when the service starts, it removes the upstream resolver from
+#  /etc/resolv.conf, and it's necessary to restart dhclient to repopulate
+#  /etc/resolv.conf with the upstream resolver.
+# Unfortunately this means we can't use the validate clause on the
+#  dnsmasq.conf template task
+- name: Install dnsmasq
+  apt:
+    name: dnsmasq
+    state: present
 
 - name: Start and enable dnsmasq
   service:
