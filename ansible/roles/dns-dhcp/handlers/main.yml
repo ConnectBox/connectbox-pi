@@ -2,7 +2,7 @@
 # A reload with the current ordering, when installed on a vanilla system
 # results in a dnsmasq that doesn't offer DHCP addresses. A restart seems to
 # fix that but it would be nice to know why a reload was insufficient
-- name: Reload dnsmasq
+- name: Restart dnsmasq
   service:
     name: dnsmasq
     state: restarted
