@@ -43,15 +43,6 @@
 
 # See if we need to create a wlan0 interface when we're running in a sim
 #  environment i.e. running Debian
-- block:
-  - name: Check if wlan0 exists
-    command: /sbin/ip link show wlan0
-    register: ip_show_wlan0
-    changed_when: False
-    ignore_errors: True
-
-  - name: Create a wlan0 interface
-    command: /sbin/ip link add wlan0 type dummy
-    when: ip_show_wlan0.rc != 0
-
-  when: ansible_lsb["id"] == "Debian"
+- name: Create a wlan0 interface
+  command: /sbin/ip link add wlan0 type dummy
+  when: "'wlan0' not in ansible_interfaces and ansible_lsb['id'] == 'Debian'"
