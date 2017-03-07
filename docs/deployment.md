@@ -8,7 +8,7 @@ Download the [current Raspbian Jessie Lite](https://www.raspberrypi.org/download
 
 ## Install Armbian on Orange Pi Zero or Pine64
 
-Download the [Debian Jessie Pine64 Armbian Server Legacy Image](https://www.armbian.com/pine64/) put it into an SD card. The [Armbian Getting Started Guide](https://docs.armbian.com/User-Guide_Getting-Started/) is useful. Before running ansible, you need to login and set the root password per the Armbian Getting Started Guide.
+Download the [Debian Jessie Pine64 Armbian Server Legacy Image](https://www.armbian.com/pine64/) put it into an SD card. Do not use a Ubuntu Xenial image as the Ansible playbooks expect Debian. The [Armbian Getting Started Guide](https://docs.armbian.com/User-Guide_Getting-Started/) is useful. Before running ansible, you need to login and set the root password per the Armbian Getting Started Guide.
 
 ## Get Ansible
 
