@@ -1,6 +1,5 @@
 ---
 
-
 # Needed by Debian Official AMI
 - name: Install aptitude
   apt:
@@ -46,3 +45,11 @@
 - name: Create a wlan0 interface
   command: /sbin/ip link add wlan0 type dummy
   when: "'wlan0' not in ansible_interfaces and ansible_lsb['id'] == 'Debian'"
+
+# Non developer mode restricts ssh connections to ethernet
+# This variable needs to be set before the mikegleasonjr.firewall role is run
+- name: Set acceptable interfaces for inbound ssh
+  set_fact:
+    iptables_ssh_in_interface: "-i eth0"
+  when: not developer_mode
+
