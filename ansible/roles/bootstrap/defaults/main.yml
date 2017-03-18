@@ -1,0 +1,9 @@
+---
+# Official Debian repo. armhf ARMv7+
+jessie_backports_repo: deb http://httpredir.debian.org/debian jessie-backports main
+
+# Debian signing keys. Used for Debian and Armbian
+jessie_backports_signing_keys:
+  - 7638D0442B90D010
+  - 8B48AD6246925553
+
