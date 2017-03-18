@@ -7,24 +7,20 @@
     state: present
   when: ansible_lsb["id"] == "Debian"
 
-# Backports repo is used by Debian and Raspbian
-- name: Add debian signing keys, necessary for backports repo
+- name: Add signing keys for jessie backports repo
   apt_key:
     keyserver: hkp://keyserver.ubuntu.com:80
     state: present
     id: "{{ item }}"
-  with_items:
-    - 7638D0442B90D010
-    - 8B48AD6246925553
+  with_items: "{{ jessie_backports_signing_keys }}"
 
 - name: Populate apt cache to avoid problems when loading jessie backport repo
   apt:
     update-cache: yes
 
-# Backports repo is used by Debian and Raspbian
 - name: Enable Jessie backport repo
   apt_repository:
-    repo: deb http://httpredir.debian.org/debian jessie-backports main contrib non-free
+    repo: "{{ jessie_backports_repo }}"
     filename: jessie-backports
     state: present
 
