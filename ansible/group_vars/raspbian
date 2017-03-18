@@ -1,2 +1,10 @@
 ---
 ansible_user: pi
+
+# No Debian armhf backports repo exists that runs on ARMv6 so we have our
+#  own for the packages that we require
+jessie_backports_repo: deb https://eisbox.net/downloads/connectbox/repo jessie-backports main
+
+# Matt's signing key, currently used to sign the repo
+jessie_backports_signing_keys:
+  - D8E4364592F3A749

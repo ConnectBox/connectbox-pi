@@ -7,43 +7,22 @@
     state: present
   when: ansible_lsb["id"] == "Debian"
 
-# Debian-provided backports repo is used by Debian and Armbian
-- name: Add Debian signing keys, to allow Debian backports repo
+- name: Add signing keys for jessie backports repo
   apt_key:
     keyserver: hkp://keyserver.ubuntu.com:80
     state: present
     id: "{{ item }}"
-  with_items:
-    - 7638D0442B90D010
-    - 8B48AD6246925553
-  when: ansible_lsb["id"] != "Raspbian"
-
-# No Debian armhf backports repo exists that runs on ARMv6 so we have our
-#  own for the packages that we require
-- name: Add ConnectBox signing key, to allow ConnectBox backports repo
-  apt_key:
-    url: https://eisbox.net/downloads/connectbox/repo/apt/conf/92F3A749.gpg.key
-    state: present
-  when: ansible_lsb["id"] == "Raspbian"
+  with_items: "{{ jessie_backports_signing_keys }}"
 
 - name: Populate apt cache to avoid problems when loading jessie backport repo
   apt:
     update-cache: yes
 
-- name: Enable Debian-provided Jessie backport repo (for Debian and Armbian)
+- name: Enable Jessie backport repo
   apt_repository:
-    repo: deb http://httpredir.debian.org/debian jessie-backports main
-    filename: debian-jessie-backports
+    repo: "{{ jessie_backports_repo }}"
+    filename: jessie-backports
     state: present
-  when: ansible_lsb["id"] != "Raspbian"
-
-# Connectbox-provided backports repo for Raspbian
-- name: Enable Connectbox-provided Jessie backport repo for Raspbian
-  apt_repository:
-    repo: deb https://eisbox.net/downloads/connectbox/repo jessie-backports main
-    filename: connectbox-jessie-backports
-    state: present
-  when: ansible_lsb["id"] == "Raspbian"
 
 - name: Populate apt cache now that repos are loaded
   apt:
