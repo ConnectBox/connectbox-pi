@@ -2,7 +2,7 @@
 
 # ConnectBox
 
-ConnectBox is a media sharing device based on small form factor computers including the Raspberry Pi, Orange Pi Zero and Pine64.
+ConnectBox is a media sharing device based on small form factor computers including the Raspberry Pi 3, Raspberry Pi Zero W, Orange Pi Zero and Pine64.
 
 # Making a ConnectBox
 

@@ -1,8 +1,8 @@
 # Making a ConnectBox
 
-The ConnectBox runs on a few different devices, with a specific operating system for each. It requires Raspbian Lite for Raspberry Pi 3 devices and Armbian for Orange Pi Zero and Pine64 devices. The ConnectBox is setup using Ansible.
+The ConnectBox runs on a few different devices, with a specific operating system for each. It requires Raspbian Lite for Raspberry Pi 3 and Raspberry Pi Zero W devices and Armbian for Orange Pi Zero and Pine64 devices. The ConnectBox is setup using Ansible.
 
-## Install Vanilla Raspbian-lite on Raspberry Pi
+## Install Vanilla Raspbian-lite on Raspberry Pi 3 or Raspberry Pi Zero W
 
 Download the [current Raspbian Jessie Lite](https://www.raspberrypi.org/downloads/raspbian/). The Nov 2016 introduced a security update that disables the SSH daemon by default. The connectbox is deployed using Ansible, which connects to the Raspberry Pi over SSH, so ssh needs to be enabled by mounting the downloaded image and creating a file called ssh in the `/boot` directory. The [security update](https://www.raspberrypi.org/blog/a-security-update-for-raspbian-pixel/) describes other ways to enable ssh. Once the image has been updated to enabled ssh, [put the image on an SD card](https://www.raspberrypi.org/documentation/installation/installing-images/) and boot the Raspberry Pi from it.
 
