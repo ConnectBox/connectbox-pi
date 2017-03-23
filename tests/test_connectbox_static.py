@@ -56,15 +56,20 @@ class ConnectBoxBasicTestCase(unittest.TestCase):
         # Strictly this should be requesting an Apple page, but DNS.
         # See comments on testAndroidCaptivePortalResponse below
         headers = requests.utils.default_headers()
-        # MacOS and iOS send something of this form
+        # iOS and MacOS pre-Yosemite send something of this form
         headers.update({"User-Agent": "CaptiveNetworkSupport-346 wispr"})
-        r = requests.get("http://%s/" % (getTestTarget(),), headers=headers)
+        r = requests.get("http://%s/success.html" %
+                         (getTestTarget(),), headers=headers)
         self.assertIn("<BODY>\nSuccess\n</BODY>", r.text)
 
-    def testIOSCaptivePortalResponseForNonIOS(self):
-        """Do not return the success.html page for normal root requests"""
-        r = requests.get("http://%s/" % (getTestTarget(),))
-        self.assertNotIn("<BODY>\nSuccess\n</BODY>", r.text)
+    def testYosemiteCaptivePortalResponseForYosemite(self):
+        """Return the hotspot-detect.html page to bypass Yosemite login"""
+        headers = requests.utils.default_headers()
+        # MacOS Yosemite and later send something of this form
+        headers.update({"User-Agent": "CaptiveNetworkSupport-346 wispr"})
+        r = requests.get("http://%s/hotspot-detect.html" %
+                         (getTestTarget(),), headers=headers)
+        self.assertIn("<BODY>\nSuccess\n</BODY>", r.text)
 
     def testAndroidCaptivePortalResponse(self):
         """Return a 204 status code to bypass Android captive portal login"""
