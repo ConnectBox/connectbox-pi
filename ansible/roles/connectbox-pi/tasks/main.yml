@@ -1,4 +1,10 @@
 ---
+- name: Set keyboard to the US layout
+  lineinfile:
+    path: /etc/default/keyboard
+    regexp: '^XKBLAYOUT="gb"'
+    line: 'XKBLAYOUT="us"'
+
 - name: Configure hostname
   hostname:
     name: "{{ connectbox_default_hostname }}"
