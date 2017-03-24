@@ -33,11 +33,16 @@ Get the source code from the src repo (sudo should not be used for this apt-get 
 
     apt-get source libssl-dev
 
-Get the build dependecies (Note: you will likely run into into a bit of dependency hell here, since a common reason for rebuilding a package is to get a newer version - which itself depends on the presence of newer libraries... Of course, the only way out is descend, building the newer dependencies as well. That said, this specific example should not run into any trouble).
+Get the build dependecies
+
+**Note:** you will likely run into into a bit of dependency hell here, since a common reason for rebuilding a package is to get a newer version - which itself depends on the presence of newer libraries... Of course, the only way out is descend, building the newer dependencies as well. That said, this specific example should not run into any trouble.
 
     sudo apt-get build-dep libssl-dev
 
-Rebuild the package
+Finally, rebuild the package
+
+**Note:** Errors and warnings from lintian in the final stage of the build process are common; not all maintainers will have fixed these issues before publishing. Generally if you got that far and debuild generated packages then you can ignore any messages from lintian.
+
 
     cd openssl-1.0.2k
     debuild -b -uc -us
@@ -46,7 +51,7 @@ If all goes well the system will chug for a while and you will have several fres
 
 ## Make your own repository
 
-There are several tools that will process your packages a create a repository from them - for this example we install and use reprepro:
+There are several tools that will process your packages a create a repository from them - for this example we install and use [reprepro](https://mirrorer.alioth.debian.org/):
 
     apt-get install reprepro
 
