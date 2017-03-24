@@ -14,7 +14,13 @@ The easiest way to build compatible packages is directly on the Raspberry Pi 3 (
 
 The robust Debian ecosystem allows us to reproducibly rebuild almost any package without significant effort. One aspect of this is that every major package repository has a cooresponding source repository. For these instructions, add the jessie-backports source repo to apt:
 
-    echo 'deb-src http://ftp.debian.org/debian jessie-backports main contrib' > /etc/apt/sources.list.d/jessie-backports-src.list
+    echo 'deb-src http://ftp.debian.org/debian jessie-backports main contrib' | sudo tee /etc/apt/sources.list.d/jessie-backports-src.list
+
+Make sure the signing keys for the repository are trusted and apt cache has been updated.
+
+    sudo apt-key adv --keyserver pgpkeys.mit.edu --recv-keys 8B48AD6246925553
+    sudo apt-key adv --keyserver pgpkeys.mit.edu --recv-keys 7638D0442B90D010
+    sudo apt-get update
 
 ## Rebuild the package
 
@@ -23,11 +29,11 @@ Make a directory to work in (the name is not important)
     mkdir debian
     cd debian
 
-Get the source code from the src repo
+Get the source code from the src repo (sudo should not be used for this apt-get command)
 
-    apt-get apt-get source libssl-dev
+    apt-get source libssl-dev
 
-Get the build dependecies (Note: you may run into dependency hell here, since often the reason for rebuilding a package is to get a newer version... which itself requires new libraries... the only way out is to follow the depedencies down, building them too)
+Get the build dependecies (Note: you will likely run into into a bit of dependency hell here, since a common reason for rebuilding a package is to get a newer version - which itself depends on the presence of newer libraries... Of course, the only way out is descend, building the newer dependencies as well. That said, this specific example should not run into any trouble).
 
     sudo apt-get build-dep libssl-dev
 
@@ -53,14 +59,14 @@ You'll need to set up a basic configuration for reprepro:
 
     mkdir conf
 
-Then, in the file `conf/distributions`, place the following:
+Then, in the file `conf/distributions`, place the following (where 92F3A749 is your signing key):
 
     Codename: jessie-backports
     Components: main
     Architectures: armhf
     SignWith: 92F3A749
 
-Also place `ask-passphrase` in the file `conf/options` (otherwise reprepro will fail without obvious explanation when it can't sign the repo)
+Also place `ask-passphrase` in the file `conf/options` (otherwise reprepro will fail without obvious explanation when it can't sign the repo because it doens't have the password to your signing key)
 
 And finally, add your custom packages to the repo:
 
