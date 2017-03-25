@@ -47,7 +47,7 @@
   service:
     name: log2ram
     state: stopped
-  when: ansible_lsb["id"] == "Debian" && ansible_architecture == "aarch64"
+  when: ansible_lsb["id"] == "Debian" and ansible_architecture == "aarch64"
   notify: Start log2ram service
 
 # Needed by Debian Jessie
