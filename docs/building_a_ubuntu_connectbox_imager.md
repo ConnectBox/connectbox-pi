@@ -1,13 +1,13 @@
-# An Idiot's Guide to Using Ubuntu 16.04 to build ConnectBox Images
+# An Idiot's Guide to Using Ubuntu 16.04 (Xenial) to build ConnectBox Images
 Revision 1.0  March 16, 2017
 by GeoDirk (a Linux Idiot)
 
 ## Summary
-This document describes the steps necessary to build a ConnectBox firmware image using an Ubuntu 16.04 LTS operating system. Ubuntu can be run from a desktop/laptop or hosted inside a virtual machine.
+This document describes the steps necessary to build a ConnectBox firmware image using an Ubuntu 16.04 LTS (Xenial) operating system. Ubuntu can be run from a desktop/laptop or hosted inside a virtual machine.
 
 This document assumes that you have gotten as far as having Ubuntu 16.04 installed and running somewhere on the network.
 
-As of the release of this document, the Ansible script has been designed to work on the following devices:
+As of the release of this document, the Ansible playbook has been designed to work on the following devices:
 
 - Raspberry Pi 3 (RPi3)
 - Raspberry Pi Zero W (RPiZ)
@@ -63,8 +63,6 @@ The key's randomart image is:
 Ansible is used as the script engine on this Ubuntu machine to remotely configure the services on the RPi3.  The following are the steps to install Ansible and the environment.  Note that this might take quite a bit of time for each step
 
 ```bash
-sudo apt-get install python-pip -y
-sudo apt-get install python-virtualenv -y
 sudo apt-get install language-pack-en-base -y
 sudo apt-get install git -y
 
@@ -79,7 +77,7 @@ sudo apt-get install ansible -y
 
 ## Setting up your Device
 
-We'll need to get your RPi3 setup with a fresh, unalterated image.  Follow the instructions here for how to get your device flashed with the proper firmware image:
+We first setup your RPi3 with a fresh base operating system image. Follow the instructions to install the base image on your MicroSD card and boot your device with it (_Install Vanilla Raspbian-lite on Raspberry Pi 3_):
 
 [Deployment Docs](https://github.com/ConnectBox/connectbox-pi/blob/master/docs/deployment.md)
 
