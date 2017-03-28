@@ -5,13 +5,14 @@ The ConnectBox runs on a few different devices, with a specific operating system
 # Terminology
 
 For simplicity, let's assume the following terms:
-* __workstation__: The machine where you'll run Ansible. It might be a Linux virtual machine, or server or it might be a laptop running MacOS, or something else. When describing commands to run on the workstation, we'll display the workstation prompt as `box@ubuntu:`.
+* __workstation__: The machine where you'll run Ansible. It might be a Linux virtual machine, or server or it might be a laptop running MacOS, or something else. When describing commands to run on the workstation, we'll display the workstation prompt as `user@ubuntu: $`.
  Most importantly, the workstation is different to your _device_.
-* __device__: The ConnectBox hardware. It might be a Raspberry Pi 3, or it might be one of the other supported devices. When describing commands to be run on the device, we'll display the device prompt as `pi@rasberrypi:` even though it will be different on other devices.
+* __device__: The ConnectBox hardware. It might be a Raspberry Pi 3, or it might be one of the other supported devices. When describing commands to be run on the device, we'll display the device prompt as `pi@rasberrypi: $` even though it will be different on other devices.
 
 ## Install Vanilla Raspbian-lite on Raspberry Pi 3 or Raspberry Pi Zero W
 
 Download the [current Raspbian Jessie Lite](https://www.raspberrypi.org/downloads/raspbian/). The Nov 2016 introduced a security update that disables the SSH daemon by default. The connectbox is deployed using Ansible, which connects to the Raspberry Pi over SSH, so ssh needs to be enabled. Enable sshd by one of the methods below (you only need to choose one):
+
 Note: this is a Raspberry Pi device specific step as the other devices have their SSH enabled]
 
 ### Enabling sshd on the device using raspi-config
@@ -20,14 +21,14 @@ Connect a keyboard and monitor to the Raspberry Pi and boot it up. Log in using 
  username: pi
  password: raspberry
 
-It is important that you DO NOT do anything further to the Raspberry Pi other than the steps outlined below. The Ansible playbook expects an environment that is factory fresh and any other changes can prevent successful execution.
+It is important that you _do not_ do anything further to the Raspberry Pi other than the steps outlined below. The Ansible playbook expects an environment that is factory fresh and any other changes can prevent successful execution.
 
-The snippet below is from the offical Raspbian docs: [Setup SSH](https://www.raspberrypi.org/documentation/remote-access/ssh/)
+The snippet below is from the _Setup SSH_ section of the offical [Raspbian docs](https://www.raspberrypi.org/documentation/remote-access/ssh/)
 
 From the Raspberry Pi command line, run the following command:
 
 ```bash
-sudo raspi-config
+pi@raspberrypi: $ sudo raspi-config
 
 1. Select "Interfacing Options" from the window
 3. Navigate to and select "SSH"
@@ -55,13 +56,13 @@ If you already have an ssh keypair, you can skip this step.
 Once the commands are processed, we now need to create a set of SSH keys on our machine that we will eventually use when running the Ansible script over on the RPi3.
 
 ```
-ssh-keygen
+user@ubuntu:~$ ssh-keygen
 ```
 
 Hit return to just accept the defaults until you get back to the command prompt.
 
 ```bash
-box@ubuntu:~$ ssh-keygen
+user@ubuntu:~$ ssh-keygen
 Generating public/private rsa key pair.
 Enter file in which to save the key (/home/box/.ssh/id_rsa): 
 Created directory '/home/box/.ssh'.
@@ -70,7 +71,7 @@ Enter same passphrase again:
 Your identification has been saved in /home/box/.ssh/id_rsa.
 Your public key has been saved in /home/box/.ssh/id_rsa.pub.
 The key fingerprint is:
-SHA256:vuUwcoZTkDqakuAT21drYfbSE3WsT36HxBT1g4PzQmI box@ubuntu
+SHA256:vuUwcoZTkDqakuAT21drYfbSE3WsT36HxBT1g4PzQmI user@ubuntu
 The key's randomart image is:
 +---[RSA 2048]----+
 |              ...|
@@ -109,12 +110,13 @@ From the command line on your workstation, we'll log into the device remotely so
 
 
 ```bash
-ssh pi@192.168.88.26
+user@ubuntu:~$ ssh pi@192.168.88.26
 ```
+
 You'll need to answer "yes" when you are prompted to add in the RPi's fingerprint and then enter in the 's password of "raspberry"
 
 ```bash
-box@ubuntu:~$ ssh pi@192.168.88.26
+user@ubuntu:~$ ssh pi@192.168.88.26
 The authenticity of host '192.168.88.26 (192.168.88.26)' can't be established.
 ECDSA key fingerprint is SHA256:P7Eqv0UkjbG9yWSYE5qzDNc5K6vOqCJ4kQ1fakB2aVk.
 Are you sure you want to continue connecting (yes/no)? yes
@@ -143,7 +145,7 @@ We want to type `exit` to get back to our Ubuntu prompt:
 pi@raspberrypi:~ $ exit
 logout
 Connection to 192.168.88.26 closed.
-box@ubuntu:~$ 
+user@ubuntu:~$ 
 ```
 We now copy over our public SSH key to the RPi3 so we no longer need to log in [use your RPi3's IP address]:
 
@@ -153,21 +155,16 @@ scp ~/.ssh/id_rsa.pub pi@192.168.88.26:.ssh/authorized_keys
 You'll be prompted for the RPi3's password of "raspberry" one last time.
 
 ```bash
-box@ubuntu:~$ scp ~/.ssh/id_rsa.pub pi@192.168.88.26:.ssh/authorized_keys
+user@ubuntu:~$ scp ~/.ssh/id_rsa.pub pi@192.168.88.26:.ssh/authorized_keys
 pi@192.168.88.26's password: 
 id_rsa.pub                                    100%  392     0.4KB/s   00:00    
-box@ubuntu:~$ 
-```
-We should test that the SSH key transfer worked by trying to once again SSH into the RPi3:
-
-```bash
-ssh pi@192.168.88.26
+user@ubuntu:~$ 
 ```
 
-You shouldn't be prompted for the password but taken right in [Note: look for the `pi@raspberrypi` at the command prompt to verify that you are inside the RPi3]
+We should test that the SSH key transfer worked by trying to once again SSH into the device.  You shouldn't be prompted for the password but taken right in [Note: look for the `pi@raspberrypi` at the command prompt to verify that you are inside the RPi3]
 
 ```bash
-box@ubuntu:~$ ssh pi@192.168.88.26
+user@ubuntu:~$ ssh pi@192.168.88.26
 
 The programs included with the Debian GNU/Linux system are free software;
 the exact distribution terms for each program are described in the
@@ -178,31 +175,32 @@ permitted by applicable law.
 Last login: Thu Mar 16 19:56:01 2017 from 192.168.88.212
 pi@raspberrypi:~ $ 
 ```
-Type `exit` to get back to the Ubuntu machine;
+
+Type `exit` to get back to your workstation;
 
 ```bash
 pi@raspberrypi:~ $ exit
 logout
 Connection to 192.168.88.26 closed.
-box@ubuntu:~$ 
+user@ubuntu:~$ 
 ```
 
 ## Get Ansible
 
 This project uses Ansible v2.1 or above. 
 
-Package managers generally have an out-dated version of ansible, but the [Ansible documentation](http://docs.ansible.com/ansible/intro_installation.html#installing-the-control-machine) lists methods for obtaining Ansible for common platforms.
+Package managers generally have an out-dated version of ansible, but the [Ansible documentation](http://docs.ansible.com/ansible/intro_installation.html#installing-the-control-machine) lists methods for obtaining a current version of Ansible for common platforms.
 
 e.g. for Ubuntu, only the following is necessary (steps taken from the Ansible docs):
 
 ```bash
-$ sudo apt-get install software-properties-common
-$ sudo apt-add-repository ppa:ansible/ansible
-$ sudo apt-get update
-$ sudo apt-get install ansible
+user@ubuntu: $ sudo apt-get install software-properties-common
+user@ubuntu: $ sudo apt-add-repository ppa:ansible/ansible
+user@ubuntu: $ sudo apt-get update
+user@ubuntu: $ sudo apt-get install ansible
 ```
 
-The developing.md file lists an alternative method for setting up Ansible using python virtualenvs. If you are developing playbooks, you should follow those instructions.
+The developing.md file lists an alternative method for setting up Ansible using python virtual environments. If you are developing playbooks or the ConnectBox software itself, you should follow those instructions.
 
 ## Run Ansible
 
@@ -213,18 +211,17 @@ The rest of this guide assumes that your device is attached to the network via i
 Clone the ConnectBox Github repository to your workstation with the following commands, if you have not already done so:
 
 ```bash
-cd ~
-mkdir tmp
-cd tmp/
-git clone https://github.com/ConnectBox/connectbox-pi.git
-cd connectbox-pi/
+user@ubuntu: $ mkdir ~/tmp
+user@ubuntu: $ cd ~/tmp
+user@ubuntu: $ git clone https://github.com/ConnectBox/connectbox-pi.git
+user@ubuntu: $ cd connectbox-pi/
 ```
 
 Once complete, create a copy of the ansible inventory based on the example file:
 
 ```bash
-cd ansible/
-cp inventory.example inventory
+user@ubuntu: $ cd ansible/
+user@ubuntu: $ cp inventory.example inventory
 ```
 
 Open the inventory file in an editor, and uncomment the appropriate line for your device type. For example, you would need to modify the following lines for a RPi3/RPiZero+
@@ -234,7 +231,7 @@ Open the inventory file in an editor, and uncomment the appropriate line for you
 #192.168.20.183 ansible_user=pi wireless_country_code=AU
 ```
 
-We want to modify the second line to first remove the leading `#` comment, change the IP address to our RPi3 device's IP address, change the `wireless_country_code` to an [appropriate regulatory domain](https://git.kernel.org/cgit/linux/kernel/git/sforshee/wireless-regdb.git/tree/db.txt) (00 is the default, and may not be appropriate). If you are experimenting with the system, you may want to activate developer mode by setting `developer_mode=true` but know that __developer_mode=true leaves the connectbox in an insecure state__ . Read the Optional Ansible Arguments documentation below to find out whether this is suitable. __developer_mode=true is unsuitable for real-world use__
+We want to modify the second line to first remove the leading `#` comment, change the IP address to our RPi3 device's IP address, change the `wireless_country_code` to an [appropriate regulatory domain](https://git.kernel.org/cgit/linux/kernel/git/sforshee/wireless-regdb.git/tree/db.txt) (00 is the default, and may not be appropriate). If you are experimenting with the system, you may want to activate developer mode by setting `developer_mode=true` but know that __developer_mode=true leaves the connectbox in an insecure state__ . Read the Optional Ansible Arguments documentation below to find out whether this is suitable. __developer_mode=true is unsuitable for real-world use or production deployments__
 
 Once done you will likely have something of this form, and you should save the file:
 
@@ -255,7 +252,7 @@ The process will start modifying the device and turning it into a ConnectBox.  T
 
 --snippet--
 ```bash
-(connectbox-pi) box@ubuntu:~/tmp/connectbox-pi/ansible$ ansible-playbook -i inventory site.yml
+user@ubuntu:~/tmp/connectbox-pi/ansible$ ansible-playbook -i inventory site.yml
 
 PLAY [all] *********************************************************************
 
