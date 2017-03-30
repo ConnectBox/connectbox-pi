@@ -40,6 +40,16 @@
   when: jessie_backport_repo_added.changed
   tags: skip_ansible_lint
 
+# https://forum.armbian.com/index.php?/topic/3729-problems-since-versions-525-and-526-with-varlog/
+# Armbian doesn't set ansible_lsb["id"] to Armbian so we need to look for
+#  Debian running on aarch64
+- name: Temporarily shutdown log2ram service on Armbian during package installation
+  service:
+    name: log2ram
+    state: stopped
+  when: ansible_lsb["id"] == "Debian" and ansible_architecture == "aarch64"
+  notify: Start log2ram service
+
 # Needed by Debian Jessie
 - name: Install openresolv
   apt:
