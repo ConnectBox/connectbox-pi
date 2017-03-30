@@ -1,6 +1,6 @@
 # Making a ConnectBox
 
-The ConnectBox runs on a few different devices, with a specific operating system for each. It requires Raspbian Lite for Raspberry Pi 3 and Raspberry Pi Zero W devices and Armbian for Orange Pi Zero and Pine64 devices. The ConnectBox is setup using Ansible and is performed using an ethernet connection to the device.
+The ConnectBox runs on a few different devices, with a specific operating system for each. It requires Raspbian Lite for Raspberry Pi 3 and Raspberry Pi Zero W devices and Armbian for Orange Pi Zero and Pine64 devices. The ConnectBox is setup using Ansible (a tool for deployment, configuration management and orchestration) and is performed using an ethernet connection to the device.
 
 # Terminology
 
@@ -86,25 +86,13 @@ The key's randomart image is:
 +----[SHA256]-----+
 ```
 
+# Find the IP address of your device
+
+We need to know the IP address of your device so we can deploy to it. The Raspberry Pi project has some [simple documentation](https://www.raspberrypi.org/documentation/remote-access/ip-address.md) on how to do this.
+
+Make a note of your IP address for subsequent steps.
+
 ### Deploying SSH keys
-
-Find the IP address for the ethernet interface of your device.
-
-A simple method involves connecting a keyboard and monitor, logging in and looking at the output of `ifconfig eth0`. In the example below, the IP address for the **eth0** adaptor is the number: 192.168.88.26  Write this down as we'll need it in a moment.
-
-```bash
-pi@raspberrypi:~ $ ifconfig eth0
-eth0      Link encap:Ethernet  HWaddr b8:27:eb:e3:7c:1d  
-          inet addr:192.168.88.26  Bcast:192.168.88.255  Mask:255.255.255.0
-          inet6 addr: fe80::e102:ac35:54f:6479/64 Scope:Link
-          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
-          RX packets:412 errors:0 dropped:10 overruns:0 frame:0
-          TX packets:150 errors:0 dropped:0 overruns:0 carrier:0
-          collisions:0 txqueuelen:1000 
-          RX bytes:28756 (28.0 KiB)  TX bytes:19294 (18.8 KiB)
-```
-
-Another method involves looking at the logs of your DHCP server to see which address was allocated.
 
 From the command line on your workstation, we'll log into the device remotely so we can pass over our SSH keys. [From here on our, replace the IP address 192.168.88.26 with your specific device's IP address]
 
