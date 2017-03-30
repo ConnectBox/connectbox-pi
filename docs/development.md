@@ -4,7 +4,15 @@ If you're developing the interface, it's often faster to do development on a vir
 
 ## Get Ansible
 
-Whether you're using Vagrant or developing directly against a device, you'll need Ansible to perform the setup, so follow the _Get Ansible_ instructions in the [deployment.md](deployment.md) documentation.
+Whether you're using Vagrant or developing directly against a device, you'll need Ansible to perform the setup. To develop the Ansible playbooks, or develop the ConnectBox software, you'll need to have Ansible 2.1+ and some extra tools. From the directory containing this README, run:
+
+```bash
+$ mkdir ~/.virtualenvs
+$ virtualenv ~/.virtualenvs/connectbox-pi
+$ . ~/.virtualenvs/connectbox-pi/bin/activate
+$ pip install -r requirements.txt
+```
+
 
 ## Developing against a VM
 
