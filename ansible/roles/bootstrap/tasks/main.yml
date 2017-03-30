@@ -7,31 +7,48 @@
     state: present
   when: ansible_lsb["id"] == "Debian"
 
-# Backports repo is used by Debian and Raspbian
-- name: Add debian signing keys, necessary for backports repo
+- name: Add signing keys for jessie backports repo
   apt_key:
     keyserver: hkp://keyserver.ubuntu.com:80
     state: present
     id: "{{ item }}"
-  with_items:
-    - 7638D0442B90D010
-    - 8B48AD6246925553
+  with_items: "{{ jessie_backports_signing_keys }}"
 
+# This is the initial population of the cache, so that we don't have
+#  problems when adding a repo. If the cache already exists, we don't
+#  need to run this step. This will be the case when the playbook is
+#  run for a second or subsequent time within the cache_valid_time
 - name: Populate apt cache to avoid problems when loading jessie backport repo
   apt:
     update-cache: yes
+    cache_valid_time: 86400 # 1 day
 
-# Backports repo is used by Debian and Raspbian
 - name: Enable Jessie backport repo
   apt_repository:
-    repo: deb http://httpredir.debian.org/debian jessie-backports main contrib non-free
+    repo: "{{ jessie_backports_repo }}"
     filename: jessie-backports
     state: present
+  register: jessie_backport_repo_added
 
+# This always needs to run given whenever the repo has been loaded, so there
+#  is no cache_valid_time parameter. We skip ansible lint because we want to
+#  run this task when the repo has been added, but the normal method for this
+#  is a handler, but handlers can only run at the end, when it's too late.
 - name: Populate apt cache now that repos are loaded
   apt:
     update-cache: yes
-#    cache_valid_time: 86400 # 1 day
+  when: jessie_backport_repo_added.changed
+  tags: skip_ansible_lint
+
+# https://forum.armbian.com/index.php?/topic/3729-problems-since-versions-525-and-526-with-varlog/
+# Armbian doesn't set ansible_lsb["id"] to Armbian so we need to look for
+#  Debian running on aarch64
+- name: Temporarily shutdown log2ram service on Armbian during package installation
+  service:
+    name: log2ram
+    state: stopped
+  when: ansible_lsb["id"] == "Debian" and ansible_architecture == "aarch64"
+  notify: Start log2ram service
 
 # Needed by Debian Jessie
 - name: Install openresolv

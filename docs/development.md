@@ -1,10 +1,18 @@
 # Developing the ConnectBox software
 
-If you're developing the interface, it's often faster to do development on a virtual machine and do final validation against a real device (Raspberry Pi/Orange Pi Zero/Pine64). If you want to do this, a `Vagrantfile` exists to allow [Vagrant](https://www.vagrantup.com) to automatically provision a virtual machine (running Debian Jessie) that behaves like a ConnectBox in all areas except the provision of a wireless network. It's also easy to directly develop against a device, but it's often a little slower because of the limited resources on the device itself.
+If you're developing the interface, it's often faster to do development on a virtual machine and do final validation against a real device (Raspberry Pi 3/Raspberry Pi Zero W/Orange Pi Zero/Pine64). If you want to do this, a `Vagrantfile` exists to allow [Vagrant](https://www.vagrantup.com) to automatically provision a virtual machine (running Debian Jessie) that behaves like a ConnectBox in all areas except the provision of a wireless network. It's also easy to directly develop against a device, but it's often a little slower because of the limited resources on the device itself.
 
 ## Get Ansible
 
-Whether you're using Vagrant or developing directly against a device, you'll need Ansible to perform the setup, so follow the _Get Ansible_ instructions in the [deployment.md](deployment.md) documentation.
+Whether you're using Vagrant or developing directly against a device, you'll need Ansible to perform the setup. To develop the Ansible playbooks, or develop the ConnectBox software, you'll need to have Ansible 2.1+ and some extra tools. From the directory containing this README, run:
+
+```bash
+$ mkdir ~/.virtualenvs
+$ virtualenv ~/.virtualenvs/connectbox-pi
+$ . ~/.virtualenvs/connectbox-pi/bin/activate
+$ pip install -r requirements.txt
+```
+
 
 ## Developing against a VM
 
