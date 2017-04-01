@@ -6,8 +6,7 @@ import requests
 from selenium import webdriver
 
 TEST_IP_ENV_VAR = "TEST_IP"
-TEST_BASE_URL = "http://connectbox.local"
-ADMIN_BASE_URL = "http://connectbox.local/admin"
+
 # Default creds. Will need a way to override these when it changes
 ADMIN_USER = "admin"
 ADMIN_PASSWORD = "connectbox"
@@ -22,6 +21,14 @@ def getTestTarget():
         raise RuntimeError(error_msg)
 
 
+def getTestBaseURL():
+    return "http://connectbox.local"
+
+
+def getAdminBaseURL():
+    return getTestBaseURL() + "/admin"
+
+
 def getAdminAuth():
     return requests.auth.HTTPBasicAuth(ADMIN_USER, ADMIN_PASSWORD)
 
@@ -32,23 +39,23 @@ class ConnectBoxBasicTestCase(unittest.TestCase):
         r = requests.get("http://%s" % (getTestTarget(),),
                          allow_redirects=False)
         self.assertTrue(r.is_redirect)
-        self.assertEqual(r.headers["Location"], TEST_BASE_URL)
+        self.assertEqual(r.headers["Location"], getTestBaseURL())
 
     def testContentResponseType(self):
         # URLs under content should return json
-        r = requests.get("%s/content/" % (TEST_BASE_URL,))
+        r = requests.get("%s/content/" % (getTestBaseURL(),))
         self.assertIsInstance(r.json(), list)
 
     def testAdminNeedsAuth(self):
-        r = requests.get("%s/" % (ADMIN_BASE_URL,))
+        r = requests.get("%s/" % (getAdminBaseURL(),))
         self.assertEquals(r.status_code, 401)
 
     def testAdminNoTrailingSlashRequired(self):
-        r = requests.get("%s" % (ADMIN_BASE_URL,), auth=getAdminAuth())
+        r = requests.get("%s" % (getAdminBaseURL(),), auth=getAdminAuth())
         self.assertIn("ConnectBox Admin Dashboard", r.text)
 
     def testAdminPageTitle(self):
-        r = requests.get("%s/" % (ADMIN_BASE_URL,), auth=getAdminAuth())
+        r = requests.get("%s/" % (getAdminBaseURL(),), auth=getAdminAuth())
         self.assertIn("ConnectBox Admin Dashboard", r.text)
 
     def testIOSCaptivePortalResponseForIOS(self):
@@ -104,8 +111,8 @@ class ConnectBoxBasicTestCase(unittest.TestCase):
 
 class ConnectBoxAPITestCase(unittest.TestCase):
 
-    ADMIN_SSID_URL = "%s/api.php/ssid" % (ADMIN_BASE_URL,)
-    ADMIN_HOSTNAME_URL = "%s/api.php/hostname" % (ADMIN_BASE_URL,)
+    ADMIN_SSID_URL = "%s/api.php/ssid" % (getAdminBaseURL(),)
+    ADMIN_HOSTNAME_URL = "%s/api.php/hostname" % (getAdminBaseURL(),)
     SUCCESS_RESPONSE = ["SUCCESS"]
     BAD_REQUEST_TEXT = "BAD REQUEST"
 
@@ -226,5 +233,5 @@ class ConnectBoxWebDriverTestCase(unittest.TestCase):
         self.addCleanup(self.browser.quit)
 
     def testPageTitle(self):
-        self.browser.get(TEST_BASE_URL)
+        self.browser.get(getTestBaseURL())
         self.assertIn("ConnectBox", self.browser.title)
