@@ -41,12 +41,6 @@ def getAdminAuth():
 
 class ConnectBoxBasicTestCase(unittest.TestCase):
 
-    def testBaseRedirect(self):
-        r = requests.get("http://%s" % (getTestTarget(),),
-                         allow_redirects=False)
-        self.assertTrue(r.is_redirect)
-        self.assertIn("Location", r.headers)
-
     def testContentResponseType(self):
         # URLs under content should return json
         r = requests.get("%s/content/" % (getTestBaseURL(),))
@@ -63,6 +57,16 @@ class ConnectBoxBasicTestCase(unittest.TestCase):
     def testAdminPageTitle(self):
         r = requests.get("%s/" % (getAdminBaseURL(),), auth=getAdminAuth())
         self.assertIn("ConnectBox Admin Dashboard", r.text)
+
+
+class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
+    """Behavioural tests for the Nginx default vhost"""
+
+    def testBaseRedirect(self):
+        r = requests.get("http://%s" % (getTestTarget(),),
+                         allow_redirects=False)
+        self.assertTrue(r.is_redirect)
+        self.assertIn("Location", r.headers)
 
     def testIOSCaptivePortalResponseForIOS(self):
         """Return the success.html page to bypass iOS captive portal login"""
@@ -234,7 +238,6 @@ class ConnectBoxAPITestCase(unittest.TestCase):
 class ConnectBoxWebDriverTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.testTarget = getTestTarget()
         self.browser = webdriver.PhantomJS()
         self.addCleanup(self.browser.quit)
 
