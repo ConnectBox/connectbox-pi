@@ -10,6 +10,7 @@ TEST_IP_ENV_VAR = "TEST_IP"
 # Default creds. Will need a way to override these when it changes
 ADMIN_USER = "admin"
 ADMIN_PASSWORD = "connectbox"
+_testBaseURL = ""
 
 
 def getTestTarget():
@@ -22,7 +23,12 @@ def getTestTarget():
 
 
 def getTestBaseURL():
-    return "http://connectbox.local"
+    global _testBaseURL
+    if not _testBaseURL:
+        r = requests.get("http://%s" % (getTestTarget(),),
+                         allow_redirects=False)
+        _testBaseURL = r.headers["Location"]
+    return _testBaseURL
 
 
 def getAdminBaseURL():
@@ -39,7 +45,7 @@ class ConnectBoxBasicTestCase(unittest.TestCase):
         r = requests.get("http://%s" % (getTestTarget(),),
                          allow_redirects=False)
         self.assertTrue(r.is_redirect)
-        self.assertEqual(r.headers["Location"], getTestBaseURL())
+        self.assertIn("Location", r.headers)
 
     def testContentResponseType(self):
         # URLs under content should return json
