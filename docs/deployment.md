@@ -278,6 +278,7 @@ To use these arguments, add them to the inventory file or add `-e option_name=va
 - __deploy_sample_content__ _(default: true)_: Installs sample files to demonstrate ConnectBox functionality.
 - __ssid__ _(default: ConnectBox - Free Media)_: The Wireless SSID can be changed from the admin interface but it can also be changed at deployment time.
 - __developer_mode__ _(default: false)_: Developer mode leaves the device in an insecure state, but makes it possible to examine the internal state of the ConnectBox. When developer mode is false _(think, production mode)_, sshd is stopped and disabled by default at the end of the ansible playbook run, and the user account is locked (with `usermod -L`). This is done to prevent unauthorised remote access and console access, particularly if operating system default passwords are not changed. If you have inadvertently locked yourself out, the [Raspbian security update](https://www.raspberrypi.org/blog/a-security-update-for-raspbian-pixel/) describes how to re-enable sshd and you can re-enable the account using information at RaspberryPi Spy - [Reset a lost Raspberry Pi password)[http://www.raspberrypi-spy.co.uk/2014/08/how-to-reset-a-forgotten-raspberry-pi-password/)
+- __connectbox_default_hostname__ _(default: connectbox.local)_: Change the host name of the Connectbox (visible in the URL field when browsing)
 
 ## Use the ConnectBox
 
