@@ -1,11 +1,12 @@
 ---
+- name: Set correct arguments for mounting USB drives
+  copy:
+    src: etc_usbmount_usbmount.conf
+    dest: /etc/usbmount/usbmount.conf
+  notify: Warn to remount USB
+
 - name: Install usbmount for auto mounting of USB drives
   apt:
     name: usbmount
     state: present
 
-#- name: Expose usb content to the webserver
-#  file:
-#    src: /media/usb0
-#    dest: "{{ connectbox_usb_files_root }}"
-#    state: link
