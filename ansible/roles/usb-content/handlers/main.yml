@@ -1,0 +1,6 @@
+---
+# We can't actually remount the USB without walking all the devices
+#  so let's just print a message (that will likely get missed)
+- name: Warn to remount USB
+  debug:
+    msg: Remove and reinsert your USB storage. Mount options have changed.
