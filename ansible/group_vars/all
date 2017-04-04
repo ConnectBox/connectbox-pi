@@ -122,8 +122,6 @@ nginx_vhosts:
 # We want to set the default server. Remove the default server that
 #  nginx provides.
 nginx_remove_default_vhost: true
-# Use backports for nginx installation
-nginx_default_release: jessie-backports
 # i.e. allow inbound ssh from all interfaces
 # Overriden in bootstrap role for non-developer mode
 iptables_ssh_in_interface: ""
