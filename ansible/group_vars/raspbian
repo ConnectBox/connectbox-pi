@@ -6,5 +6,5 @@ ansible_user: pi
 jessie_backports_repo: deb https://eisbox.net/downloads/connectbox/repo jessie-backports main
 
 # Matt's signing key, currently used to sign the repo
-jessie_backports_signing_keys:
+repo_signing_keys:
   - D8E4364592F3A749

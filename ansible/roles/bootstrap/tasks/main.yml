@@ -7,12 +7,12 @@
     state: present
   when: ansible_lsb["id"] == "Debian"
 
-- name: Add signing keys for jessie backports repo
+- name: Add signing keys for additional repositories
   apt_key:
     keyserver: hkp://keyserver.ubuntu.com:80
     state: present
     id: "{{ item }}"
-  with_items: "{{ jessie_backports_signing_keys }}"
+  with_items: "{{ repo_signing_keys }}"
 
 # This is the initial population of the cache, so that we don't have
 #  problems when adding a repo. If the cache already exists, we don't
