@@ -25,6 +25,7 @@
     mode: 0775
   with_items:
     - "{{ connectbox_default_content_root }}"
+    - "{{ connectbox_captive_portal_root }}"
 
 # Copy client interface files
 - name: Copy connectbox client interface
@@ -65,3 +66,50 @@
     owner: www-data
     group: www-data
     recurse: yes
+
+- name: Install packages for python virtualenv
+  apt:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - python-virtualenv
+    - python-pip
+
+- name: Install packages for captive portal manager process
+  pip:
+    virtualenv: "{{ connectbox_web_root }}/captive_portal_virtualenv"  # XXX Could do better?
+    name: "{{ item }}"
+  with_items:
+    - flask
+    - gunicorn
+
+# Copy client interface files
+- name: Copy connectbox client interface
+  synchronize:
+    src: ../html/captive_portal/
+    dest: "{{ connectbox_captive_portal_root }}"
+
+# XXX either this or the tmpfiles.d task is needed, not both
+#- name: Create /run/gunicorn for PID storage
+#  file:
+#    path: "{{ gunicorn_run_directory }}"
+#    state: directory
+#    owner: www-data
+#    group: www-data
+
+- name: Copy gunicorn tempfiles definition
+  template:
+    src: etc_tmpfiles.d_gunicorn.conf.j2
+    dest: /etc/tmpfiles.d/gunicorn.conf
+
+- name: Copy gunicorn systemd unit file
+  template:
+    src: etc_systemd_system_gunicorn.service.j2
+    dest: /etc/systemd/system/gunicorn.service
+  notify: Restart gunicorn
+
+- name: Enable gunicorn service
+  systemd:
+    name: gunicorn
+    enabled: yes
+    #state: started
