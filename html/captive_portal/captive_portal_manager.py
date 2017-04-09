@@ -40,10 +40,11 @@ def get_dhcp_lease_secs():
 
 
 def is_recent_client(ip_address_str):
-    if ip_address_str in _client_map:
-        print _client_map[ip_address_str]
-        return (datetime.datetime.now() - _client_map[ip_address_str] >
-                datetime.timedelta(secs=get_dhcp_lease_secs()))
+    recency_criteria = datetime.timedelta(seconds=get_dhcp_lease_secs())
+    last_registered_time = _client_map.get(ip_address_str)
+    if last_registered_time:
+        return (datetime.datetime.now() - last_registered_time) \
+            < recency_criteria
     return False
 
 
