@@ -23,11 +23,30 @@ def getTestTarget():
 
 
 def getTestBaseURL():
+    """Gets the ConnectBox base URL, solely from the IP address
+
+    1. Deregister client to ensure correct state
+    2. First request to register client
+    3. Subsequent request to receive 302 back to nginx
+    4. Final request that uses nginx to 302 to ConnectBox vhost
+    5. Deregister client to ensure correct state for subsequent requests
+
+    Steps 3 & 4 happen in one requests.get because it follow redirects
+    """
+
     global _testBaseURL
     if not _testBaseURL:
-        r = requests.get("http://%s" % (getTestTarget(),),
-                         allow_redirects=False)
-        _testBaseURL = r.headers["Location"]
+        # Deregister
+        requests.get("http://%s/_forget_client" % (getTestTarget(),))
+        # Register (no redirects given)
+        r = requests.get("http://%s" % (getTestTarget(),),)
+        # bounce through the 302, and retrieve the base connectbox page
+        r = requests.get("http://%s" % (getTestTarget(),),)
+        # and this is the ConnectBox base URL that we want
+        _testBaseURL = r.url
+        # Deregister the client, so that the test case that triggered
+        #  this request starts with a clean slate
+        requests.get("http://%s/_forget_client" % (getTestTarget(),))
     return _testBaseURL
 
 
@@ -62,7 +81,17 @@ class ConnectBoxBasicTestCase(unittest.TestCase):
 class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
     """Behavioural tests for the Nginx default vhost"""
 
+    def setUp(self):
+        """Simulate first connection
+
+        Make sure the ConnectBox doesn't think the client has connected
+        before, so we can test captive portal behaviour
+        """
+        requests.get("http://%s/_forget_client" % (getTestTarget(),))
+
     def testBaseRedirect(self):
+        """Two hits on an unregistered route redirects to ConnectBox"""
+        r = requests.get("http://%s" % (getTestTarget(),),)
         r = requests.get("http://%s" % (getTestTarget(),),
                          allow_redirects=False)
         self.assertTrue(r.is_redirect)
@@ -77,6 +106,10 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
         headers.update({"User-Agent": "CaptiveNetworkSupport-346 wispr"})
         r = requests.get("http://%s/success.html" %
                          (getTestTarget(),), headers=headers)
+        # XXX - check a header to make sure the captive portal manager has
+        #  us in the correct state
+        r = requests.get("http://%s/success.html" %
+                         (getTestTarget(),), headers=headers)
         self.assertIn("<BODY>\nSuccess\n</BODY>", r.text)
 
     def testYosemiteCaptivePortalResponseForYosemite(self):
@@ -86,6 +119,11 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
         headers.update({"User-Agent": "CaptiveNetworkSupport-346 wispr"})
         r = requests.get("http://%s/hotspot-detect.html" %
                          (getTestTarget(),), headers=headers)
+        # XXX - check a header to make sure the captive portal manager has
+        #  us in the correct state
+        r = requests.get("http://%s/hotspot-detect.html" %
+                         (getTestTarget(),), headers=headers)
+        #  us in the correct state
         self.assertIn("<BODY>\nSuccess\n</BODY>", r.text)
 
     def testAndroidCaptivePortalResponse(self):
@@ -96,14 +134,31 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
         #  people running these tests, so let's just poke for the page using
         #  the IP address of the server so we hit the default server, where
         #  this 204 redirection is active.
-        # gen_204 is also a fallback (see group_vars/all)
+        r = requests.get("http://%s/generate_204" % (getTestTarget(),))
+        # XXX - check a header to make sure the captive portal manager has
+        #  us in the correct state
         r = requests.get("http://%s/generate_204" % (getTestTarget(),))
         self.assertEquals(r.status_code, 204)
+
+    def testAndroid7FallbackCaptivePortalResponse(self):
+        """Return a 204 status code to bypass Android captive portal login"""
+        # Strictly this should be requesting
+        #  http://clients3.google.com/gen_204 but answering requests for
+        #  that site requires DNS mods, which can't be assumed for all
+        #  people running these tests, so let's just poke for the page using
+        #  the IP address of the server so we hit the default server, where
+        #  this 204 redirection is active.
+        r = requests.get("http://%s/gen_204" % (getTestTarget(),))
+        # XXX - check a header to make sure the captive portal manager has
+        #  us in the correct state
         r = requests.get("http://%s/gen_204" % (getTestTarget(),))
         self.assertEquals(r.status_code, 204)
 
     def testWindowsCaptivePortalResponse(self):
         """Return ncsi.txt to bypass windows captive portal login page"""
+        r = requests.get("http://%s/ncsi.txt" % (getTestTarget(),))
+        # XXX - check a header to make sure the captive portal manager has
+        #  us in the correct state
         r = requests.get("http://%s/ncsi.txt" % (getTestTarget(),))
         self.assertEquals("Microsoft NCSI", r.text)
 
@@ -111,10 +166,17 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
         """Return wifistub.html to bypass kindle captive portal login page"""
         r = requests.get("http://%s/kindle-wifi/wifistub.html" %
                          (getTestTarget(),))
+        # XXX - check a header to make sure the captive portal manager has
+        #  us in the correct state
+        r = requests.get("http://%s/kindle-wifi/wifistub.html" %
+                         (getTestTarget(),))
         self.assertIn("81ce4465-7167-4dcb-835b-dcc9e44c112a", r.text)
 
     def testFacebookMessengerConnectivityResponse(self):
         """Return 204 status code to bypass FB messenger connectivity check"""
+        r = requests.get("http://%s/mobile/status.php" % (getTestTarget(),))
+        # XXX - check a header to make sure the captive portal manager has
+        #  us in the correct state
         r = requests.get("http://%s/mobile/status.php" % (getTestTarget(),))
         self.assertEquals(r.status_code, 204)
 
