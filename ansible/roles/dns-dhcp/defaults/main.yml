@@ -7,4 +7,4 @@ dhcp_range_start: 10.129.0.2
 dhcp_range_end: 10.129.0.250
 # Have a very short lease time, to minimise the problems arising on reboot
 #  given we don't store a leasefile (leasefile-ro is set in dnsmasq)
-dhcp_lease_time: 5m
+dhcp_lease_time_secs: 300

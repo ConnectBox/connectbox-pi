@@ -4,10 +4,9 @@ from werkzeug.contrib.fixers import ProxyFix
 
 WELCOME_TEMPLATE = "welcome.html"
 _client_map = {}
+_dhcp_lease_secs = -1
+DHCP_FALLBACK_LEASE_SECS = 300
 REAL_HOST_REDIRECT_URL = "/to-hostname"
-# XXX how do we get the dhcp lease time?
-DHCP_LEASE_TIME = "5m"
-
 
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app)
@@ -23,10 +22,29 @@ def cp_entry_point():
         return render_template(WELCOME_TEMPLATE)
 
 
+def get_dhcp_lease_secs():
+    """Extract lease time from /etc/dnsmasq.conf
+
+    dhcp-range=10.129.0.2,10.129.0.250,255.255.255.0,300
+    """
+    global _dhcp_lease_secs
+    if _dhcp_lease_secs <= 0:
+        # So we have a valid lease time if we can't parse the file for
+        #  some reason (this shouldn't ever be necessary)
+        _dhcp_lease_secs = DHCP_FALLBACK_LEASE_SECS
+        with open("/etc/dnsmasq.conf") as f:
+            for line in f:
+                if line[:10] == "dhcp_range":
+                    _dhcp_lease_secs = int(line.split(",")[-1])
+    return _dhcp_lease_secs
+
+
 def is_recent_client(ip_address_str):
-    # XXX need timeout here too
-    # XXX and purge
-    return ip_address_str in _client_map
+    if ip_address_str in _client_map:
+        print _client_map[ip_address_str]
+        return (datetime.datetime.now() - _client_map[ip_address_str] >
+                datetime.timedelta(secs=get_dhcp_lease_secs()))
+    return False
 
 
 def register_client(ip_address_str):
