@@ -1,3 +1,4 @@
 ---
 os_target: armbian
 ansible_user: root
+nginx_worker_processes: auto
