@@ -89,6 +89,15 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
         """
         requests.get("http://%s/_forget_client" % (getTestTarget(),))
 
+    def tearDown(self):
+        """Leave system in a clean state
+
+        Make sure the ConnectBox won't think this client has connected
+        before, regardless of whether the next connection is from a
+        test, or from a normal browser or captive portal connection
+        """
+        requests.get("http://%s/_forget_client" % (getTestTarget(),))
+
     def testBaseRedirect(self):
         """Two hits on an unregistered route redirects to ConnectBox"""
         r = requests.get("http://%s" % (getTestTarget(),),)
