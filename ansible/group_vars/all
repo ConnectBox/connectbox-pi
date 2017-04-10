@@ -106,7 +106,7 @@ nginx_vhosts:
         fastcgi_param PATH_INFO $path_info;
         fastcgi_param PATH_TRANSLATED $document_root$path_info;
         include snippets/fastcgi-php.conf;
-        fastcgi_pass unix:/var/run/php5-fpm.sock;
+        fastcgi_pass {{ fastcgi_pass_sock }};
         auth_basic "Access Denied";
         auth_basic_user_file /usr/local/connectbox/etc/basicauth;
       }
