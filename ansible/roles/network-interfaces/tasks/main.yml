@@ -31,4 +31,8 @@
     name: systemd-networkd.service
     state: restarted
   when: etc_network_interfaces.changed
+  tags:
+    # This task on change is intentionally not a handler; don't trigger ANSIBLE0016
+    - skip_ansible_lint
+
 
