@@ -1,0 +1,5 @@
+
+os_target: debian
+
+nginx_default_release: jessie-backports
+

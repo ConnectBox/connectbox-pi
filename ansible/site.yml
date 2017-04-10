@@ -1,5 +1,34 @@
 ---
+
+# Note: OS specific variables are included in
+# the order of the hierarchy of their fork...
+# The "lower" fork wins
+# Debian <
+#  Ubuntu <
+#   Raspbian
+#   Armian
+
 - hosts: all
+  pre_tasks:
+    - name: Include OS family variables
+      include_vars: "group_vars/{{ ansible_os_family|lower }}"
+    - name: Include Distribution variables
+      include_vars: "group_vars/{{ ansible_distribution|lower }}"
+      when: ansible_os_family != ansible_distribution
+    - name: Include Target specific variables
+      include_vars: "group_vars/{{ ansible_lsb['id']|lower }}"
+      when: ansible_lsb["id"] != ansible_distribution
+    - name: Check for Armbian
+      stat:
+        path: "/etc/armbian.txt"
+      register: armbian_file
+    - name: Include Armbian specific variables
+      include_vars: "group_vars/armbian"
+      when: armbian_file.stat.exists == True
+    - debug:
+        var: os_target
+        verbosity: 1
   become: yes
   roles:
     - connectbox-pi
+

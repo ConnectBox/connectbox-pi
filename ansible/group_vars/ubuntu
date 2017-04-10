@@ -1,0 +1,5 @@
+
+os_target: ubuntu
+
+nginx_default_release: xenial
+
