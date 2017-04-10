@@ -24,4 +24,11 @@
     owner: root
     group: root
     mode: 0644
-  notify: Restart network
+  register: etc_network_interfaces
+
+- name: Restart network
+  service:
+    name: systemd-networkd.service
+    state: restarted
+  when: etc_network_interfaces.changed
+
