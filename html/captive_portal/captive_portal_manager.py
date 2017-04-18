@@ -8,11 +8,7 @@ _dhcp_lease_secs = -1
 DHCP_FALLBACK_LEASE_SECS = 300
 REAL_HOST_REDIRECT_URL = "/to-hostname"
 
-app = Flask(__name__)
-app.wsgi_app = ProxyFix(app.wsgi_app)
 
-
-@app.route('/')
 def cp_entry_point():
     source_ip = request.headers["X-Forwarded-For"]
     if is_recent_client(source_ip):
@@ -40,11 +36,16 @@ def get_dhcp_lease_secs():
 
 
 def is_recent_client(ip_address_str):
-    recency_criteria = datetime.timedelta(seconds=get_dhcp_lease_secs())
+    diff_client_recency_criteria = \
+            datetime.timedelta(seconds=get_dhcp_lease_secs())
+    # Avoid showing success after initial quick-fire requests so that we can
+    #  show the "Proceed to ConnectBox" link
+    initial_fast_retry_recency_criteria = datetime.timedelta(seconds=5)
     last_registered_time = _client_map.get(ip_address_str)
     if last_registered_time:
-        return (datetime.datetime.now() - last_registered_time) \
-            < recency_criteria
+        time_since_reg = datetime.datetime.now() - last_registered_time
+        return time_since_reg > initial_fast_retry_recency_criteria and \
+            time_since_reg < diff_client_recency_criteria
     return False
 
 
@@ -70,7 +71,6 @@ def welcome_or_return_status_code(status_code):
         return render_template(WELCOME_TEMPLATE)
 
 
-@app.route('/success.html')
 def cp_check_ios_macos_pre_yosemite():
     """Captive Portal Check for iOS and MacOS pre-yosemite
 
@@ -81,7 +81,6 @@ def cp_check_ios_macos_pre_yosemite():
     return welcome_or_serve_template("success.html")
 
 
-@app.route('/hotspot-detect.html')
 def cp_check_macos_post_yosemite():
     """Captive portal check for MacOS Yosemite and later
 
@@ -94,9 +93,6 @@ def cp_check_macos_post_yosemite():
     return welcome_or_serve_template("hotspot-detect.html")
 
 
-@app.route('/generate_204')
-@app.route('/gen_204')
-@app.route('/mobile/status.php')
 def cp_check_status_no_content():
     """Captive Portal Check for devices and apps wanting a 204
 
@@ -113,14 +109,12 @@ def cp_check_status_no_content():
     return welcome_or_return_status_code(204)
 
 
-@app.route('/kindle-wifi/wifistub.html')
 def cp_check_amazon_kindle_fire():
     """Captive portal check for Amazon Kindle Fire
     """
     return welcome_or_serve_template("wifistub.html")
 
 
-@app.route('/ncsi.txt')
 def cp_check_windows():
     """Captive portal check for Windows
 
@@ -129,7 +123,6 @@ def cp_check_windows():
     return welcome_or_serve_template("ncsi.txt")
 
 
-@app.route('/_forget_client')
 def forget_client():
     """Forgets that a client has been seen recently to allow running tests"""
     source_ip = request.headers["X-Forwarded-For"]
@@ -138,6 +131,37 @@ def forget_client():
 
     # XXX Is this an acceptable status code?
     return Response(status=204)
+
+
+app = Flask(__name__)
+app.add_url_rule('/',
+                 'index', cp_entry_point)
+app.add_url_rule('/success.html',
+                 'success', cp_check_ios_macos_pre_yosemite)
+# iOS from captive portal
+app.add_url_rule('/library/test/success.html',
+                 'success', cp_check_ios_macos_pre_yosemite)
+app.add_url_rule('/hotspot-detect.html',
+                 'hotspot-detect', cp_check_macos_post_yosemite)
+app.add_url_rule('/generate_204',
+                 'generate_204', cp_check_status_no_content)
+app.add_url_rule('/gen_204',
+                 'gen_204', cp_check_status_no_content)
+app.add_url_rule('/mobile/status.php',
+                 'status', cp_check_status_no_content)
+app.add_url_rule('/kindle-wifi/wifistub.html',
+                 'kindle-wifi', cp_check_amazon_kindle_fire)
+app.add_url_rule('/ncsi.txt',
+                 'ncsi', cp_check_windows)
+app.add_url_rule('/_forget_client',
+                 'forget', forget_client)
+app.wsgi_app = ProxyFix(app.wsgi_app)
+
+
+@app.errorhandler(404)
+def default_view(error):
+    """Handle all URLs and send them to the welcome page"""
+    return cp_entry_point()
 
 
 if __name__ == "__main__":

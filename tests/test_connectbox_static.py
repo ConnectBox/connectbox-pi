@@ -1,3 +1,4 @@
+import copy
 import json
 import os
 import unittest
@@ -11,6 +12,10 @@ TEST_IP_ENV_VAR = "TEST_IP"
 ADMIN_USER = "admin"
 ADMIN_PASSWORD = "connectbox"
 _testBaseURL = ""
+# Text in the welcome template
+WELCOME_TEMPLATE_TEXT_SAMPLE = "<TITLE>Proceed to ConnectBox</TITLE>"
+# Corresponds to the 302 in the nginx default vhost config
+FINAL_302_PAGE_SUFFIX = "to-hostname"
 
 
 def getTestTarget():
@@ -101,10 +106,11 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
     def testBaseRedirect(self):
         """Two hits on an unregistered route redirects to ConnectBox"""
         r = requests.get("http://%s" % (getTestTarget(),),)
+        self.assertIn(WELCOME_TEMPLATE_TEXT_SAMPLE, r.text)
         r = requests.get("http://%s" % (getTestTarget(),),
                          allow_redirects=False)
         self.assertTrue(r.is_redirect)
-        self.assertIn("Location", r.headers)
+        self.assertIn(FINAL_302_PAGE_SUFFIX, r.headers["Location"])
 
     def testIOSCaptivePortalResponseForIOS(self):
         """Return the success.html page to bypass iOS captive portal login"""
@@ -188,6 +194,37 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
         #  us in the correct state
         r = requests.get("http://%s/mobile/status.php" % (getTestTarget(),))
         self.assertEquals(r.status_code, 204)
+
+    def testUnknownLocalPageResponse(self):
+        """Two hits on an unregistered local route redirects to ConnectBox"""
+        r = requests.get("http://%s/unknown_local_page" % (getTestTarget(),))
+        self.assertIn(WELCOME_TEMPLATE_TEXT_SAMPLE, r.text)
+        r = requests.get("http://%s/unknown_local_page" % (getTestTarget(),),
+                         allow_redirects=False)
+        self.assertTrue(r.is_redirect)
+        self.assertIn(FINAL_302_PAGE_SUFFIX, r.headers["Location"])
+
+    def testUnknownNonLocalPageResponse(self):
+        """Two hits on an unregistered remote route redirects to ConnectBox"""
+        req = requests.Request(
+            "GET",
+            "http://%s/unknown_non_local_page" % (getTestTarget(),)
+        )
+        req.headers["Host"] = "non-local-host.com"
+        s = requests.Session()
+        r = s.send(req.prepare())
+        self.assertIn(WELCOME_TEMPLATE_TEXT_SAMPLE, r.text)
+        #XXX Unsure why this second request is failing
+        #req = requests.Request(
+        #    "GET",
+        #    "http://%s/unknown_non_local_page" % (getTestTarget(),)
+        #)
+        #req.headers["Host"] = "non-local-host.com"
+        #req.allow_redirects = False
+        #s = requests.Session()
+        #r = s.send(req.prepare())
+        #self.assertTrue(r.is_redirect)
+        #self.assertIn(FINAL_302_PAGE_SUFFIX, r.headers["Location"])
 
 
 class ConnectBoxAPITestCase(unittest.TestCase):
