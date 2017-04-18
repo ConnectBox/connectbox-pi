@@ -54,6 +54,8 @@
   with_items:
     - python-virtualenv
     - python-pip
+  tags:
+    - captive_portal
 
 - name: Install packages for captive portal manager process
   pip:
@@ -62,12 +64,16 @@
   with_items:
     - flask
     - gunicorn
+  tags:
+    - captive_portal
 
 # Copy client interface files
 - name: Copy connectbox client interface
   synchronize:
     src: ../html/captive_portal/
     dest: "{{ connectbox_captive_portal_root }}"
+  tags:
+    - captive_portal
 
 # XXX either this or the tmpfiles.d task is needed, not both
 #- name: Create /run/gunicorn for PID storage
@@ -81,11 +87,15 @@
   template:
     src: etc_tmpfiles.d_gunicorn.conf.j2
     dest: /etc/tmpfiles.d/gunicorn.conf
+  tags:
+    - captive_portal
 
 - name: Copy gunicorn systemd unit file
   template:
     src: etc_systemd_system_gunicorn.service.j2
     dest: /etc/systemd/system/gunicorn.service
+  tags:
+    - captive_portal
   notify: Restart gunicorn
 
 - name: Enable gunicorn service
@@ -93,3 +103,5 @@
     name: gunicorn
     enabled: yes
     #state: started
+  tags:
+    - captive_portal
