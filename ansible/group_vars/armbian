@@ -1,4 +1,3 @@
 ---
-os_target: armbian
+connectbox_os: armbian
 ansible_user: root
-nginx_worker_processes: auto

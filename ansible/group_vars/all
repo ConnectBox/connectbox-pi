@@ -119,6 +119,10 @@ nginx_vhosts:
         charset_types application/json;
       }
 
+# Ansible doesn't always detect the CPU count correctly. Also we want to be
+# able to target images to multiple devices, so auto seems the best choice here.
+nginx_worker_processes: auto
+
 # We want to set the default server. Remove the default server that
 #  nginx provides.
 nginx_remove_default_vhost: true

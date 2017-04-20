@@ -16,6 +16,9 @@
 # We're using the ifupdown method instead of the initscript method
 #  so this is just an ifdown and ifup operation rather than a
 #  service reload hostapd
+# Note: this is not a handler because wlan0/hostapd might be broken in later steps
+# before the handler would be executed. This ensures that wlan0 will be up and
+# hostapd properly running before exiting this role.
 - name: Reload hostapd
   shell: "ifdown wlan0; sleep 1; ifup wlan0"
   when: etc_hostapd_hostapd_conf.changed

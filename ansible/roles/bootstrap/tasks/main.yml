@@ -1,11 +1,30 @@
 ---
 
+# Check early on to see whether the OS needs to be
+# rebooted to allow a disk expansion step to complete.
+# This is Armbian only, but the check doesn't hurt others.
+- name: Check for resize2fs reboot oracle
+  stat:
+    path: "/var/run/resize2fs-reboot"
+  register: resize2fs_reboot
+
+# If the oracle above exists then we shouldn't continue
+- name: Fail when disk expansion is incomplete
+  fail:
+    msg: "The system must be rebooted because the disk expansion is not complete!"
+  when: resize2fs_reboot.stat.exists == True
+
 # Needed by Debian Official AMI
 - name: Install aptitude
   apt:
     name: aptitude
     state: present
   when: ansible_lsb["id"] == "Debian"
+
+# For mikegleasonjr.firewall - it assumes Debian/Ubuntu will always have iptables
+- name: Install iptables
+  apt: name=iptables state=present
+  when: ansible_os_family == 'Debian'
 
 - name: Add signing keys for additional repositories
   apt_key:
