@@ -1,5 +1,4 @@
 ---
-
 - include: rules.yml
 
 - include: persist-debian.yml
