@@ -78,7 +78,7 @@
     validate: /usr/sbin/visudo --check --file="%s"
     block: |
       %_connectbox ALL=(ALL) NOPASSWD: /usr/local/connectbox/bin/
-  notify: reload php5-fpm
+  notify: reload PHP
 
 # If the system is updated before any iptables modules are loaded
 #  the system can't find the modules and iptables rules can't be

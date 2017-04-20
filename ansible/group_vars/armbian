@@ -1,2 +1,3 @@
 ---
+connectbox_os: armbian
 ansible_user: root
