@@ -1,4 +1,5 @@
 import datetime
+import user_agents
 from flask import Flask, redirect, render_template, request, Response
 from werkzeug.contrib.fixers import ProxyFix
 
@@ -11,7 +12,7 @@ REAL_HOST_REDIRECT_URL = "/to-hostname"
 
 def cp_entry_point():
     source_ip = request.headers["X-Forwarded-For"]
-    if is_recent_client(source_ip):
+    if is_authorised_client(source_ip):
         return redirect(REAL_HOST_REDIRECT_URL)
     else:
         register_client(source_ip)
@@ -35,18 +36,28 @@ def get_dhcp_lease_secs():
     return _dhcp_lease_secs
 
 
-def is_recent_client(ip_address_str):
+def is_authorised_client(ip_address_str):
     diff_client_recency_criteria = \
             datetime.timedelta(seconds=get_dhcp_lease_secs())
-    # Avoid showing success after initial quick-fire requests so that we can
-    #  show the "Proceed to ConnectBox" link
-    initial_fast_retry_recency_criteria = datetime.timedelta(seconds=5)
     last_registered_time = _client_map.get(ip_address_str)
     if last_registered_time:
         time_since_reg = datetime.datetime.now() - last_registered_time
-        return time_since_reg > initial_fast_retry_recency_criteria and \
-            time_since_reg < diff_client_recency_criteria
+        return time_since_reg < diff_client_recency_criteria
     return False
+
+
+def authorise_client():
+    source_ip = request.headers["X-Forwarded-For"]
+    register_client(source_ip)
+    user_agent = user_agents.parse(request.headers.get("User-agent", ""))
+    show_url_as_href = 0
+    # iOS 9 can open links from the captive portal agent in the browser
+    if user_agent.os.family == "iOS" and \
+       user_agent.os.version[0] == 9:
+        show_url_as_href = 1
+
+    return render_template("connected.html",
+                           show_url_as_href=show_url_as_href)
 
 
 def register_client(ip_address_str):
@@ -55,19 +66,17 @@ def register_client(ip_address_str):
 
 def welcome_or_serve_template(template):
     source_ip = request.headers["X-Forwarded-For"]
-    if is_recent_client(source_ip):
+    if is_authorised_client(source_ip):
         return render_template(template)
     else:
-        register_client(source_ip)
         return render_template(WELCOME_TEMPLATE)
 
 
 def welcome_or_return_status_code(status_code):
     source_ip = request.headers["X-Forwarded-For"]
-    if is_recent_client(source_ip):
+    if is_authorised_client(source_ip):
         return Response(status=status_code)
     else:
-        register_client(source_ip)
         return render_template(WELCOME_TEMPLATE)
 
 
@@ -129,7 +138,7 @@ def forget_client():
     if source_ip in _client_map:
         del _client_map[source_ip]
 
-    # XXX Is this an acceptable status code?
+    # Is this an acceptable status code?
     return Response(status=204)
 
 
@@ -153,13 +162,15 @@ app.add_url_rule('/kindle-wifi/wifistub.html',
                  'kindle-wifi', cp_check_amazon_kindle_fire)
 app.add_url_rule('/ncsi.txt',
                  'ncsi', cp_check_windows)
+app.add_url_rule('/_authorise_client',
+                 'auth', authorise_client, methods=['POST'])
 app.add_url_rule('/_forget_client',
                  'forget', forget_client)
 app.wsgi_app = ProxyFix(app.wsgi_app)
 
 
 @app.errorhandler(404)
-def default_view(error):
+def default_view(_):
     """Handle all URLs and send them to the welcome page"""
     return cp_entry_point()
 

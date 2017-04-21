@@ -63,6 +63,7 @@
     name: "{{ item }}"
   with_items:
     - flask
+    - user-agents
     - gunicorn
   tags:
     - captive_portal
