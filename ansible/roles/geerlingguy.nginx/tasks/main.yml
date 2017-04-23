@@ -3,6 +3,10 @@
 - name: Include OS-specific variables.
   include_vars: "{{ ansible_os_family }}.yml"
 
+- name: Include Distro-specific variables for Ubuntu
+  include_vars: "{{ ansible_distribution }}.yml"
+  when: ansible_distribution == 'Ubuntu'
+
 - name: Define nginx_user.
   set_fact:
     nginx_user: "{{ __nginx_user }}"

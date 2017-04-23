@@ -48,6 +48,7 @@
     filename: jessie-backports
     state: present
   register: jessie_backport_repo_added
+  when: ansible_distribution == "Debian"
 
 # This always needs to run given whenever the repo has been loaded, so there
 #  is no cache_valid_time parameter. We skip ansible lint because we want to
