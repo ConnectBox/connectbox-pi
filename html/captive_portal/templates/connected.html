@@ -5,10 +5,10 @@
 </HEAD>
 <BODY>
 <p>Welcome</p>
-{% if show_url_as_href %}
-<a href="/to-hostname">Go To ConnectBox</a>
+{% if link_type == "href" %}
+<a href='{{ connectbox_url }}'>Go To ConnectBox</a>
 {% else %}
-Go to ConnectBox: http://connectbox.rpi3  (FIXME)
+Go to ConnectBox: {{ connectbox_url }}
 {% endif %}
 </BODY>
 </HTML>

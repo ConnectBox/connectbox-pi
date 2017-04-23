@@ -1,22 +1,40 @@
 import datetime
-import user_agents
+import requests
 from flask import Flask, redirect, render_template, request, Response
+from ua_parser import user_agent_parser
 from werkzeug.contrib.fixers import ProxyFix
 
-WELCOME_TEMPLATE = "welcome.html"
+DEBUG = 0
+
 _client_map = {}
 _dhcp_lease_secs = -1
+_real_connectbox_url = ""
 DHCP_FALLBACK_LEASE_SECS = 300
-REAL_HOST_REDIRECT_URL = "/to-hostname"
+REAL_HOST_REDIRECT_URL = "http://127.0.0.1/to-hostname"
 
 
 def cp_entry_point():
     source_ip = request.headers["X-Forwarded-For"]
     if is_authorised_client(source_ip):
-        return redirect(REAL_HOST_REDIRECT_URL)
+        return redirect(get_real_connectbox_url())
     else:
-        register_client(source_ip)
-        return render_template(WELCOME_TEMPLATE)
+        return authorise_client()
+
+
+def get_real_connectbox_url():
+    """Get the hostname where the connectbox can be found
+
+    We could remove the need for this if we had a redirect in nginx from
+    the default vhost to the connectbox host but that would mean putting
+    an ugly URL like http://a.b.c.d/some-redirect in the captive portal
+    page. So we use the value from that redirect to present a nice URL.
+    """
+    global _real_connectbox_url
+    if not _real_connectbox_url:
+        r = requests.get(REAL_HOST_REDIRECT_URL,
+                         allow_redirects=False)
+        _real_connectbox_url = r.headers["Location"]
+    return _real_connectbox_url
 
 
 def get_dhcp_lease_secs():
@@ -49,15 +67,29 @@ def is_authorised_client(ip_address_str):
 def authorise_client():
     source_ip = request.headers["X-Forwarded-For"]
     register_client(source_ip)
-    user_agent = user_agents.parse(request.headers.get("User-agent", ""))
-    show_url_as_href = 0
-    # iOS 9 can open links from the captive portal agent in the browser
-    if user_agent.os.family == "iOS" and \
-       user_agent.os.version[0] == 9:
-        show_url_as_href = 1
+    ua_str = request.headers.get("User-agent", "")
+    user_agent = user_agent_parser.Parse(ua_str)
+    if DEBUG:
+        print "User-agent: %s" % (ua_str,)
+        print "User-agent parsed: %s" % (user_agent,)
+
+    if user_agent["os"]["family"] == "iOS" and \
+            user_agent["os"]["major"] == "9":
+        # iOS 9 can open links from the captive portal agent in the browser
+        link_type = "href"
+    elif user_agent["os"]["family"] == "Mac OS X" and \
+            user_agent["os"]["major"] == "10" and \
+            user_agent["os"]["minor"] == "12":
+        # Sierra (10.12) can open links from the captive portal agent in
+        #  the browser
+        link_type = "href"
+
+    else:
+        link_type = "text"
 
     return render_template("connected.html",
-                           show_url_as_href=show_url_as_href)
+                           connectbox_url=get_real_connectbox_url(),
+                           link_type=link_type)
 
 
 def register_client(ip_address_str):
@@ -67,9 +99,10 @@ def register_client(ip_address_str):
 def welcome_or_serve_template(template):
     source_ip = request.headers["X-Forwarded-For"]
     if is_authorised_client(source_ip):
+        register_client(source_ip)
         return render_template(template)
     else:
-        return render_template(WELCOME_TEMPLATE)
+        return authorise_client()
 
 
 def welcome_or_return_status_code(status_code):
@@ -77,10 +110,10 @@ def welcome_or_return_status_code(status_code):
     if is_authorised_client(source_ip):
         return Response(status=status_code)
     else:
-        return render_template(WELCOME_TEMPLATE)
+        return authorise_client()
 
 
-def cp_check_ios_macos_pre_yosemite():
+def cp_check_ios_pre_9_and_macos_pre_yosemite_pre_yosemite():
     """Captive Portal Check for iOS and MacOS pre-yosemite
 
     See: https://forum.piratebox.cc/read.php?9,8927
@@ -90,16 +123,21 @@ def cp_check_ios_macos_pre_yosemite():
     return welcome_or_serve_template("success.html")
 
 
-def cp_check_macos_post_yosemite():
+def cp_check_ios_9_plus_and_macos_post_yosemite():
     """Captive portal check for MacOS Yosemite and later
 
     # noqa (ignore line length check for URLs)
 
     See: https://apple.stackexchange.com/questions/45418/how-to-automatically-login-to-captive-portals-on-os-x
+
     No need to check for user agent, because the default server does not serve
     the connectbox interface, so we don't need to avoid name clashes.
     """
-    return welcome_or_serve_template("hotspot-detect.html")
+    ua_str = request.headers.get("User-agent", "")
+    if "wispr" in ua_str:
+        return welcome_or_serve_template("hotspot-detect.html")
+    else:
+        return authorise_client()
 
 
 def cp_check_status_no_content():
@@ -146,12 +184,14 @@ app = Flask(__name__)
 app.add_url_rule('/',
                  'index', cp_entry_point)
 app.add_url_rule('/success.html',
-                 'success', cp_check_ios_macos_pre_yosemite)
+                 'success',
+                 cp_check_ios_pre_9_and_macos_pre_yosemite_pre_yosemite)
 # iOS from captive portal
 app.add_url_rule('/library/test/success.html',
-                 'success', cp_check_ios_macos_pre_yosemite)
+                 'success',
+                 cp_check_ios_pre_9_and_macos_pre_yosemite_pre_yosemite)
 app.add_url_rule('/hotspot-detect.html',
-                 'hotspot-detect', cp_check_macos_post_yosemite)
+                 'hotspot-detect', cp_check_ios_9_plus_and_macos_post_yosemite)
 app.add_url_rule('/generate_204',
                  'generate_204', cp_check_status_no_content)
 app.add_url_rule('/gen_204',
