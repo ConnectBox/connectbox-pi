@@ -4,8 +4,16 @@ from flask import Flask, redirect, render_template, request, Response
 from ua_parser import user_agent_parser
 from werkzeug.contrib.fixers import ProxyFix
 
-DEBUG = 0
-
+LINK_OPS = {
+    "TEXT": "text",
+    "HREF": "href",
+    "JS_DOC_LOC_HREF": "javascript_document_location_href",
+    "JS_WIN_LOC_HREF": "javascript_window_location_href",
+    "JS_WIN_OPEN": "javascript_window_open",
+    "JS_WIN_OPEN_BLANK": "javascript_window_open_blank",
+    "JS_HREF_NORMAL_CLICK": "javascript_href_normal_click",
+    "JS_HREF_BLANK_CLICK": "javascript_href_blank_click",
+}
 _client_map = {}
 _dhcp_lease_secs = -1
 _real_connectbox_url = ""
@@ -14,6 +22,13 @@ REAL_HOST_REDIRECT_URL = "http://127.0.0.1/to-hostname"
 
 
 def cp_entry_point():
+    # XXX - Just redirect, and assume that we know about all captive
+    #  portal agents? If not, def don't authorise client because that
+    #  means that a CPA will detect internet connection before the
+    #  user has "logged in"
+    # If we do a redirect, subsequent CPA and CP requests go to the
+    #  host mentioned in the redirect header so we probably don't want
+    #  to even do that :-(
     source_ip = request.headers["X-Forwarded-For"]
     if is_authorised_client(source_ip):
         return redirect(get_real_connectbox_url())
@@ -54,46 +69,48 @@ def get_dhcp_lease_secs():
     return _dhcp_lease_secs
 
 
-def is_authorised_client(ip_address_str):
+def is_authorised_client(ip_addr_str):
     diff_client_recency_criteria = \
             datetime.timedelta(seconds=get_dhcp_lease_secs())
-    last_registered_time = _client_map.get(ip_address_str)
+    last_registered_time = _client_map.get(ip_addr_str)
+    # XXX - update if it's already authorised so that we preserve the
+    #  illusion of connectivity.
     if last_registered_time:
         time_since_reg = datetime.datetime.now() - last_registered_time
         return time_since_reg < diff_client_recency_criteria
     return False
 
 
-def authorise_client():
-    source_ip = request.headers["X-Forwarded-For"]
-    register_client(source_ip)
-    ua_str = request.headers.get("User-agent", "")
+def get_link_type(ua_str):
     user_agent = user_agent_parser.Parse(ua_str)
-    if DEBUG:
-        print "User-agent: %s" % (ua_str,)
-        print "User-agent parsed: %s" % (user_agent,)
-
     if user_agent["os"]["family"] == "iOS" and \
             user_agent["os"]["major"] == "9":
         # iOS 9 can open links from the captive portal agent in the browser
-        link_type = "href"
+        return LINK_OPS["HREF"]
     elif user_agent["os"]["family"] == "Mac OS X" and \
             user_agent["os"]["major"] == "10" and \
             user_agent["os"]["minor"] == "12":
         # Sierra (10.12) can open links from the captive portal agent in
         #  the browser
-        link_type = "href"
-
+        return LINK_OPS["HREF"]
     else:
-        link_type = "text"
+        return LINK_OPS["TEXT"]
+
+
+def authorise_client(ip_addr_str=None):
+    if ip_addr_str is None:
+        ip_addr_str = request.headers["X-Forwarded-For"]
+    register_client(ip_addr_str)
 
     return render_template("connected.html",
                            connectbox_url=get_real_connectbox_url(),
-                           link_type=link_type)
+                           LINK_OPS=LINK_OPS,
+                           link_type=get_link_type(
+                               request.headers.get("User-agent", "")))
 
 
-def register_client(ip_address_str):
-    _client_map[ip_address_str] = datetime.datetime.now()
+def register_client(ip_addr_str):
+    _client_map[ip_addr_str] = datetime.datetime.now()
 
 
 def welcome_or_serve_template(template):
@@ -204,6 +221,8 @@ app.add_url_rule('/ncsi.txt',
                  'ncsi', cp_check_windows)
 app.add_url_rule('/_authorise_client',
                  'auth', authorise_client, methods=['POST'])
+app.add_url_rule('/_authorise_client/<ip_addr_str>',
+                 'auth_ip', authorise_client, methods=['POST'])
 app.add_url_rule('/_forget_client',
                  'forget', forget_client)
 app.wsgi_app = ProxyFix(app.wsgi_app)

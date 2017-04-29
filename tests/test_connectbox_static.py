@@ -205,7 +205,7 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
         r = requests.get("http://%s/hotspot-detect.html" %
                          (getTestTarget(),), headers=headers)
         r.raise_for_status()
-        # 2. We provide response that indicates no internet, causing
+        # 2. Connectbox provides response that indicates no internet, causing
         #   captive portal browser to be opened
         self.assertNotIn("<BODY>\nSuccess\n</BODY>", r.text)
         # 3. Device sends regular user agent request for hotspot-detect.html
@@ -216,7 +216,7 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
         r = requests.get("http://%s/hotspot-detect.html" %
                          (getTestTarget(),), headers=headers)
         r.raise_for_status()
-        # 4. We send a welcome page, with a link to click
+        # 4. Connectbox sends a welcome page, with a link to click
         self.assertIn("<a href='%s'" % (getTestBaseURL(),), r.text)
         # 5. Device sends wispr hotspot-detect.html request
         headers = requests.utils.default_headers()
@@ -224,9 +224,9 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
         r = requests.get("http://%s/hotspot-detect.html" %
                          (getTestTarget(),), headers=headers)
         r.raise_for_status()
-        # 6. We provide response that indicates an internet connection which
-        #    changes captive portal browser button to "Done" and allows the
-        #    user to click on the link
+        # 6. Connectbox provides response that indicates an internet
+        #    connection which changes captive portal browser button to "Done"
+        #    and allows the user to click on the link
         self.assertIn("<BODY>\nSuccess\n</BODY>", r.text)
 
     def testAndroidCaptivePortalResponse(self):

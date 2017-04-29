@@ -4,9 +4,22 @@
     <TITLE>Connected to ConnectBox Wifi</TITLE>
 </HEAD>
 <BODY>
-<p>Welcome</p>
 {% if link_type == "href" %}
 <a href='{{ connectbox_url }}'>Go To ConnectBox</a>
+{% elif link_type == LINK_OPS["JS_DOC_LOC_HREF"] %}
+<script>document.location.href="{{ connectbox_url }}";</script>
+{% elif link_type == LINK_OPS["JS_WIN_LOC_HREF"] %}
+<script>window.location.href="{{ connectbox_url }}";</script>
+{% elif link_type == LINK_OPS["JS_WIN_OPEN"] %}
+<script>window.open("{{ connectbox_url }}");</script>
+{% elif link_type == LINK_OPS["JS_WIN_OPEN_BLANK"] %}
+<script>window.open("{{ connectbox_url }}", "_blank");</script>
+{% elif link_type == LINK_OPS["JS_HREF_NORMAL_CLICK"] %}
+<a href='{{ connectbox_url }}' id="connectbox_anchor">Go To ConnectBox</a>
+<script>document.getElementById("connectbox_anchor").click();</script>
+{% elif link_type == LINK_OPS["JS_HREF_BLANK_CLICK"] %}
+<a href='{{ connectbox_url }}' id="connectbox_anchor" target="_blank">Go To ConnectBox</a>
+<script>document.getElementById("connectbox_anchor").click();</script>
 {% else %}
 Go to ConnectBox: {{ connectbox_url }}
 {% endif %}
