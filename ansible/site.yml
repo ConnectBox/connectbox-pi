@@ -1,5 +1,32 @@
 ---
+
+# Note: OS specific variables are included in the order of the hierarchy of their fork:
+#
+# Debian─┬─Ubuntu───Armbian
+#        ├─Raspbian
+#        └─Armbian
+#
+# (See also https://github.com/ConnectBox/connectbox-pi/wiki/Differentiating-platform-by-ansible-variables)
+
 - hosts: all
+  pre_tasks:
+    - name: Include OS family variables
+      include_vars: "group_vars/{{ ansible_os_family|lower }}"
+    - name: Include Distribution variables
+      include_vars: "group_vars/{{ ansible_distribution|lower }}"
+    - name: Include Target specific variables
+      include_vars: "group_vars/{{ ansible_lsb['id']|lower }}"
+    - name: Check for Armbian info
+      stat:
+        path: "/etc/armbian.txt"
+      register: armbian_file
+    - name: Check for Armbian Release
+      stat:
+        path: "/etc/armbian-release"
+      register: armbian_release_file
+    - name: Include Armbian specific variables
+      include_vars: "group_vars/armbian"
+      when: armbian_file.stat.exists == True or armbian_release_file.stat.exists == True
   become: yes
   roles:
     - connectbox-pi

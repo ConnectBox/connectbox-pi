@@ -5,14 +5,14 @@
     name: git
     state: present
 
-- name: install php5-fpm for admin interface
+- name: install PHP for admin interface
   apt:
-    name: php5-fpm
+    name: "{{ php_service }}"
     state: present
 
-- name: Enable php5-fpm
+- name: Enable PHP
   service:
-    name: php5-fpm
+    name: "{{ php_service }}"
     enabled: yes
     state: started
 
