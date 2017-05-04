@@ -62,6 +62,7 @@
 # https://forum.armbian.com/index.php?/topic/3729-problems-since-versions-525-and-526-with-varlog/
 # Armbian doesn't set ansible_lsb["id"] to Armbian so we need to look for
 #  Debian running on aarch64
+# XXX - Armbian runs on other architectures too
 - name: Temporarily shutdown log2ram service on Armbian during package installation
   service:
     name: log2ram
@@ -77,10 +78,10 @@
   when: ansible_lsb["id"] == "Debian"
 
 # See if we need to create a wlan0 interface when we're running in a sim
-#  environment i.e. running Debian
+#  environment i.e. running virtualised
 - name: Create a wlan0 interface
   command: /sbin/ip link add wlan0 type dummy
-  when: "'wlan0' not in ansible_interfaces and ansible_lsb['id'] == 'Debian'"
+  when: "'wlan0' not in ansible_interfaces and ansible_virtualization_type != 'NA'"
 
 # Non developer mode restricts ssh connections to ethernet
 # This variable needs to be set before the mikegleasonjr.firewall role is run
