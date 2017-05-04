@@ -32,8 +32,8 @@ auth_algs=3
 ignore_broadcast_ssid=0
 wmm_enabled=1  # QOS
 
-{% if hostapd_ht_capab != "__default__" %}
-ht_capab={{ hostapd_ht_capab }}
+{% if wireless_adapter_capabilities != "__default__" %}
+ht_capab={{ wireless_adapter_capabilities }}
 {% else %}
 {#
   The default is different to a blank value, so comment when we have a default

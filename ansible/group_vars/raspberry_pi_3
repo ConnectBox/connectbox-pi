@@ -1,5 +1,5 @@
 ---
 ieee80211n_enabled: 1
 # From: https://github.com/ConnectBox/connectbox-pi/wiki/Wireless-Benchmarking-with-ht_capab-settings
-hostapd_ht_capab: "[HT20][SHORT-GI-20][DDDS_CCK-40]"
+wireless_adapter_capabilities: "[HT20][SHORT-GI-20][DDDS_CCK-40]"
 
