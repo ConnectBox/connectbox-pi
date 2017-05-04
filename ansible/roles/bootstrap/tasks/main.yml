@@ -63,7 +63,7 @@
   service:
     name: log2ram
     state: stopped
-  when: connectbox_os == "Armbian"
+  when: connectbox_os == "armbian"
   notify: Start log2ram service
 
 # Needed by Debian Jessie
