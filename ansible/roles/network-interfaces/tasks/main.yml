@@ -1,7 +1,7 @@
 ---
 
 - name: Check if NetworkManager package is installed
-  command: dpkg -l network-manager
+  command: dpkg -s network-manager
   register: nm_installed_check
   failed_when: nm_installed_check.rc > 1
 
