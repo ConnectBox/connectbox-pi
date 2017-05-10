@@ -66,7 +66,7 @@ nginx_vhosts:
         fastcgi_param PATH_INFO $path_info;
         fastcgi_param PATH_TRANSLATED $document_root$path_info;
         include snippets/fastcgi-php.conf;
-        fastcgi_pass unix:/var/run/php5-fpm.sock;
+        fastcgi_pass {{ fastcgi_pass_sock }};
         auth_basic "Access Denied";
         auth_basic_user_file /usr/local/connectbox/etc/basicauth;
       }
@@ -79,11 +79,13 @@ nginx_vhosts:
         charset_types application/json;
       }
 
+# Ansible doesn't always detect the CPU count correctly. Also we want to be
+# able to target images to multiple devices, so auto seems the best choice here.
+nginx_worker_processes: auto
+
 # We want to set the default server. Remove the default server that
 #  nginx provides.
 nginx_remove_default_vhost: true
-# Use backports for nginx installation
-nginx_default_release: jessie-backports
 # i.e. allow inbound ssh from all interfaces
 # Overriden in bootstrap role for non-developer mode
 iptables_ssh_in_interface: ""

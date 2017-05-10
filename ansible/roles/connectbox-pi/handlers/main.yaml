@@ -1,6 +1,8 @@
 ---
-- name: reload php5-fpm
-  service: name=php5-fpm state=restarted
+- name: reload PHP
+  service:
+    name: "{{ php_service }}"
+    state: restarted
 
 # Skip lint because there's no way that ansible-lint can know at build time
 #  that we're legitimately use shell because of the && that is always
