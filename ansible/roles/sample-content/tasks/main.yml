@@ -5,6 +5,7 @@
       repo: https://github.com/ConnectBox/connectbox-sample-content.git
       dest: /tmp/connectbox-sample-content
       depth: 1
+      update: no
 
   - name: Place sample content at USB drive location
     command: rsync -a /tmp/connectbox-sample-content/content/ {{ connectbox_usb_files_root }}

@@ -14,72 +14,32 @@ wireless_country_code: "00"
 connectbox_web_root: /var/www/connectbox
 connectbox_default_content_root: "{{ connectbox_web_root }}/connectbox_default"
 connectbox_admin_root: "{{ connectbox_web_root }}/admin"
+connectbox_captive_portal_root: "{{ connectbox_web_root }}/captive_portal"
+connectbox_captive_portal_virtualenv: "{{ connectbox_web_root }}/captive_portal_virtualenv"
 connectbox_config_root: /etc/connectbox
 connectbox_usb_files_root: /media/usb0
 connectbox_admin_credentials: admin:$apr1$CBOXFOO2$usYeNWIKOX910UnI/jugh.
 connectbox_default_hostname: connectbox.local
 
-# Make sure we show index.html for 404, given we'll be sent here by
-#  people browsing for all sorts of things
 nginx_vhosts:
   - listen: "*:80 default_server"
     server_name: "_"
     extra_parameters: |
       rewrite_log on;
-      # Simulate internet access for iOS and MacOSX pre-yosemite so we
-      #  can exit their captive portal browser.
-      # See: https://forum.piratebox.cc/read.php?9,8927
-      # No need to check for user agent, because the default server is not
-      #  a part of serving the connectbox interface, so we don't need to avoid
-      #  name clashes.
-      location /success.html {
-        root "{{ connectbox_default_content_root }}";
-      }
-      # Simulate internet access for MacOSX Yosemite and later, so we
-      #  can exit their captive portal browser
-      # See: https://apple.stackexchange.com/questions/45418/how-to-automatically-login-to-captive-portals-on-os-x#
-      # No need to check for user agent, because the default server is not
-      #  a part of serving the connectbox interface, so we don't need to avoid
-      #  name clashes.
-      location /hotspot-detect.html {
-        root "{{ connectbox_default_content_root }}";
-      }
 
-      # Simulate internet access for Android so we can exit their
-      #  captive portal.
-      #  See: https://www.chromium.org/chromium-os/chromiumos-design-docs/network-portal-detection
-      # Required in the default_server to avoid sending a 302 when we
-      #  actually need a 204
-      location /generate_204 {
-        return 204;
-      }
-      # Android 7 introduced a fallback method for captive portal detection.
-      # Let's support that too.
-      # https://android.googlesource.com/platform/frameworks/base/+/master/services/core/java/com/android/server/connectivity/NetworkMonitor.java#92
-      location /gen_204 {
-        return 204;
-      }
-      # Exit Amazon kindle captive portal detection
-      location = /kindle-wifi/wifistub.html {
-        root "/var/www/connectbox/connectbox_default";
-      }
-
-      # Simulate interet access for Windows so we can exit their captive
-      #  portal browser.
-      # See: https://technet.microsoft.com/en-us/library/cc766017(v=ws.10).aspx
-      location /ncsi.txt {
-        root "{{ connectbox_default_content_root }}";
-      }
-
-      # Disable Facebook messenger connectivity check
-      location /mobile/status.php {
-        return 204;
-      }
-
-      # Default - bounce to the real server definition
       location / {
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Host $http_host;
+        proxy_redirect off;
+        proxy_pass http://127.0.0.1:{{ gunicorn_listen_port }};
+      }
+
+      # Bounce to the real server definition to save the captive portal
+      #  manager from needing to find and store the real hostname
+      location /to-hostname {
         return 302 http://$hostname;
       }
+
   - listen: "80"
     server_name: "$hostname"
     index: index.html

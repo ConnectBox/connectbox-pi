@@ -1,0 +1,19 @@
+[Unit]
+Description=gunicorn daemon
+After=network.target
+
+[Service]
+PIDFile=/run/gunicorn/pid
+User={{ gunicorn_user }}
+Group={{ gunicorn_group }}
+RuntimeDirectory=gunicorn
+WorkingDirectory={{ connectbox_captive_portal_root }}
+ExecStart={{ connectbox_captive_portal_virtualenv }}/bin/gunicorn \
+          --pid {{ gunicorn_pid_file }}  \
+          --bind 127.0.0.1:{{ gunicorn_listen_port }} captive_portal_manager:app
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecStop=/bin/kill -s TERM $MAINPID
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
