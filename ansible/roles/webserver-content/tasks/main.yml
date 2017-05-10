@@ -76,14 +76,8 @@
     dest: "{{ connectbox_captive_portal_root }}"
   tags:
     - captive_portal
-
-# XXX either this or the tmpfiles.d task is needed, not both
-#- name: Create /run/gunicorn for PID storage
-#  file:
-#    path: "{{ gunicorn_run_directory }}"
-#    state: directory
-#    owner: www-data
-#    group: www-data
+  notify:
+    - Restart gunicorn
 
 - name: Copy gunicorn tempfiles definition
   template:
