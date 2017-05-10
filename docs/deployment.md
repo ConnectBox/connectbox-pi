@@ -43,7 +43,7 @@ On your desktop, mount the downloaded image and creating a file called ssh in th
 
 ## Install Armbian on Orange Pi Zero or Pine64
 
-Download the [Debian Jessie Pine64 Armbian Server Legacy Image](https://www.armbian.com/pine64/) put it into an SD card. Do not use a Ubuntu Xenial image as the Ansible playbooks expect Debian. The [Armbian Getting Started Guide](https://docs.armbian.com/User-Guide_Getting-Started/) is useful. Before running ansible, you need to login and set the root password per the Armbian Getting Started Guide.
+Download the appropriate image for your device from the [Armbian download area](https://www.armbian.com/download/) put it into an SD card. Armbian images using a Legacy kernel, based on Ubuntu Xenial and Debian Jessie are supported. Images using a Mainline kernel make not provide a useable ConnectBox. The [Armbian Getting Started Guide](https://docs.armbian.com/User-Guide_Getting-Started/) is useful. Before running ansible, you need to login and set the root password per the Armbian Getting Started Guide.
 
 ## Setup SSH Keys
 
