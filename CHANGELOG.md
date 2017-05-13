@@ -7,6 +7,8 @@ instead indentifies releases by release date.
 
 ## Unreleased
 
+- Added creation of a 10MB and 100MB test file to help with throughput
+  testing, when sample content is installed
 - Added Captive Portal Manager that causes the operating system captive
   portal agent on iOS 9+ and MacOS 10.10+ to display a link or reference
   to the ConnectBox front page.
