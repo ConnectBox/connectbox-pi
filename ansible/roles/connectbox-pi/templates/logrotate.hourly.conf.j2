@@ -6,6 +6,7 @@
         sharedscripts
         create 0640 www-data adm
         notifempty
+        size 1k
         prerotate
                 if [ -d /etc/logrotate.d/httpd-prerotate ]; then \
                         run-parts /etc/logrotate.d/httpd-prerotate; \
@@ -13,6 +14,6 @@
         endscript
         postrotate
                 invoke-rc.d nginx rotate >/dev/null 2>&1
-                /usr/local/access_log_analyzer/bin/access-log-analyzer.sh --config /usr/local/access_log_analyzer/etc/access_log_analyzer.conf < {{ connectbox_access_log }}.1
-        Endscript
+                /usr/local/access_log_analyzer/bin/access-log-analyzer.sh --config /usr/local/access_log_analyzer/etc/access_log_analyzer.conf {{ connectbox_access_log }}.1
+        endscript
 }

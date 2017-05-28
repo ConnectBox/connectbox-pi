@@ -122,15 +122,15 @@
 - name: Make hourly logrotate config
   template:
     src: logrotate.hourly.conf.j2
-    dest: /usr/local/access_log_analyzer/etc/logrotate.hourly.conf
+    dest: /etc/logrotate.hourly.conf
     backup: yes
-    owner: _connectbox
-    group: _connectbox
+    owner: root
+    group: root
     mode: 0644
 
 - name: Configure hourly logrotate for connectbox access logrotate
   copy:
-    content: "/usr/sbin/logrotate /usr/local/access_log_analyzer/etc/logrotate.hourly.conf"
+    content: "/usr/sbin/logrotate /etc/logrotate.hourly.conf"
     dest: "/etc/cron.hourly/logrotate.hourly"
 
 # If the system is updated before any iptables modules are loaded
