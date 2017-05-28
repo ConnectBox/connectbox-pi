@@ -20,6 +20,11 @@ connectbox_config_root: /etc/connectbox
 connectbox_usb_files_root: /media/usb0
 connectbox_admin_credentials: admin:$apr1$CBOXFOO2$usYeNWIKOX910UnI/jugh.
 connectbox_default_hostname: connectbox.local
+connectbox_log_dir: /var/log/connectbox
+connectbox_access_log: "{{ connectbox_log_dir }}/connectbox-access.log"
+connectbox_error_log:  "{{ connectbox_log_dir }}/connectbox-error.log"
+
+access_log_analyzer_repo: https://github.com/ConnectBox/access_log_analyzer.git
 
 nginx_vhosts:
   - listen: "*:80 default_server"
@@ -45,8 +50,8 @@ nginx_vhosts:
     index: index.html
     root: "{{ connectbox_default_content_root }}"
     error_page: "404 /index.html"
-    access_log: "/var/log/nginx/connectbox-access.log"
-    error_log: "/var/log/nginx/connectbox-error.log"
+    access_log: "{{ connectbox_access_log }}"
+    error_log: "{{ connectbox_error_log }}"
     extra_parameters: |
       rewrite_log on;
 
