@@ -130,8 +130,11 @@
 
 - name: Configure hourly logrotate for connectbox access logrotate
   copy:
-    content: "/usr/sbin/logrotate /etc/logrotate.hourly.conf"
-    dest: "/etc/cron.hourly/logrotate.hourly"
+    content: "#!/bin/sh\n/usr/sbin/logrotate /etc/logrotate.hourly.conf"
+    dest: "/etc/cron.hourly/logrotate-hourly"
+    mode: 0755
+    owner: root
+    group: root
 
 # If the system is updated before any iptables modules are loaded
 #  the system can't find the modules and iptables rules can't be
