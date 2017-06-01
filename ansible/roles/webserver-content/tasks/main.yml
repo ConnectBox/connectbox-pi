@@ -54,6 +54,7 @@
   with_items:
     - python-virtualenv
     - python-pip
+    - virtualenv
   tags:
     - captive_portal
 
