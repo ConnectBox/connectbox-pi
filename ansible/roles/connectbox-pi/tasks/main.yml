@@ -56,6 +56,15 @@
     group: _connectbox
     mode: 0755
 
+- name: Make logs directory
+  file:
+    state: directory
+    path: "{{ connectbox_log_dir }}"
+    owner: _connectbox
+    group: _connectbox
+    recurse: yes
+    mode: 0755
+
 - name: Copy connectbox scripts
   copy:
     src: ../scripts/
@@ -79,6 +88,53 @@
     block: |
       %_connectbox ALL=(ALL) NOPASSWD: /usr/local/connectbox/bin/
   notify: reload PHP
+
+- name: install access-log-analyzer
+  git:
+    repo: '{{access_log_analyzer_repo}}'
+    dest: /usr/local/access-log-analyzer
+
+- name: Make access-log-analyzer etc directory
+  file:
+    state: directory
+    path: /usr/local/access-log-analyzer/etc
+    owner: _connectbox
+    group: _connectbox
+    mode: 0755
+
+- name: Make access-log-analyzer var directory
+  file:
+    state: directory
+    path: /usr/local/access-log-analyzer/var
+    owner: _connectbox
+    group: _connectbox
+    mode: 0755
+
+- name: Make access-log-analyzer config overrides
+  template:
+    src: access-log-analyzer.conf.j2
+    dest: /usr/local/access-log-analyzer/etc/access-log-analyzer.conf
+    backup: yes
+    owner: _connectbox
+    group: _connectbox
+    mode: 0644
+
+- name: Make hourly logrotate config
+  template:
+    src: logrotate.hourly.conf.j2
+    dest: /etc/logrotate.hourly.conf
+    backup: yes
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Configure hourly logrotate for connectbox access logrotate
+  copy:
+    content: "#!/bin/sh\n/usr/sbin/logrotate /etc/logrotate.hourly.conf"
+    dest: "/etc/cron.hourly/logrotate-hourly"
+    mode: 0755
+    owner: root
+    group: root
 
 # If the system is updated before any iptables modules are loaded
 #  the system can't find the modules and iptables rules can't be
