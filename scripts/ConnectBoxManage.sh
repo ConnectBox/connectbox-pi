@@ -504,6 +504,22 @@ function set_ssid () {
   fi
 }
 
+function dologrotate () {
+  # Shutdown
+  if [ $DEBUG == 1 ]; then
+    echo "Rotating logs"
+  fi
+
+  /etc/cron.hourly/logrotate-hourly 2>&1 | logger -t $(basename $0)
+
+  if [ ${PIPESTATUS[0]} -eq 0 ]
+  then
+    success
+  else
+    failure
+  fi
+}
+
 if [[ $# -lt 1 ]]; then
     usage
 fi
@@ -565,6 +581,8 @@ elif [ "$action" = "reboot" ]; then
   doreboot
 elif [ "$action" = "reset" ]; then
   reset
+elif [ "$action" = "logrotate" ]; then
+  dologrotate
 else
   usage
 fi

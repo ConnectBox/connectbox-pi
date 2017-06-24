@@ -80,6 +80,11 @@
             a {
                 text-decoration: none !important;
             }
+            td.popular-content-header {
+                border-top: 0px !important;
+                background-color: #CCEFEB;
+                border-radius: 4px;
+            }
 }
         </style>
     </head>
@@ -152,6 +157,25 @@
                 </div>
             </div>
 
+            <div class="row" ng-hide="index.error || !index.popularFiles || !index.isTopLevel">
+                <div class="table-responsive">
+                <table class="table">
+                    <tbody>
+                        <tr><td class="popular-content-header"><i class="fa fa-line-chart"></i></td></tr>
+                        <tr ng-repeat="row in index.popularFiles | orderBy:index.sort.name:index.sort.rev">
+                            <td ng-class="::{'centered': row.isTopLevel}" ng-style="$index == 0 && {'border-top' : 0}">
+                                <a style="display: inline-block;" href="{{:: row.resource }}">
+                                    <i class="fa {{:: row | mediaTypes }}"></i>
+                                    <span>&nbsp;{{:: row.name }}</span>
+                                </a>
+                                <span style="display: inline-block;">&nbsp;<span ng-repeat="i in getNumber(row.score) track by $index"><i class="fa fa-star"></i></span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                </div>
+            </div>
+
             <div class="row" style="margin-top: 60px;" ng-show="index.error">
                 <div class="alert alert-danger" role="alert">
                     <big>
@@ -165,6 +189,10 @@ angular.module('index', ['ng'])
     .controller('IndexController', ['$http', '$location', '$scope', '$window', '$timeout',
         function($http, $location, $scope, window, $timeout, FILES_BASE_URL) {
             var self = this;
+
+            $scope.getNumber = function(num) {
+                return new Array(num);
+            }
 
             this.iconMetadata = window.iconMetadata;
             this.config = null;
@@ -286,6 +314,51 @@ angular.module('index', ['ng'])
                 );
             }
 
+            function load_popular_files() {
+                self.error = null;
+                self.loading.start();
+
+                return $http(
+                    {
+                        method: 'GET',
+                        url: '/' + self.config.Client.stats_file
+                    }
+                ).then(
+                    function(response) {
+                        var max = 0;
+                        var min = 2147483647;
+                        self.popularFiles = ((response.data && response.data['year']) || []).map(function (f) {
+                            var resource = f.resource;
+                            var parts = resource.split('/');
+                            f.name = decodeURIComponent(parts[parts.length - 1])
+                            f.ext = file_extension(f.name)
+                            if ( f.count > max ) {
+                                max = f.count;
+                            }
+                            if ( f.count < min ) {
+                                min = f.count;
+                            }
+                            return f;
+                        });
+
+                        var maxMin = (max - min);
+                        if (maxMin <= 0) {
+                            maxMin = 1;
+                        }
+                        self.popularFiles = self.popularFiles.map(function (f) {
+                            f.score = Math.round(4 * (f.count - min) / maxMin + 1);
+                            return f;
+                        });
+
+                        self.loading.stop();
+                    },
+                    function (response) {
+                        self.error = response;
+                        self.loading.stop();
+                    }
+                )
+            }
+
             function path_parts(path) {
                 var parts = (path === '/'? '': path).split('/'), up = '';
                 for (var i = 0, l = parts.length; i < l; i++) {
@@ -340,7 +413,8 @@ angular.module('index', ['ng'])
                             {
                                 base_index_url: "",
                                 tail_slash: false,
-                                display_root_folder_names: true
+                                display_root_folder_names: true,
+                                stats_file: "stats.top10.json"
                             };
 
                         $scope.$on('$locationChangeSuccess',
@@ -359,6 +433,8 @@ angular.module('index', ['ng'])
                         } else {
                             $scope.$broadcast('$locationChangeSuccess');
                         }
+
+                        load_popular_files();
                     },
                     function(response) {
                         self.loading.stop();

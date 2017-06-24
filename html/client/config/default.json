@@ -1,10 +1,11 @@
 {
-	"Content":{
-		"contentRoute":"/content"
-	},
-	"Client":{
-		"tail_slash":true,
-        "display_root_folder_names":true,
-        "icon_prefix": "_icon_"
-	}
+  "Content": {
+    "contentRoute": "/content"
+  },
+  "Client": {
+    "tail_slash": true,
+    "display_root_folder_names": true,
+    "icon_prefix": "_icon_",
+    "stats_file": "stats.top10.json"
+  }
 }

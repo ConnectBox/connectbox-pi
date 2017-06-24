@@ -47,6 +47,13 @@
             <li><a href="#home" id="menu_home">Home</a></li>
             <li><a href="#about" id="menu_about">About</a></li>
             <li><a href="#contact" id="menu_contact">Contact</a></li>
+            <li class="reports">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Reports <span class="caret"></span></a>
+              <ul class="dropdown-menu">
+                <li><a href="#" id="menu_top10_stats">Top 10</a></li>
+                <li><a href="#" id="menu_all_stats">All Stats</a></li>
+              </ul>
+            </li>
             <li class="dropdown">
               <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Configure <span class="caret"></span></a>
               <ul class="dropdown-menu">
@@ -147,6 +154,11 @@
         <h1>System</h1>
       </div>
       <p class="lead">System Functions</p>
+        <form class="simple_form form-inline" id="form_logrotate">
+            <input class="btn btn-default" name="logrotate" type="submit" value="Rotate Logs">
+            <div style="display:none" id="logrotate_success">✓</div>
+        </form>
+
         <form class="simple_form form-inline" id="form_unmountusb">
             <input class="btn btn-default" name="unmountusb" type="submit" value="Unmount USB">
             <div style="display:none" id="unmountusb_success">✓</div>
