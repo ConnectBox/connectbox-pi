@@ -7,7 +7,7 @@
 #  directory left for subsequent scripts
 
 # Terraform output variables that define endpoints we'll sshe to
-PROVISIONED_TARGET_IP_VARIABLES="connectbox-server-public-ip";
+PROVISIONED_TARGET_IP_VARIABLES="connectbox-debian-server-public-ip";
 
 # Servers should take 3 minutes max to become accessible over ssh, and as
 #  we wait for 1 second between attempts, this is our max attempt count

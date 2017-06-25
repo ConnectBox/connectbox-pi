@@ -131,9 +131,9 @@ resource "aws_network_interface" "client-facing-server" {
 	subnet_id = "${aws_subnet.client-facing-subnet.id}"
 	# AWS reserves the bottom four addresses in each subnet
 	#  so this is the lowest available
-	private_ips = ["${var.server_client_facing_ip}"]
+	private_ips = ["${var.debian_server_client_facing_ip}"]
 	attachment {
-		instance = "${aws_instance.connectbox-server.id}"
+		instance = "${aws_instance.connectbox-debian-server.id}"
 		device_index = 1
 	}
 	tags {
@@ -151,7 +151,7 @@ resource "aws_network_interface" "client-facing-server" {
 #	private_ips = ["10.0.1.5"]
 #	security_groups = ["${aws_security_group.default.id}"]
 #	attachment {
-#		instance = "${aws_instance.connectbox-server.id}"
+#		instance = "${aws_instance.connectbox-debian-server.id}"
 #		device_index = 1
 #	}
 #	tags {
@@ -162,14 +162,14 @@ resource "aws_network_interface" "client-facing-server" {
 #	}
 #}
 
-resource "aws_instance" "connectbox-server" {
+resource "aws_instance" "connectbox-debian-server" {
 	ami = "${lookup(var.amis, var.region)}"
 	instance_type = "${var.instance_type}"
 	key_name = "travis-ci-connectbox-20170126"
 	subnet_id = "${aws_subnet.default.id}"
 	vpc_security_group_ids = ["${aws_security_group.default.id}"]
 	tags {
-		Name = "connectbox-server"
+		Name = "connectbox-debian-server"
 		project = "connectbox"
 		lifecycle = "ci"
 		creator = "terraform"

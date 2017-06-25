@@ -1,4 +1,5 @@
 variable "region" { default = "us-west-2" }
+#variable "region" { default = "ap-southeast-2" }
 
 # Seemingly required so subnets are not necessarily created in the same AZ as
 #  the network interfaces
@@ -26,4 +27,4 @@ variable "default_vpc_cidr" { default = "10.0.0.0/16" }
 variable "default_subnet_cidr" { default = "10.0.1.0/24" }
 variable "client_facing_subnet_cidr" { default = "10.0.2.0/24" }
 
-variable "server_client_facing_ip" { default = "10.0.2.5" }
+variable "debian_server_client_facing_ip" { default = "10.0.2.5" }
