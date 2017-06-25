@@ -1,6 +1,6 @@
 language: python
 dist: trusty
-sudo: true
+sudo: false
 cache:
   directories:
   - "$HOME/.cache/pip"
