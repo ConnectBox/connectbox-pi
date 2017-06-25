@@ -1,6 +1,6 @@
 language: python
 dist: trusty
-sudo: true
+sudo: false
 cache:
   directories:
   - "$HOME/.cache/pip"
@@ -9,7 +9,7 @@ cache:
 before_cache:
 - rm -f $HOME/.cache/pip/log/debug.log
 install:
-- wget -O /tmp/terraform.zip https://releases.hashicorp.com/terraform/0.8.2/terraform_0.8.2_linux_amd64.zip
+- wget -O /tmp/terraform.zip https://releases.hashicorp.com/terraform/0.9.8/terraform_0.9.8_linux_amd64.zip
 - unzip /tmp/terraform.zip
 - export PATH=$PATH:$PWD
 - pip install -r requirements.txt

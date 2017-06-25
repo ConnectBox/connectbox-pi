@@ -19,6 +19,18 @@ resource "aws_key_pair" "travis-ci-connectbox-20170126" {
 	public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCpGLG32t7stqIIU1MiRWMSpb4Cm3iOSJCX+G6BtOLu5RwpVR8/fE/w0ZlVpu3CWTtYRohqVUNGew8g9uSdt6aR/i1G3vmp2eyrfkV/R/ITt2rM4zzl8yGc5N5rlLzvem36Q1Z77UEZqXBqDnbZIH4tZw3IzKpk0RB2anGSzQ2NYn2gzW63KU4RcQY9Fg6A45qC5CFa6beF9l5epHB2AsO2N7x8aoPnmdRC/5Qej5kIxIgscZd4JHq8q3gpBYVVAucCp7Xmp3jiFLAvYAdVbTeIymDaWCvhAGTpweWod7Nu/sMUJ2l0IP9hVkd/ToapPOm3I1W+4rRjItbHK4BZsKYX"
 }
 
+data "aws_route53_zone" "selected" {
+  name         = "connectbox.org."
+}
+
+resource "aws_route53_record" "debian" {
+  zone_id = "${data.aws_route53_zone.selected.zone_id}"
+  name    = "debian.ci.${data.aws_route53_zone.selected.name}"
+  type    = "A"
+  ttl     = "1"
+  records = ["${aws_instance.connectbox-debian-server.public_ip}"]
+}
+
 # Shared by all travis-ci jobs
 resource "aws_vpc" "default" {
 	cidr_block = "${var.default_vpc_cidr}"
@@ -131,9 +143,9 @@ resource "aws_network_interface" "client-facing-server" {
 	subnet_id = "${aws_subnet.client-facing-subnet.id}"
 	# AWS reserves the bottom four addresses in each subnet
 	#  so this is the lowest available
-	private_ips = ["${var.server_client_facing_ip}"]
+	private_ips = ["${var.debian_server_client_facing_ip}"]
 	attachment {
-		instance = "${aws_instance.connectbox-server.id}"
+		instance = "${aws_instance.connectbox-debian-server.id}"
 		device_index = 1
 	}
 	tags {
@@ -151,7 +163,7 @@ resource "aws_network_interface" "client-facing-server" {
 #	private_ips = ["10.0.1.5"]
 #	security_groups = ["${aws_security_group.default.id}"]
 #	attachment {
-#		instance = "${aws_instance.connectbox-server.id}"
+#		instance = "${aws_instance.connectbox-debian-server.id}"
 #		device_index = 1
 #	}
 #	tags {
@@ -162,14 +174,14 @@ resource "aws_network_interface" "client-facing-server" {
 #	}
 #}
 
-resource "aws_instance" "connectbox-server" {
+resource "aws_instance" "connectbox-debian-server" {
 	ami = "${lookup(var.amis, var.region)}"
 	instance_type = "${var.instance_type}"
 	key_name = "travis-ci-connectbox-20170126"
 	subnet_id = "${aws_subnet.default.id}"
 	vpc_security_group_ids = ["${aws_security_group.default.id}"]
 	tags {
-		Name = "connectbox-server"
+		Name = "connectbox-debian-server"
 		project = "connectbox"
 		lifecycle = "ci"
 		creator = "terraform"
