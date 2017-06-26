@@ -6,31 +6,29 @@
 # Makes no assumptions about working directory on entry, or the working
 #  directory left for subsequent scripts
 
-# Terraform output variables that define endpoints we'll sshe to
-PROVISIONED_TARGET_IP_VARIABLES="connectbox-server-public-ip";
+# Each of these must be provisioned by terraform
+PROVISIONED_INSTANCE_NAMES="debian.ci.connectbox.org";
 
 # Servers should take 3 minutes max to become accessible over ssh, and as
 #  we wait for 1 second between attempts, this is our max attempt count
 MAX_SSH_CONNECT_ATTEMPTS=180;
 
 setup_and_verify_infra( ) {
-  # Expects arg of PROVISIONED_TARGET_IP_VARIABLES
+  # Expects arg of PROVISIONED_INSTANCE_NAMES
   # Make sure we don't have an inventory file, as we're going to append to it
   #  as we run this function.
   rm -f inventory;
   terraform apply;
 
-  for target_host_var in $1; do
+  for target_host in $1; do
     conn_attempt_count=0;
-    target_host=$(terraform output $target_host_var);
-
     # Wait for ssh to become available on the target host
     echo -n "Waiting for ssh to become available on $target_host "
     while ! (ssh -o ConnectTimeout=2 -o StrictHostKeyChecking=no -i $PEM_OUT admin@$target_host true 2> /dev/null); do
       if [ $conn_attempt_count -ge $MAX_SSH_CONNECT_ATTEMPTS ]; then
 	# Something has gone wrong. Bail (don't even attempt to connect to
 	#  any other hosts provisioned in the same terraform apply).
-	echo " unable to connect in $conn_attempt_count attempts.";
+	echo " unable to connect to $target_host in $conn_attempt_count attempts.";
 	return 1;
       fi
       echo -n ".";
@@ -39,9 +37,9 @@ setup_and_verify_infra( ) {
     done
     echo "OK";
     # Specify developer mode so the machine isn't locked down (we need access
-    #  (to run the tests)
+    #  to run the tests)
     echo "Adding $target_host to inventory";
-    echo "$target_host developer_mode=True ansible_ssh_user=admin ansible_ssh_private_key_file=$PEM_OUT" > inventory;
+    echo "$target_host developer_mode=True ansible_ssh_user=admin ansible_ssh_private_key_file=$PEM_OUT connectbox_default_hostname=debian.ci.connectbox.org" >> inventory;
   done
 
   echo "Inventory follows:";
@@ -60,12 +58,12 @@ openssl aes-256-cbc -K $encrypted_6b05639713bb_key -iv $encrypted_6b05639713bb_i
 # Run CI build on AWS. This uses protected variables
 cd $TRAVIS_BUILD_DIR/ci;
 
-setup_and_verify_infra $PROVISIONED_TARGET_IP_VARIABLES;
+setup_and_verify_infra $PROVISIONED_INSTANCE_NAMES;
 if [ $? -ne 0 ]; then
   # Try again.
   echo "Tearing down freshly provisioned infrastructure and trying again.";
   terraform destroy --force;
-  setup_and_verify_infra $PROVISIONED_TARGET_IP_VARIABLES;
+  setup_and_verify_infra $PROVISIONED_INSTANCE_NAMES;
   if [ $? -ne 0 ]; then
     # Something is seriously wrong, and we should bail
     echo "Unable to connect to AWS infrastructure after two attempts. Tearing down freshly provisioned infrastructure and bailing."
@@ -90,8 +88,7 @@ else
 fi
 
 
-# Tell the test running host how to find the connectbox by name
-# Use tee rather than trying to redirect using sudo
-printf "\n%s connectbox.local" ${target_host} | sudo tee -a /etc/hosts > /dev/null
-# Run web/selenium tests
-TEST_IP=$target_host python -m unittest discover ../tests
+# Run web/selenium tests for each host
+for target_host in $PROVISIONED_INSTANCE_NAMES; do
+  TEST_IP=$(dig +short $target_host) python -m unittest discover ../tests;
+done
