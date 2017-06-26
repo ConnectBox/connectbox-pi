@@ -31,6 +31,14 @@ resource "aws_route53_record" "debian" {
   records = ["${aws_instance.connectbox-debian-server.public_ip}"]
 }
 
+resource "aws_route53_record" "ubuntu" {
+  zone_id = "${data.aws_route53_zone.selected.zone_id}"
+  name    = "ubuntu.ci.${data.aws_route53_zone.selected.name}"
+  type    = "A"
+  ttl     = "1"
+  records = ["${aws_instance.connectbox-ubuntu-server.public_ip}"]
+}
+
 # Shared by all travis-ci jobs
 resource "aws_vpc" "default" {
 	cidr_block = "${var.default_vpc_cidr}"
@@ -139,7 +147,7 @@ resource "aws_subnet" "client-facing-subnet" {
 	}
 }
 
-resource "aws_network_interface" "client-facing-server" {
+resource "aws_network_interface" "client-facing-debian-server" {
 	subnet_id = "${aws_subnet.client-facing-subnet.id}"
 	# AWS reserves the bottom four addresses in each subnet
 	#  so this is the lowest available
@@ -149,39 +157,52 @@ resource "aws_network_interface" "client-facing-server" {
 		device_index = 1
 	}
 	tags {
-		Name = "client-facing interface for connectbox server"
+		Name = "client-facing interface for connectbox debian server"
 		project = "connectbox"
 		lifecycle = "ci"
 		creator = "terraform"
 	}
 }
 
-#resource "aws_network_interface" "default-server" {
-#	subnet_id = "${aws_subnet.default.id}"
-#	# AWS reserves the bottom four addresses in each subnet
-#	#  so this is the lowest available
-#	private_ips = ["10.0.1.5"]
-#	security_groups = ["${aws_security_group.default.id}"]
-#	attachment {
-#		instance = "${aws_instance.connectbox-debian-server.id}"
-#		device_index = 1
-#	}
-#	tags {
-#		Name = "default interface for connectbox server"
-#		project = "connectbox"
-#		lifecycle = "ci"
-#		creator = "terraform"
-#	}
-#}
+resource "aws_network_interface" "client-facing-ubuntu-server" {
+	subnet_id = "${aws_subnet.client-facing-subnet.id}"
+	# AWS reserves the bottom four addresses in each subnet
+	#  so this is the lowest available
+	private_ips = ["${var.ubuntu_server_client_facing_ip}"]
+	attachment {
+		instance = "${aws_instance.connectbox-ubuntu-server.id}"
+		device_index = 1
+	}
+	tags {
+		Name = "client-facing interface for connectbox ubuntu server"
+		project = "connectbox"
+		lifecycle = "ci"
+		creator = "terraform"
+	}
+}
 
 resource "aws_instance" "connectbox-debian-server" {
-	ami = "${lookup(var.amis, var.region)}"
+	ami = "${lookup(var.debian_amis, var.region)}"
 	instance_type = "${var.instance_type}"
 	key_name = "travis-ci-connectbox-20170126"
 	subnet_id = "${aws_subnet.default.id}"
 	vpc_security_group_ids = ["${aws_security_group.default.id}"]
 	tags {
 		Name = "connectbox-debian-server"
+		project = "connectbox"
+		lifecycle = "ci"
+		creator = "terraform"
+	}
+}
+
+resource "aws_instance" "connectbox-ubuntu-server" {
+	ami = "${lookup(var.ubuntu_amis, var.region)}"
+	instance_type = "${var.instance_type}"
+	key_name = "travis-ci-connectbox-20170126"
+	subnet_id = "${aws_subnet.default.id}"
+	vpc_security_group_ids = ["${aws_security_group.default.id}"]
+	tags {
+		Name = "connectbox-ubuntu-server"
 		project = "connectbox"
 		lifecycle = "ci"
 		creator = "terraform"
