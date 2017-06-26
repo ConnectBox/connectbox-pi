@@ -2,101 +2,101 @@
 /* global ConnectBoxApp */
 /* eslint no-use-before-define: "off" */
 var ConnectBoxApp = (function (App, $) {
-    'use strict';
-    
-    var apiEnum = {
-            ENDPOINT: 'api.php'
-        };
+  'use strict'
 
-    function buildApiUrl(resource, params) {
-        var baseurl = apiEnum.ENDPOINT + '/' + resource;
+  var apiEnum = {
+    ENDPOINT: 'api.php'
+  }
 
-        if (params) {
-            return baseurl + Object.keys(params).reduce(function (previousValue, currentValue) {
-                return previousValue + '&' + currentValue + '=' + encodeURIComponent(params[currentValue]);
-            }, '');
-        } else {
-            return baseurl;
-        }
+  function buildApiUrl (resource, params) {
+    var baseurl = apiEnum.ENDPOINT + '/' + resource
+
+    if (params) {
+      return baseurl + Object.keys(params).reduce(function (previousValue, currentValue) {
+        return previousValue + '&' + currentValue + '=' + encodeURIComponent(params[currentValue])
+      }, '')
+    } else {
+      return baseurl
     }
+  }
 
-    App.api = {
-        getProperty: function (propertyName, callback) {
-            $.ajax({
-                url: buildApiUrl(propertyName, {}),
-                method: 'GET',
-                success: function (data, textStatus, jqXHR) {
-                    window.mydata = data;
-                    if (data.code === 0) {
-                        if (callback) {
-                            callback(data.result);
-                        }
-                    } else {
-                        if (callback) {
-                            callback(null, data.code, data.result);
-                        }
-                    }
-                },
-                error: function (jqXHR, textStatus, errorThrown) {
-                    if (callback) {
-                        callback(null, 500, 'Unexpected error getting property: ' + textStatus);
-                    }
-                }
-                });
+  App.api = {
+    getProperty: function (propertyName, callback) {
+      $.ajax({
+        url: buildApiUrl(propertyName, {}),
+        method: 'GET',
+        success: function (data, textStatus, jqXHR) {
+          window.mydata = data
+          if (data.code === 0) {
+            if (callback) {
+              callback(data.result)
+            }
+          } else {
+            if (callback) {
+              callback(null, data.code, data.result)
+            }
+          }
         },
-
-        setProperty: function (propertyName, propertyValue, callback) {
-            $.ajax({
-                url: buildApiUrl(propertyName, {}),
-                method: 'PUT',
-                dataType: 'json',
-                data: "{\"value\": \"" + propertyValue + "\"}",
-                success: function (data, textStatus, jqXHR) {
-                    window.mydata = data;
-                    if (data.code === 0) {
-                        if (callback) {
-                            callback(data.result);
-                        }
-                    } else {
-                        if (callback) {
-                            callback(null, data.code, data.result);
-                        }
-                    }
-                },
-                error: function (jqXHR, textStatus, errorThrown) {
-                    if (callback) {
-                        callback(null, 500, 'Unexpected error setting property: ' + textStatus);
-                    }
-                }
-            });
-        },
-
-        triggerEvent: function (propertyName, eventType, callback) {
-            $.ajax({
-                url: buildApiUrl(propertyName, {}),
-                method: 'POST',
-                dataType: 'json',
-                data: "{\"value\": \"" + eventType + "\"}",
-                success: function (data, textStatus, jqXHR) {
-                    window.mydata = data;
-                    if (data.code === 0) {
-                        if (callback) {
-                            callback(data.result);
-                        }
-                    } else {
-                        if (callback) {
-                            callback(null, data.code, data.result);
-                        }
-                    }
-                },
-                error: function (jqXHR, textStatus, errorThrown) {
-                    if (callback) {
-                        callback(null, 500, 'Unexpected error triggering event: ' + textStatus);
-                    }
-                }
-            });
+        error: function (jqXHR, textStatus, errorThrown) {
+          if (callback) {
+            callback(null, 500, 'Unexpected error getting property: ' + textStatus)
+          }
         }
-    };
-    
-    return App;
-}(ConnectBoxApp || {}, jQuery));
+      })
+    },
+
+    setProperty: function (propertyName, propertyValue, callback) {
+      $.ajax({
+        url: buildApiUrl(propertyName, {}),
+        method: 'PUT',
+        dataType: 'json',
+        data: '{"value": "' + propertyValue + '"}',
+        success: function (data, textStatus, jqXHR) {
+          window.mydata = data
+          if (data.code === 0) {
+            if (callback) {
+              callback(data.result)
+            }
+          } else {
+            if (callback) {
+              callback(null, data.code, data.result)
+            }
+          }
+        },
+        error: function (jqXHR, textStatus, errorThrown) {
+          if (callback) {
+            callback(null, 500, 'Unexpected error setting property: ' + textStatus)
+          }
+        }
+      })
+    },
+
+    triggerEvent: function (propertyName, eventType, callback) {
+      $.ajax({
+        url: buildApiUrl(propertyName, {}),
+        method: 'POST',
+        dataType: 'json',
+        data: '{"value": "' + eventType + '"}',
+        success: function (data, textStatus, jqXHR) {
+          window.mydata = data
+          if (data.code === 0) {
+            if (callback) {
+              callback(data.result)
+            }
+          } else {
+            if (callback) {
+              callback(null, data.code, data.result)
+            }
+          }
+        },
+        error: function (jqXHR, textStatus, errorThrown) {
+          if (callback) {
+            callback(null, 500, 'Unexpected error triggering event: ' + textStatus)
+          }
+        }
+      })
+    }
+  }
+
+  return App
+}(ConnectBoxApp || {}, jQuery))
