@@ -1,0 +1,2 @@
+debian.ci.connectbox.org developer_mode=True ansible_ssh_user=admin ansible_ssh_private_key_file=../ci/travis-ci-connectbox.pem connectbox_default_hostname=debian.ci.connectbox.org
+ubuntu.ci.connectbox.org developer_mode=True ansible_ssh_user=ubuntu ansible_ssh_private_key_file=../ci/travis-ci-connectbox.pem connectbox_default_hostname=ubuntu.ci.connectbox.org ansible_python_interpreter=/usr/bin/python3
