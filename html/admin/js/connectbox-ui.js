@@ -125,19 +125,6 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
     })
   }
 
-  function logrotate (event) {
-    event.preventDefault()
-    clearSystemStatus()
-
-    ConnectBoxApp.api.triggerEvent('system', 'logrotate', function (result, code, message) {
-      if (result) {
-        $('#logrotate_success').show()
-      } else {
-        showError('Error performing logrotate', parseErrorMessage(message))
-      }
-    })
-  }
-
   function passwordLoad (event) {
     $('#' + currentItem).toggle()
 
@@ -308,7 +295,6 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
       $('#form_unmountusb').on('submit', unmountusb)
       $('#form_shutdown').on('submit', shutdown)
       $('#form_reboot').on('submit', reboot)
-      $('#form_logrotate').on('submit', logrotate)
       $('#form_reset').on('submit', reset)
       $('#menu_top10_stats').on('click', getTop10Stats)
       $('#menu_all_stats').on('click', getAllStats)

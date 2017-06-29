@@ -157,7 +157,7 @@
                 </div>
             </div>
 
-            <div class="row" ng-hide="index.error || !index.popularFiles || !index.isTopLevel">
+            <div class="row" ng-hide="index.error || !index.popularFiles || index.popularFiles.length == 0 || !index.isTopLevel">
                 <div class="table-responsive">
                 <table class="table">
                     <tbody>
@@ -353,7 +353,7 @@ angular.module('index', ['ng'])
                         self.loading.stop();
                     },
                     function (response) {
-                        self.error = response;
+                        console.log('failed to load popular files: ' + response.status + ' ' + response.statusText)
                         self.loading.stop();
                     }
                 )
