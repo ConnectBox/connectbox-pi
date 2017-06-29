@@ -1,5 +1,5 @@
 ansible==2.3.1.0
-ansible-lint==3.4.3
+ansible-lint==3.4.13
 appdirs==1.4.3
 asn1crypto==0.22.0
 astroid==1.5.2
