@@ -17,7 +17,8 @@ setup_and_verify_infra( ) {
     conn_attempt_count=0;
     # Wait for ssh to become available on the target host
     echo -n "Waiting for ssh to become available on $target_host "
-    while ! (ssh -o ConnectTimeout=2 -o StrictHostKeyChecking=no -i $PEM_OUT admin@$target_host true 2> /dev/null); do
+    # The ssh config specifies which user to use and the key
+    while ! (ssh -F ci-ssh-config -o ConnectTimeout=2 -o StrictHostKeyChecking=no $target_host true 2> /dev/null); do
       if [ $conn_attempt_count -ge $MAX_SSH_CONNECT_ATTEMPTS ]; then
 	# Something has gone wrong. Bail (don't even attempt to connect to
 	#  any other hosts provisioned in the same terraform apply).
