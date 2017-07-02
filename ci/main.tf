@@ -25,7 +25,7 @@ data "aws_route53_zone" "selected" {
 
 resource "aws_route53_record" "debian" {
   zone_id = "${data.aws_route53_zone.selected.zone_id}"
-  name    = "debian.ci.${data.aws_route53_zone.selected.name}"
+  name    = "debian.${var.ci-dns-prefix}.${data.aws_route53_zone.selected.name}"
   type    = "A"
   ttl     = "1"
   records = ["${aws_instance.connectbox-debian-server.public_ip}"]
@@ -33,7 +33,7 @@ resource "aws_route53_record" "debian" {
 
 resource "aws_route53_record" "ubuntu" {
   zone_id = "${data.aws_route53_zone.selected.zone_id}"
-  name    = "ubuntu.ci.${data.aws_route53_zone.selected.name}"
+  name    = "ubuntu.${var.ci-dns-prefix}.${data.aws_route53_zone.selected.name}"
   type    = "A"
   ttl     = "1"
   records = ["${aws_instance.connectbox-ubuntu-server.public_ip}"]

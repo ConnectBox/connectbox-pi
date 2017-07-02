@@ -1,5 +1,8 @@
 variable "region" { default = "us-west-2" }
 
+# So that dev of CI can happen alongside real CI builds
+variable "ci-dns-prefix" { default = "ci" }
+
 # Seemingly required as subnets are not necessarily created in the same AZ as
 #  the network interfaces
 variable "preferred_az" {
