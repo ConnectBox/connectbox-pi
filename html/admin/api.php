@@ -1,4 +1,5 @@
 <?php
+setlocale(LC_CTYPE, "en_US.UTF-8");
 header('Content-Type: application/json; charset=UTF8');
 define("_CMD", "sudo /usr/local/connectbox/bin/ConnectBoxManage.sh");
 $method = $_SERVER['REQUEST_METHOD'];
