@@ -6,25 +6,19 @@
 # Makes no assumptions about working directory on entry, or the working
 #  directory left for subsequent scripts
 
-# Each of these must be provisioned by terraform
-PROVISIONED_INSTANCE_NAMES="debian.ci.connectbox.org";
-
 # Servers should take 3 minutes max to become accessible over ssh, and as
 #  we wait for 1 second between attempts, this is our max attempt count
 MAX_SSH_CONNECT_ATTEMPTS=180;
 
 setup_and_verify_infra( ) {
-  # Expects arg of PROVISIONED_INSTANCE_NAMES
-  # Make sure we don't have an inventory file, as we're going to append to it
-  #  as we run this function.
-  rm -f inventory;
   terraform apply;
 
-  for target_host in $1; do
+  for target_host in $(grep -v "^#" ci-inventory | cut -d" " -f1); do
     conn_attempt_count=0;
     # Wait for ssh to become available on the target host
     echo -n "Waiting for ssh to become available on $target_host "
-    while ! (ssh -o ConnectTimeout=2 -o StrictHostKeyChecking=no -i $PEM_OUT admin@$target_host true 2> /dev/null); do
+    # The ssh config specifies which user to use and the key
+    while ! (ssh -F ci-ssh-config -o ConnectTimeout=2 -o StrictHostKeyChecking=no $target_host true 2> /dev/null); do
       if [ $conn_attempt_count -ge $MAX_SSH_CONNECT_ATTEMPTS ]; then
 	# Something has gone wrong. Bail (don't even attempt to connect to
 	#  any other hosts provisioned in the same terraform apply).
@@ -36,14 +30,7 @@ setup_and_verify_infra( ) {
       sleep 1;
     done
     echo "OK";
-    # Specify developer mode so the machine isn't locked down (we need access
-    #  to run the tests)
-    echo "Adding $target_host to inventory";
-    echo "$target_host developer_mode=True ansible_ssh_user=admin ansible_ssh_private_key_file=$PEM_OUT connectbox_default_hostname=debian.ci.connectbox.org" >> inventory;
   done
-
-  echo "Inventory follows:";
-  cat inventory;
   return 0;
 }
 
@@ -58,12 +45,12 @@ openssl aes-256-cbc -K $encrypted_6b05639713bb_key -iv $encrypted_6b05639713bb_i
 # Run CI build on AWS. This uses protected variables
 cd $TRAVIS_BUILD_DIR/ci;
 
-setup_and_verify_infra $PROVISIONED_INSTANCE_NAMES;
+setup_and_verify_infra
 if [ $? -ne 0 ]; then
   # Try again.
   echo "Tearing down freshly provisioned infrastructure and trying again.";
   terraform destroy --force;
-  setup_and_verify_infra $PROVISIONED_INSTANCE_NAMES;
+  setup_and_verify_infra
   if [ $? -ne 0 ]; then
     # Something is seriously wrong, and we should bail
     echo "Unable to connect to AWS infrastructure after two attempts. Tearing down freshly provisioned infrastructure and bailing."
@@ -77,18 +64,18 @@ fi
 if [ "$TRAVIS_BRANCH" = "master" ]; then
   # Do a full deploy and redeploy
   # Now do our initial provisioning run
-  ansible-playbook -i inventory ../ansible/site.yml;
+  ansible-playbook -i ci-inventory ../ansible/site.yml;
 
   # Perform a re-run of the playbooks, to see whether they run cleanly and
   #  without marking any task as changed
-  ansible-playbook -i inventory ../ansible/site.yml;
+  ansible-playbook -i ci-inventory ../ansible/site.yml;
 else
   # Do essential steps of a deployment to keep things fast
-  ansible-playbook -i inventory --skip-tags=full-build-only ../ansible/site.yml;
+  ansible-playbook -i ci-inventory --skip-tags=full-build-only ../ansible/site.yml;
 fi
 
 
 # Run web/selenium tests for each host
-for target_host in $PROVISIONED_INSTANCE_NAMES; do
+for target_host in $(grep -v "^#" ci-inventory | cut -d" " -f1); do
   TEST_IP=$(dig +short $target_host) python -m unittest discover ../tests;
 done

@@ -14,12 +14,12 @@
     msg: "The system must be rebooted because the disk expansion is not complete!"
   when: resize2fs_reboot.stat.exists == True
 
-# Needed by Debian Official AMI
+# Needed by Debian and Ubuntu Official AMIs
 - name: Install aptitude
   apt:
     name: aptitude
     state: present
-  when: ansible_lsb["id"] == "Debian"
+  when: ansible_lsb["id"] == "Debian" or ansible_lsb["id"] == "Ubuntu"
 
 # For mikegleasonjr.firewall - it assumes Debian/Ubuntu will always have iptables
 - name: Install iptables
