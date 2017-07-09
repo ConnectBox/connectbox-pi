@@ -1,7 +1,6 @@
 ---
 # Check early on to see if the style of interface names need to be changed
-#  (only applicable to Ubuntu, and not when we're running CI, which we assume
-#   is synonomous with running on AWS)
+#  (only applicable to Ubuntu, and not when we're running virtualised)
 # We do this before the check for the Armbian reboot oracle. If we need
 #  to reboot to activate the old-style interface names, we'll sort out the
 #  reboot oracle too, but if the reboot oracle check is before this check
@@ -11,7 +10,7 @@
     dest: /etc/udev/rules.d/80-net-setup-link.rules
     src: /dev/null
     state: link
-  when: ansible_distribution == "Ubuntu" and ansible_virtualization_type != "xen"
+  when: ansible_distribution == "Ubuntu" and ansible_virtualization_type == "NA"
   register: old_style_names
 
 - name: Request reboot if interface naming style has changed
