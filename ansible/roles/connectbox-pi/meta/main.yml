@@ -4,8 +4,8 @@
 dependencies:
   - bootstrap
   - dns-dhcp
-  - geerlingguy.nginx
   - mikegleasonjr.firewall
+  - nginx
   - webserver-content
   - usb-content
   - sample-content

@@ -1,0 +1,39 @@
+server {
+    listen 80;
+    server_name $hostname;
+    root {{ connectbox_default_content_root }};
+    index index.html;
+    error_page 404 /index.html;
+    access_log {{ connectbox_access_log }};
+    error_log {{ connectbox_error_log }} error;
+    rewrite_log on;
+    
+    # Admin interface
+    location /admin {
+      root {{ connectbox_web_root }};
+      auth_basic "Access Denied";
+      auth_basic_user_file /usr/local/connectbox/etc/basicauth;
+    }
+    
+    # Admin worker scripts
+    # pass the PHP scripts to FastCGI server via unix domain socket
+    location ~ ^/admin/(?<script_name>.+\.php)(?<path_info>/.+)$ {
+      root {{ connectbox_web_root }};
+      include fastcgi_params;
+      fastcgi_param SCRIPT_FILENAME $document_root$script_name;
+      fastcgi_param PATH_INFO $path_info;
+      fastcgi_param PATH_TRANSLATED $document_root$path_info;
+      include snippets/fastcgi-php.conf;
+      fastcgi_pass {{ fastcgi_pass_sock }};
+      auth_basic "Access Denied";
+      auth_basic_user_file /usr/local/connectbox/etc/basicauth;
+    }
+    
+    location /content/ {
+      alias {{ connectbox_usb_files_root }}/;
+      autoindex on;
+      autoindex_format json;
+      charset utf-8;
+      charset_types application/json;
+    }
+}
