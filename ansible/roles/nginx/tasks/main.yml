@@ -37,20 +37,36 @@
     group: root
   notify: restart nginx
   with_items:
-    - { src: connectbox_captive-portal.conf.j2, dest: connectbox_captive-portal.conf }
-    - { src: connectbox_icon-only.conf.j2, dest: connectbox_icon-only.conf }
+    - { src: "{{ nginx_vhost_file_captive_portal }}.j2", dest: "{{ nginx_vhost_file_captive_portal }}" }
+    - { src: "{{ nginx_vhost_file_icon_only }}.j2", dest: "{{ nginx_vhost_file_icon_only }}" }
+    - { src: "{{ nginx_vhost_file_static_site }}.j2", dest: "{{ nginx_vhost_file_static_site }}" }
 
 - name: Create nginx active vhost symlink for captive portal vhost
   file:
-    src: "{{ nginx_available_vhosts_path }}/connectbox_captive-portal.conf"
-    dest: "{{ nginx_enabled_vhosts_path }}/connectbox_captive-portal.conf"
+    src: "{{ nginx_available_vhosts_path }}/{{ nginx_vhost_file_captive_portal }}"
+    dest: "{{ nginx_enabled_vhosts_path }}/{{ nginx_vhost_file_captive_portal }}"
     state: link
     force: yes
   notify: restart nginx
 
+- name: Select icon_only interface
+  set_fact:
+    interface_nginx_config: "{{ nginx_vhost_file_icon_only }}"
+  when: device_type == "icon_only"
+
+- name: Select static-site interface
+  set_fact:
+    interface_nginx_config: "{{ nginx_vhost_file_static_site }}"
+  when: device_type == "static_site"
+
+- name: Sanity check device type
+  fail:
+    msg: "Invalid device type {{ device_type }} - valid options are icon_only or static_site"
+  when: device_type != "icon_only" and device_type != "static_site"
+
 - name: Create nginx active vhost symlink for interface
   file:
-    src: "{{ nginx_available_vhosts_path }}/connectbox_icon-only.conf"
+    src: "{{ nginx_available_vhosts_path }}/{{ interface_nginx_config }}"
     dest: "{{ nginx_enabled_vhosts_path }}/connectbox_interface.conf"
     state: link
     force: yes

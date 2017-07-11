@@ -1,20 +1,13 @@
 server {
     listen 80;
     server_name $hostname;
-    root {{ connectbox_default_content_root }};
+    root {{ connectbox_usb_files_root }};
     index index.html;
     error_page 404 /index.html;
     access_log {{ connectbox_access_log }};
     error_log {{ connectbox_error_log }} error;
     rewrite_log on;
-
+    
 {{ nginx_admin_block }}
 
-    location /content/ {
-      alias {{ connectbox_usb_files_root }}/;
-      autoindex on;
-      autoindex_format json;
-      charset utf-8;
-      charset_types application/json;
-    }
 }
