@@ -42,5 +42,5 @@
 - name: Start and enable dnsmasq
   service:
     name: dnsmasq
-    enabled: yes
+    enabled: no
     state: started
