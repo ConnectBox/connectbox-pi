@@ -15,3 +15,5 @@ iface {{ client_facing_if }} inet static
     address {{ client_facing_if_ip_address }}
     netmask {{ client_facing_if_netmask }}
     hostapd /etc/hostapd/hostapd.conf
+    post-up service start dnsmasq
+    pre-down service stop dnsmasq
