@@ -42,4 +42,4 @@
         This file will be hidden when a USB stick is inserted.
         The original of this file can be found at https://github.com/ConnectBox/connectbox-pi/blob/master/docs/administration.md
 
-  when: "{{ '/media/usb0' not in ansible_mounts|map(attribute='mount') }}"
+  when: "'/media/usb0' not in ansible_mounts|map(attribute='mount')"
