@@ -256,6 +256,46 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
     })
   }
 
+  function staticsiteLoad (event) {
+    $('#' + currentItem).toggle()
+
+    currentItem = 'staticsite'
+
+    $('.active').toggleClass('active')
+    $('#menu_home').parent().toggleClass('active')
+
+    $('#staticsite').toggle()
+    $('#update_staticsite_success').hide()
+
+    ConnectBoxApp.api.getProperty('staticsite', function (result, code, message) {
+      if (result) {
+        if (result[0] === 'true') {
+          $('#input_staticsite_disabled').parent().removeClass('active')
+          $('#input_staticsite_enabled').parent().addClass('active')
+        } else {
+          $('#input_staticsite_disabled').parent().addClass('active')
+          $('#input_staticsite_enabled').parent().removeClass('active')
+        }
+      } else {
+        showError('Error reading static site settings', parseErrorMessage(message))
+      }
+    })
+  }
+
+  function staticsiteSave (event) {
+    event.preventDefault()
+    var staticEnabled = $('#input_staticsite_enabled').parent().hasClass('active')
+
+    $('#update_staticsite_success').hide()
+    ConnectBoxApp.api.setProperty('staticsite', staticEnabled, function (result, code, message) {
+      if (result) {
+        $('#update_staticsite_success').show()
+      } else {
+        showError('Error updating static site', parseErrorMessage(message))
+      }
+    })
+  }
+
   function getTop10Stats (event) {
     event.preventDefault()
 
@@ -289,6 +329,8 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
       $('#form_channel').on('submit', channelSave)
       $('#menu_hostname').on('click', hostnameLoad)
       $('#form_hostname').on('submit', hostnameSave)
+      $('#menu_staticsite').on('click', staticsiteLoad)
+      $('#form_staticsite').on('submit', staticsiteSave)
       $('#menu_password').on('click', passwordLoad)
       $('#form_password').on('submit', passwordSave)
       $('#menu_system').on('click', systemLoad)
