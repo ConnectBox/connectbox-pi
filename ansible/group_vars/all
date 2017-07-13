@@ -6,6 +6,16 @@
 # Parameterised to allow overriding during CI builds, where we want to
 #  test some client-facing capabilities but do not have a wifi interface
 client_facing_if: "wlan0"
+
+# Client facing if stuff is defined here because we have a circular dependency
+# in that dns-dhcp depends
+#  on the IP address for wlan0 that's defined in the network-interfaces role
+#  but network-interfaces needs dnsmasq to be installed (which is done by the
+#  dns-dhcp role)
+client_facing_if_ip_address: 10.129.0.1
+client_facing_if_netmask: 255.255.255.0
+client_facing_if_network_cidr: 10.129.0.0/24
+
 # Unset country code. Operators should override with their country, based
 #  on the entries in the following file:
 # https://git.kernel.org/cgit/linux/kernel/git/sforshee/wireless-regdb.git/tree/db.txt
