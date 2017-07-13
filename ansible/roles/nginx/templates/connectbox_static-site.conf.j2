@@ -2,7 +2,7 @@ server {
     listen 80;
     server_name $hostname;
     root {{ connectbox_usb_files_root }};
-    index index.html;
+    index index.html index.htm;
     error_page 404 /index.html;
     access_log {{ connectbox_access_log }};
     error_log {{ connectbox_error_log }} error;
