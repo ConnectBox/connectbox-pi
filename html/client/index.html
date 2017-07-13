@@ -291,6 +291,8 @@ angular.module('index', ['ng'])
                             if (f.name.startsWith(self.config.Client.icon_prefix)) {
                                 parse_ico_metadata(self.config.Client.icon_prefix, f.name, dirMap);
                                 return false;
+                            } else if (self.config.Client.system_files.indexOf(f.name) != -1) {
+                                return false;
                             } else {
                                 return true;
                             }
