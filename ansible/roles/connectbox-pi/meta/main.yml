@@ -4,6 +4,8 @@
 dependencies:
   - bootstrap
   - dns-dhcp
+  - network-interfaces
+  - wifi-ap
   - mikegleasonjr.firewall
   - nginx
   - webserver-content

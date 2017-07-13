@@ -6,7 +6,6 @@
     owner: root
     group: root
     mode: 0644
-  notify: Restart dnsmasq
 
 # Note that the handler must do a restart instead of a reload as some of
 #  these defaults are only read at startup
@@ -14,7 +13,6 @@
   copy:
     src: etc_default_dnsmasq
     dest: /etc/default/dnsmasq
-  notify: Restart dnsmasq
 
 # This is necessary because nginx redirects to the hostname, but the hostname
 #  is listed in /etc/hosts and associated with 127.0.0.1 (so dnsmasq uses it
@@ -39,8 +37,8 @@
     name: dnsmasq
     state: present
 
-- name: Start and enable dnsmasq
+- name: Stop and disable dnsmasq given it is managed as a pre-down post-up task for wlan0
   service:
     name: dnsmasq
-    enabled: yes
-    state: started
+    enabled: no
+    state: stopped
