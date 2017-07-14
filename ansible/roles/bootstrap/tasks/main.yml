@@ -13,6 +13,29 @@
   when: ansible_distribution == "Ubuntu" and ansible_virtualization_type == "NA"
   register: old_style_names
 
+- block:
+  - name: Create usbhost1 device tree overlay for NanoPi NEO internal USB port
+    shell: sed 's/hci0/hci1/g' /boot/dtb/overlay/sun8i-h3-usbhost0.dtbo > /boot/dtb/overlay/sun8i-h3-usbhost1.dtbo
+    args:
+      creates: /boot/dtb/overlay/sun8i-h3-usbhost1.dtbo
+      warn: False  # Can't use either lineinfile or template here
+
+  # will have problems if overlay lines are already present, but as that's not
+  #  something we see at the moment, we won't try to cater for it
+  - name: Activate all usbhost overlays on NanoPi NEO
+    lineinfile:
+      path: /boot/armbianEnv.txt
+      line: "overlays=usbhost0 usbhost1 usbhost2 usbhost3"
+      state: present
+    register: insert_usb_overlays
+
+  - name: Request reboot if usbhost overlays have been changed
+    fail:
+      msg: "The system must be rebooted to activate additional usb ports"
+    when: insert_usb_overlays.changed
+    tags: skip_ansible_lint
+  when: '"NanoPi NEO" in machine_type.stdout'
+
 - name: Request reboot if interface naming style has changed
   fail:
     msg: "The system must be rebooted to apply old-style interface names"

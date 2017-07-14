@@ -27,6 +27,16 @@
     - name: Include Armbian specific variables
       include_vars: "group_vars/armbian"
       when: armbian_file.stat.exists == True or armbian_release_file.stat.exists == True
+    # This is probably better implemented as an ansible plugin so we can support
+    #  machines with 3.x series kernels (armbian legacy)
+    # We will get errors when this file doesn't exist (3.x series kernels) so we
+    #  ignore errors. It's ok if this is unset because we're only looking for a
+    #  string inside the registered result.
+    - name: Register machine type
+      command: cat /sys/firmware/devicetree/base/model
+      register: machine_type
+      ignore_errors: yes
+      changed_when: False
   become: yes
   roles:
     - connectbox-pi
