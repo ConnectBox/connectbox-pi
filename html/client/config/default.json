@@ -8,7 +8,12 @@
     "icon_prefix": "_icon_",
     "stats_file": "stats.top10.json",
     "system_files": [
-        "System Volume Information", "AUTORUN.INF*", "AUTORUN.INF", "autorun.inf", "Autorun.inf", ".DS_Store"
+      "System Volume Information",
+      "AUTORUN.INF*",
+      "AUTORUN.INF",
+      "autorun.inf",
+      "Autorun.inf",
+      ".DS_Store"
     ]
   }
 }
