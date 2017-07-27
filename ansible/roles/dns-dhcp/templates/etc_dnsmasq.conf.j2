@@ -35,6 +35,9 @@ local-ttl=5
 quiet-dhcp
 quiet-dhcp6
 
+# Speed up DHCP by allowing it to reject unknown leases
+dhcp-authoritative
+
 # Don't keep a leasefile, as leases contain MAC addresses and they're
 #  potentially incriminating
 leasefile-ro
