@@ -6,6 +6,14 @@
     "tail_slash": true,
     "display_root_folder_names": true,
     "icon_prefix": "_icon_",
-    "stats_file": "stats.top10.json"
+    "stats_file": "stats.top10.json",
+    "system_files": [
+      "System Volume Information",
+      "AUTORUN.INF*",
+      "AUTORUN.INF",
+      "autorun.inf",
+      "Autorun.inf",
+      ".DS_Store"
+    ]
   }
 }
