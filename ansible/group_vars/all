@@ -35,6 +35,8 @@ connectbox_access_log: "{{ connectbox_log_dir }}/connectbox-access.log"
 connectbox_error_log:  "{{ connectbox_log_dir }}/connectbox-error.log"
 
 access_log_analyzer_repo: https://github.com/ConnectBox/access-log-analyzer.git
+connectbox_client_repo: https://github.com/ConnectBox/connectbox-react-client.git
+connectbox_client_path: published/
 
 nginx_admin_block: |
       # Admin interface
