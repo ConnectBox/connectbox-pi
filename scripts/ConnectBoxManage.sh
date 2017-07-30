@@ -390,6 +390,43 @@ function set_password () {
   fi
 }
 
+function get_staticsite () {
+  symlink=`readlink /etc/nginx/sites-enabled/connectbox_interface.conf`
+  if [[ "$symlink" == *connectbox_static-site.conf ]]; then
+    echo "true"
+  else
+    echo "false"
+  fi
+}
+
+function set_staticsite () {
+  if [[ -z "${val// }" ]]; then
+    echo "Missing staticsite value"
+    exit 1;
+  fi
+
+  symlink="/etc/nginx/sites-enabled/connectbox_interface.conf"
+  rm /etc/nginx/sites-enabled/connectbox_interface.conf 2>&1 | logger -t $(basename $0)
+  if [ ${PIPESTATUS[0]} -eq 0 ]
+  then
+    conf="connectbox_icon-only.conf"
+    if [[ "$val" == "true" ]]; then
+      conf="connectbox_static-site.conf"
+    fi
+    ln -s "/etc/nginx/sites-available/${conf}" ${symlink} 2>&1 | logger -t $(basename $0)
+
+    if [ ${PIPESTATUS[0]} -eq 0 ]
+    then
+      reload_nginx
+      success
+    else
+      failure
+    fi
+  else
+    failure
+  fi
+}
+
 function get_hostname () {
   local host_name=`hostname`
   echo $host_name;
@@ -525,6 +562,11 @@ if [ "$action" = "get" ]; then
       exit 0;
       ;;
 
+    "staticsite")
+      get_staticsite
+      exit 0;
+      ;;
+
     *)
       usage
       ;;
@@ -544,6 +586,11 @@ elif [ "$action" = "set" ]; then
 
     "hostname")
       set_hostname
+      exit 0;
+      ;;
+
+    "staticsite")
+      set_staticsite
       exit 0;
       ;;
 

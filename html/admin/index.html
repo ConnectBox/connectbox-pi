@@ -62,6 +62,7 @@
                 <li role="separator" class="divider"></li>
                 <li class="dropdown-header">Web Server</li>
                 <li><a href="#" id="menu_hostname">Hostname</a></li>
+                <li><a href="#" id="menu_staticsite">Static site</a></li>
                 <li class="dropdown-header">Wireless Access Point</li>
                 <li><a href="#" id="menu_ssid">SSID</a></li>
                 <li><a href="#" id="menu_channel">Channel</a></li>
@@ -146,6 +147,25 @@
 
               <input class="btn btn-default" name="update_hostname" type="submit" value="Update">
               <div style="display:none" id="update_hostname_success">✓</div>
+        </form>
+    </div>
+
+    <div class="container" id="staticsite" style="display: none;">
+      <div class="page-header">
+        <h1>Web Server</h1>
+      </div>
+      <p class="lead">Static site configuration</p>
+          <form class="simple_form form-inline" id="form_staticsite">
+              <div class="btn-group" data-toggle="buttons">
+                <label class="btn btn-primary">
+                  <input type="radio" name="staticsite" id="input_staticsite_disabled" autocomplete="off"> Off
+                </label>
+                <label class="btn btn-primary">
+                  <input type="radio" name="staticsite" id="input_staticsite_enabled" autocomplete="off"> On
+                </label>
+              </div>
+              <input class="btn btn-default" name="update_staticsite" type="submit" value="Update">
+              <div style="display:none" id="update_staticsite_success">✓</div>
         </form>
     </div>
 
