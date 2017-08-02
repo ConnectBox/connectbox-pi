@@ -1,6 +1,5 @@
 ---
 ssid: "ConnectBox - Free Media"
 wireless_channel: 1
-ieee80211n_enabled: 0
 # Sentinel used in hostapd.conf.j2 (see doco there)
 wireless_adapter_capabilities: __default__

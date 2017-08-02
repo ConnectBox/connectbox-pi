@@ -1,3 +1,2 @@
 ---
-ieee80211n_enabled: 1
 wireless_adapter_capabilities: "[HT20][HT40+][SHORT-GI-20][SHORT-GI-40][RX-STBC1]"
