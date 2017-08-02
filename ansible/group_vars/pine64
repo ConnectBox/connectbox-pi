@@ -1,4 +1,3 @@
 ---
-ieee80211n_enabled: 1
 # From: https://github.com/ConnectBox/connectbox-pi/wiki/Wireless-Benchmarking-with-ht_capab-settings
 wireless_adapter_capabilities: "[HT40][SHORT-GI-20][SHORT-GI-40][MAX-AMSDU-7935][DDDS_CCK-40]"
