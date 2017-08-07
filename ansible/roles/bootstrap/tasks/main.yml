@@ -56,6 +56,21 @@
     msg: "The system must be rebooted because the disk expansion is not complete!"
   when: resize2fs_reboot.stat.exists == True
 
+# Disable unattended upgrades before attempting to install packages
+# (stop service, then remove entirely)
+# unattended-upgrades only runs on Ubuntu
+- block:
+  - name: Stop unattended-upgrades service
+    service:
+      name: unattended-upgrades
+      state: stopped
+
+  - name: Uninstall unattended-upgrades service
+    apt:
+      name: unattended-upgrades
+      state: absent
+  when: ansible_distribution == "Ubuntu"
+
 # Needed by Debian and Ubuntu Official AMIs
 - name: Install aptitude
   apt:
