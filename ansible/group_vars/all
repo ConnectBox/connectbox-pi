@@ -29,7 +29,7 @@ connectbox_captive_portal_virtualenv: "{{ connectbox_web_root }}/captive_portal_
 connectbox_config_root: /etc/connectbox
 connectbox_usb_files_root: /media/usb0
 connectbox_admin_credentials: admin:$apr1$CBOXFOO2$usYeNWIKOX910UnI/jugh.
-connectbox_default_hostname: connectbox.local
+connectbox_default_hostname: connectbox
 connectbox_log_dir: /var/log/connectbox
 connectbox_access_log: "{{ connectbox_log_dir }}/connectbox-access.log"
 connectbox_error_log:  "{{ connectbox_log_dir }}/connectbox-error.log"
