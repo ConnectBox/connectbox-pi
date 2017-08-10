@@ -27,11 +27,15 @@
     - "{{ connectbox_default_content_root }}"
     - "{{ connectbox_captive_portal_root }}"
 
-# Copy client interface files
-- name: Copy connectbox client interface
-  synchronize:
-    src: ../html/client/
-    dest: "{{ connectbox_default_content_root }}"
+- name: retrieve connectbox-client-repo
+  git:
+    repo: "{{ connectbox_client_repo }}"
+    dest: /tmp/connectbox_client
+
+- name: Copy external connectbox client interface
+  command: cp -r . "{{ connectbox_default_content_root }}"
+  args:
+    chdir: /tmp/connectbox_client/{{ connectbox_client_path }}
 
 # Permissions are correctly set in the subsequent task
 - name: Copy connectbox admin ui
