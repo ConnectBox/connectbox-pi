@@ -1,5 +1,5 @@
 ---
 ssid: "ConnectBox - Free Media"
 wireless_channel: 1
-# Sentinel used in hostapd.conf.j2 (see doco there)
-wireless_adapter_capabilities: __default__
+# rt5372
+wireless_adapter_capabilities: "[HT20][HT40+][SHORT-GI-20][SHORT-GI-40][TX-STBC][RX-STBC12]"
