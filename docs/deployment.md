@@ -271,6 +271,10 @@ If there are no reported errors, your RPi3 is now running as a ConnectBox.  You 
 
 Once you finish that, duplicate the microSD card to quickly create additional ConnectBoxes - you do not need to run this script again.
 
+### Applying Device-specific configuration (wifi adapter configuration)
+
+Ansible groups are used to apply device-specific configuration to the ConnectBox. The groups are defined under `ansible/group_vars` and the groups for wifi-adapters are most common. The default configuration for wifi adapters is for the rt5372. If you are unsure of your adapter type, put your device in the `generic_wifi_adapter` group in the Ansible inventory. Groups to activate configuration for other wifi adapters is also present in `ansible/group_vars`.
+
 ### Optional Ansible Arguments
 
 To use these arguments, add them to the inventory file or add `-e option_name=value` to the `ansible-playbook` commandline e.g. `-e ssid="My Connectbox"` or `-e deploy_sample_content=false`
