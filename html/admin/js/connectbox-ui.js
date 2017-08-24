@@ -310,6 +310,12 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
 
   ConnectBoxApp.ui = {
     init: function () {
+      $(document).on('click', '.navbar-collapse.in', function (e) {
+        if ($(e.target).is('a') && $(e.target).attr('class') !== 'dropdown-toggle') {
+          $(this).collapse('hide')
+        }
+      })
+
       var selectedMenuItem = '#menu_home'
       var selectedItem = '#home'
       if (location.hash) {
