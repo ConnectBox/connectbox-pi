@@ -26,7 +26,7 @@
 .error button 
 {
     position: absolute;
-    right: 10px;
+    left: 10px;
     bottom:5px;
 }
 
@@ -34,7 +34,7 @@
 {
     position: fixed;
     z-index: 999;
-    height: 75px;
+    height: 100px;
     width: 400px;
     overflow: show;
     margin: auto;
