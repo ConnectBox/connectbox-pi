@@ -8,6 +8,16 @@
     width: 350px;
 }
 
+.info #msg-title
+{
+    background-color: grey;
+    color: floralwhite;
+    padding: 5px;
+    -webkit-border-radius: 5;
+    -moz-border-radius: 5;
+    border-radius: 5px;
+}
+
 .error #msg-title
 {
     background-color: crimson;

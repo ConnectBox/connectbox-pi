@@ -10,13 +10,17 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
   function hideMessageDialog () {
     $('#msg-dialog').addClass('hidden')
     $('#msg-dialog').removeClass('error')
+    $('#msg-dialog').removeClass('info')
     $('#msg-dialog #msg-title').html('')
     $('#msg-dialog #msg-body').html('')
   }
 
-    // Show error dialog
-  function showError (title, message, callback) {
-    $('#msg-dialog').addClass('error')
+  function showMessage (title, message, error, callback) {
+    if (error) {
+      $('#msg-dialog').addClass('error')
+    } else {
+      $('#msg-dialog').addClass('info')
+    }
     $('#msg-dialog #msg-title').html(title)
     $('#msg-dialog #msg-body').html(message)
     $('#msg-dialog').removeClass('hidden')
@@ -30,6 +34,11 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
 
       $('#msg-dialog button').off('click')
     })
+  }
+
+  // Show error dialog
+  function showError (title, message, callback) {
+    showMessage(title, message, true, callback)
   }
 
   function parseErrorMessage (message) {
@@ -179,14 +188,10 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
 
   function ssidSave (event) {
     event.preventDefault()
-
+    var value = $('#input_ssid').val()
     $('#update_ssid_success').hide()
-    ConnectBoxApp.api.setProperty('ssid', $('#input_ssid').val(), function (result, code, message) {
-      if (result) {
-        $('#update_ssid_success').show()
-      } else {
-        showError('Error updating SSID', parseErrorMessage(message))
-      }
+    ConnectBoxApp.api.setProperty('ssid', value, function (result, code, message) {
+      showMessage('SSID updated to ' + value, 'Update your wireless network settings, then click OK.', false)
     })
   }
 
@@ -210,15 +215,31 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
     })
   }
 
+  function waitForPropertyUpdate (propertyName, expectedValue, attempts, waitTime, successElement, errorMessage) {
+    setTimeout(function () {
+      ConnectBoxApp.api.getProperty(propertyName, function (result, code, message) {
+        if (result && expectedValue === result[0]) {
+          $(successElement).show()
+        } else {
+          if (attempts === 0) {
+            showError(errorMessage, parseErrorMessage(message))
+          } else {
+            waitForPropertyUpdate(propertyName, expectedValue, attempts - 1, waitTime, successElement, errorMessage)
+          }
+        }
+      })
+    }, waitTime)
+  }
+
   function channelSave (event) {
     event.preventDefault()
-
+    var value = $('#input_channel').val()
     $('#update_channel_success').hide()
-    ConnectBoxApp.api.setProperty('channel', $('#input_channel').val(), function (result, code, message) {
+    ConnectBoxApp.api.setProperty('channel', value, function (result, code, message) {
       if (result) {
         $('#update_channel_success').show()
       } else {
-        showError('Error updating channel', parseErrorMessage(message))
+        waitForPropertyUpdate('channel', value, 5, 1000, '#update_channel_success', 'Error updating channel')
       }
     })
   }
@@ -245,14 +266,12 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
 
   function hostnameSave (event) {
     event.preventDefault()
-
+    var value = $('#input_hostname').val()
     $('#update_hostname_success').hide()
-    ConnectBoxApp.api.setProperty('hostname', $('#input_hostname').val(), function (result, code, message) {
-      if (result) {
-        $('#update_hostname_success').show()
-      } else {
-        showError('Error updating hostname', parseErrorMessage(message))
-      }
+    ConnectBoxApp.api.setProperty('hostname', value, function (result, code, message) {
+      showMessage('hostname updated to ' + value, 'Click OK to continue.', false, function () {
+        window.location.href = 'http://' + value + '/admin/'
+      })
     })
   }
 
