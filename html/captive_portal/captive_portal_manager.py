@@ -15,7 +15,7 @@ LINK_OPS = {
     "JS_HREF_BLANK_CLICK": "javascript_href_blank_click",
 }
 _client_map = {}
-DHCP_FALLBACK_LEASE_SECS = 300
+DHCP_FALLBACK_LEASE_SECS = 86400  # 1 day
 REAL_HOST_REDIRECT_URL = "http://127.0.0.1/to-hostname"
 
 

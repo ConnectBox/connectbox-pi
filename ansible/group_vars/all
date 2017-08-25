@@ -13,8 +13,8 @@ client_facing_if: "wlan0"
 #  but network-interfaces needs dnsmasq to be installed (which is done by the
 #  dns-dhcp role)
 client_facing_if_ip_address: 10.129.0.1
-client_facing_if_netmask: 255.255.255.0
-client_facing_if_network_cidr: 10.129.0.0/24
+client_facing_if_netmask: 255.255.0.0
+client_facing_if_network_cidr: 10.129.0.0/16
 
 # Unset country code. Operators should override with their country, based
 #  on the entries in the following file:
