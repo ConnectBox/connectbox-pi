@@ -1,0 +1,42 @@
+#!/bin/sh
+
+TAG=$(basename $0);
+WIFI_INTERFACE={{ client_facing_if }};
+HOSTAPD_CONF=/etc/hostapd/hostapd.conf;
+CRDA_CONFIG=/etc/default/crda;
+
+current_hostapd_cc=$(awk -F= '$1 ~ /^country_code/ {print $2;}' ${HOSTAPD_CONF})
+
+# CRDA config sets REGDOMAIN. If that's set, then we treat that as a
+#  deliberate override.
+. ${CRDA_CONFIG};
+
+if [ -z "${REGDOMAIN}" ]; then
+	# No CRDA override. Let's scan surrounding networks and take the most
+	#  popular regulatory domain
+	ifconfig ${WIFI_INTERFACE} up;
+	ambient_cc=$(iw dev ${WIFI_INTERFACE} scan |
+		awk '$1 ~ /Country:/ { print $2;}' |
+		sort |
+		uniq -c |
+		sort -n |
+		tail -1 |
+		awk '{print $2;}');
+	# Leave things as you found them, like your parents said
+	ifconfig ${WIFI_INTERFACE} down;
+
+	# If we can't get any regulatory domains from surrounding networks
+	#  then we have no reason to change what's set in hostapd
+	if [ -z "${ambient_cc}" ]; then
+		new_cc=${current_hostapd_cc};
+	else
+		new_cc=${ambient_cc};
+	fi
+else
+	new_cc=${REGDOMAIN};
+fi
+
+if [ "${new_cc}" != "${current_hostapd_cc}" ]; then
+	logger -t ${TAG} "Setting hostapd country_code from ${current_hostapd_cc} to ${new_cc}";
+	sed -i 's/^country_code.*/country_code='${new_cc}'/' $HOSTAPD_CONF;
+fi

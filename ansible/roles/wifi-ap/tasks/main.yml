@@ -13,6 +13,22 @@
     mode: 0644
   register: etc_hostapd_hostapd_conf
 
+- name: Copy script to set regulatory domain
+  template:
+    src: set_wifi_country_code.sh.j2
+    dest: /etc/hostapd/set_wifi_country_code.sh
+    owner: root
+    group: root
+    mode: 0755
+
+- name: Populate /etc/default/crda with regulatory domain override
+  template:
+    src: etc_default_crda.j2
+    dest: /etc/default/crda
+    owner: root
+    group: root
+    mode: 0644
+
 # We're using the ifupdown method instead of the initscript method
 #  so this is just an ifdown and ifup operation rather than a
 #  service reload hostapd
