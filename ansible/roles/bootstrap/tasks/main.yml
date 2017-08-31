@@ -56,6 +56,18 @@
     msg: "The system must be rebooted because the disk expansion is not complete!"
   when: resize2fs_reboot.stat.exists == True
 
+# Schedule a resize of the root partition after the next boot
+# This is a benign operation if the partition is already full
+#  and scheduling it here allows for it to be expanded on first
+#  boot for our images (as long as the device is shutdown and
+#  not rebooted after the playbook is run)
+# This is deliberately placed after the forced-reboot operations
+- name: Schedule a resize of the root partition after the next boot
+  service:
+    name: resize2fs
+    enabled: yes
+  when: connectbox_os == "armbian"
+
 # Disable unattended upgrades before attempting to install packages
 # (stop service, then remove entirely)
 # unattended-upgrades only runs on Ubuntu
