@@ -67,6 +67,7 @@
     name: resize2fs
     enabled: yes
   when: connectbox_os == "armbian"
+  tags: resize_root_partition
 
 # Disable unattended upgrades before attempting to install packages
 # (stop service, then remove entirely)
