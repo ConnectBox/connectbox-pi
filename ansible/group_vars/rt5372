@@ -1,2 +1,2 @@
 ---
-wireless_adapter_capabilities: "[HT20][HT40+][SHORT-GI-20][SHORT-GI-40][TX-STBC][RX-STBC12]"
+wireless_adapter_capabilities: "[HT20][SHORT-GI-20][TX-STBC][RX-STBC12]"

@@ -7,4 +7,4 @@ wireless_channel: 1
 # https://git.kernel.org/cgit/linux/kernel/git/sforshee/wireless-regdb.git/tree/db.txt
 wireless_country_code: ""
 # rt5372
-wireless_adapter_capabilities: "[HT20][HT40+][SHORT-GI-20][SHORT-GI-40][TX-STBC][RX-STBC12]"
+wireless_adapter_capabilities: "[HT20][SHORT-GI-20][TX-STBC][RX-STBC12]"
