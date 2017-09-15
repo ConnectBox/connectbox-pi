@@ -20,5 +20,9 @@ server {
       autoindex_format json;
       charset utf-8;
       charset_types application/json;
+      # Never cache the indexes
+      location ~ /$ {
+        expires -1;
+      }
     }
 }
