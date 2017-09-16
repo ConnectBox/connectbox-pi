@@ -1,6 +1,7 @@
 ---
 # Official Debian repo. armhf ARMv7+
 jessie_backports_repo: deb http://httpredir.debian.org/debian jessie-backports main
+apty_services: []
 
 # Debian signing keys. Used for Debian and Armbian
 repo_signing_keys:

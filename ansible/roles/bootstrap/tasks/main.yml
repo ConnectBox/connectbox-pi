@@ -77,11 +77,7 @@
       name: "{{ item }}"
       state: stopped
       enabled: no
-    with_items:
-    - unattended-upgrades
-    - apt-daily
-    - apt-daily-upgrade
-  when: ansible_distribution == "Ubuntu"
+    with_items: "{{ apty_services }}"
 
 # Needed by Debian and Ubuntu Official AMIs
 - name: Install aptitude
