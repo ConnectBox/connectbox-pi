@@ -5,15 +5,20 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 This project indentifies releases by release date.
 
-
 Current open Issues: https://github.com/ConnectBox/connectbox-pi/issues?q=is%3Aopen+is%3Aissue+milestone%3A%2225-unit+pilot%22
 
 
 # Unreleased
 
+* None.
+
+# 20170916
+
 * Fixed: Channel 11-14 unavailable regardless of regulatory domain [Issue #168](https://github.com/ConnectBox/connectbox-pi/issues/168)
-* https://github.com/ConnectBox/connectbox-pi/issues/163
+* Changed: Do not allow 40Mhz 2.4Ghz channels [PR #170](https://github.com/ConnectBox/connectbox-pi/pull/170)
 * Fixed: Image does not expose all available space on the microsd card [Issue #163](https://github.com/ConnectBox/connectbox-pi/issues/163)
+* Fixed: File listings do not have a cache policy [PR #172](https://github.com/ConnectBox/connectbox-pi/pull/172)
+* Changed: Disable automatic apt upgrades [PR #173](https://github.com/ConnectBox/connectbox-pi/pull/173)
 
 # 20170901
 
