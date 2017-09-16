@@ -1,3 +1,7 @@
 ---
 connectbox_os: armbian
 ansible_user: root
+apty_services:
+  - unattended-upgrades
+  - apt-daily
+  - apt-daily-upgrade

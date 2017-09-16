@@ -69,20 +69,15 @@
   when: connectbox_os == "armbian"
   tags: resize_root_partition
 
-# Disable unattended upgrades before attempting to install packages
-# (stop service, then remove entirely)
-# unattended-upgrades only runs on Ubuntu
+# Disable automated apt-y things before attempting to install packages
+# unattended-upgrades and apt.systemd.daily only run on Ubuntu
 - block:
-  - name: Stop unattended-upgrades service
+  - name: Stop automated apty services
     service:
-      name: unattended-upgrades
+      name: "{{ item }}"
       state: stopped
-
-  - name: Uninstall unattended-upgrades service
-    apt:
-      name: unattended-upgrades
-      state: absent
-  when: ansible_distribution == "Ubuntu"
+      enabled: no
+    with_items: "{{ apty_services }}"
 
 # Needed by Debian and Ubuntu Official AMIs
 - name: Install aptitude
