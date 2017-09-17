@@ -10,7 +10,7 @@ Current open Issues: https://github.com/ConnectBox/connectbox-pi/issues?q=is%3Ao
 
 # Unreleased
 
-* None.
+* Changed: Automatically reboot system if required during ansible playbook runs [PR #175](https://github.com/ConnectBox/connectbox-pi/issues/175)
 
 # 20170916
 
