@@ -30,15 +30,15 @@
     register: insert_usb_overlays
 
   - name: Request reboot if usbhost overlays have been changed
-    fail:
-      msg: "The system must be rebooted to activate additional usb ports"
+    set_fact:
+      reboot_required: True
     when: insert_usb_overlays.changed
     tags: skip_ansible_lint
   when: '"NanoPi NEO" in machine_type.stdout'
 
 - name: Request reboot if interface naming style has changed
-  fail:
-    msg: "The system must be rebooted to apply old-style interface names"
+  set_fact:
+    reboot_required: True
   when: old_style_names.changed
   tags: skip_ansible_lint
 
@@ -52,9 +52,22 @@
 
 # If the oracle above exists then we shouldn't continue
 - name: Fail when disk expansion is incomplete
-  fail:
-    msg: "The system must be rebooted because the disk expansion is not complete!"
+  set_fact:
+    reboot_required: True
   when: resize2fs_reboot.stat.exists == True
+
+- name: Reboot device for changes to take effect
+  shell: sleep 2 && /sbin/shutdown -r now
+  async: 1
+  poll: 0
+  when: reboot_required
+
+# The system takes 5-10 seconds to disappear from the network
+#  so let's wait 15 seconds before doing our first check
+- name: Wait for server to restart (max wait 5 minutes)
+  wait_for_connection:
+    delay=15
+    timeout=300
 
 # Schedule a resize of the root partition after the next boot
 # This is a benign operation if the partition is already full
