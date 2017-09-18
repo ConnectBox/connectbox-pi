@@ -68,6 +68,7 @@
   wait_for_connection:
     delay=15
     timeout=300
+  when: reboot_required
 
 # Schedule a resize of the root partition after the next boot
 # This is a benign operation if the partition is already full
