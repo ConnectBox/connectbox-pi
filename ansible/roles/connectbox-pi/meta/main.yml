@@ -1,6 +1,4 @@
 ---
-# dns-dhcp needs to come last, given it adjusts resolv.conf and breaks
-#  subsequent lookups
 dependencies:
   - bootstrap
   - dns-dhcp
