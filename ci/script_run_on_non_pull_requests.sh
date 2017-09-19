@@ -65,15 +65,25 @@ if [ "$TRAVIS_BRANCH" = "master" ]; then
   # Do a full deploy and redeploy
   # Now do our initial provisioning run
   ansible-playbook -i ci-inventory ../ansible/site.yml;
-
+  if [ $? -gt 0 ]; then
+    echo "Failure during initial ansible run. Exiting";
+    exit 1;
+  fi
   # Perform a re-run of the playbooks, to see whether they run cleanly and
   #  without marking any task as changed
   ansible-playbook -i ci-inventory ../ansible/site.yml;
+  if [ $? -gt 0 ]; then
+    echo "Failure during ansible re-run. Exiting";
+    exit 1;
+  fi
 else
   # Do essential steps of a deployment to keep things fast
   ansible-playbook -i ci-inventory --skip-tags=full-build-only ../ansible/site.yml;
+  if [ $? -gt 0 ]; then
+    echo "Failure during ansible run. Exiting";
+    exit 1;
+  fi
 fi
-
 
 # Run web/selenium tests for each host
 for target_host in $(grep -v "^#" ci-inventory | cut -d" " -f1); do
