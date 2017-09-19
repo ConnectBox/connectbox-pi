@@ -165,3 +165,6 @@
     iptables_ssh_in_interface: "-i eth0"
   when: not developer_mode
 
+- name: Fail to test ansible exit code in CI
+  fail:
+    msg: deliberately failing to confirm CI bombs
