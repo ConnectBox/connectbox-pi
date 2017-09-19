@@ -1,0 +1,27 @@
+---
+- name: Reset Regulatory Domain
+  lineinfile:
+    path: /etc/hostapd/hostapd.conf
+    regexp: '^country_code=.*'
+    line: country_code=00
+
+# Schedule a resize of the root partition after the next boot
+# This is a benign operation if the partition is already full
+#  and scheduling it here allows for it to be expanded on first
+#  boot for our images (as long as the device is shutdown and
+#  not rebooted after the playbook is run)
+# This is deliberately placed after the forced-reboot operations
+- name: Schedule a resize of the root partition after the next boot
+  service:
+    name: resize2fs
+    enabled: yes
+  when: connectbox_os == "armbian"
+  tags: resize_root_partition
+
+- name: Schedule Final Handlers
+  assert:
+    that: True
+  changed_when: True
+  notify:
+    - Warn against rebooting
+    - Perform final shutdown
