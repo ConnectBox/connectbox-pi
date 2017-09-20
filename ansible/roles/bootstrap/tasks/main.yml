@@ -164,4 +164,3 @@
   set_fact:
     iptables_ssh_in_interface: "-i eth0"
   when: not developer_mode
-
