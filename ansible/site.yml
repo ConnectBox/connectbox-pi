@@ -40,3 +40,4 @@
   become: yes
   roles:
     - connectbox-pi
+    - { role: image-preparation, when: do_image_preparation }

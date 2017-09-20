@@ -70,19 +70,6 @@
     timeout=300
   when: reboot_required
 
-# Schedule a resize of the root partition after the next boot
-# This is a benign operation if the partition is already full
-#  and scheduling it here allows for it to be expanded on first
-#  boot for our images (as long as the device is shutdown and
-#  not rebooted after the playbook is run)
-# This is deliberately placed after the forced-reboot operations
-- name: Schedule a resize of the root partition after the next boot
-  service:
-    name: resize2fs
-    enabled: yes
-  when: connectbox_os == "armbian"
-  tags: resize_root_partition
-
 # Disable automated apt-y things before attempting to install packages
 # unattended-upgrades and apt.systemd.daily only run on Ubuntu
 - block:

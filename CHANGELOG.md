@@ -10,7 +10,9 @@ Current open Issues: https://github.com/ConnectBox/connectbox-pi/issues?q=is%3Ao
 
 # Unreleased
 
-* Changed: Automatically reboot system if required during ansible playbook runs [PR #175](https://github.com/ConnectBox/connectbox-pi/issues/175)
+* Added: Automatically reboot system if required during ansible playbook runs
+* Added: Automate several on-device tasks required for creation of images
+* Fixed: Fail during CI if any Ansible run or any tests fail
 
 # 20170916
 

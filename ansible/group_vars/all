@@ -55,6 +55,10 @@ nginx_admin_block: |
         auth_basic_user_file /usr/local/connectbox/etc/basicauth;
       }
 
+
+# Don't perform image prep tasks unless overridden
+do_image_preparation: False
+
 # i.e. allow inbound ssh from all interfaces
 # Overriden in bootstrap role for non-developer mode
 iptables_ssh_in_interface: ""
