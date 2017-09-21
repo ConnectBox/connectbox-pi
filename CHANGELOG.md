@@ -13,6 +13,8 @@ Current open Issues: https://github.com/ConnectBox/connectbox-pi/issues?q=is%3Ao
 * Added: Automatically reboot system if required during ansible playbook runs
 * Added: Automate several on-device tasks required for creation of images
 * Fixed: Fail during CI if any Ansible run or any tests fail
+* Changed: Remove selenium tests.
+* Changed: Bump versions of python dependencies for the build system, and start maintaining dependencies with pip-compile
 
 # 20170916
 
