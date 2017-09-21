@@ -3,7 +3,6 @@ import os
 import unittest
 import random
 import requests
-from selenium import webdriver
 
 TEST_IP_ENV_VAR = "TEST_IP"
 
@@ -88,6 +87,11 @@ class ConnectBoxBasicTestCase(unittest.TestCase):
         r = requests.get("%s/" % (getAdminBaseURL(),), auth=getAdminAuth())
         r.raise_for_status()
         self.assertIn("ConnectBox Admin Dashboard", r.text)
+
+    def testTextInDocumentTitle(self):
+        r = requests.get("%s/" % (getTestBaseURL(),))
+        r.raise_for_status()
+        self.assertIn("<title>ConnectBox</title>", r.text)
 
 
 class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
@@ -435,14 +439,3 @@ class ConnectBoxAPITestCase(unittest.TestCase):
         # EM DASH codepoint is a 3 byte character
         # This SSID set should be rejected
         self._testSSIDSetWithLength(u'\N{EM DASH}' * 11)
-
-
-class ConnectBoxWebDriverTestCase(unittest.TestCase):
-
-    def setUp(self):
-        self.browser = webdriver.PhantomJS()
-        self.addCleanup(self.browser.quit)
-
-    def testPageTitle(self):
-        self.browser.get(getTestBaseURL())
-        self.assertIn("ConnectBox", self.browser.title)
