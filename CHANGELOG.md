@@ -15,6 +15,7 @@ Current open Issues: https://github.com/ConnectBox/connectbox-pi/issues?q=is%3Ao
 * Fixed: Fail during CI if any Ansible run or any tests fail
 * Changed: Remove selenium tests.
 * Changed: Bump versions of python dependencies for the build system, and start maintaining dependencies with pip-compile
+* Added: Schedule resize of root partition on raspbian at first boot for image creation
 
 # 20170916
 
