@@ -10,17 +10,17 @@ Vagrant.configure(2) do |config|
     vb.memory = "512"
   end
 
-  # Debian Jessie
-  config.vm.define "debian" do |debian|
-    debian.vm.box = "debian/jessie64"
-    debian.vm.network "private_network", ip: "172.28.128.3"
-    debian.vm.post_up_message = "ConnectBox (Debian Jessie) provisioned in developer mode. IP: 172.28.128.3, hostname: debian-vagrant.connectbox. You probably want '172.28.128.3 debian-vagrant.connectbox' in /etc/hosts"
+  # Debian Stretch
+  config.vm.define "stretch" do |stretch|
+    stretch.vm.box = "debian/stretch64"
+    stretch.vm.network "private_network", ip: "172.28.128.5"
+    stretch.vm.post_up_message = "ConnectBox (Debian Stretch) provisioned in developer mode. IP: 172.28.128.5, hostname: stretch-vagrant.connectbox. You probably want '172.28.128.5 stretch-vagrant.connectbox' in /etc/hosts"
 
-    debian.vm.provision "ansible" do |ansible|
+    stretch.vm.provision "ansible" do |ansible|
       ansible.playbook = "ansible/site.yml"
       ansible.host_vars = {
 	      "debian" => {
-          "connectbox_default_hostname": "debian-vagrant.connectbox",
+          "connectbox_default_hostname": "stretch-vagrant.connectbox",
           "developer_mode": true,
 	}
       }
