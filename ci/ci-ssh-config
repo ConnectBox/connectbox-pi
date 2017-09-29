@@ -1,4 +1,4 @@
-Host debian.ci.connectbox.org
+Host stretch.ci.connectbox.org
         User admin
         IdentityFile travis-ci-connectbox.pem
 

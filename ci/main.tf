@@ -23,12 +23,12 @@ data "aws_route53_zone" "selected" {
   name         = "connectbox.org."
 }
 
-resource "aws_route53_record" "debian" {
+resource "aws_route53_record" "stretch" {
   zone_id = "${data.aws_route53_zone.selected.zone_id}"
-  name    = "debian.${var.ci-dns-prefix}.${data.aws_route53_zone.selected.name}"
+  name    = "stretch.${var.ci-dns-prefix}.${data.aws_route53_zone.selected.name}"
   type    = "A"
   ttl     = "1"
-  records = ["${aws_instance.connectbox-debian-server.public_ip}"]
+  records = ["${aws_instance.connectbox-stretch-server.public_ip}"]
 }
 
 resource "aws_route53_record" "ubuntu" {
@@ -147,17 +147,17 @@ resource "aws_subnet" "client-facing-subnet" {
 	}
 }
 
-resource "aws_network_interface" "client-facing-debian-server" {
+resource "aws_network_interface" "client-facing-stretch-server" {
 	subnet_id = "${aws_subnet.client-facing-subnet.id}"
 	# AWS reserves the bottom four addresses in each subnet
 	#  so this is the lowest available
-	private_ips = ["${var.debian_server_client_facing_ip}"]
+	private_ips = ["${var.stretch_server_client_facing_ip}"]
 	attachment {
-		instance = "${aws_instance.connectbox-debian-server.id}"
+		instance = "${aws_instance.connectbox-stretch-server.id}"
 		device_index = 1
 	}
 	tags {
-		Name = "client-facing interface for connectbox debian server"
+		Name = "client-facing interface for connectbox stretch server"
 		project = "connectbox"
 		lifecycle = "ci"
 		creator = "terraform"
@@ -181,14 +181,14 @@ resource "aws_network_interface" "client-facing-ubuntu-server" {
 	}
 }
 
-resource "aws_instance" "connectbox-debian-server" {
-	ami = "${lookup(var.debian_amis, var.region)}"
+resource "aws_instance" "connectbox-stretch-server" {
+	ami = "${lookup(var.stretch_amis, var.region)}"
 	instance_type = "${var.instance_type}"
 	key_name = "travis-ci-connectbox-20170126"
 	subnet_id = "${aws_subnet.default.id}"
 	vpc_security_group_ids = ["${aws_security_group.default.id}"]
 	tags {
-		Name = "connectbox-debian-server"
+		Name = "connectbox-stretch-server"
 		project = "connectbox"
 		lifecycle = "ci"
 		creator = "terraform"

@@ -15,12 +15,12 @@ variable "preferred_az" {
 
 variable "instance_type" { default = "t2.nano" }
 
-# Debian Jessie AMIs by region
-variable "debian_amis" {
+# Debian Stretch AMIs by region
+variable "stretch_amis" {
 	default = {
-		"us-east-1" = "ami-b14ba7a7"
-		"ap-southeast-2" = "ami-881317eb"
-		"us-west-2" = "ami-221ea342"
+		"us-east-1" = "ami-ac5e55d7"
+		"ap-southeast-2" = "ami-51f61333"
+		"us-west-2" = "ami-fa18f282"
 	}
 }
 
@@ -38,5 +38,5 @@ variable "default_vpc_cidr" { default = "10.0.0.0/16" }
 variable "default_subnet_cidr" { default = "10.0.1.0/24" }
 variable "client_facing_subnet_cidr" { default = "10.0.2.0/24" }
 
-variable "debian_server_client_facing_ip" { default = "10.0.2.5" }
+variable "stretch_server_client_facing_ip" { default = "10.0.2.5" }
 variable "ubuntu_server_client_facing_ip" { default = "10.0.2.6" }
