@@ -3,7 +3,6 @@
   apt:
     name: nginx
     state: present
-    default_release: jessie-backports
 
 - name: Remove OS default nginx vhost
   file:

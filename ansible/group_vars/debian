@@ -1,4 +1,2 @@
 ---
 connectbox_os: debian
-php_service: php5-fpm
-fastcgi_pass_sock: unix:/var/run/php5-fpm.sock
