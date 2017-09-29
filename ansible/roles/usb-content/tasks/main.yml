@@ -1,7 +1,7 @@
 ---
 - name: Set correct arguments for mounting USB drives
   copy:
-    src: etc_udev_rules.d_automount.rules       
+    src: etc_udev_rules.d_automount.rules
     dest: /etc/udev/rules.d/automount.rules
     owner: root
     group: root
