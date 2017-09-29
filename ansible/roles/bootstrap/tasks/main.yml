@@ -80,18 +80,6 @@
       enabled: no
     with_items: "{{ apty_services }}"
 
-# Needed by Debian and Ubuntu Official AMIs
-#- name: Install aptitude
-#  apt:
-#    name: aptitude
-#    state: present
-#  when: ansible_lsb["id"] == "Debian" or ansible_lsb["id"] == "Ubuntu"
-
-# For mikegleasonjr.firewall - it assumes Debian/Ubuntu will always have iptables
-- name: Install iptables
-  apt: name=iptables state=present
-  when: ansible_os_family == 'Debian'
-
 # Only repopulate daily so we don't slow runs down unnecessarily
 - name: Populate apt cache
   apt:
