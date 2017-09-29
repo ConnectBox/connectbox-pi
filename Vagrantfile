@@ -19,7 +19,7 @@ Vagrant.configure(2) do |config|
     stretch.vm.provision "ansible" do |ansible|
       ansible.playbook = "ansible/site.yml"
       ansible.host_vars = {
-	      "debian" => {
+	      "stretch" => {
           "connectbox_default_hostname": "stretch-vagrant.connectbox",
           "developer_mode": true,
 	}
