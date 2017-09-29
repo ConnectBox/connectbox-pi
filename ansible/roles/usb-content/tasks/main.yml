@@ -1,23 +1,11 @@
 ---
-- name:
-  file:
-    path: /etc/usbmount
-    state: directory
-    owner: root
-    group: root
-    mode: 0755
-
 - name: Set correct arguments for mounting USB drives
   copy:
-    src: etc_usbmount_usbmount.conf
-    dest: /etc/usbmount/usbmount.conf
+    src: etc_udev_rules.d_automount.rules       
+    dest: /etc/udev/rules.d/automount.rules
     owner: root
     group: root
     mode: 0644
-  notify: Warn to remount USB
-
-- name: Install usbmount for auto mounting of USB drives
-  apt:
-    name: usbmount
-    state: present
-
+  notify:
+    - Reload udev rules
+    - Warn to remount USB

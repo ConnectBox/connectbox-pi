@@ -1,0 +1,4 @@
+#ACTION=="add",KERNEL=="sda*", RUN+="/usr/bin/pmount --noatime --sync -t vfat -c utf8 --umask 022 %k usb0
+#ACTION=="remove", KERNEL=="sda*", RUN+="/usr/bin/pumount %k"     
+ACTION=="add",KERNEL=="sda1",RUN+="mount -o sync,noexec,nodev,noatime,nodiratime -fstype=vfat,utf8 %k /media/usb0"
+ACTION=="remove", KERNEL=="sda1", RUN+="/usr/bin/umount %k"     

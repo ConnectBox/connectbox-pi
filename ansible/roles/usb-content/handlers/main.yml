@@ -1,4 +1,7 @@
 ---
+- name: Reload udev rules
+  command: udevadm control --reload-rules
+
 # We can't actually remount the USB without walking all the devices
 #  so let's just print a message (that will likely get missed)
 - name: Warn to remount USB
