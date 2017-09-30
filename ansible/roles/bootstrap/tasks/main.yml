@@ -80,6 +80,13 @@
       enabled: no
     with_items: "{{ apty_services }}"
 
+# mikegleasonjr.firewall assumes iptables but Armbian doesn't ship with it
+- name: Install iptables
+  apt:
+    name: iptables
+    state: present
+  when: connectbox_os == "armbian"
+
 # Only repopulate daily so we don't slow runs down unnecessarily
 - name: Populate apt cache
   apt:
