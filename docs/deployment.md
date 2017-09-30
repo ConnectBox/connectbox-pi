@@ -1,6 +1,6 @@
 # Making a ConnectBox
 
-The ConnectBox runs on a few different devices, with a specific operating system for each. It requires Raspbian Lite for Raspberry Pi 3 and Raspberry Pi Zero W devices and Armbian for Orange Pi Zero and Pine64 devices. The ConnectBox is setup using Ansible (a tool for deployment, configuration management and orchestration) and is performed using an ethernet connection to the device.
+The ConnectBox runs on a few different devices, with a specific operating system for each. It requires Raspbian Lite (Stretch only) for Raspberry Pi 3 and Raspberry Pi Zero W devices and Armbian (Xenial only) for Orange Pi Zero and Pine64 devices. Pre-made images are available for select devices, and you can always install to your devices using Ansible (a tool for deployment, configuration management and orchestration) if you have an ethernet connection to the device.
 
 # Terminology
 
@@ -9,9 +9,13 @@ For simplicity, let's assume the following terms:
  Most importantly, the workstation is different to your _device_.
 * __device__: The ConnectBox hardware. It might be a Raspberry Pi 3, or it might be one of the other supported devices. When describing commands to be run on the device, we'll display the device prompt as `pi@rasberrypi: $` even though it will be different on other devices.
 
+## Get a pre-made image
+
+Pre-made images are distributed on GitHub (https://github.com/ConnectBox/connectbox-pi/releases) . If you don't see an image for your device, feel free to raise an issue or email us.
+
 ## Install Vanilla Raspbian-lite on Raspberry Pi 3 or Raspberry Pi Zero W
 
-Download the [current Raspbian Jessie Lite](https://www.raspberrypi.org/downloads/raspbian/). The Nov 2016 introduced a security update that disables the SSH daemon by default. The connectbox is deployed using Ansible, which connects to the Raspberry Pi over SSH, so ssh needs to be enabled. Enable sshd by one of the methods below (you only need to choose one):
+Download the [current Raspbian Lite (Stretch)](https://www.raspberrypi.org/downloads/raspbian/). The Nov 2016 introduced a security update that disables the SSH daemon by default. The connectbox is deployed using Ansible, which connects to the Raspberry Pi over SSH, so ssh needs to be enabled. Enable sshd by one of the methods below (you only need to choose one):
 
 Note: this is a Raspberry Pi device specific step as the other devices have their SSH enabled]
 
@@ -41,9 +45,9 @@ pi@raspberrypi: $ sudo raspi-config
 
 On your desktop, mount the downloaded image and creating a file called ssh in the `/boot` directory. Once the image has been updated to enabled ssh, [put the image on an SD card](https://www.raspberrypi.org/documentation/installation/installing-images/) and boot the Raspberry Pi from it.
 
-## Install Armbian on Orange Pi Zero or Pine64
+## Install Armbian on NanoPi NEO, Orange Pi Zero or Pine64
 
-Download the appropriate image for your device from the [Armbian download area](https://www.armbian.com/download/) put it into an SD card. Armbian images using a Legacy kernel, based on Ubuntu Xenial and Debian Jessie are supported. Images using a Mainline kernel make not provide a useable ConnectBox. The [Armbian Getting Started Guide](https://docs.armbian.com/User-Guide_Getting-Started/) is useful. Before running ansible, you need to login and set the root password per the Armbian Getting Started Guide.
+Download the appropriate image for your device from the [Armbian download area](https://www.armbian.com/download/) put it into an SD card. Armbian images using a Legacy or Mainline kernel, based on Ubuntu Xenial are supported, though Mainline offers better performance. The [Armbian Getting Started Guide](https://docs.armbian.com/User-Guide_Getting-Started/) is useful. Before running ansible, you need to login and set the root password per the Armbian Getting Started Guide.
 
 ## Setup SSH Keys
 

@@ -17,6 +17,9 @@ Current open Issues: https://github.com/ConnectBox/connectbox-pi/issues?q=is%3Ao
 * Changed: Bump versions of python dependencies for the build system, and start maintaining dependencies with pip-compile
 * Added: Schedule resize of root partition on raspbian at first boot for image creation
 * Changed: Cleanup admin and development documentation to reflect current state
+* Removed: Support for Raspbian Jessie and Armbian Jessie
+* Added: Support for Raspbian Stretch
+* Changed: Use udev to mount USB storage instead of usbmount
 
 # 20170916
 
