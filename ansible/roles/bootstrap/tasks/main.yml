@@ -80,6 +80,12 @@
       enabled: no
     with_items: "{{ apty_services }}"
 
+# Needed for package upgrades via ansible (aptitude safe-upgrade)
+- name: Install aptitude
+  apt:
+    name: aptitude
+    state: present
+
 # mikegleasonjr.firewall assumes iptables but Armbian doesn't ship with it
 - name: Install iptables
   apt:
