@@ -1,7 +1,7 @@
 ---
-- name:
+- name: Create mount point for first USB drive
   file:
-    path: /etc/usbmount
+    path: "{{ connectbox_usb_files_root }}"
     state: directory
     owner: root
     group: root
@@ -9,15 +9,19 @@
 
 - name: Set correct arguments for mounting USB drives
   copy:
-    src: etc_usbmount_usbmount.conf
-    dest: /etc/usbmount/usbmount.conf
+    src: etc_udev_rules.d_automount.rules
+    dest: /etc/udev/rules.d/automount.rules
     owner: root
     group: root
     mode: 0644
-  notify: Warn to remount USB
+  notify:
+    - Reload udev rules
+    - Warn to remount USB
 
-- name: Install usbmount for auto mounting of USB drives
-  apt:
-    name: usbmount
-    state: present
-
+- name: Teach systemd-udev to expose mount points to the system
+  lineinfile:
+    path: /lib/systemd/system/systemd-udevd.service
+    regexp: '^MountFlags='
+    line: 'MountFlags=shared'
+  notify:
+    - Reload systemd-udevd unit file and restart service

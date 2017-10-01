@@ -1,11 +1,3 @@
 ---
 connectbox_os: raspbian
 ansible_user: pi
-
-# Matt's signing key, currently used to sign the repo
-repo_signing_keys:
-  - D8E4364592F3A749
-
-# No Debian armhf backports repo exists that runs on ARMv6 so we have our
-#  own for the packages that we require
-jessie_backports_repo: deb https://eisbox.net/downloads/connectbox/repo jessie-backports main

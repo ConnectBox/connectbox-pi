@@ -80,50 +80,18 @@
       enabled: no
     with_items: "{{ apty_services }}"
 
-# Needed by Debian and Ubuntu Official AMIs
-- name: Install aptitude
-  apt:
-    name: aptitude
-    state: present
-  when: ansible_lsb["id"] == "Debian" or ansible_lsb["id"] == "Ubuntu"
-
-# For mikegleasonjr.firewall - it assumes Debian/Ubuntu will always have iptables
+# mikegleasonjr.firewall assumes iptables but Armbian doesn't ship with it
 - name: Install iptables
-  apt: name=iptables state=present
-  when: ansible_os_family == 'Debian'
-
-- name: Add signing keys for additional repositories
-  apt_key:
-    keyserver: hkp://keyserver.ubuntu.com:80
+  apt:
+    name: iptables
     state: present
-    id: "{{ item }}"
-  with_items: "{{ repo_signing_keys }}"
+  when: connectbox_os == "armbian"
 
-# This is the initial population of the cache, so that we don't have
-#  problems when adding a repo. If the cache already exists, we don't
-#  need to run this step. This will be the case when the playbook is
-#  run for a second or subsequent time within the cache_valid_time
-- name: Populate apt cache to avoid problems when loading jessie backport repo
+# Only repopulate daily so we don't slow runs down unnecessarily
+- name: Populate apt cache
   apt:
     update-cache: yes
     cache_valid_time: 86400 # 1 day
-
-- name: Enable Jessie backport repo
-  apt_repository:
-    repo: "{{ jessie_backports_repo }}"
-    filename: jessie-backports
-    state: present
-  register: jessie_backport_repo_added
-
-# This always needs to run given whenever the repo has been loaded, so there
-#  is no cache_valid_time parameter. We skip ansible lint because we want to
-#  run this task when the repo has been added, but the normal method for this
-#  is a handler, but handlers can only run at the end, when it's too late.
-- name: Populate apt cache now that repos are loaded
-  apt:
-    update-cache: yes
-  when: jessie_backport_repo_added.changed
-  tags: skip_ansible_lint
 
 - name: Temporarily shutdown log2ram service on Armbian during package installation
   service:
@@ -132,7 +100,7 @@
   when: connectbox_os == "armbian"
   notify: Start log2ram service
 
-# Needed by Debian Jessie
+# Needed by Debian Stretch
 - name: Install openresolv
   apt:
     name: openresolv

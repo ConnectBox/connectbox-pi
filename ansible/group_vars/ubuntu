@@ -1,8 +1,5 @@
 ---
 connectbox_os: ubuntu
-nginx_default_release: xenial
-php_service: php7.0-fpm
-fastcgi_pass_sock: unix:/var/run/php/php7.0-fpm.sock
 apty_services:
   - unattended-upgrades
   - apt-daily
