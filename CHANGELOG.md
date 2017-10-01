@@ -10,6 +10,10 @@ Current open Issues: https://github.com/ConnectBox/connectbox-pi/issues?q=is%3Ao
 
 # Unreleased
 
+*
+
+# 20171001
+
 * Added: Automatically reboot system if required during ansible playbook runs
 * Added: Automate several on-device tasks required for creation of images
 * Fixed: Fail during CI if any Ansible run or any tests fail
@@ -20,6 +24,7 @@ Current open Issues: https://github.com/ConnectBox/connectbox-pi/issues?q=is%3Ao
 * Removed: Support for Raspbian Jessie and Armbian Jessie
 * Added: Support for Raspbian Stretch
 * Changed: Use udev to mount USB storage instead of usbmount
+* Changed: Purge apt caches before imaging to reduce image size
 
 # 20170916
 
