@@ -5,6 +5,11 @@
     regexp: '^country_code=.*'
     line: country_code=00
 
+- name: Purge apt cache
+  file:
+    dest: /var/cache/apt
+    state: absent
+
 # Schedule a resize of the root partition after the next boot
 # This is a benign operation if the partition is already full
 #  and scheduling it here allows for it to be expanded on first
