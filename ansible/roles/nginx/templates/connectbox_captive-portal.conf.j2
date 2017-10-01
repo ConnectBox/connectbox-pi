@@ -3,6 +3,8 @@ server {
     listen *:80 default_server;
     server_name _;
     index index.html index.htm;
+    access_log {{ connectbox_log_dir }}/captive-portal-access.log;
+    error_log {{ connectbox_log_dir }}/captive-portal-error.log error;
     rewrite_log on;
     
     location / {
