@@ -84,6 +84,12 @@ def get_link_type(ua_str):
         # Sierra (10.12) can open links from the captive portal agent in
         #  the browser
         return LINK_OPS["HREF"]
+    elif user_agent["os"]["family"] == "Android" and \
+            user_agent["os"]["major"] == "5":
+        # Lollipop (Android v5) can render links, and can execute javascript
+        #  but all operations keep the device trapped in the reduce-capability
+        #  captive portal browsers
+        return LINK_OPS["TEXT"]
 
     return LINK_OPS["TEXT"]
 
