@@ -1,4 +1,6 @@
 import datetime
+import threading
+import time
 import requests
 from flask import Flask, redirect, render_template, request, Response
 from ua_parser import user_agent_parser
@@ -15,6 +17,8 @@ LINK_OPS = {
     "JS_HREF_BLANK_CLICK": "javascript_href_blank_click",
 }
 _client_map = {}
+_delayed_registration_times = {}
+ANDROID_V6_REGISTRATION_DELAY_SECS = 180
 DHCP_FALLBACK_LEASE_SECS = 86400  # 1 day
 REAL_HOST_REDIRECT_URL = "http://127.0.0.1/to-hostname"
 
@@ -94,10 +98,24 @@ def get_link_type(ua_str):
     return LINK_OPS["TEXT"]
 
 
-def authorise_client(ip_addr_str=None):
+def authorise_client(ip_addr_str=None, delay_seconds=0):
     if ip_addr_str is None:
         ip_addr_str = request.headers["X-Forwarded-For"]
-    register_client(ip_addr_str)
+
+    if delay_seconds == 0:
+        # Just do it
+        register_client(ip_addr_str)
+    else:
+        # Don't allow more than one delayed registration per IP address
+        #  (don't run the risk of DoS'ing the server)
+        reg_time = _delayed_registration_times.get(ip_addr_str, 0)
+        if reg_time <= time.time():
+            # We don't have a pending registration so schedule one
+            _delayed_registration_times[ip_addr_str] = time.time()
+            t = threading.Timer(delay_seconds,
+                                register_client,
+                                args=[ip_addr_str])
+            t.start()
 
     return render_template("connected.html",
                            connectbox_url=get_real_connectbox_url(),
@@ -107,6 +125,13 @@ def authorise_client(ip_addr_str=None):
 
 
 def register_client(ip_addr_str):
+    # Remove any delayed registration timestamps so we don't leak
+    try:
+        del _delayed_registration_times[ip_addr_str]
+    except KeyError:
+        pass
+
+    # Now register
     _client_map[ip_addr_str] = datetime.datetime.now()
 
 
@@ -115,14 +140,6 @@ def welcome_or_serve_template(template):
     if is_authorised_client(source_ip):
         register_client(source_ip)
         return render_template(template)
-
-    return authorise_client()
-
-
-def welcome_or_return_status_code(status_code):
-    source_ip = request.headers["X-Forwarded-For"]
-    if is_authorised_client(source_ip):
-        return Response(status=status_code)
 
     return authorise_client()
 
@@ -166,6 +183,7 @@ def cp_check_status_no_content():
 
     /mobile/status.php satisfies facebook messenger connectivity check
     """
+    source_ip = request.headers["X-Forwarded-For"]
     ua_str = request.headers.get("User-agent", "")
     user_agent = user_agent_parser.Parse(ua_str)
     # Android uses a Dalvik agent for captive portal detection, but uses
@@ -185,7 +203,24 @@ def cp_check_status_no_content():
             req_url=request.url,
         )
 
-    return welcome_or_return_status_code(204)
+    # Android 6 and above automatically close the captive portal browser
+    #  once a 204 is received, so we kick off a timer to authorise the
+    #  client after a little while, and provide 200 responses until then.
+    # Note that this check only applies to the Dalvik captive portal
+    #  checker, not the webview
+    # XXX robustificate pls in the face of missing fields (or check whether
+    #  the user agent parser robustificates for us
+    if user_agent["user_agent"]["family"] == "Android" and \
+            int(user_agent["user_agent"]["major"]) >= 6:
+        # schedule delayed registration
+        delay_registration_seconds = ANDROID_V6_REGISTRATION_DELAY_SECS
+    else:
+        delay_registration_seconds = 0
+
+    if is_authorised_client(source_ip):
+        return Response(status=204)
+
+    return authorise_client(source_ip, delay_registration_seconds)
 
 
 def cp_check_amazon_kindle_fire():
@@ -204,6 +239,7 @@ def cp_check_windows():
 
 def forget_client():
     """Forgets that a client has been seen recently to allow running tests"""
+    # XXX how can we unschedule delayed registrations
     source_ip = request.headers["X-Forwarded-For"]
     if source_ip in _client_map:
         del _client_map[source_ip]
