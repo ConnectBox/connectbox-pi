@@ -180,7 +180,9 @@ def cp_check_status_no_content():
             "connected.html",
             connectbox_url=get_real_connectbox_url(),
             LINK_OPS=LINK_OPS,
-            link_type=get_link_type(ua_str)
+            link_type=get_link_type(ua_str),
+            ua_str=ua_str,
+            req_url=request.url,
         )
 
     return welcome_or_return_status_code(204)
