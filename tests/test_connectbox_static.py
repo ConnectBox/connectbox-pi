@@ -233,19 +233,52 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
         #    and allows the user to click on the link
         self.assertIn("<BODY>\nSuccess\n</BODY>", r.text)
 
-    def testAndroidCaptivePortalResponse(self):
-        """Return a 204 status code to bypass Android captive portal login"""
+    def testAndroid5CaptivePortalResponse(self):
+        """Android 5 ConnectBox connection workflow
+
+        Expected to be the same in Android 6. Changes in 7
+        """
         # Strictly this should be requesting
         #  http://clients3.google.com/generate_204 but answering requests for
         #  that site requires DNS mods, which can't be assumed for all
         #  people running these tests, so let's just poke for the page using
         #  the IP address of the server so we hit the default server, where
         #  this 204 redirection is active.
-        r = requests.get("http://%s/generate_204" % (getTestTarget(),))
+        # 1. Device sends generate_204 request
+        headers = requests.utils.default_headers()
+        # This is the UA from a Lenovo junk Android 5 tablet, but let's assume
+        #  that it's representative of over Android 5 (lollipop) devices
+        headers.update({"User-Agent": "Dalvik/2.1.0 (Linux; U; Android 5.0.1; "
+                        "Lenovo TB3-710F Build/LRX21M)"})
+        r = requests.get("http://%s/generate_204" %
+                         (getTestTarget(),), headers=headers)
         r.raise_for_status()
-        r = requests.get("http://%s/generate_204" % (getTestTarget(),))
+        # 2. Connectbox provides response that indicates no internet
+        self.assertEquals(r.status_code, 200)
+        # 3. Device send another generate_204 request within a few seconds
+        r = requests.get("http://%s/generate_204" %
+                         (getTestTarget(),), headers=headers)
         r.raise_for_status()
+        # 4. Connectbox replies that internet access is available.
         self.assertEquals(r.status_code, 204)
+        # 5. On receipt of a 204 soon after a 200, the device shows a
+        #    "Sign-in to network" notification. Counter-intuitively, if the
+        #    device continues to get 200 replies, it never shows this
+        #    notification.
+        #    We assume that the user responds to this notification, which
+        #    causes the Android captive portal browser to send a request
+        #    to the generate_204 URL
+        headers.update({"User-Agent": "Mozilla/5.0 (Linux; Android 5.0.1; "
+                        "Lenovo TB3-710F Build/LRX21M; wv) AppleWebKit/537.36 "
+                        "(KHTML, like Gecko) Version/4.0 Chrome/45.0.2454.95 "
+                        "Safari/537.36"})
+        r = requests.get("http://%s/generate_204" %
+                         (getTestTarget(),), headers=headers)
+        r.raise_for_status()
+        # 6. Connectbox provides a response with a text-URL
+        self.assertIn("<TITLE>Connected to ConnectBox Wifi</TITLE>", r.text)
+        # No URLs, please
+        self.assertNotIn("href=", r.text.lower())
 
     def testAndroid7FallbackCaptivePortalResponse(self):
         """Return a 204 status code to bypass Android captive portal login"""
