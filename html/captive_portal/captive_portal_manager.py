@@ -166,6 +166,23 @@ def cp_check_status_no_content():
 
     /mobile/status.php satisfies facebook messenger connectivity check
     """
+    ua_str = request.headers.get("User-agent", "")
+    user_agent = user_agent_parser.Parse(ua_str)
+    # Android uses a Dalvik agent for captive portal detection, but uses
+    #  a Chrome webview to display the welcome/terms page so we want to
+    #  return a web page only when we get a request from that Chrome view
+    # We don't need to check whether the user is authorised because they
+    #  will only get prompted to sign into the network when they don't
+    #  get a 204 response at some stage in the recent past
+    if user_agent["os"]["family"] == "Android" and \
+            user_agent["user_agent"]["family"] == "Chrome":
+        return render_template(
+            "connected.html",
+            connectbox_url=get_real_connectbox_url(),
+            LINK_OPS=LINK_OPS,
+            link_type=get_link_type(ua_str)
+        )
+
     return welcome_or_return_status_code(204)
 
 
