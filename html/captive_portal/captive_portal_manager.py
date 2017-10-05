@@ -23,19 +23,12 @@ DHCP_FALLBACK_LEASE_SECS = 86400  # 1 day
 REAL_HOST_REDIRECT_URL = "http://127.0.0.1/to-hostname"
 
 
-def cp_entry_point():
-    # XXX - Just redirect, and assume that we know about all captive
-    #  portal agents? If not, def don't authorise client because that
-    #  means that a CPA will detect internet connection before the
-    #  user has "logged in"
-    # If we do a redirect, subsequent CPA and CP requests go to the
-    #  host mentioned in the redirect header so we probably don't want
-    #  to even do that :-(
-    source_ip = request.headers["X-Forwarded-For"]
-    if is_authorised_client(source_ip):
-        return redirect(_real_connectbox_url)
-
-    return authorise_client()
+def redirect_to_connectbox():
+    # Redirect to connectbox, but don't authorise. We don't want to
+    #  authorise because it'll interfere with the client-specific
+    #  authorisation workflow. We assume that the client-specific
+    #  workflow will be done separately.
+    return redirect(_real_connectbox_url)
 
 
 def get_real_connectbox_url():
@@ -251,7 +244,7 @@ def forget_client():
 def setup_captive_portal_app():
     cpm = Flask(__name__)
     cpm.add_url_rule('/',
-                     'index', cp_entry_point)
+                     'index', redirect_to_connectbox)
     cpm.add_url_rule('/success.html',
                      'success',
                      cp_check_ios_lt_v9_macos_lt_v1010)
@@ -292,8 +285,9 @@ _dhcp_lease_secs = get_dhcp_lease_secs()
 @app.errorhandler(404)
 def default_view(_):
     """Handle all URLs and send them to the welcome page"""
-    return cp_entry_point()
+    return redirect_to_connectbox()
 
 
 if __name__ == "__main__":
+    # XXX debug should be off for non-development releases
     app.run(host='0.0.0.0', debug=True)

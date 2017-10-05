@@ -117,10 +117,7 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
                      (getTestTarget(),)).raise_for_status()
 
     def testBaseRedirect(self):
-        """Two hits on the index redirects to ConnectBox"""
-        r = requests.get("http://%s" % (getTestTarget(),),)
-        r.raise_for_status()
-        self.assertIn(WELCOME_TEMPLATE_TEXT_SAMPLE, r.text)
+        """A hit on the index redirects to ConnectBox"""
         r = requests.get("http://%s" % (getTestTarget(),),
                          allow_redirects=False)
         r.raise_for_status()
@@ -341,10 +338,7 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
         self.assertEquals(r.status_code, 204)
 
     def testUnknownLocalPageResponse(self):
-        """Two hits on an unregistered local route redirects to ConnectBox"""
-        r = requests.get("http://%s/unknown_local_page" % (getTestTarget(),))
-        r.raise_for_status()
-        self.assertIn(WELCOME_TEMPLATE_TEXT_SAMPLE, r.text)
+        """A hit on an unregistered local route redirects to ConnectBox"""
         r = requests.get("http://%s/unknown_local_page" % (getTestTarget(),),
                          allow_redirects=False)
         r.raise_for_status()
