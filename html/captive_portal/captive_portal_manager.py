@@ -82,10 +82,12 @@ def get_link_type(ua_str):
         #  the browser
         return LINK_OPS["HREF"]
     elif user_agent["os"]["family"] == "Android" and \
-            user_agent["os"]["major"] == "5":
-        # Lollipop (Android v5) can render links, and can execute javascript
-        #  but all operations keep the device trapped in the reduce-capability
-        #  captive portal browsers
+            (user_agent["os"]["major"] == "5" or
+             user_agent["os"]["major"] == "6"):
+        # Lollipop (Android v5) and Marshmallow (Android v6) can render links,
+        #  and can execute javascript but all operations keep the device
+        #  trapped in the reduced-capability captive portal browsers and we
+        #  don't want that, so we just show text
         return LINK_OPS["TEXT"]
 
     return LINK_OPS["TEXT"]
