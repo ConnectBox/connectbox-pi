@@ -275,6 +275,7 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
         # We don't want to show URLs in this captive portal browser
         self.assertNotIn("href=", r.text.lower())
 
+    @unittest.skip("Some android 6 devices have different workflow")
     def testAndroid6CaptivePortalResponse(self):
         """Android 6 ConnectBox connection workflow
         """
@@ -322,6 +323,7 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
         # We don't want to show URLs in this captive portal browser
         self.assertNotIn("href=", r.text.lower())
 
+    @unittest.skip("Skipped as some android 6 devices have different workflow")
     def testUnrecognisedRequestsDoNotAuthoriseClient(self):
         """We don't want to authorise clients when they request an offsite URL
 

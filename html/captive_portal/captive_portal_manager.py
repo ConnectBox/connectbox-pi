@@ -188,7 +188,8 @@ def cp_check_status_no_content():
     #  will only get prompted to sign into the network when they don't
     #  get a 204 response at some stage in the recent past
     if user_agent["os"]["family"] == "Android" and \
-            user_agent["user_agent"]["family"] == "Chrome":
+            user_agent["user_agent"]["family"] == "Chrome" and \
+            user_agent["os"]["major"] == "5":
         return render_template(
             "connected.html",
             connectbox_url=get_real_connectbox_url(),
@@ -198,6 +199,9 @@ def cp_check_status_no_content():
             req_url=request.url,
         )
 
+    # XXX - temporarily comment out this block, and make the above block
+    #       apply to android 5 only, while we sort out a workflow that works
+    #       reliably for non v5 android versions.
     # Android 6 and above automatically close the captive portal browser
     #  once a 204 is received, so we kick off a timer to authorise the
     #  client after a little while, and provide 200 responses until then.
@@ -205,12 +209,13 @@ def cp_check_status_no_content():
     #  checker, not the webview
     # XXX robustificate pls in the face of missing fields (or check whether
     #  the user agent parser robustificates for us
-    if user_agent["user_agent"]["family"] == "Android" and \
-            int(user_agent["user_agent"]["major"]) >= 6:
-        # schedule delayed registration
-        delay_registration_seconds = ANDROID_V6_REGISTRATION_DELAY_SECS
-    else:
-        delay_registration_seconds = 0
+    # if user_agent["user_agent"]["family"] == "Android" and \
+    #         int(user_agent["user_agent"]["major"]) >= 6:
+    #     # schedule delayed registration
+    #     delay_registration_seconds = ANDROID_V6_REGISTRATION_DELAY_SECS
+    # else:
+    #     delay_registration_seconds = 0
+    delay_registration_seconds = 0
 
     if is_authorised_client(source_ip):
         return Response(status=204)
