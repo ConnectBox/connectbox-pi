@@ -117,10 +117,7 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
                      (getTestTarget(),)).raise_for_status()
 
     def testBaseRedirect(self):
-        """Two hits on the index redirects to ConnectBox"""
-        r = requests.get("http://%s" % (getTestTarget(),),)
-        r.raise_for_status()
-        self.assertIn(WELCOME_TEMPLATE_TEXT_SAMPLE, r.text)
+        """A hit on the index redirects to ConnectBox"""
         r = requests.get("http://%s" % (getTestTarget(),),
                          allow_redirects=False)
         r.raise_for_status()
@@ -233,19 +230,140 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
         #    and allows the user to click on the link
         self.assertIn("<BODY>\nSuccess\n</BODY>", r.text)
 
-    def testAndroidCaptivePortalResponse(self):
-        """Return a 204 status code to bypass Android captive portal login"""
+    def testAndroid5CaptivePortalResponse(self):
+        """Android 5 ConnectBox connection workflow
+        """
         # Strictly this should be requesting
         #  http://clients3.google.com/generate_204 but answering requests for
         #  that site requires DNS mods, which can't be assumed for all
         #  people running these tests, so let's just poke for the page using
         #  the IP address of the server so we hit the default server, where
         #  this 204 redirection is active.
-        r = requests.get("http://%s/generate_204" % (getTestTarget(),))
+        # 1. Device sends generate_204 request
+        headers = requests.utils.default_headers()
+        # This is the UA from a Lenovo junk Android 5 tablet, but let's assume
+        #  that it's representative of over Android 5 (lollipop) devices
+        headers.update({"User-Agent": "Dalvik/2.1.0 (Linux; U; Android 5.0.1; "
+                        "Lenovo TB3-710F Build/LRX21M)"})
+        r = requests.get("http://%s/generate_204" %
+                         (getTestTarget(),), headers=headers)
         r.raise_for_status()
-        r = requests.get("http://%s/generate_204" % (getTestTarget(),))
+        # 2. Connectbox provides response that indicates no internet
+        self.assertEquals(r.status_code, 200)
+        # 3. Device send another generate_204 request within a few seconds
+        r = requests.get("http://%s/generate_204" %
+                         (getTestTarget(),), headers=headers)
         r.raise_for_status()
+        # 4. Connectbox replies that internet access is available.
         self.assertEquals(r.status_code, 204)
+        # 5. On receipt of a 204 soon after a 200, the device shows a
+        #    "Sign-in to network" notification. Counter-intuitively, if the
+        #    device continues to get 200 replies, it never shows this
+        #    notification.
+        #    We assume that the user responds to this notification, which
+        #    causes the Android captive portal browser to send a request
+        #    to the generate_204 URL
+        headers.update({"User-Agent": "Mozilla/5.0 (Linux; Android 5.0.1; "
+                        "Lenovo TB3-710F Build/LRX21M; wv) AppleWebKit/537.36 "
+                        "(KHTML, like Gecko) Version/4.0 Chrome/45.0.2454.95 "
+                        "Safari/537.36"})
+        r = requests.get("http://%s/generate_204" %
+                         (getTestTarget(),), headers=headers)
+        r.raise_for_status()
+        # 6. Connectbox provides a response with a text-URL
+        self.assertIn("<TITLE>Connected to ConnectBox Wifi</TITLE>", r.text)
+        # We don't want to show URLs in this captive portal browser
+        self.assertNotIn("href=", r.text.lower())
+
+    @unittest.skip("Some android 6 devices have different workflow")
+    def testAndroid6CaptivePortalResponse(self):
+        """Android 6 ConnectBox connection workflow
+        """
+        # Strictly this should be requesting
+        #  http://clients3.google.com/generate_204 but answering requests for
+        #  that site requires DNS mods, which can't be assumed for all
+        #  people running these tests, so let's just poke for the page using
+        #  the IP address of the server so we hit the default server, where
+        #  this 204 redirection is active.
+        # 1. Device sends generate_204 request
+        headers = requests.utils.default_headers()
+        # This is the UA from a Nexus 7 phone, but let's assume that it's
+        #  representative of over Android 6 (marshmallow) devices
+        headers.update({"User-Agent": "Dalvik/2.1.0 (Linux; U; Android 6.0.1; "
+                        "Nexus 7 Build/MOB30X)"})
+        r = requests.get("http://%s/generate_204" %
+                         (getTestTarget(),), headers=headers)
+        r.raise_for_status()
+        # 2. Connectbox provides response that indicates no internet
+        #    but schedules access to be granted after
+        #    ANDROID_V6_REGISTRATION_DELAY_SECS. We don't want to wait that
+        #    long during a test run, so we'll just assume that it works.
+        self.assertEquals(r.status_code, 200)
+        # 3. Device send another generate_204 request within a few seconds
+        r = requests.get("http://%s/generate_204" %
+                         (getTestTarget(),), headers=headers)
+        r.raise_for_status()
+        # 4. Connectbox replies that internet access is still not available
+        self.assertEquals(r.status_code, 200)
+        # 5. On receipt of a 200 i.e. internet access unavailable, the device
+        #    shows a "Sign-in to network" notification (until a 204 is
+        #    received)
+        #    We assume that the user responds to this notification, which
+        #    causes the Android captive portal browser to send a request
+        #    to the generate_204 URL
+        headers.update({"User-Agent": "Mozilla/5.0 (Linux; Android 6.0.1; "
+                        "Nexus 7 Build/MOB30X; wv) AppleWebKit/537.36 "
+                        "(KHTML, like Gecko) Version/4.0 Chrome/61.0.3163.98 "
+                        "Safari/537.36"})
+        r = requests.get("http://%s/generate_204" %
+                         (getTestTarget(),), headers=headers)
+        r.raise_for_status()
+        # 6. Connectbox provides a response with a text-URL
+        self.assertIn("<TITLE>Connected to ConnectBox Wifi</TITLE>", r.text)
+        # We don't want to show URLs in this captive portal browser
+        self.assertNotIn("href=", r.text.lower())
+
+    @unittest.skip("Skipped as some android 6 devices have different workflow")
+    def testUnrecognisedRequestsDoNotAuthoriseClient(self):
+        """We don't want to authorise clients when they request an offsite URL
+
+        We do want to provide a redirect. Based on Android 6 workflow because
+        Android 6 has a delayed authorisation workflow, so it' easier to test.
+        """
+        # 1. Device sends generate_204 request
+        headers = requests.utils.default_headers()
+        # This is the UA from a Nexus 7 phone, but let's assume that it's
+        #  representative of over Android 6 (marshmallow) devices
+        headers.update({"User-Agent": "Dalvik/2.1.0 (Linux; U; Android 6.0.1; "
+                        "Nexus 7 Build/MOB30X)"})
+        r = requests.get("http://%s/generate_204" %
+                         (getTestTarget(),), headers=headers)
+        r.raise_for_status()
+        # 2. Connectbox provides response that indicates no internet
+        #    but schedules access to be granted after
+        #    ANDROID_V6_REGISTRATION_DELAY_SECS. We don't want to wait that
+        #    long during a test run, so we'll just assume that it works.
+        self.assertEquals(r.status_code, 200)
+        # 3. Device sends a request for an unrecognised URL (say favicon.ico
+        #    requested by the captive portal browser, though the user agent
+        #    isn't actually important in this case)
+        headers.update({"User-Agent": "Mozilla/5.0 (Linux; Android 6.0.1; "
+                        "Nexus 7 Build/MOB30X; wv) AppleWebKit/537.36 "
+                        "(KHTML, like Gecko) Version/4.0 Chrome/61.0.3163.98 "
+                        "Safari/537.36"})
+        r = requests.get("http://%s/favicon.ico" %
+                         (getTestTarget(),), headers=headers)
+        r.raise_for_status()
+        # 4. Connectbox replies that internet access is still not available
+        self.assertEquals(r.status_code, 200)
+        # 5. Do a final generate_204 request.
+        headers.update({"User-Agent": "Dalvik/2.1.0 (Linux; U; Android 6.0.1; "
+                        "Nexus 7 Build/MOB30X)"})
+        r = requests.get("http://%s/generate_204" %
+                         (getTestTarget(),), headers=headers)
+        r.raise_for_status()
+        # 6. Connectbox replies that internet access is still not available
+        self.assertEquals(r.status_code, 200)
 
     def testAndroid7FallbackCaptivePortalResponse(self):
         """Return a 204 status code to bypass Android captive portal login"""
@@ -288,10 +406,7 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
         self.assertEquals(r.status_code, 204)
 
     def testUnknownLocalPageResponse(self):
-        """Two hits on an unregistered local route redirects to ConnectBox"""
-        r = requests.get("http://%s/unknown_local_page" % (getTestTarget(),))
-        r.raise_for_status()
-        self.assertIn(WELCOME_TEMPLATE_TEXT_SAMPLE, r.text)
+        """A hit on an unregistered local route redirects to ConnectBox"""
         r = requests.get("http://%s/unknown_local_page" % (getTestTarget(),),
                          allow_redirects=False)
         r.raise_for_status()

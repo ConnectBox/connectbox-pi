@@ -1,4 +1,6 @@
 import datetime
+import threading
+import time
 import requests
 from flask import Flask, redirect, render_template, request, Response
 from ua_parser import user_agent_parser
@@ -15,23 +17,18 @@ LINK_OPS = {
     "JS_HREF_BLANK_CLICK": "javascript_href_blank_click",
 }
 _client_map = {}
+_delayed_registration_times = {}
+ANDROID_V6_REGISTRATION_DELAY_SECS = 180
 DHCP_FALLBACK_LEASE_SECS = 86400  # 1 day
 REAL_HOST_REDIRECT_URL = "http://127.0.0.1/to-hostname"
 
 
-def cp_entry_point():
-    # XXX - Just redirect, and assume that we know about all captive
-    #  portal agents? If not, def don't authorise client because that
-    #  means that a CPA will detect internet connection before the
-    #  user has "logged in"
-    # If we do a redirect, subsequent CPA and CP requests go to the
-    #  host mentioned in the redirect header so we probably don't want
-    #  to even do that :-(
-    source_ip = request.headers["X-Forwarded-For"]
-    if is_authorised_client(source_ip):
-        return redirect(_real_connectbox_url)
-
-    return authorise_client()
+def redirect_to_connectbox():
+    # Redirect to connectbox, but don't authorise. We don't want to
+    #  authorise because it'll interfere with the client-specific
+    #  authorisation workflow. We assume that the client-specific
+    #  workflow will be done separately.
+    return redirect(_real_connectbox_url)
 
 
 def get_real_connectbox_url():
@@ -84,14 +81,36 @@ def get_link_type(ua_str):
         # Sierra (10.12) can open links from the captive portal agent in
         #  the browser
         return LINK_OPS["HREF"]
+    elif user_agent["os"]["family"] == "Android" and \
+            (user_agent["os"]["major"] == "5" or
+             user_agent["os"]["major"] == "6"):
+        # Lollipop (Android v5) and Marshmallow (Android v6) can render links,
+        #  and can execute javascript but all operations keep the device
+        #  trapped in the reduced-capability captive portal browsers and we
+        #  don't want that, so we just show text
+        return LINK_OPS["TEXT"]
 
     return LINK_OPS["TEXT"]
 
 
-def authorise_client(ip_addr_str=None):
+def authorise_client(ip_addr_str=None, delay_seconds=0):
     if ip_addr_str is None:
         ip_addr_str = request.headers["X-Forwarded-For"]
-    register_client(ip_addr_str)
+
+    if delay_seconds == 0:
+        # Just do it
+        register_client(ip_addr_str)
+    else:
+        # Don't allow more than one delayed registration per IP address
+        #  (don't run the risk of DoS'ing the server)
+        reg_time = _delayed_registration_times.get(ip_addr_str, 0)
+        if reg_time <= time.time():
+            # We don't have a pending registration so schedule one
+            _delayed_registration_times[ip_addr_str] = time.time()
+            t = threading.Timer(delay_seconds,
+                                register_client,
+                                args=[ip_addr_str])
+            t.start()
 
     return render_template("connected.html",
                            connectbox_url=get_real_connectbox_url(),
@@ -101,6 +120,13 @@ def authorise_client(ip_addr_str=None):
 
 
 def register_client(ip_addr_str):
+    # Remove any delayed registration timestamps so we don't leak
+    try:
+        del _delayed_registration_times[ip_addr_str]
+    except KeyError:
+        pass
+
+    # Now register
     _client_map[ip_addr_str] = datetime.datetime.now()
 
 
@@ -109,14 +135,6 @@ def welcome_or_serve_template(template):
     if is_authorised_client(source_ip):
         register_client(source_ip)
         return render_template(template)
-
-    return authorise_client()
-
-
-def welcome_or_return_status_code(status_code):
-    source_ip = request.headers["X-Forwarded-For"]
-    if is_authorised_client(source_ip):
-        return Response(status=status_code)
 
     return authorise_client()
 
@@ -160,7 +178,49 @@ def cp_check_status_no_content():
 
     /mobile/status.php satisfies facebook messenger connectivity check
     """
-    return welcome_or_return_status_code(204)
+    source_ip = request.headers["X-Forwarded-For"]
+    ua_str = request.headers.get("User-agent", "")
+    user_agent = user_agent_parser.Parse(ua_str)
+    # Android uses a Dalvik agent for captive portal detection, but uses
+    #  a Chrome webview to display the welcome/terms page so we want to
+    #  return a web page only when we get a request from that Chrome view
+    # We don't need to check whether the user is authorised because they
+    #  will only get prompted to sign into the network when they don't
+    #  get a 204 response at some stage in the recent past
+    if user_agent["os"]["family"] == "Android" and \
+            user_agent["user_agent"]["family"] == "Chrome" and \
+            user_agent["os"]["major"] == "5":
+        return render_template(
+            "connected.html",
+            connectbox_url=get_real_connectbox_url(),
+            LINK_OPS=LINK_OPS,
+            link_type=get_link_type(ua_str),
+            ua_str=ua_str,
+            req_url=request.url,
+        )
+
+    # XXX - temporarily comment out this block, and make the above block
+    #       apply to android 5 only, while we sort out a workflow that works
+    #       reliably for non v5 android versions.
+    # Android 6 and above automatically close the captive portal browser
+    #  once a 204 is received, so we kick off a timer to authorise the
+    #  client after a little while, and provide 200 responses until then.
+    # Note that this check only applies to the Dalvik captive portal
+    #  checker, not the webview
+    # XXX robustificate pls in the face of missing fields (or check whether
+    #  the user agent parser robustificates for us
+    # if user_agent["user_agent"]["family"] == "Android" and \
+    #         int(user_agent["user_agent"]["major"]) >= 6:
+    #     # schedule delayed registration
+    #     delay_registration_seconds = ANDROID_V6_REGISTRATION_DELAY_SECS
+    # else:
+    #     delay_registration_seconds = 0
+    delay_registration_seconds = 0
+
+    if is_authorised_client(source_ip):
+        return Response(status=204)
+
+    return authorise_client(source_ip, delay_registration_seconds)
 
 
 def cp_check_amazon_kindle_fire():
@@ -179,6 +239,7 @@ def cp_check_windows():
 
 def forget_client():
     """Forgets that a client has been seen recently to allow running tests"""
+    # XXX how can we unschedule delayed registrations
     source_ip = request.headers["X-Forwarded-For"]
     if source_ip in _client_map:
         del _client_map[source_ip]
@@ -190,7 +251,7 @@ def forget_client():
 def setup_captive_portal_app():
     cpm = Flask(__name__)
     cpm.add_url_rule('/',
-                     'index', cp_entry_point)
+                     'index', redirect_to_connectbox)
     cpm.add_url_rule('/success.html',
                      'success',
                      cp_check_ios_lt_v9_macos_lt_v1010)
@@ -231,8 +292,9 @@ _dhcp_lease_secs = get_dhcp_lease_secs()
 @app.errorhandler(404)
 def default_view(_):
     """Handle all URLs and send them to the welcome page"""
-    return cp_entry_point()
+    return redirect_to_connectbox()
 
 
 if __name__ == "__main__":
+    # XXX debug should be off for non-development releases
     app.run(host='0.0.0.0', debug=True)
