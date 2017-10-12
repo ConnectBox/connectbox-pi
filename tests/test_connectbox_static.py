@@ -40,10 +40,12 @@ def getTestBaseURL():
     global _testBaseURL
     if not _testBaseURL:
         # Deregister
-        requests.get("http://%s/_forget_client" %
-                     (getTestTarget(),)).raise_for_status()
+        r = requests.delete("http://%s/_authorised_clients" %
+                            (getTestTarget(),))
+        r.raise_for_status()
         # Register (no redirects given)
-        r = requests.get("http://%s" % (getTestTarget(),),)
+        r = requests.post("http://%s/_authorised_clients" %
+                          (getTestTarget(),),)
         r.raise_for_status()
         # bounce through the 302, and retrieve the base connectbox page
         r = requests.get("http://%s" % (getTestTarget(),),)
@@ -52,8 +54,9 @@ def getTestBaseURL():
         _testBaseURL = r.url
         # Deregister the client, so that the test case that triggered
         #  this request starts with a clean slate
-        requests.get("http://%s/_forget_client" %
-                     (getTestTarget(),)).raise_for_status()
+        r = requests.delete("http://%s/_forget_client" %
+                            (getTestTarget(),))
+        r.raise_for_status()
     return _testBaseURL
 
 
@@ -103,8 +106,9 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
         Make sure the ConnectBox doesn't think the client has connected
         before, so we can test captive portal behaviour
         """
-        requests.get("http://%s/_forget_client" %
-                     (getTestTarget(),)).raise_for_status()
+        r = requests.delete("http://%s/_authorised_clients" %
+                            (getTestTarget(),))
+        r.raise_for_status()
 
     def tearDown(self):
         """Leave system in a clean state
@@ -113,8 +117,9 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
         before, regardless of whether the next connection is from a
         test, or from a normal browser or captive portal connection
         """
-        requests.get("http://%s/_forget_client" %
-                     (getTestTarget(),)).raise_for_status()
+        r = requests.delete("http://%s/_authorised_clients" %
+                            (getTestTarget(),))
+        r.raise_for_status()
 
     def testBaseRedirect(self):
         """A hit on the index redirects to ConnectBox"""

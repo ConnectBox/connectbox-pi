@@ -93,7 +93,7 @@ def get_link_type(ua_str):
     return LINK_OPS["TEXT"]
 
 
-def authorise_client(ip_addr_str=None, delay_seconds=0):
+def add_authorised_client(ip_addr_str=None, delay_seconds=0):
     if ip_addr_str is None:
         ip_addr_str = request.headers["X-Forwarded-For"]
 
@@ -136,7 +136,7 @@ def welcome_or_serve_template(template):
         register_client(source_ip)
         return render_template(template)
 
-    return authorise_client()
+    return add_authorised_client()
 
 
 def cp_check_ios_lt_v9_macos_lt_v1010():
@@ -162,7 +162,7 @@ def cp_check_ios_gte_v9_macos_gte_v1010():
     if "wispr" in ua_str:
         return welcome_or_serve_template("hotspot-detect.html")
 
-    return authorise_client()
+    return add_authorised_client()
 
 
 def cp_check_status_no_content():
@@ -220,7 +220,7 @@ def cp_check_status_no_content():
     if is_authorised_client(source_ip):
         return Response(status=204)
 
-    return authorise_client(source_ip, delay_registration_seconds)
+    return add_authorised_client(source_ip, delay_registration_seconds)
 
 
 def cp_check_amazon_kindle_fire():
@@ -237,14 +237,12 @@ def cp_check_windows():
     return welcome_or_serve_template("ncsi.txt")
 
 
-def forget_client():
+def remove_authorised_client(ip_addr_str=None):
     """Forgets that a client has been seen recently to allow running tests"""
-    # XXX how can we unschedule delayed registrations
     source_ip = request.headers["X-Forwarded-For"]
     if source_ip in _client_map:
         del _client_map[source_ip]
 
-    # Is this an acceptable status code?
     return Response(status=204)
 
 
@@ -271,12 +269,16 @@ def setup_captive_portal_app():
                      'kindle-wifi', cp_check_amazon_kindle_fire)
     cpm.add_url_rule('/ncsi.txt',
                      'ncsi', cp_check_windows)
-    cpm.add_url_rule('/_authorise_client',
-                     'auth', authorise_client, methods=['POST'])
-    cpm.add_url_rule('/_authorise_client/<ip_addr_str>',
-                     'auth_ip', authorise_client, methods=['POST'])
-    cpm.add_url_rule('/_forget_client',
-                     'forget', forget_client)
+    # cpm.add_url_rule('/_authorised_clients',
+    #                  'auth', get_authorised_clients, methods=['GET'])
+    cpm.add_url_rule('/_authorised_clients',
+                     'auth', add_authorised_client, methods=['POST'])
+    cpm.add_url_rule('/_authorised_clients/<ip_addr_str>',
+                     'auth_ip', add_authorised_client, methods=['PUT'])
+    cpm.add_url_rule('/_authorised_clients',
+                     'deauth', remove_authorised_client, methods=['DELETE'])
+    cpm.add_url_rule('/_authorised_clients/<ip_addr_str>',
+                     'deauth_ip', remove_authorised_client, methods=['DELETE'])
     cpm.wsgi_app = ProxyFix(cpm.wsgi_app)
     return cpm
 
