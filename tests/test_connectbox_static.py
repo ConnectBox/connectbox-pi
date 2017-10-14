@@ -54,7 +54,7 @@ def getTestBaseURL():
         _testBaseURL = r.url
         # Deregister the client, so that the test case that triggered
         #  this request starts with a clean slate
-        r = requests.delete("http://%s/_forget_client" %
+        r = requests.delete("http://%s/_authorised_clients" %
                             (getTestTarget(),))
         r.raise_for_status()
     return _testBaseURL
@@ -99,6 +99,10 @@ class ConnectBoxBasicTestCase(unittest.TestCase):
 
 class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
     """Behavioural tests for the Nginx default vhost"""
+
+    # Something that we will find in the CP welcome page
+    CAPTIVE_PORTAL_SEARCH_TEXT = \
+        "<TITLE>Connected to ConnectBox Wifi</TITLE>"
 
     def setUp(self):
         """Simulate first connection
@@ -235,8 +239,11 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
         #    and allows the user to click on the link
         self.assertIn("<BODY>\nSuccess\n</BODY>", r.text)
 
+    @unittest.skip("XXX does point 5 really hold???")
     def testAndroid5CaptivePortalResponse(self):
         """Android 5 ConnectBox connection workflow
+
+        We don't advertise internet access to Android devices.
         """
         # Strictly this should be requesting
         #  http://clients3.google.com/generate_204 but answering requests for
@@ -253,7 +260,7 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
         r = requests.get("http://%s/generate_204" %
                          (getTestTarget(),), headers=headers)
         r.raise_for_status()
-        # 2. Connectbox provides response that indicates no internet
+        # 2. Connectbox replies indicating no internet access
         self.assertEquals(r.status_code, 200)
         # 3. Device send another generate_204 request within a few seconds
         r = requests.get("http://%s/generate_204" %
@@ -276,7 +283,7 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
                          (getTestTarget(),), headers=headers)
         r.raise_for_status()
         # 6. Connectbox provides a response with a text-URL
-        self.assertIn("<TITLE>Connected to ConnectBox Wifi</TITLE>", r.text)
+        self.assertIn(self.CAPTIVE_PORTAL_SEARCH_TEXT, r.text)
         # We don't want to show URLs in this captive portal browser
         self.assertNotIn("href=", r.text.lower())
 
@@ -324,11 +331,11 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
                          (getTestTarget(),), headers=headers)
         r.raise_for_status()
         # 6. Connectbox provides a response with a text-URL
-        self.assertIn("<TITLE>Connected to ConnectBox Wifi</TITLE>", r.text)
+        self.assertIn(self.CAPTIVE_PORTAL_SEARCH_TEXT, r.text)
         # We don't want to show URLs in this captive portal browser
         self.assertNotIn("href=", r.text.lower())
 
-    @unittest.skip("Skipped as some android 6 devices have different workflow")
+    @unittest.skip("Reimplement as iOS because Androids don't ever register")
     def testUnrecognisedRequestsDoNotAuthoriseClient(self):
         """We don't want to authorise clients when they request an offsite URL
 
@@ -373,74 +380,77 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
     def testAndroid7FallbackCaptivePortalResponse(self):
         """Return a 204 status code to bypass Android captive portal login"""
         # Strictly this should be requesting
-        #  http://clients3.google.com/gen_204 but answering requests for
-        #  that site requires DNS mods, which can't be assumed for all
-        #  people running these tests, so let's just poke for the page using
-        #  the IP address of the server so we hit the default server, where
-        #  this 204 redirection is active.
+        #  http://clients3.google.com/gen_204 but it's easier to test, and
+        #  functionally equivalent to send to the default vhost
         r = requests.get("http://%s/gen_204" % (getTestTarget(),))
         r.raise_for_status()
+        # 2. Connectbox provides response that indicates no internet
+        #    We also make sure we get a captive portal page on this
+        #    request.
+        self.assertEquals(r.status_code, 200)
+        self.assertIn(self.CAPTIVE_PORTAL_SEARCH_TEXT, r.text)
+        # 3. Device tries again
         r = requests.get("http://%s/gen_204" % (getTestTarget(),))
         r.raise_for_status()
-        self.assertEquals(r.status_code, 204)
+        # 4. Connectbox provides response that indicates no internet
+        #    confirming that the device is not being registered
+        #    We also make sure we get a captive portal page on this
+        #    request.
+        self.assertEquals(r.status_code, 200)
+        self.assertIn(self.CAPTIVE_PORTAL_SEARCH_TEXT, r.text)
 
     def testWindowsCaptivePortalResponse(self):
-        """Return ncsi.txt to bypass windows captive portal login page"""
+        """Bounce Windows to the captive portal welcome page"""
         r = requests.get("http://%s/ncsi.txt" % (getTestTarget(),))
         r.raise_for_status()
+        # Make sure we get a portal page
+        self.assertEqual(r.status_code, 200)
+        self.assertIn(self.CAPTIVE_PORTAL_SEARCH_TEXT, r.text)
         r = requests.get("http://%s/ncsi.txt" % (getTestTarget(),))
         r.raise_for_status()
-        self.assertEquals("Microsoft NCSI", r.text)
+        # Make sure we still get a portal page on this subsequent request
+        self.assertEqual(r.status_code, 200)
+        self.assertIn(self.CAPTIVE_PORTAL_SEARCH_TEXT, r.text)
 
-    def testAmazonKindleCaptivePortalResponse(self):
-        """Return wifistub.html to bypass kindle captive portal login page"""
+    def testAmazonKindleFireCaptivePortalResponse(self):
+        """Bounce Kindle Fire to the captive portal welcome page"""
         r = requests.get("http://%s/kindle-wifi/wifistub.html" %
                          (getTestTarget(),))
         r.raise_for_status()
+        # Make sure we get a portal page
+        self.assertEqual(r.status_code, 200)
+        self.assertIn(self.CAPTIVE_PORTAL_SEARCH_TEXT, r.text)
         r = requests.get("http://%s/kindle-wifi/wifistub.html" %
                          (getTestTarget(),))
         r.raise_for_status()
-        self.assertIn("81ce4465-7167-4dcb-835b-dcc9e44c112a", r.text)
-
-    def testFacebookMessengerConnectivityResponse(self):
-        """Return 204 status code to bypass FB messenger connectivity check"""
-        r = requests.get("http://%s/mobile/status.php" % (getTestTarget(),))
-        r.raise_for_status()
-        r = requests.get("http://%s/mobile/status.php" % (getTestTarget(),))
-        r.raise_for_status()
-        self.assertEquals(r.status_code, 204)
+        # Make sure we still get a portal page on this subsequent request
+        self.assertEqual(r.status_code, 200)
+        self.assertIn(self.CAPTIVE_PORTAL_SEARCH_TEXT, r.text)
 
     def testUnknownLocalPageResponse(self):
-        """A hit on an unregistered local route redirects to ConnectBox"""
+        """
+        A hit on an unregistered local page redirects to the ConnectBox content
+        """
         r = requests.get("http://%s/unknown_local_page" % (getTestTarget(),),
                          allow_redirects=False)
         r.raise_for_status()
         self.assertTrue(r.is_redirect)
         self.assertEquals(getTestBaseURL(), r.headers["Location"])
 
-    @unittest.skip("Workflow unclear atm")
     def testUnknownNonLocalPageResponse(self):
-        """Two hits on an unregistered remote route redirects to ConnectBox"""
-        req = requests.Request(
-            "GET",
-            "http://%s/unknown_non_local_page" % (getTestTarget(),)
-        )
-        req.headers["Host"] = "non-local-host.com"
+        """
+        A hit on a remote page redirects to the ConnectBox content
+        """
         s = requests.Session()
-        r = s.send(req.prepare())
+        r = s.request(
+            "GET",
+            "http://%s/unknown_non_local_page" % (getTestTarget(),),
+            allow_redirects=False,
+            headers={"Host": "non-local-host.com"},
+        )
         r.raise_for_status()
-        self.assertIn(WELCOME_TEMPLATE_TEXT_SAMPLE, r.text)
-        #XXX Unsure why this second request is failing
-        #req = requests.Request(
-        #    "GET",
-        #    "http://%s/unknown_non_local_page" % (getTestTarget(),)
-        #)
-        #req.headers["Host"] = "non-local-host.com"
-        #req.allow_redirects = False
-        #s = requests.Session()
-        #r = s.send(req.prepare())
-        #self.assertTrue(r.is_redirect)
-        #self.assertIn(FINAL_302_PAGE_SUFFIX, r.headers["Location"])
+        self.assertTrue(r.is_redirect)
+        self.assertEquals(getTestBaseURL(), r.headers["Location"])
 
 
 class ConnectBoxAPITestCase(unittest.TestCase):

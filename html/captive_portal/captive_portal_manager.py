@@ -1,6 +1,23 @@
+"""
+A limited Captive Portal implementation
+
+Does the minimum required to:
+* Get basic instructions in front of the user about where to find content,
+  using the device's default captive portal viewer.
+* Allow the user to stay joined to the ConnectBox AP (on some devices,
+  we must provide responses to indicate that the ConnectBox provides
+  internet access, otherwise the captive portal viewer will not allow
+  the user to remain joined to the network)
+* Prevent the user from attempting to browse ConnectBox content in the
+  reduced-functionality captive portal browser (CP browsers vary across
+  devices, but can lack important functionality like javascript, video
+  and audio players and PDF viewing).
+* Redirect requests to other domains back to the ConnectBox content (this
+  has shortcomings with HSTS and HTTPS certs, but we're providing this
+  functionality for the time being
+"""
+
 import datetime
-import threading
-import time
 import requests
 from flask import Flask, redirect, render_template, request, Response
 from ua_parser import user_agent_parser
@@ -17,7 +34,6 @@ LINK_OPS = {
     "JS_HREF_BLANK_CLICK": "javascript_href_blank_click",
 }
 _client_map = {}
-_delayed_registration_times = {}
 ANDROID_V6_REGISTRATION_DELAY_SECS = 180
 DHCP_FALLBACK_LEASE_SECS = 86400  # 1 day
 REAL_HOST_REDIRECT_URL = "http://127.0.0.1/to-hostname"
@@ -59,9 +75,19 @@ def get_dhcp_lease_secs():
     return _dhcp_lease_secs
 
 
-def is_authorised_client(ip_addr_str):
+def is_recent_authorised_client(ip_addr_str):
+    """
+    Checks whether this IP has gone through this CP recently
+
+    We want to avoid bringing up the captive portal browser when a
+    user rejoins the network after a short break because spamminess
+    is bad, and they shouldn't need a pointer to the content (which
+    is what the captive portal browser provides).
+
+    We base our recency criteria on the DHCP lease time
+    """
     diff_client_recency_criteria = \
-            datetime.timedelta(seconds=get_dhcp_lease_secs())
+        datetime.timedelta(seconds=get_dhcp_lease_secs())
     last_registered_time = _client_map.get(ip_addr_str)
     if last_registered_time:
         time_since_reg = datetime.datetime.now() - last_registered_time
@@ -93,46 +119,22 @@ def get_link_type(ua_str):
     return LINK_OPS["TEXT"]
 
 
-def add_authorised_client(ip_addr_str=None, delay_seconds=0):
+def add_authorised_client(ip_addr_str=None):
     if ip_addr_str is None:
         ip_addr_str = request.headers["X-Forwarded-For"]
 
-    if delay_seconds == 0:
-        # Just do it
-        register_client(ip_addr_str)
-    else:
-        # Don't allow more than one delayed registration per IP address
-        #  (don't run the risk of DoS'ing the server)
-        reg_time = _delayed_registration_times.get(ip_addr_str, 0)
-        if reg_time <= time.time():
-            # We don't have a pending registration so schedule one
-            _delayed_registration_times[ip_addr_str] = time.time()
-            t = threading.Timer(delay_seconds,
-                                register_client,
-                                args=[ip_addr_str])
-            t.start()
-
-    return render_template("connected.html",
-                           connectbox_url=get_real_connectbox_url(),
-                           LINK_OPS=LINK_OPS,
-                           link_type=get_link_type(
-                               request.headers.get("User-agent", "")))
+    register_client(ip_addr_str)
+    return show_captive_portal_welcome()
 
 
 def register_client(ip_addr_str):
-    # Remove any delayed registration timestamps so we don't leak
-    try:
-        del _delayed_registration_times[ip_addr_str]
-    except KeyError:
-        pass
-
-    # Now register
     _client_map[ip_addr_str] = datetime.datetime.now()
 
 
 def welcome_or_serve_template(template):
     source_ip = request.headers["X-Forwarded-For"]
-    if is_authorised_client(source_ip):
+    if is_recent_authorised_client(source_ip):
+        # Update last-seen time
         register_client(source_ip)
         return render_template(template)
 
@@ -165,78 +167,6 @@ def cp_check_ios_gte_v9_macos_gte_v1010():
     return add_authorised_client()
 
 
-def cp_check_status_no_content():
-    """Captive Portal Check for devices and apps wanting a 204
-
-    # noqa (ignore line length check for URLs)
-
-    generate_204 is a standard Android check
-    See: https://www.chromium.org/chromium-os/chromiumos-design-docs/network-portal-detection
-
-    gen_204 is a fallback method introduced in Android 7
-    See: https://android.googlesource.com/platform/frameworks/base/+/master/services/core/java/com/android/server/connectivity/NetworkMonitor.java#92
-
-    /mobile/status.php satisfies facebook messenger connectivity check
-    """
-    source_ip = request.headers["X-Forwarded-For"]
-    ua_str = request.headers.get("User-agent", "")
-    user_agent = user_agent_parser.Parse(ua_str)
-    # Android uses a Dalvik agent for captive portal detection, but uses
-    #  a Chrome webview to display the welcome/terms page so we want to
-    #  return a web page only when we get a request from that Chrome view
-    # We don't need to check whether the user is authorised because they
-    #  will only get prompted to sign into the network when they don't
-    #  get a 204 response at some stage in the recent past
-    if user_agent["os"]["family"] == "Android" and \
-            user_agent["user_agent"]["family"] == "Chrome" and \
-            user_agent["os"]["major"] == "5":
-        return render_template(
-            "connected.html",
-            connectbox_url=get_real_connectbox_url(),
-            LINK_OPS=LINK_OPS,
-            link_type=get_link_type(ua_str),
-            ua_str=ua_str,
-            req_url=request.url,
-        )
-
-    # XXX - temporarily comment out this block, and make the above block
-    #       apply to android 5 only, while we sort out a workflow that works
-    #       reliably for non v5 android versions.
-    # Android 6 and above automatically close the captive portal browser
-    #  once a 204 is received, so we kick off a timer to authorise the
-    #  client after a little while, and provide 200 responses until then.
-    # Note that this check only applies to the Dalvik captive portal
-    #  checker, not the webview
-    # XXX robustificate pls in the face of missing fields (or check whether
-    #  the user agent parser robustificates for us
-    # if user_agent["user_agent"]["family"] == "Android" and \
-    #         int(user_agent["user_agent"]["major"]) >= 6:
-    #     # schedule delayed registration
-    #     delay_registration_seconds = ANDROID_V6_REGISTRATION_DELAY_SECS
-    # else:
-    #     delay_registration_seconds = 0
-    delay_registration_seconds = 0
-
-    if is_authorised_client(source_ip):
-        return Response(status=204)
-
-    return add_authorised_client(source_ip, delay_registration_seconds)
-
-
-def cp_check_amazon_kindle_fire():
-    """Captive portal check for Amazon Kindle Fire
-    """
-    return welcome_or_serve_template("wifistub.html")
-
-
-def cp_check_windows():
-    """Captive portal check for Windows
-
-    See: https://technet.microsoft.com/en-us/library/cc766017(v=ws.10).aspx
-    """
-    return welcome_or_serve_template("ncsi.txt")
-
-
 def remove_authorised_client(ip_addr_str=None):
     """Forgets that a client has been seen recently to allow running tests"""
     source_ip = request.headers["X-Forwarded-For"]
@@ -244,6 +174,16 @@ def remove_authorised_client(ip_addr_str=None):
         del _client_map[source_ip]
 
     return Response(status=204)
+
+
+def show_captive_portal_welcome():
+    ua_str = request.headers.get("User-agent", "")
+    return render_template(
+        "connected.html",
+        connectbox_url=get_real_connectbox_url(),
+        LINK_OPS=LINK_OPS,
+        link_type=get_link_type(ua_str),
+    )
 
 
 def setup_captive_portal_app():
@@ -259,16 +199,22 @@ def setup_captive_portal_app():
                      cp_check_ios_lt_v9_macos_lt_v1010)
     cpm.add_url_rule('/hotspot-detect.html',
                      'hotspot-detect', cp_check_ios_gte_v9_macos_gte_v1010)
-    cpm.add_url_rule('/generate_204',
-                     'generate_204', cp_check_status_no_content)
-    cpm.add_url_rule('/gen_204',
-                     'gen_204', cp_check_status_no_content)
-    cpm.add_url_rule('/mobile/status.php',
-                     'status', cp_check_status_no_content)
-    cpm.add_url_rule('/kindle-wifi/wifistub.html',
-                     'kindle-wifi', cp_check_amazon_kindle_fire)
-    cpm.add_url_rule('/ncsi.txt',
-                     'ncsi', cp_check_windows)
+    # Android <= v6 (possibly later too)
+    # noqa: See: https://www.chromium.org/chromium-os/chromiumos-design-docs/network-portal-detection
+    cpm.add_url_rule('/generate_204', 'welcome',
+                     show_captive_portal_welcome)
+    # Fallback method introduced in Android 7
+    # See:
+    # noqa: https://android.googlesource.com/platform/frameworks/base/+/master/services/core/java/com/android/server/connectivity/NetworkMonitor.java#92
+    cpm.add_url_rule('/gen_204', 'welcome',
+                     show_captive_portal_welcome)
+    # Captive Portal check for Amazon Kindle Fire
+    cpm.add_url_rule('/kindle-wifi/wifistub.html', 'welcome',
+                     show_captive_portal_welcome)
+    # Captive Portal check for Windows
+    # See: https://technet.microsoft.com/en-us/library/cc766017(v=ws.10).aspx
+    cpm.add_url_rule('/ncsi.txt', 'welcome',
+                     show_captive_portal_welcome)
     # cpm.add_url_rule('/_authorised_clients',
     #                  'auth', get_authorised_clients, methods=['GET'])
     cpm.add_url_rule('/_authorised_clients',
