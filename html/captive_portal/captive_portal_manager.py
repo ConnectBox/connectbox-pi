@@ -162,7 +162,7 @@ def cp_check_ios_gte_v9_macos_gte_v1010():
     """
     ua_str = request.headers.get("User-agent", "")
     if "wispr" in ua_str:
-        return welcome_or_serve_template("hotspot-detect.html")
+        return welcome_or_serve_template("success.html")
 
     return add_authorised_client()
 
