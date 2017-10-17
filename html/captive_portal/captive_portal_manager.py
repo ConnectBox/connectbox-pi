@@ -37,6 +37,7 @@ _client_map = {}
 ANDROID_V6_REGISTRATION_DELAY_SECS = 180
 DHCP_FALLBACK_LEASE_SECS = 86400  # 1 day
 REAL_HOST_REDIRECT_URL = "http://127.0.0.1/to-hostname"
+_real_connectbox_url = None
 
 
 def redirect_to_connectbox():
@@ -55,9 +56,12 @@ def get_real_connectbox_url():
     an ugly URL like http://a.b.c.d/some-redirect in the captive portal
     page. So we use the value from that redirect to present a nice URL.
     """
-    resp = requests.get(REAL_HOST_REDIRECT_URL,
-                        allow_redirects=False)
-    return resp.headers["Location"]
+    global _real_connectbox_url
+    if not _real_connectbox_url:
+        resp = requests.get(REAL_HOST_REDIRECT_URL,
+                            allow_redirects=False)
+        _real_connectbox_url = resp.headers["Location"]
+    return _real_connectbox_url
 
 
 def get_dhcp_lease_secs():
@@ -230,7 +234,6 @@ def setup_captive_portal_app():
 
 
 app = setup_captive_portal_app()  # pylint: disable=C0103
-_real_connectbox_url = get_real_connectbox_url()
 _dhcp_lease_secs = get_dhcp_lease_secs()
 
 

@@ -285,9 +285,9 @@ function reload_nginx () {
   fi
 
   # gunicorn gets connectbox hostname from an nginx response so restart
-  #  gunicorn before we reload nginx
-  systemctl restart gunicorn
+  #  gunicorn after we reload nginx
   systemctl reload nginx
+  systemctl restart gunicorn
 
   if [ $? -ne 0 ]
   then
