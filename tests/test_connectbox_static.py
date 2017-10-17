@@ -239,7 +239,6 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
         #    and allows the user to click on the link
         self.assertIn("<BODY>\nSuccess\n</BODY>", r.text)
 
-    @unittest.skip("XXX does point 5 really hold???")
     def testAndroid5CaptivePortalResponse(self):
         """Android 5 ConnectBox connection workflow
 
@@ -266,12 +265,10 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
         r = requests.get("http://%s/generate_204" %
                          (getTestTarget(),), headers=headers)
         r.raise_for_status()
-        # 4. Connectbox replies that internet access is available.
-        self.assertEquals(r.status_code, 204)
-        # 5. On receipt of a 204 soon after a 200, the device shows a
-        #    "Sign-in to network" notification. Counter-intuitively, if the
-        #    device continues to get 200 replies, it never shows this
-        #    notification.
+        # 4. Connectbox replies that internet access is still not available
+        self.assertEquals(r.status_code, 200)
+        # 5. On receipt of something other than a 204, the device shows a
+        #    "Sign-in to network" notification.
         #    We assume that the user responds to this notification, which
         #    causes the Android captive portal browser to send a request
         #    to the generate_204 URL
@@ -282,7 +279,9 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
         r = requests.get("http://%s/generate_204" %
                          (getTestTarget(),), headers=headers)
         r.raise_for_status()
-        # 6. Connectbox provides a response with a text-URL
+        # 6. Connectbox provides a response with a text-URL and still
+        #    indicating that internet access isn't available
+        self.assertEquals(r.status_code, 200)
         self.assertIn(self.CAPTIVE_PORTAL_SEARCH_TEXT, r.text)
         # We don't want to show URLs in this captive portal browser
         self.assertNotIn("href=", r.text.lower())
