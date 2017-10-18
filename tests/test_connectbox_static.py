@@ -48,7 +48,8 @@ def getTestBaseURL():
                           (getTestTarget(),),)
         r.raise_for_status()
         # bounce through the 302, and retrieve the base connectbox page
-        r = requests.get("http://%s" % (getTestTarget(),),)
+        r = requests.get("http://%s/_redirect_to_connectbox" %
+                         (getTestTarget(),),)
         r.raise_for_status()
         # and this is the ConnectBox base URL that we want
         _testBaseURL = r.url
@@ -125,13 +126,12 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
                             (getTestTarget(),))
         r.raise_for_status()
 
-    def testBaseRedirect(self):
-        """A hit on the index redirects to ConnectBox"""
+    def testNoBaseRedirect(self):
+        """A hit on the index does not redirect to ConnectBox"""
         r = requests.get("http://%s" % (getTestTarget(),),
                          allow_redirects=False)
         r.raise_for_status()
-        self.assertTrue(r.is_redirect)
-        self.assertEquals(getTestBaseURL(), r.headers["Location"])
+        self.assertFalse(r.is_redirect)
 
     def testIOS9CaptivePortalResponse(self):
         """iOS9 ConnectBox connection workflow"""
@@ -411,17 +411,16 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
 
     def testUnknownLocalPageResponse(self):
         """
-        A hit on an unregistered local page redirects to the ConnectBox content
+        An unregistered local page hit does not redirect to ConnectBox content
         """
         r = requests.get("http://%s/unknown_local_page" % (getTestTarget(),),
                          allow_redirects=False)
         r.raise_for_status()
-        self.assertTrue(r.is_redirect)
-        self.assertEquals(getTestBaseURL(), r.headers["Location"])
+        self.assertFalse(r.is_redirect)
 
     def testUnknownNonLocalPageResponse(self):
         """
-        A hit on a remote page redirects to the ConnectBox content
+        A remote page hit does not redirect to ConnectBox content
         """
         s = requests.Session()
         r = s.request(
@@ -431,8 +430,7 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
             headers={"Host": "non-local-host.com"},
         )
         r.raise_for_status()
-        self.assertTrue(r.is_redirect)
-        self.assertEquals(getTestBaseURL(), r.headers["Location"])
+        self.assertFalse(r.is_redirect)
 
 
 class ConnectBoxAPITestCase(unittest.TestCase):

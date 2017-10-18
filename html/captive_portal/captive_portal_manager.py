@@ -12,9 +12,6 @@ Does the minimum required to:
   reduced-functionality captive portal browser (CP browsers vary across
   devices, but can lack important functionality like javascript, video
   and audio players and PDF viewing).
-* Redirect requests to other domains back to the ConnectBox content (this
-  has shortcomings with HSTS and HTTPS certs, but we're providing this
-  functionality for the time being
 """
 
 import datetime
@@ -34,7 +31,6 @@ LINK_OPS = {
     "JS_HREF_BLANK_CLICK": "javascript_href_blank_click",
 }
 _client_map = {}
-ANDROID_V6_REGISTRATION_DELAY_SECS = 180
 DHCP_FALLBACK_LEASE_SECS = 86400  # 1 day
 REAL_HOST_REDIRECT_URL = "http://127.0.0.1/to-hostname"
 _real_connectbox_url = None
@@ -192,8 +188,6 @@ def show_captive_portal_welcome():
 
 def setup_captive_portal_app():
     cpm = Flask(__name__)
-    cpm.add_url_rule('/',
-                     'index', redirect_to_connectbox)
     cpm.add_url_rule('/success.html',
                      'success',
                      cp_check_ios_lt_v9_macos_lt_v1010)
@@ -229,6 +223,8 @@ def setup_captive_portal_app():
                      'deauth', remove_authorised_client, methods=['DELETE'])
     cpm.add_url_rule('/_authorised_clients/<ip_addr_str>',
                      'deauth_ip', remove_authorised_client, methods=['DELETE'])
+    cpm.add_url_rule('/_redirect_to_connectbox',
+                     'redirect', redirect_to_connectbox)
     cpm.wsgi_app = ProxyFix(cpm.wsgi_app)
     return cpm
 
@@ -242,8 +238,8 @@ _dhcp_lease_secs = get_dhcp_lease_secs()
 #  the decorator.
 @app.errorhandler(404)
 def default_view(_):
-    """Handle all URLs and send them to the welcome page"""
-    return redirect_to_connectbox()
+    """Handle all URLs and send them to the captive portal welcome page"""
+    return show_captive_portal_welcome()
 
 
 if __name__ == "__main__":
