@@ -334,47 +334,30 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
         # We don't want to show URLs in this captive portal browser
         self.assertNotIn("href=", r.text.lower())
 
-    @unittest.skip("Reimplement as iOS because Androids don't ever register")
     def testUnrecognisedRequestsDoNotAuthoriseClient(self):
-        """We don't want to authorise clients when they request an offsite URL
+        """We don't want to authorise clients when they request an unknown URL
 
-        We do want to provide a redirect. Based on Android 6 workflow because
-        Android 6 has a delayed authorisation workflow, so it' easier to test.
+        We do want to provide a redirect. Based on iOS workflow, given that's
+        one of the few where we actually store state.
         """
-        # 1. Device sends generate_204 request
+        # 1. Device sends wispr hotspot-detect.html request
         headers = requests.utils.default_headers()
-        # This is the UA from a Nexus 7 phone, but let's assume that it's
-        #  representative of over Android 6 (marshmallow) devices
-        headers.update({"User-Agent": "Dalvik/2.1.0 (Linux; U; Android 6.0.1; "
-                        "Nexus 7 Build/MOB30X)"})
-        r = requests.get("http://%s/generate_204" %
+        # This is the UA from iOS 10.3.1 but let's assume it's representative
+        headers.update({"User-Agent": "CaptiveNetworkSupport-346.50.1 wispr"})
+        r = requests.get("http://%s/hotspot-detect.html" %
                          (getTestTarget(),), headers=headers)
         r.raise_for_status()
-        # 2. Connectbox provides response that indicates no internet
-        #    but schedules access to be granted after
-        #    ANDROID_V6_REGISTRATION_DELAY_SECS. We don't want to wait that
-        #    long during a test run, so we'll just assume that it works.
-        self.assertEquals(r.status_code, 200)
-        # 3. Device sends a request for an unrecognised URL (say favicon.ico
-        #    requested by the captive portal browser, though the user agent
-        #    isn't actually important in this case)
-        headers.update({"User-Agent": "Mozilla/5.0 (Linux; Android 6.0.1; "
-                        "Nexus 7 Build/MOB30X; wv) AppleWebKit/537.36 "
-                        "(KHTML, like Gecko) Version/4.0 Chrome/61.0.3163.98 "
-                        "Safari/537.36"})
+        # 2. We provide response that indicates no internet, causing
+        #   captive portal browser to be opened
+        self.assertNotIn("<BODY>\nSuccess\n</BODY>", r.text)
+        # 3. Request another URL from the site, but one that isn't a valid
+        #    flask route i.e. testing unknown file workflow
         r = requests.get("http://%s/favicon.ico" %
                          (getTestTarget(),), headers=headers)
         r.raise_for_status()
-        # 4. Connectbox replies that internet access is still not available
-        self.assertEquals(r.status_code, 200)
-        # 5. Do a final generate_204 request.
-        headers.update({"User-Agent": "Dalvik/2.1.0 (Linux; U; Android 6.0.1; "
-                        "Nexus 7 Build/MOB30X)"})
-        r = requests.get("http://%s/generate_204" %
-                         (getTestTarget(),), headers=headers)
-        r.raise_for_status()
-        # 6. Connectbox replies that internet access is still not available
-        self.assertEquals(r.status_code, 200)
+        # 4. Connectbox should still provide a response indicating no
+        #    internet
+        self.assertNotIn("<BODY>\nSuccess\n</BODY>", r.text)
 
     def testAndroid7FallbackCaptivePortalResponse(self):
         """Return a 204 status code to bypass Android captive portal login"""
