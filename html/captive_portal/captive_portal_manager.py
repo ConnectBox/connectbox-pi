@@ -186,12 +186,6 @@ def show_captive_portal_welcome():
     )
 
 
-def samsung_j3_test():
-    # see if we can work out what the j3 is wanting
-    # conf.json implies that it wants json, so let's give it something
-    return Response('{}', mimetype='application/json')
-
-
 def setup_captive_portal_app():
     cpm = Flask(__name__)
     cpm.add_url_rule('/success.html',
@@ -231,8 +225,6 @@ def setup_captive_portal_app():
                      'deauth_ip', remove_authorised_client, methods=['DELETE'])
     cpm.add_url_rule('/_redirect_to_connectbox',
                      'redirect', redirect_to_connectbox)
-    cpm.add_url_rule('/conf.json',
-                     'samsung_j3_test', samsung_j3_test)
     cpm.wsgi_app = ProxyFix(cpm.wsgi_app)
     return cpm
 
