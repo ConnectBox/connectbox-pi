@@ -208,9 +208,7 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
 
     ConnectBoxApp.api.getProperty('channel', function (result, code, message) {
       if (result) {
-        // the channel number is 1-based int, but the selectedIndex of the
-        //  HTMLSelectedElement is 0-based, so we subtract 1
-        $('#input_channel')[0].selectedIndex = result[0] - 1
+        $('#input_channel').val(result[0])
       } else {
         showError('Error reading channel', parseErrorMessage(message))
       }
