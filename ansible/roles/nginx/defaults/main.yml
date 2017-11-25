@@ -9,7 +9,7 @@ nginx_enabled_vhosts_path: /etc/nginx/sites-enabled
 interface_type: icon_only
 nginx_vhost_file_icon_only: connectbox_icon-only.conf
 nginx_vhost_file_static_site: connectbox_static-site.conf
-nginx_vhost_file_captive_portal: connectbox_captive-portal.conf
+nginx_vhost_file_captive_portal: connectbox_captive_portal.conf
 
 # Mapping interface type to the actual vhost file used by nginx
 interface_type_files:

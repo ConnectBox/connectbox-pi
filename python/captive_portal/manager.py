@@ -186,8 +186,7 @@ def show_captive_portal_welcome():
     )
 
 
-def setup_captive_portal_app():
-    cpm = Flask(__name__)
+def setup_captive_portal_app(cpm):
     cpm.add_url_rule('/success.html',
                      'success',
                      cp_check_ios_lt_v9_macos_lt_v1010)
@@ -226,22 +225,5 @@ def setup_captive_portal_app():
     cpm.add_url_rule('/_redirect_to_connectbox',
                      'redirect', redirect_to_connectbox)
     cpm.wsgi_app = ProxyFix(cpm.wsgi_app)
-    return cpm
 
-
-app = setup_captive_portal_app()  # pylint: disable=C0103
-_dhcp_lease_secs = get_dhcp_lease_secs()
-
-
-# There's no simple way to set an error handler without using a decorator
-#  but that requires app to be defined at the top level, and before use of
-#  the decorator.
-@app.errorhandler(404)
-def default_view(_):
-    """Handle all URLs and send them to the captive portal welcome page"""
-    return show_captive_portal_welcome()
-
-
-if __name__ == "__main__":
-    # XXX debug should be off for non-development releases
-    app.run(host='0.0.0.0', debug=True)
+_dhcp_lease_secs = 120 #get_dhcp_lease_secs()

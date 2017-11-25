@@ -589,3 +589,115 @@ class ConnectBoxAPITestCase(unittest.TestCase):
         # EM DASH codepoint is a 3 byte character
         # This SSID set should be rejected
         self._testSSIDSetWithLength(u'\N{EM DASH}' * 11)
+
+class ConnectBoxChatTestCase(unittest.TestCase):
+    CHAT_MESSAGES_URL = "%s/chat/messages" % (getTestBaseURL())
+
+    @classmethod
+    def setUpClass(cls):
+        pass
+
+    @classmethod
+    def tearDownClass(cls):
+        pass
+
+    def test_get_messages(self):
+        handle = "Foo"
+        body = "message 1"
+        req = requests.post(self.CHAT_MESSAGES_URL, json={"handle": handle, "body": body})
+        req.raise_for_status()
+
+        response = req.json()
+        self.assertTrue('result' in response)
+        message = response['result']
+        self.assertTrue('id' in message)
+        id1 = message['id']
+
+        body = "message 2"
+        req = requests.post(self.CHAT_MESSAGES_URL, json={"handle": handle, "body": body})
+        req.raise_for_status()
+
+        response = req.json()
+        self.assertTrue('result' in response)
+        message = response['result']
+        self.assertTrue('id' in message)
+        id2 = message['id']
+
+        req = requests.get(self.CHAT_MESSAGES_URL)
+        response = req.json()
+
+        self.assertTrue('result' in response)
+        messages = response['result']
+        ids = []
+        for msg in messages:
+            self.assertTrue('id' in msg)
+            self.assertTrue('timestamp' in msg)
+            self.assertTrue('handle' in msg)
+            self.assertTrue('body' in msg)
+            ids.append(msg['id'])
+
+        self.assertTrue(id1 in ids)
+        self.assertTrue(id2 in ids)
+
+        req = requests.get('%s?max_id=%d' % (self.CHAT_MESSAGES_URL, id2))
+        response = req.json()
+
+        self.assertTrue('result' in response)
+        messages = response['result']
+        ids = []
+        for msg in messages:
+            self.assertTrue('id' in msg)
+            self.assertTrue('timestamp' in msg)
+            self.assertTrue('handle' in msg)
+            self.assertTrue('body' in msg)
+            ids.append(msg['id'])
+
+        self.assertFalse(id1 in ids)
+        self.assertTrue(id2 in ids)
+
+    def test_add_message(self):
+        handle = "Foo"
+        body = "message 1"
+        req = requests.post(self.CHAT_MESSAGES_URL, json={"handle": handle, "body": body})
+        req.raise_for_status()
+
+        response = req.json()
+        self.assertTrue('result' in response)
+        message = response['result']
+        self.assertTrue('id' in message)
+        self.assertTrue('timestamp' in message)
+        self.assertTrue('handle' in message)
+        self.assertTrue('body' in message)
+        self.assertEqual(message['handle'], handle)
+        self.assertEqual(message['body'], body)
+        id1 = message['id']
+
+        body = "message 2"
+        req = requests.post(self.CHAT_MESSAGES_URL, json={"handle": handle, "body": body})
+        req.raise_for_status()
+
+        response = req.json()
+        self.assertTrue('result' in response)
+        message = response['result']
+        self.assertTrue('id' in message)
+        self.assertTrue('timestamp' in message)
+        self.assertTrue('handle' in message)
+        self.assertTrue('body' in message)
+        self.assertEqual(message['handle'], handle)
+        self.assertEqual(message['body'], body)
+        id2 = message['id']
+        self.assertTrue(id2 > id1)
+
+    def test_update_message(self):
+        req = requests.put(self.CHAT_MESSAGES_URL, json={"handle": "Foo", "body": "message 1"})
+
+        self.assertEquals(req.status_code, 405)
+
+    def test_expire_messages(self):
+        req = requests.delete(self.CHAT_MESSAGES_URL)
+        req.raise_for_status()
+
+        response = req.json()
+        self.assertTrue('result' in response)
+
+        self.assertTrue(response['result'] >= 0)

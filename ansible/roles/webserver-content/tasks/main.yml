@@ -25,7 +25,7 @@
     mode: 0775
   with_items:
     - "{{ connectbox_default_content_root }}"
-    - "{{ connectbox_captive_portal_root }}"
+    - "{{ connectbox_app_root }}"
 
 - name: retrieve connectbox-client-repo
   git:
@@ -62,23 +62,25 @@
   tags:
     - captive_portal
 
-- name: Install packages for captive portal manager process
+- name: Install packages for connectbox server process
   pip:
-    virtualenv: "{{ connectbox_web_root }}/captive_portal_virtualenv"  # XXX Could do better?
+    virtualenv: "{{ connectbox_web_root }}/connectbox_virtualenv"  # XXX Could do better?
     name: "{{ item }}"
   with_items:
     - flask
     - ua-parser
     - gunicorn
     - requests
+    - six
+    - sqlalchemy
   tags:
     - captive_portal
 
 # Copy client interface files
 - name: Copy connectbox client interface
   synchronize:
-    src: ../html/captive_portal/
-    dest: "{{ connectbox_captive_portal_root }}"
+    src: ../python/
+    dest: "{{ connectbox_app_root }}"
   tags:
     - captive_portal
   notify:
