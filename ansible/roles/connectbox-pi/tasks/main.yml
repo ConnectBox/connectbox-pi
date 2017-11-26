@@ -109,7 +109,7 @@
 - cron:
     name: "expire chat messages"
     minute: "0,15,30,45"
-    job: "curl -XDELETE http://127.0.0.1/chat/messages > /dev/null"
+    job: "curl -XDELETE http://127.0.0.1:5000/chat/messages > /dev/null"
 
 - name: install access-log-analyzer
   git:

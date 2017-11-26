@@ -695,9 +695,5 @@ class ConnectBoxChatTestCase(unittest.TestCase):
 
     def test_expire_messages(self):
         req = requests.delete(self.CHAT_MESSAGES_URL)
-        req.raise_for_status()
 
-        response = req.json()
-        self.assertTrue('result' in response)
-
-        self.assertTrue(response['result'] >= 0)
+        self.assertEquals(req.status_code, 405)
