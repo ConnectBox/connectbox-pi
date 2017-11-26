@@ -22,6 +22,11 @@ def messages_endpoint():
         payload = request.json or {}
         result = add_message(payload)
     elif request.method == 'DELETE':
+        # Only allow cleanup from 127.0.0.1
+        if request.host != '127.0.0.1:5000':
+            res = jsonify({'result': 'Method Not Allowed'})
+            res.status_code = 405
+            return res
         result = cleanup_messages()
 
     return jsonify({'result': result})
