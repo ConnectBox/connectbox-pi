@@ -34,4 +34,4 @@ def default_view(_):
 
 if __name__ == "__main__":
     # XXX debug should be off for non-development releases
-    app.run(host='0.0.0.0', port=3333, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
