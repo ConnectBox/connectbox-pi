@@ -226,4 +226,4 @@ def setup_captive_portal_app(cpm):
                      'redirect', redirect_to_connectbox)
     cpm.wsgi_app = ProxyFix(cpm.wsgi_app)
 
-_dhcp_lease_secs = 120 #get_dhcp_lease_secs()
+_dhcp_lease_secs = get_dhcp_lease_secs()
