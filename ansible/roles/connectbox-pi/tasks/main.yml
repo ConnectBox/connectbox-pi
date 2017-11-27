@@ -106,8 +106,8 @@
       %_connectbox ALL=(ALL) NOPASSWD: /usr/local/connectbox/bin/
   notify: reload PHP
 
-- cron:
-    name: "expire chat messages"
+- name: expire chat messages
+  cron:
     minute: "0,15,30,45"
     job: "curl -XDELETE http://127.0.0.1:5000/chat/messages > /dev/null"
 
