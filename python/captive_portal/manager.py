@@ -15,6 +15,7 @@ Does the minimum required to:
 """
 
 import datetime
+import os.path
 import requests
 from flask import Flask, redirect, render_template, request, Response
 from ua_parser import user_agent_parser
@@ -68,10 +69,12 @@ def get_dhcp_lease_secs():
     # So we have a valid lease time if we can't parse the file for
     #  some reason (this shouldn't ever be necessary)
     _dhcp_lease_secs = DHCP_FALLBACK_LEASE_SECS
-    with open("/etc/dnsmasq.conf") as dnsmasq_conf:
-        for line in dnsmasq_conf:
-            if line[:10] == "dhcp_range":
-                _dhcp_lease_secs = int(line.split(",")[-1])
+    dnsmasq_file = "/etc/dnsmasq.conf"
+    if os.path.isfile(dnsmasq_file):
+        with open(dnsmasq_file) as dnsmasq_conf:
+            for line in dnsmasq_conf:
+                if line[:10] == "dhcp_range":
+                    _dhcp_lease_secs = int(line.split(",")[-1])
     return _dhcp_lease_secs
 
 
