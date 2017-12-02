@@ -11,6 +11,8 @@ def connected():
 def open_connection(conn_info):
     """ Open database connection """
     STATE['conn'] = sqlalchemy.create_engine(conn_info)
+    STATE['messages_table'] = sqlalchemy.schema.MetaData(
+        STATE['conn'], reflect=True).tables['messages']
     STATE['connected'] = True
 
 def setup():
@@ -42,12 +44,12 @@ def record_count():
         'select count(*) from messages').fetchone()
     return row[0]
 
-def delete_records(max_age=3):
+def delete_records(max_age_hours=3):
     """ Delete stale records """
 
     STATE['conn'].execute((
         'delete from messages where '
-        '24 * (julianday(\'now\') - julianday(timestamp)) > ?'), [max_age])
+        '24 * (julianday(\'now\') - julianday(timestamp)) > ?'), [max_age_hours])
 
 def query_messages(since=0, limit=25, offset=0):
     """
@@ -72,14 +74,8 @@ def insert_message(handle, message):
     """
     Insert record
     """
-    STATE['conn'].execute('INSERT INTO messages (handle, message) VALUES (?,?)', [handle, message])
-    row = STATE['conn'].execute('SELECT max(rowid) from messages').fetchone()
-    row = STATE['conn'].execute((
-        'SELECT rowid, cast(strftime(\'%s\', timestamp) as integer), '
-        'handle, message from messages where rowid = ?'), [row[0]]).fetchone()
-    message = dict()
-    message['id'] = row[0]
-    message['timestamp'] = row[1]
-    message['handle'] = row[2]
-    message['body'] = row[3]
-    return message
+    ins = STATE['messages_table'].insert().values(handle=handle, message=message)
+    res = STATE['conn'].execute(ins)
+    return {
+        'id': res.lastrowid
+    }
