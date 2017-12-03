@@ -128,7 +128,7 @@
 # Needed in several subsequent roles
 - name: install git
   apt:
-    name: git 
+    name: git
     state: present
 
 # See if we need to create a wlan0 interface when we're running in a sim
