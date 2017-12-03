@@ -602,9 +602,9 @@ class ConnectBoxChatTestCase(unittest.TestCase):
         pass
 
     def test_get_messages(self):
-        handle = "Foo"
+        nick = "Foo"
         body = "message 1"
-        req = requests.post(self.CHAT_MESSAGES_URL, json={"handle": handle, "body": body})
+        req = requests.post(self.CHAT_MESSAGES_URL, json={"nick": nick, "body": body})
         req.raise_for_status()
 
         response = req.json()
@@ -614,7 +614,7 @@ class ConnectBoxChatTestCase(unittest.TestCase):
         id1 = message['id']
 
         body = "message 2"
-        req = requests.post(self.CHAT_MESSAGES_URL, json={"handle": handle, "body": body})
+        req = requests.post(self.CHAT_MESSAGES_URL, json={"nick": nick, "body": body})
         req.raise_for_status()
 
         response = req.json()
@@ -632,7 +632,7 @@ class ConnectBoxChatTestCase(unittest.TestCase):
         for msg in messages:
             self.assertTrue('id' in msg)
             self.assertTrue('timestamp' in msg)
-            self.assertTrue('handle' in msg)
+            self.assertTrue('nick' in msg)
             self.assertTrue('body' in msg)
             ids.append(msg['id'])
 
@@ -648,7 +648,7 @@ class ConnectBoxChatTestCase(unittest.TestCase):
         for msg in messages:
             self.assertTrue('id' in msg)
             self.assertTrue('timestamp' in msg)
-            self.assertTrue('handle' in msg)
+            self.assertTrue('nick' in msg)
             self.assertTrue('body' in msg)
             ids.append(msg['id'])
 
@@ -656,9 +656,9 @@ class ConnectBoxChatTestCase(unittest.TestCase):
         self.assertTrue(id2 in ids)
 
     def test_add_message(self):
-        handle = "Foo"
+        nick = "Foo"
         body = "message 1"
-        req = requests.post(self.CHAT_MESSAGES_URL, json={"handle": handle, "body": body})
+        req = requests.post(self.CHAT_MESSAGES_URL, json={"nick": nick, "body": body})
         req.raise_for_status()
 
         response = req.json()
@@ -666,14 +666,14 @@ class ConnectBoxChatTestCase(unittest.TestCase):
         message = response['result']
         self.assertTrue('id' in message)
         self.assertTrue('timestamp' in message)
-        self.assertTrue('handle' in message)
+        self.assertTrue('nick' in message)
         self.assertTrue('body' in message)
-        self.assertEqual(message['handle'], handle)
+        self.assertEqual(message['nick'], nick)
         self.assertEqual(message['body'], body)
         id1 = message['id']
 
         body = "message 2"
-        req = requests.post(self.CHAT_MESSAGES_URL, json={"handle": handle, "body": body})
+        req = requests.post(self.CHAT_MESSAGES_URL, json={"nick": nick, "body": body})
         req.raise_for_status()
 
         response = req.json()
@@ -681,15 +681,15 @@ class ConnectBoxChatTestCase(unittest.TestCase):
         message = response['result']
         self.assertTrue('id' in message)
         self.assertTrue('timestamp' in message)
-        self.assertTrue('handle' in message)
+        self.assertTrue('nick' in message)
         self.assertTrue('body' in message)
-        self.assertEqual(message['handle'], handle)
+        self.assertEqual(message['nick'], nick)
         self.assertEqual(message['body'], body)
         id2 = message['id']
         self.assertTrue(id2 > id1)
 
     def test_update_message(self):
-        req = requests.put(self.CHAT_MESSAGES_URL, json={"handle": "Foo", "body": "message 1"})
+        req = requests.put(self.CHAT_MESSAGES_URL, json={"nick": "Foo", "body": "message 1"})
 
         self.assertEquals(req.status_code, 405)
 

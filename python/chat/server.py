@@ -2,7 +2,7 @@ from flask import jsonify, request
 import datasource
 
 def add_message(message):
-    return datasource.insert_message(message['handle'], message['body'])
+    return datasource.insert_message(message['nick'], message['body'])
 
 def get_messages(max_id=None):
     return datasource.query_messages(since=max_id)

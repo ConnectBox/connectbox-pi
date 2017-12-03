@@ -11,8 +11,6 @@ def connected():
 def open_connection(conn_info):
     """ Open database connection """
     STATE['conn'] = sqlalchemy.create_engine(conn_info)
-    STATE['messages_table'] = sqlalchemy.schema.MetaData(
-        STATE['conn'], reflect=True).tables['messages']
     STATE['connected'] = True
 
 def setup():
@@ -21,10 +19,12 @@ def setup():
     cursor.execute((
         'CREATE TABLE IF NOT EXISTS'
         ' messages (timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,'
-        ' handle varchar(256), message text)'))
+        ' nick varchar(256), message text)'))
     cursor.execute((
         'CREATE INDEX IF NOT EXISTS'
         ' timestamp_idx ON messages (timestamp)'))
+    STATE['messages_table'] = sqlalchemy.schema.MetaData(
+        STATE['conn'], reflect=True).tables['messages']
 
 def commit():
     """ Commit """
@@ -59,22 +59,22 @@ def query_messages(since=0, limit=25, offset=0):
     results = []
     for row in cursor.execute((
             'SELECT rowid, cast(strftime(\'%s\', timestamp) as integer), '
-            'handle, message FROM messages '
+            'nick, message FROM messages '
             'WHERE rowid >= ? order by timestamp desc limit ? offset ?'),
                               [since, limit, offset]):
         message = dict()
         message['id'] = row[0]
         message['timestamp'] = row[1]
-        message['handle'] = row[2]
+        message['nick'] = row[2]
         message['body'] = row[3]
         results.append(message)
     return results
 
-def insert_message(handle, message):
+def insert_message(nick, message):
     """
     Insert record
     """
-    ins = STATE['messages_table'].insert().values(handle=handle, message=message)
+    ins = STATE['messages_table'].insert().values(nick=nick, message=message)
     res = STATE['conn'].execute(ins)
     return {
         'id': res.lastrowid
