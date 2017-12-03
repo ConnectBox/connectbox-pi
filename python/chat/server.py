@@ -18,6 +18,8 @@ def messages_endpoint():
     if request.method == 'GET':
         max_id = request.args.get('max_id', 0)
         result = get_messages(max_id=max_id)
+        if max_id != 0 and not result:
+            return ('', 204)
     elif request.method == 'POST':
         payload = request.json or {}
         result = add_message(payload)

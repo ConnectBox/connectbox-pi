@@ -639,7 +639,7 @@ class ConnectBoxChatTestCase(unittest.TestCase):
         self.assertTrue(id1 in ids)
         self.assertTrue(id2 in ids)
 
-        req = requests.get('%s?max_id=%d' % (self.CHAT_MESSAGES_URL, id2))
+        req = requests.get('%s?max_id=%d' % (self.CHAT_MESSAGES_URL, (id2 - 1)))
         response = req.json()
 
         self.assertTrue('result' in response)
@@ -655,6 +655,9 @@ class ConnectBoxChatTestCase(unittest.TestCase):
         self.assertFalse(id1 in ids)
         self.assertTrue(id2 in ids)
 
+        req = requests.get('%s?max_id=%d' % (self.CHAT_MESSAGES_URL, id2))
+        self.assertEqual(req.status_code, 204)
+
     def test_add_message(self):
         nick = "Foo"
         body = "message 1"
@@ -665,11 +668,7 @@ class ConnectBoxChatTestCase(unittest.TestCase):
         self.assertTrue('result' in response)
         message = response['result']
         self.assertTrue('id' in message)
-        self.assertTrue('timestamp' in message)
-        self.assertTrue('nick' in message)
-        self.assertTrue('body' in message)
-        self.assertEqual(message['nick'], nick)
-        self.assertEqual(message['body'], body)
+
         id1 = message['id']
 
         body = "message 2"
@@ -680,20 +679,20 @@ class ConnectBoxChatTestCase(unittest.TestCase):
         self.assertTrue('result' in response)
         message = response['result']
         self.assertTrue('id' in message)
-        self.assertTrue('timestamp' in message)
-        self.assertTrue('nick' in message)
-        self.assertTrue('body' in message)
-        self.assertEqual(message['nick'], nick)
-        self.assertEqual(message['body'], body)
+
         id2 = message['id']
         self.assertTrue(id2 > id1)
 
     def test_update_message(self):
         req = requests.put(self.CHAT_MESSAGES_URL, json={"nick": "Foo", "body": "message 1"})
 
-        self.assertEquals(req.status_code, 405)
+        self.assertEqual(req.status_code, 405)
 
     def test_expire_messages(self):
         req = requests.delete(self.CHAT_MESSAGES_URL)
+        req.raise_for_status()
 
-        self.assertEquals(req.status_code, 405)
+        response = req.json()
+        self.assertTrue('result' in response)
+
+        self.assertTrue(response['result'] >= 0)

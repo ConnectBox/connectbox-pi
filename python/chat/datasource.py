@@ -60,7 +60,7 @@ def query_messages(since=0, limit=25, offset=0):
     for row in cursor.execute((
             'SELECT rowid, cast(strftime(\'%s\', timestamp) as integer), '
             'nick, message FROM messages '
-            'WHERE rowid >= ? order by timestamp desc limit ? offset ?'),
+            'WHERE rowid > ? order by timestamp desc limit ? offset ?'),
                               [since, limit, offset]):
         message = dict()
         message['id'] = row[0]
