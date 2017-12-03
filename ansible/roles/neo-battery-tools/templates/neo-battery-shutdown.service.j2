@@ -1,0 +1,10 @@
+[Unit]
+Description=ConnectBox NEO Battery Shutdown Service
+After=multi-user.target
+
+[Service]
+Type=idle
+ExecStart={{ battery_tool_virtualenv_dir }}/bin/neo_batterylevelshutdown
+
+[Install]
+WantedBy=multi-user.target

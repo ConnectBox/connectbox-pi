@@ -1,6 +1,7 @@
 ---
 dependencies:
   - bootstrap
+  - { role: neo-battery-tools, when: '"NanoPi NEO" in machine_type.stdout' }
   - dns-dhcp
   - network-interfaces
   - wifi-ap

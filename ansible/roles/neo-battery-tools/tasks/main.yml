@@ -1,0 +1,29 @@
+---
+- name: Make neo battery shutdown virtualenv directory
+  file:
+    path: "{{ battery_tool_virtualenv_dir }}"
+    state: directory
+
+- name: Setup neo battery shutdown virtualenv (python3)
+  pip:
+    virtualenv: "{{ battery_tool_virtualenv_dir }}"
+    virtualenv_python: python3
+    editable: False
+    name: git+https://github.com/ConnectBox/NEO_BatteryLevelShutdown.git
+
+- name: Copy neo battery shutdown systemd service definition
+  template:
+    src: neo-battery-shutdown.service.j2
+    dest: "/etc/systemd/system/{{ battery_tool_service_name }}"
+    mode: 0644
+    owner: root
+    group: root
+  notify:
+    - restart neo battery shutdown service
+
+# Startup has either already happened, or will happen in the handler
+- name: Enable neo battery shutdown service
+  systemd:
+    name: "{{ battery_tool_service_name }}"
+    daemon_reload: yes
+    enabled: yes
