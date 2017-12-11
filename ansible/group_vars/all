@@ -69,7 +69,7 @@ iptables_ssh_in_interface: ""
 
 firewall_v4_group_rules:
   150 redirect http:
-    - -t nat -A PREROUTING -s {{ client_facing_if_network_cidr }} tcp --dport 80 -j DNAT --to {{ client_facing_if_ip_address }}:80
+    - -t nat -A PREROUTING -s {{ client_facing_if_network_cidr }} -p tcp --dport 80 -j DNAT --to {{ client_facing_if_ip_address }}:80
   # Overriding default - we only want ssh on the wired interface
   200 allow ssh:
     - -A INPUT -p tcp {{ iptables_ssh_in_interface }} --dport ssh -j ACCEPT
