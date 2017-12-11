@@ -3,3 +3,4 @@ ansible-lint
 flake8
 Flask==0.12.1
 requests
+dnspython
