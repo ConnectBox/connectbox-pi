@@ -53,8 +53,8 @@ domain={{ hostname }}
 
 {% if developer_mode -%}
 # Enable only dns on the external facing interface
-interface=eth0
-no-dhcp-interface=eth0
+interface={{ lan_dns_if }}
+no-dhcp-interface={{ lan_dns_if }}
 {%- endif %}
 
 interface={{ client_facing_if }}

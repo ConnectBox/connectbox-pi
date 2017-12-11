@@ -19,10 +19,11 @@ Vagrant.configure(2) do |config|
     stretch.vm.provision "ansible" do |ansible|
       ansible.playbook = "ansible/site.yml"
       ansible.host_vars = {
-	      "stretch" => {
+        "stretch" => {
           "connectbox_default_hostname": "stretch-vagrant.connectbox",
           "developer_mode": true,
-	}
+          "lan_dns_if": "eth1",
+        }
       }
       ansible.skip_tags = "full-build-only"
     end
@@ -42,7 +43,8 @@ Vagrant.configure(2) do |config|
         "ubuntu" => {
           "connectbox_default_hostname": "ubuntu-vagrant.connectbox",
           "developer_mode": true,
-	}
+          "lan_dns_if": "eth1",
+        }
       }
       ansible.skip_tags = "full-build-only"
     end
