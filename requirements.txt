@@ -14,6 +14,7 @@ chardet==3.0.4            # via requests
 click==6.7                # via flask
 configparser==3.5.0       # via flake8
 cryptography==2.0.3       # via paramiko
+dnspython==1.15.0
 enum34==1.1.6             # via cryptography, flake8
 flake8==3.4.1
 flask==0.12.1

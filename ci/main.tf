@@ -102,6 +102,20 @@ resource "aws_security_group" "default" {
 		cidr_blocks = ["0.0.0.0/0"]
 	}
 
+	# DNS access from anywhere to allow testing of resolution
+	ingress {
+		from_port = 0
+		to_port = 53
+		protocol = "udp"
+		cidr_blocks = ["0.0.0.0/0"]
+	}
+	ingress {
+		from_port = 0
+		to_port = 53
+		protocol = "tcp"
+		cidr_blocks = ["0.0.0.0/0"]
+	}
+
 	# ICMP Unreachable
 	ingress {
 		from_port = 3

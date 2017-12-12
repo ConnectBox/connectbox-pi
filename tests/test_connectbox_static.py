@@ -1,3 +1,4 @@
+import dns.resolver
 import json
 import os
 import unittest
@@ -96,6 +97,45 @@ class ConnectBoxBasicTestCase(unittest.TestCase):
         r = requests.get("%s/" % (getTestBaseURL(),))
         r.raise_for_status()
         self.assertIn("<title>ConnectBox</title>", r.text)
+
+
+class ConnectBoxDNSTestCase(unittest.TestCase):
+    """Behavioural tests for the dnsmasq server"""
+
+    def setUp(self):
+        """Simulate first connection
+
+        Make sure the ConnectBox doesn't think the client has connected
+        before, so we can test captive portal behaviour
+        """
+        self.resolver = dns.resolver.Resolver()
+        self.resolver.nameservers = [getTestTarget()]
+
+    def testBasicDNSResponse(self):
+        # Test the default response
+        reply = self.resolver.query('google.com')
+
+        # Expect an A record
+        self.assertEqual(dns.rdatatype.to_text(reply.rdtype), 'A')
+
+        # ... with a single item
+        self.assertEqual(len(reply.rrset.items), 1)
+
+        # ... containing the right address
+        self.assertEqual(str(reply.rrset.items[0]), '10.129.0.1')
+
+    def testAndroidDNSResponse(self):
+        # Test the special host needed for Android Captive Portal
+        reply = self.resolver.query('connectivitycheck.gstatic.com')
+
+        # Expect an A record
+        self.assertEqual(dns.rdatatype.to_text(reply.rdtype), 'A')
+
+        # ... with a single item
+        self.assertEqual(len(reply.rrset.items), 1)
+
+        # ... containing a non-private IP
+        self.assertEqual(str(reply.rrset.items[0]), '172.217.3.174')
 
 
 class ConnectBoxDefaultVHostTestCase(unittest.TestCase):

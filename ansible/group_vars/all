@@ -16,6 +16,11 @@ client_facing_if_ip_address: 10.129.0.1
 client_facing_if_netmask: 255.255.0.0
 client_facing_if_network_cidr: 10.129.0.0/16
 
+# Used to serve dns on LAN in developer mode, principally for testing.
+# In situations where there are multiple wired ethernet interfaces, this is
+#  not necessarily the same interface as the one used for SSH.
+lan_dns_if: eth0
+
 # Used in multiple roles, so defaults defined here rather than in a role
 php_service: php7.0-fpm
 fastcgi_pass_sock: unix:/var/run/php/php7.0-fpm.sock
@@ -69,7 +74,7 @@ iptables_ssh_in_interface: ""
 
 firewall_v4_group_rules:
   150 redirect http:
-    - -t nat -A PREROUTING -s {{ client_facing_if_network_cidr }} tcp --dport 80 -j DNAT --to {{ client_facing_if_ip_address }}:80
+    - -t nat -A PREROUTING -s {{ client_facing_if_network_cidr }} -p tcp --dport 80 -j DNAT --to {{ client_facing_if_ip_address }}:80
   # Overriding default - we only want ssh on the wired interface
   200 allow ssh:
     - -A INPUT -p tcp {{ iptables_ssh_in_interface }} --dport ssh -j ACCEPT

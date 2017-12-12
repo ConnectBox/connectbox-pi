@@ -15,6 +15,13 @@ bogus-priv
 #  line or the dnsmasq configuration file.
 no-resolv
 
+# Return Akami addresses for Android devices to display the captive portal
+# They don't need to be routable, just non-private IP space
+address=/clients1.google.com/172.217.3.174
+address=/clients3.google.com/172.217.3.174
+address=/connectivitycheck.gstatic.com/172.217.3.174
+address=/connectivitycheck.android.com/172.217.3.174
+
 # Return the connectbox-pi address for all queries, unless they match dhcp
 #  leases or are answered from /etc/hosts
 address=/#/{{ client_facing_if_ip_address }}
@@ -43,6 +50,12 @@ dhcp-authoritative
 leasefile-ro
 
 domain={{ hostname }}
+
+{% if developer_mode -%}
+# Enable only dns on the external facing interface
+interface={{ lan_dns_if }}
+no-dhcp-interface={{ lan_dns_if }}
+{%- endif %}
 
 interface={{ client_facing_if }}
 dhcp-range={{ dhcp_range_start }},{{ dhcp_range_end }},{{ client_facing_if_netmask }},{{ dhcp_lease_time_secs }}
