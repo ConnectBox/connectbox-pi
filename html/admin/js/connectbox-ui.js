@@ -156,7 +156,7 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
       alert("Password doesn't match!")
     } else {
       $('#update_password_success').hide()
-      ConnectBoxApp.api.setProperty('password', $('#input_password').val(), function (result, code, message) {
+      ConnectBoxApp.api.setProperty('password', $('#input_password').val(), true, function (result, code, message) {
         if (result) {
           $('#update_password_success').show()
         } else {
@@ -190,7 +190,7 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
     event.preventDefault()
     var value = $('#input_ssid').val()
     $('#update_ssid_success').hide()
-    ConnectBoxApp.api.setProperty('ssid', value, function (result, code, message) {
+    ConnectBoxApp.api.setProperty('ssid', value, true, function (result, code, message) {
       showMessage('SSID updated to ' + value, 'Update your wireless network settings, then click OK.', false)
     })
   }
@@ -235,7 +235,7 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
     event.preventDefault()
     var value = $('#input_channel').val()
     $('#update_channel_success').hide()
-    ConnectBoxApp.api.setProperty('channel', value, function (result, code, message) {
+    ConnectBoxApp.api.setProperty('channel', value, true, function (result, code, message) {
       if (result) {
         $('#update_channel_success').show()
       } else {
@@ -268,10 +268,49 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
     event.preventDefault()
     var value = $('#input_hostname').val()
     $('#update_hostname_success').hide()
-    ConnectBoxApp.api.setProperty('hostname', value, function (result, code, message) {
+    ConnectBoxApp.api.setProperty('hostname', value, true, function (result, code, message) {
       showMessage('hostname updated to ' + value, 'Click OK to continue.', false, function () {
         window.location.href = 'http://' + value + '/admin/'
       })
+    })
+  }
+
+  function bannerLoad (event) {
+    $('#' + currentItem).toggle()
+
+    currentItem = 'banner'
+
+    $('.active').toggleClass('active')
+    $('#menu_home').parent().toggleClass('active')
+
+    $('#banner').toggle()
+    $('#update_banner_success').hide()
+
+    ConnectBoxApp.api.getProperty('ui-config', function (result, code, message) {
+      if (result && result.length > 0) {
+        var config = JSON.parse(result[0])
+        $('#input_banner').val(config.Client.banner)
+      } else {
+        showError('Error reading banner message', parseErrorMessage(message))
+      }
+    })
+  }
+
+  function bannerSave (event) {
+    event.preventDefault()
+    var value = $('#input_banner').val()
+    $('#update_banner_success').hide()
+
+    ConnectBoxApp.api.getProperty('ui-config', function (result, code, message) {
+      if (result && result.length > 0) {
+        var config = JSON.parse(result[0])
+        config.Client.banner = value
+        ConnectBoxApp.api.setProperty('ui-config', JSON.stringify(config), false, function (result, code, message) {
+          $('#update_banner_success').show()
+        })
+      } else {
+        showError('Error reading banner message', parseErrorMessage(message))
+      }
     })
   }
 
@@ -306,7 +345,7 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
     var staticEnabled = $('#input_staticsite_enabled').parent().hasClass('active')
 
     $('#update_staticsite_success').hide()
-    ConnectBoxApp.api.setProperty('staticsite', staticEnabled, function (result, code, message) {
+    ConnectBoxApp.api.setProperty('staticsite', staticEnabled, true, function (result, code, message) {
       if (result) {
         $('#update_staticsite_success').show()
       } else {
@@ -354,6 +393,8 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
       $('#form_channel').on('submit', channelSave)
       $('#menu_hostname').on('click', hostnameLoad)
       $('#form_hostname').on('submit', hostnameSave)
+      $('#menu_banner').on('click', bannerLoad)
+      $('#form_banner').on('submit', bannerSave)
       $('#menu_staticsite').on('click', staticsiteLoad)
       $('#form_staticsite').on('submit', staticsiteSave)
       $('#menu_password').on('click', passwordLoad)
