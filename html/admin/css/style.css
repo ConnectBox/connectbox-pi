@@ -75,3 +75,8 @@
     margin-top: 10px;
     color: #888;
 }
+
+.admin-input
+{
+    width: 250px !important;
+}

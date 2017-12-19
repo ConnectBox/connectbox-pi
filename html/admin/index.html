@@ -66,6 +66,7 @@
                 <li class="dropdown-header">Web Server</li>
                 <li><a href="#" id="menu_hostname">Hostname</a></li>
                 <li><a href="#" id="menu_staticsite">Static site</a></li>
+                <li role="separator" class="divider"></li>
                 <li class="dropdown-header">Wireless Access Point</li>
                 <li><a href="#" id="menu_ssid">SSID</a></li>
                 <li><a href="#" id="menu_channel">Channel</a></li>
@@ -106,7 +107,7 @@
           <form class="simple_form form-inline" id="form_password">
               <div class="form-group required"><label class="required sr-only" for="password"><abbr title="required">*</abbr> Password</label><input class="string required form-control" id="input_password" name="password" placeholder="Enter Password" type="text"></div>
 
-              <div class="form-group required"><label class="required sr-only" for="password_confirm"><abbr title="required">*</abbr> Confirm Password</label><input class="string required form-control" id="input_password_confirm" name="password_confirm" placeholder="Confirm Password" type="text"></div>
+              <div class="form-group required"><label class="required sr-only" for="password_confirm"><abbr title="required">*</abbr> Confirm Password</label><input class="string required form-control admin-input" id="input_password_confirm" name="password_confirm" placeholder="Confirm Password" type="text"></div>
 
               <input class="btn btn-default" name="update_password" type="submit" value="Update">
               <div style="display:none" id="update_password_success">✓</div>
@@ -117,10 +118,10 @@
       <div class="page-header">
         <h1>User Interface</h1>
       </div>
-      <p class="lead">Banner Message</p>
+      <p class="lead">Banner Message (html or plain text)</p>
           <form class="simple_form form-inline" id="form_banner">
               <div class="form-group required"><label class="required sr-only" for="banner">Message</label>
-                <textarea class="string formcontrol" id="input_banner" name="banner" rows="4" cols="120"></textarea></div>
+                <textarea class="string formcontrol" id="input_banner" name="banner" rows="4" cols="80"></textarea></div>
 
               <input class="btn btn-default" name="update_banner" type="submit" value="Update">
               <div style="display:none" id="update_banner_success">✓</div>
@@ -133,7 +134,7 @@
       </div>
       <p class="lead">Configure the SSID broadcast by the Wireless Access Point</p>
           <form class="simple_form form-inline" id="form_ssid">
-              <div class="form-group required"><label class="required sr-only" for="ssid"><abbr title="required">*</abbr> SSID</label><input class="string required form-control" id="input_ssid" name="ssid" placeholder="Enter SSID" type="text" style="width: 250px;"></div>
+              <div class="form-group required"><label class="required sr-only" for="ssid"><abbr title="required">*</abbr> SSID</label><input class="string required form-control admin-input" id="input_ssid" name="ssid" placeholder="Enter SSID" type="text"></div>
 
               <input class="btn btn-default" name="update_ssid" type="submit" value="Update">
               <div style="display:none" id="update_ssid_success">✓</div>
@@ -173,7 +174,7 @@
       </div>
       <p class="lead">Web server hostname</p>
           <form class="simple_form form-inline" id="form_hostname">
-              <div class="form-group required"><label class="required sr-only" for="hostname"><abbr title="required">*</abbr> Hostname</label><input class="string required form-control" id="input_hostname" name="hostname" placeholder="Enter Hostname" type="text"></div>
+              <div class="form-group required"><label class="required sr-only" for="hostname"><abbr title="required">*</abbr> Hostname</label><input class="string required form-control admin-input" id="input_hostname" name="hostname" placeholder="Enter Hostname" type="text"></div>
 
               <input class="btn btn-default" name="update_hostname" type="submit" value="Update">
               <div style="display:none" id="update_hostname_success">✓</div>
