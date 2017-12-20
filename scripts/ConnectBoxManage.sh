@@ -13,6 +13,7 @@ HOSTS_CONFIG="/etc/hosts"
 NGINX_CONFIG="/etc/nginx/sites-enabled/vhosts.conf"
 PASSWORD_CONFIG="/usr/local/connectbox/etc/basicauth"
 PASSWORD_SALT="CBOXFOO2016"
+UI_CONFIG="/var/www/connectbox/connectbox_default/config/default.json"
 DEBUG=0
 SUCCESS="SUCCESS"
 FAILURE="Unexpected Error"
@@ -69,6 +70,45 @@ touch $LOCK_FILE
 function usage () {
   echo $USAGE
   exit 1;
+}
+
+function backup_ui_config () {
+  # Backup the original configuration file
+  if [ ! -e "$UI_CONFIG.original" ]; then
+    if [ $DEBUG == 1 ]; then
+      echo "Backing up $UI_CONFIG to $UI_CONFIG.original"
+    fi
+
+    cp $UI_CONFIG $UI_CONFIG.original 2>&1 | logger -t $(basename $0)
+
+    if [ ${PIPESTATUS[0]} -ne 0 ]
+    then
+      failure
+    fi
+  fi
+}
+
+function restore_ui_config () {
+  # Restore the original configuration file
+  if [ -e "$UI_CONFIG.original" ]; then
+    if [ $DEBUG == 1 ]; then
+      echo "Restoring $UI_CONFIG from $UI_CONFIG.original"
+    fi
+
+    cp $UI_CONFIG.original $UI_CONFIG 2>&1 | logger -t $(basename $0)
+
+    if [ ${PIPESTATUS[0]} -ne 0 ]
+    then
+      failure
+    else
+      hostname `cat $UI_CONFIG` 2>&1 | logger -t $(basename $0)
+
+      if [ ${PIPESTATUS[0]} -ne 0 ]
+      then
+        failure
+      fi
+    fi
+  fi
 }
 
 function backup_hostname_config () {
@@ -263,6 +303,7 @@ function reset () {
   restore_nginx_config
   restore_hostname_config
   restore_hosts_config
+  restore_ui_config
   reload_nginx
   restart_hostapd
   success
@@ -427,6 +468,34 @@ function set_staticsite () {
   fi
 }
 
+function get_ui_config () {
+  local ui_config=`cat $UI_CONFIG`
+  echo $ui_config;
+}
+
+function set_ui_config () {
+  if [[ -z "${val// }" ]]; then
+    echo "Missing ui config value"
+    exit 1;
+  fi
+
+  backup_ui_config
+
+  # Update the ui config
+  if [ $DEBUG == 1 ]; then
+    echo "Updating ui config to '$val'"
+  fi
+
+  echo $val > $UI_CONFIG 2>&1 | logger -t $(basename $0)
+
+  if [ ${PIPESTATUS[0]} -eq 0 ]
+  then
+    success
+  else
+    failure
+  fi
+}
+
 function get_hostname () {
   local host_name=`hostname`
   echo $host_name;
@@ -567,6 +636,11 @@ if [ "$action" = "get" ]; then
       exit 0;
       ;;
 
+    "ui-config")
+      get_ui_config
+      exit 0;
+      ;;
+
     *)
       usage
       ;;
@@ -596,6 +670,11 @@ elif [ "$action" = "set" ]; then
 
     "password")
       set_password
+      exit 0;
+      ;;
+
+    "ui-config")
+      set_ui_config
       exit 0;
       ;;
 

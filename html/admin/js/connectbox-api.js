@@ -45,12 +45,12 @@ var ConnectBoxApp = (function (App, $) {
       })
     },
 
-    setProperty: function (propertyName, propertyValue, callback) {
+    setProperty: function (propertyName, propertyValue, wrap, callback) {
       $.ajax({
         url: buildApiUrl(propertyName, {}),
         method: 'PUT',
         dataType: 'json',
-        data: '{"value": "' + propertyValue + '"}',
+        data: wrap ? '{"value": "' + propertyValue + '"}' : propertyValue,
         success: function (data, textStatus, jqXHR) {
           window.mydata = data
           if (data.code === 0) {
