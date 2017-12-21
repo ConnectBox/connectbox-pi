@@ -589,3 +589,129 @@ class ConnectBoxAPITestCase(unittest.TestCase):
         # EM DASH codepoint is a 3 byte character
         # This SSID set should be rejected
         self._testSSIDSetWithLength(u'\N{EM DASH}' * 11)
+
+class ConnectBoxChatTestCase(unittest.TestCase):
+    CHAT_MESSAGES_URL = "%s/chat/messages" % (getTestBaseURL())
+    CHAT_TEXT_DIRECTION_URL = "%s/chat/messages/textDirection" % (getTestBaseURL())
+
+    @classmethod
+    def setUpClass(cls):
+        pass
+
+    @classmethod
+    def tearDownClass(cls):
+        pass
+
+    def test_get_messages(self):
+        nick = "Foo"
+        body = "message 1"
+        text_direction = "ltr"
+        req = requests.post(self.CHAT_MESSAGES_URL,
+            json={"nick": nick, "body": body, "textDirection": text_direction})
+        req.raise_for_status()
+
+        response = req.json()
+        self.assertTrue('result' in response)
+        message = response['result']
+        self.assertTrue('id' in message)
+        id1 = message['id']
+
+        body = "message 2"
+        req = requests.post(self.CHAT_MESSAGES_URL,
+            json={"nick": nick, "body": body, "textDirection": text_direction})
+        req.raise_for_status()
+
+        response = req.json()
+        self.assertTrue('result' in response)
+        message = response['result']
+        self.assertTrue('id' in message)
+        id2 = message['id']
+
+        req = requests.get(self.CHAT_MESSAGES_URL)
+        response = req.json()
+
+        self.assertTrue('result' in response)
+        messages = response['result']
+        ids = []
+        for msg in messages:
+            self.assertTrue('id' in msg)
+            self.assertTrue('timestamp' in msg)
+            self.assertTrue('nick' in msg)
+            self.assertTrue('body' in msg)
+            self.assertTrue('textDirection' in msg)
+            ids.append(msg['id'])
+
+        self.assertTrue(id1 in ids)
+        self.assertTrue(id2 in ids)
+
+        req = requests.get('%s?max_id=%d' % (self.CHAT_MESSAGES_URL, (id2 - 1)))
+        response = req.json()
+
+        self.assertTrue('result' in response)
+        messages = response['result']
+        ids = []
+        for msg in messages:
+            self.assertTrue('id' in msg)
+            self.assertTrue('timestamp' in msg)
+            self.assertTrue('nick' in msg)
+            self.assertTrue('body' in msg)
+            self.assertTrue('textDirection' in msg)
+            ids.append(msg['id'])
+
+        self.assertFalse(id1 in ids)
+        self.assertTrue(id2 in ids)
+
+        req = requests.get('%s?max_id=%d' % (self.CHAT_MESSAGES_URL, id2))
+        self.assertEqual(req.status_code, 204)
+
+    def test_add_message(self):
+        nick = "Foo"
+        body = "message 1"
+        text_direction = "ltr"
+        req = requests.post(self.CHAT_MESSAGES_URL,
+            json={"nick": nick, "body": body, "textDirection": text_direction})
+        req.raise_for_status()
+
+        response = req.json()
+        self.assertTrue('result' in response)
+        message = response['result']
+        self.assertTrue('id' in message)
+
+        id1 = message['id']
+
+        body = "message 2"
+        req = requests.post(self.CHAT_MESSAGES_URL,
+            json={"nick": nick, "body": body, "textDirection": text_direction})
+        req.raise_for_status()
+
+        response = req.json()
+        self.assertTrue('result' in response)
+        message = response['result']
+        self.assertTrue('id' in message)
+
+        id2 = message['id']
+        self.assertTrue(id2 > id1)
+
+    def test_update_message(self):
+        req = requests.put(self.CHAT_MESSAGES_URL,
+            json={"nick": "Foo", "body": "message 1", "textDirection": "ltr"})
+
+        self.assertEqual(req.status_code, 405)
+
+    def test_expire_messages(self):
+        req = requests.delete(self.CHAT_MESSAGES_URL)
+        req.raise_for_status()
+
+        response = req.json()
+        self.assertTrue('result' in response)
+
+        self.assertTrue(response['result'] >= 0)
+
+    def text_default_text_direction(self):
+        req = requests.get(self.CHAT_TEXT_DIRECTION_URL)
+        req.raise_for_status()
+
+        response = req.json()
+
+        self.assertTrue('result' in response)
+        self.assertTrue(response['result'] in ['ltr', 'rtl'])

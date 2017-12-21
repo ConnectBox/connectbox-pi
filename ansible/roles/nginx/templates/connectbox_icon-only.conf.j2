@@ -8,6 +8,7 @@ server {
     error_log {{ connectbox_error_log }} error;
     rewrite_log on;
 
+{{ nginx_chat_block }}
 {{ nginx_admin_block }}
 
     location /content/ {
