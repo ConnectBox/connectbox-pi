@@ -592,6 +592,7 @@ class ConnectBoxAPITestCase(unittest.TestCase):
 
 class ConnectBoxChatTestCase(unittest.TestCase):
     CHAT_MESSAGES_URL = "%s/chat/messages" % (getTestBaseURL())
+    CHAT_TEXT_DIRECTION_URL = "%s/chat/messages/textDirection" % (getTestBaseURL())
 
     @classmethod
     def setUpClass(cls):
@@ -604,7 +605,9 @@ class ConnectBoxChatTestCase(unittest.TestCase):
     def test_get_messages(self):
         nick = "Foo"
         body = "message 1"
-        req = requests.post(self.CHAT_MESSAGES_URL, json={"nick": nick, "body": body})
+        text_direction = "ltr"
+        req = requests.post(self.CHAT_MESSAGES_URL,
+            json={"nick": nick, "body": body, "textDirection": text_direction})
         req.raise_for_status()
 
         response = req.json()
@@ -614,7 +617,8 @@ class ConnectBoxChatTestCase(unittest.TestCase):
         id1 = message['id']
 
         body = "message 2"
-        req = requests.post(self.CHAT_MESSAGES_URL, json={"nick": nick, "body": body})
+        req = requests.post(self.CHAT_MESSAGES_URL,
+            json={"nick": nick, "body": body, "textDirection": text_direction})
         req.raise_for_status()
 
         response = req.json()
@@ -634,6 +638,7 @@ class ConnectBoxChatTestCase(unittest.TestCase):
             self.assertTrue('timestamp' in msg)
             self.assertTrue('nick' in msg)
             self.assertTrue('body' in msg)
+            self.assertTrue('textDirection' in msg)
             ids.append(msg['id'])
 
         self.assertTrue(id1 in ids)
@@ -650,6 +655,7 @@ class ConnectBoxChatTestCase(unittest.TestCase):
             self.assertTrue('timestamp' in msg)
             self.assertTrue('nick' in msg)
             self.assertTrue('body' in msg)
+            self.assertTrue('textDirection' in msg)
             ids.append(msg['id'])
 
         self.assertFalse(id1 in ids)
@@ -661,7 +667,9 @@ class ConnectBoxChatTestCase(unittest.TestCase):
     def test_add_message(self):
         nick = "Foo"
         body = "message 1"
-        req = requests.post(self.CHAT_MESSAGES_URL, json={"nick": nick, "body": body})
+        text_direction = "ltr"
+        req = requests.post(self.CHAT_MESSAGES_URL,
+            json={"nick": nick, "body": body, "textDirection": text_direction})
         req.raise_for_status()
 
         response = req.json()
@@ -672,7 +680,8 @@ class ConnectBoxChatTestCase(unittest.TestCase):
         id1 = message['id']
 
         body = "message 2"
-        req = requests.post(self.CHAT_MESSAGES_URL, json={"nick": nick, "body": body})
+        req = requests.post(self.CHAT_MESSAGES_URL,
+            json={"nick": nick, "body": body, "textDirection": text_direction})
         req.raise_for_status()
 
         response = req.json()
@@ -684,7 +693,8 @@ class ConnectBoxChatTestCase(unittest.TestCase):
         self.assertTrue(id2 > id1)
 
     def test_update_message(self):
-        req = requests.put(self.CHAT_MESSAGES_URL, json={"nick": "Foo", "body": "message 1"})
+        req = requests.put(self.CHAT_MESSAGES_URL,
+            json={"nick": "Foo", "body": "message 1", "textDirection": "ltr"})
 
         self.assertEqual(req.status_code, 405)
 
@@ -696,3 +706,12 @@ class ConnectBoxChatTestCase(unittest.TestCase):
         self.assertTrue('result' in response)
 
         self.assertTrue(response['result'] >= 0)
+
+    def text_default_text_direction(self):
+        req = requests.get(self.CHAT_TEXT_DIRECTION_URL)
+        req.raise_for_status()
+
+        response = req.json()
+
+        self.assertTrue('result' in response)
+        self.assertTrue(response['result'] in ['ltr', 'rtl'])
