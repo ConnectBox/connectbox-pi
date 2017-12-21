@@ -40,7 +40,7 @@ connectbox_error_log:  "{{ connectbox_log_dir }}/connectbox-error.log"
 
 access_log_analyzer_repo: https://github.com/ConnectBox/access-log-analyzer.git
 connectbox_client_repo: https://github.com/ConnectBox/connectbox-react-icon-client.git
-connectbox_client_path: published/
+connectbox_client_path: master/
 
 nginx_admin_block: |
       # Admin interface
