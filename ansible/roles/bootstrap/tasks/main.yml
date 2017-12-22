@@ -113,6 +113,24 @@
     state: present
   when: ansible_lsb["id"] == "Debian"
 
+# Needed in several subsequent roles
+- name: Install packages for python virtualenv
+  apt:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - python-virtualenv
+    - python-pip
+    - virtualenv
+  tags:
+    - captive_portal
+
+# Needed in several subsequent roles
+- name: install git
+  apt:
+    name: git
+    state: present
+
 # See if we need to create a wlan0 interface when we're running in a sim
 #  environment i.e. running virtualised
 - name: Create a wlan0 interface
