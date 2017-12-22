@@ -1,4 +1,9 @@
 ---
+- name: Install devmem2 to allow resistor configuration
+  apt:
+    name: devmem2
+    state: present
+
 - name: Make neo battery shutdown virtualenv directory
   file:
     path: "{{ battery_tool_virtualenv_dir }}"
@@ -11,9 +16,19 @@
     editable: False
     name: git+https://github.com/ConnectBox/NEO_BatteryLevelShutdown.git
 
+- name: Copy PA6 pulldown resistor systemd service definition
+  template:
+    src: "{{ pa6_pulldown_enabler_service_name }}.j2"
+    dest: "/etc/systemd/system/{{ pa6_pulldown_enabler_service_name }}"
+    mode: 0644
+    owner: root
+    group: root
+  notify:
+    - restart pa6 pulldown service
+
 - name: Copy neo battery shutdown systemd service definition
   template:
-    src: neo-battery-shutdown.service.j2
+    src: "{{ battery_tool_service_name }}.j2"
     dest: "/etc/systemd/system/{{ battery_tool_service_name }}"
     mode: 0644
     owner: root
@@ -22,8 +37,11 @@
     - restart neo battery shutdown service
 
 # Startup has either already happened, or will happen in the handler
-- name: Enable neo battery shutdown service
+- name: Enable services
   systemd:
-    name: "{{ battery_tool_service_name }}"
+    name: "{{ item }}"
     daemon_reload: yes
     enabled: yes
+  with_items:
+    - "{{ pa6_pulldown_enabler_service_name }}"
+    - "{{ battery_tool_service_name }}"

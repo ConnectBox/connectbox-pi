@@ -1,3 +1,2 @@
 ---
 battery_tool_virtualenv_dir: /usr/local/connectbox/battery_tool_venv
-battery_tool_service_name: neo-battery-shutdown.service

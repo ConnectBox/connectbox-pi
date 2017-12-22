@@ -1,0 +1,15 @@
+[Unit]
+Description=Enable pulldown resistor on NEO pin PA6
+After=multi-user.target
+
+[Service]
+Type=oneshot
+# Address and value come from Allwinner H3 Datasheet
+#  http://dl.linux-sunxi.org/H3/Allwinner_H3_Datasheet_V1.0.pdf
+# section 4.22.1, Port Controller Register List, for base address and address
+#  offset of Pn_PUL0 where n=0 
+# section 4.22.2.8, PA PULL Register 0 with i=6
+ExecStart=/usr/bin/devmem2 0x01c2081c h 0x2000
+
+[Install]
+WantedBy=multi-user.target
