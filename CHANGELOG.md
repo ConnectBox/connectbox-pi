@@ -12,6 +12,14 @@ Current open Issues: https://github.com/ConnectBox/connectbox-pi/issues?q=is%3Ao
 
 *
 
+# 20171224
+
+* Added: Captive Portal Workflow for Android devices
+* Removed: Automatic redirection to Connectbox page when attempting to load other sites
+* Fixed: Constrain Wifi channel selection to valid values in the admin UI
+* Added: Initial implementation of chat API and UI
+* Added: Install and activate battery level shutdown for NanoPi NEO devices with a Connectbox Hat
+
 # 20171001
 
 * Added: Automatically reboot system if required during ansible playbook runs
