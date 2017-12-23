@@ -354,18 +354,6 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
     })
   }
 
-  function getTop10Stats (event) {
-    event.preventDefault()
-
-    window.location = '/stats.top10.json'
-  }
-
-  function getAllStats (event) {
-    event.preventDefault()
-
-    window.location = '/stats.json'
-  }
-
   ConnectBoxApp.ui = {
     init: function () {
       $(document).on('click', '.navbar-collapse.in', function (e) {
@@ -404,8 +392,6 @@ var ConnectBoxApp = (function (ConnectBoxApp, $) {
       $('#form_shutdown').on('submit', shutdown)
       $('#form_reboot').on('submit', reboot)
       $('#form_reset').on('submit', reset)
-      $('#menu_top10_stats').on('click', getTop10Stats)
-      $('#menu_all_stats').on('click', getAllStats)
     }
   }
 
