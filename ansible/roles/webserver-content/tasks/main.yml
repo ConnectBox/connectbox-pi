@@ -42,6 +42,11 @@
     repo: "{{ connectbox_reports_repo }}"
     dest: /tmp/connectbox_reports
 
+- name: create connectbox reports directory
+  file:
+    path: "{{ connectbox_admin_root }}/reports"
+    state: directory
+
 - name: Copy external connectbox reporting ui
   command: cp -r . "{{ connectbox_admin_root }}/reports"
   args:
