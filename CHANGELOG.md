@@ -11,6 +11,8 @@ Current open Issues: https://github.com/ConnectBox/connectbox-pi/issues?q=is%3Ao
 # Unreleased
 
 * Added: Add reporting user interface accessible from admin dashboard
+* Added: Current project and product info in Admin "About" section
+* Removed: Redundant Admin "Contact" section
 
 # 20171224
 
