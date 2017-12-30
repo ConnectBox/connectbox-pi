@@ -10,7 +10,7 @@ Current open Issues: https://github.com/ConnectBox/connectbox-pi/issues?q=is%3Ao
 
 # Unreleased
 
-*
+* Added: Add reporting user interface accessible from admin dashboard
 
 # 20171224
 
