@@ -37,6 +37,21 @@
   args:
     chdir: /tmp/connectbox_client/{{ connectbox_client_path }}
 
+- name: retrieve connectbox-reports-repo
+  git:
+    repo: "{{ connectbox_reports_repo }}"
+    dest: /tmp/connectbox_reports
+
+- name: create connectbox reports directory
+  file:
+    path: "{{ connectbox_admin_root }}/reports"
+    state: directory
+
+- name: Copy external connectbox reporting ui
+  command: cp -r . "{{ connectbox_admin_root }}/reports"
+  args:
+    chdir: /tmp/connectbox_reports/{{ connectbox_reports_path }}
+
 # Permissions are correctly set in the subsequent task
 - name: Copy connectbox admin ui
   synchronize:

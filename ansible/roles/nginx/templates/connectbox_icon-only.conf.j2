@@ -26,4 +26,8 @@ server {
         expires -1;
       }
     }
+
+    location ~ \.json$ {
+      expires -1;
+    }
 }
