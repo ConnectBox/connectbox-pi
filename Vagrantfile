@@ -6,6 +6,9 @@ Vagrant.configure(2) do |config|
   # Overridden
   config.vm.box = ""
 
+  config.vm.provider "vmware_fusion" do |vmw|
+    vmw.memory = "512"
+  end
   config.vm.provider "virtualbox" do |vb|
     vb.memory = "512"
   end
