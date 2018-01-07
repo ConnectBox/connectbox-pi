@@ -10,8 +10,15 @@ Current open Issues: https://github.com/ConnectBox/connectbox-pi/issues?q=is%3Ao
 
 # Unreleased
 
-* Added: Add reporting user interface accessible from admin dashboard
+*
+
+# 20180108
+
+* Added: Reporting user interface accessible from admin dashboard
 * Added: Current project and product info in Admin "About" section
+* Added: Pin kernel and device tree packages to prevent inadvertant kernel upgrade
+* Added: VMWare Fusion as an additional provider for Vagrant
+* Added: Link to admin interface in footer from icon-only interface
 * Removed: Redundant Admin "Contact" section
 
 # 20171224
