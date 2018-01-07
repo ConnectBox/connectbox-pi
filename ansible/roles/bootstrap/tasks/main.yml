@@ -72,13 +72,39 @@
 
 # Disable automated apt-y things before attempting to install packages
 # unattended-upgrades and apt.systemd.daily only run on Ubuntu
+- name: Stop automated apty services
+  service:
+    name: "{{ item }}"
+    state: stopped
+    enabled: no
+  with_items: "{{ apty_services }}"
+
+# Prevent kernel and dtb upgrades on NEOs so that we don't hit
+#  https://github.com/ConnectBox/connectbox-pi/issues/149
+# This can eventually be removed once we've upstreamed usbhost
+#  dtb changes and we're confident that an in-field kernel upgrade
+#  won't cause problems for the device
 - block:
-  - name: Stop automated apty services
-    service:
-      name: "{{ item }}"
-      state: stopped
-      enabled: no
-    with_items: "{{ apty_services }}"
+  - name: Retrieve list of pinned packages
+    command: apt-mark showholds
+    register: pinned_packages
+    changed_when: False
+
+  # Can't use jinja variables in when clause so we need to
+  #  do this without a loop
+  - name: Pin kernel and dtb packages
+    command: "apt-mark hold linux-dtb-dev-sun8i"
+    when: '"linux-dtb-dev-sun8i" not in pinned_packages.stdout'
+
+  - name: Pin kernel and dtb packages
+    command: "apt-mark hold linux-image-dev-sun8i"
+    when: '"linux-image-dev-sun8i" not in pinned_packages.stdout'
+
+  - name: Pin kernel and dtb packages
+    command: "apt-mark hold linux-u-boot-nanopineo-dev"
+    when: '"linux-u-boot-nanopineo-dev" not in pinned_packages.stdout'
+
+  when: '"NanoPi NEO" in machine_type.stdout'
 
 # Needed for package upgrades via ansible (aptitude safe-upgrade)
 - name: Install aptitude
