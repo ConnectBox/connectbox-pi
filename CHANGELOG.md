@@ -11,6 +11,9 @@ Current open Issues: https://github.com/ConnectBox/connectbox-pi/issues?q=is%3Ao
 # Unreleased
 
 *
+# 20180113
+
+* Fixed: Missing usbhost1 device tree because of aptitude/apt-mark interaction for held packages
 
 # 20180108
 
