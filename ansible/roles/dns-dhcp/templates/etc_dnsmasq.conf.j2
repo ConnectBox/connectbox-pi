@@ -53,7 +53,12 @@ domain={{ hostname }}
 
 {% if developer_mode -%}
 # Enable only dns on the external facing interface
-interface={{ lan_dns_if }}
+# We provide interface=* here because dnsmasq will refuse to start (thus
+#  causing all manner of problems) if the lan_dns_if is unavailable.
+#  While this means that dev images might expose dhcp if someone plugs
+#  in another interface, we're not attempting to protect for that scenario
+#  particularly because this only applies to dev images.
+interface=*
 no-dhcp-interface={{ lan_dns_if }}
 {%- endif %}
 
