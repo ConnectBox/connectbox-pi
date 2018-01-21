@@ -11,6 +11,12 @@ Current open Issues: https://github.com/ConnectBox/connectbox-pi/issues?q=is%3Ao
 # Unreleased
 
 *
+
+# 20180122
+
+* Fixed: Corrupted /boot/armbianEnv.txt on unclean shutdown [Issue #220](https://github.com/ConnectBox/connectbox-pi/issues/220)
+* Fixed: Broken wifi on developer images when eth is unplugged
+
 # 20180113
 
 * Fixed: Missing usbhost1 device tree because of aptitude/apt-mark interaction for held packages
