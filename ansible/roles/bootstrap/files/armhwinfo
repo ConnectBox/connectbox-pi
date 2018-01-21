@@ -360,6 +360,7 @@ add_usb_storage_quirks() {
 	read USBQUIRKS <${TMPFILE}
 	sed -i '/^usbstoragequirks/d' /boot/armbianEnv.txt
 	echo "usbstoragequirks=${USBQUIRKS}" >>/boot/armbianEnv.txt
+	sync
 } # add_usb_storage_quirks
 
 case $1 in
