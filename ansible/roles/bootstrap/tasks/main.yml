@@ -118,8 +118,8 @@
 # This should be removed when we rebase our images against
 #  an Armbian that has this fixed.
 - block:
-  # Perms and ownership taken from existing armbian images
-  - copy:
+  - name: Copy replacement armhwinfo preserving existing perms
+    copy:
       src: armhwinfo
       dest: /etc/init.d/armhwinfo
       owner: root
