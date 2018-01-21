@@ -114,6 +114,29 @@
 
   when: '"NanoPi NEO" in machine_type.stdout'
 
+# Prevent corruption of armbianEnv.txt on unclean shutdown
+# This should be removed when we rebase our images against
+#  an Armbian that has this fixed.
+- block:
+  - name: Copy replacement armhwinfo preserving existing perms
+    copy:
+      src: armhwinfo
+      dest: /etc/init.d/armhwinfo
+      owner: root
+      group: root
+      mode: 0775
+
+  - name: Retrieve list of pinned packages
+    command: apt-mark showholds
+    register: pinned_packages
+    changed_when: False
+
+  - name: Pin package containing /etc/init.d/armhwinfo
+    command: "aptitude hold linux-xenial-root-dev-nanopineo"
+    when: '"linux-xenial-root-dev-nanopineoi" not in pinned_packages.stdout'
+
+  when: connectbox_os == "armbian"
+
 # mikegleasonjr.firewall assumes iptables but Armbian doesn't ship with it
 - name: Install iptables
   apt:
