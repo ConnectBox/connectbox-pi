@@ -16,3 +16,5 @@ See [docs/administration.md](docs/administration.md)
 
 See [docs/development.md](docs/development.md)
 
+# MicroSD Card Images/Releases
+See [https://github.com/ConnectBox/connectbox-pi/releases/](https://github.com/ConnectBox/connectbox-pi/releases/)
