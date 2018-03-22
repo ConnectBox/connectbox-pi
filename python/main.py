@@ -4,6 +4,7 @@ from six.moves import configparser
 from flask import Flask
 from captive_portal.manager import setup_captive_portal_app, show_captive_portal_welcome
 from chat.server import register as register_chat
+from admin.api import register as register_admin
 
 config_parser = configparser.ConfigParser()
 config_parser.readfp(open('%s/defaults.cfg' % os.path.dirname(os.path.abspath(__file__))))
@@ -19,6 +20,7 @@ app = Flask(__name__)
 
 setup_captive_portal_app(app)
 register_chat(app, chat_connection_info)
+register_admin(app)
 
 # There's no simple way to set an error handler without using a decorator
 #  but that requires app to be defined at the top level, and before use of
