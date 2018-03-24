@@ -7,10 +7,13 @@ valid_properties = ["ssid", "channel", "hostname", "staticsite", "password", "sy
 def _call_command(extra_args):
     cmd_args = ["sudo", "/usr/local/connectbox/bin/ConnectBoxManage.sh"]
     called_cmd = subprocess.run(cmd_args + extra_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if called_cmd.returncode == 0:
-        return jsonify(code=0, result=called_cmd.stdout.decode("utf-8").strip())
-    else:
-        return jsonify(code=called_cmd.returncode, result=called_cmd.stderr.decode("utf-8").strip())
+
+    result_string= called_cmd.stdout
+    if called_cmd.returncode != 0:
+        result_string= called_cmd.stderr
+
+    return jsonify(code=called_cmd.returncode,
+           result=result_string.decode("utf-8").rstrip().split("\n"))
 
 
 def get_property(prop):
@@ -24,9 +27,9 @@ def set_property(prop):
     prop_string = prop
     if prop_string not in valid_properties:
         abort(400) # bad request
-    if not request.json:
+    if (not request.json) or ("value" not in request.json):
         abort(400) # bad request
-    return _call_command(["set", prop_string])
+    return _call_command(["set", prop_string, request.json["value"]])
 
 
 def set_system_property():
