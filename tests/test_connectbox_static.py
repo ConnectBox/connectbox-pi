@@ -81,7 +81,7 @@ class ConnectBoxBasicTestCase(unittest.TestCase):
     def testAdminNeedsAuth(self):
         r = requests.get("%s/" % (getAdminBaseURL(),))
         # No raise_for_status because we're checking for a 401
-        self.assertEquals(r.status_code, 401)
+        self.assertEqual(r.status_code, 401)
 
     def testAdminNoTrailingSlashRequired(self):
         r = requests.get("%s" % (getAdminBaseURL(),), auth=getAdminAuth())
@@ -300,13 +300,13 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
                          (getTestTarget(),), headers=headers)
         r.raise_for_status()
         # 2. Connectbox replies indicating no internet access
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         # 3. Device send another generate_204 request within a few seconds
         r = requests.get("http://%s/generate_204" %
                          (getTestTarget(),), headers=headers)
         r.raise_for_status()
         # 4. Connectbox replies that internet access is still not available
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         # 5. On receipt of something other than a 204, the device shows a
         #    "Sign-in to network" notification.
         #    We assume that the user responds to this notification, which
@@ -321,7 +321,7 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
         r.raise_for_status()
         # 6. Connectbox provides a response with a text-URL and still
         #    indicating that internet access isn't available
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertIn(self.CAPTIVE_PORTAL_SEARCH_TEXT, r.text)
         # We don't want to show URLs in this captive portal browser
         self.assertNotIn("href=", r.text.lower())
@@ -349,13 +349,13 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
         #    but schedules access to be granted after
         #    ANDROID_V6_REGISTRATION_DELAY_SECS. We don't want to wait that
         #    long during a test run, so we'll just assume that it works.
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         # 3. Device send another generate_204 request within a few seconds
         r = requests.get("http://%s/generate_204" %
                          (getTestTarget(),), headers=headers)
         r.raise_for_status()
         # 4. Connectbox replies that internet access is still not available
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         # 5. On receipt of a 200 i.e. internet access unavailable, the device
         #    shows a "Sign-in to network" notification (until a 204 is
         #    received)
@@ -409,7 +409,7 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
         # 2. Connectbox provides response that indicates no internet
         #    We also make sure we get a captive portal page on this
         #    request.
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertIn(self.CAPTIVE_PORTAL_SEARCH_TEXT, r.text)
         # 3. Device tries again
         r = requests.get("http://%s/gen_204" % (getTestTarget(),))
@@ -418,7 +418,7 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
         #    confirming that the device is not being registered
         #    We also make sure we get a captive portal page on this
         #    request.
-        self.assertEquals(r.status_code, 200)
+        self.assertEqual(r.status_code, 200)
         self.assertIn(self.CAPTIVE_PORTAL_SEARCH_TEXT, r.text)
 
     def testWindowsCaptivePortalResponse(self):
@@ -497,7 +497,7 @@ class ConnectBoxAPITestCase(unittest.TestCase):
         #  nginx/php
         r = requests.get(self.ADMIN_HOSTNAME_URL, auth=getAdminAuth())
         r.raise_for_status()
-        self.assertEquals(r.json()["code"], 0)
+        self.assertEqual(r.json()["code"], 0)
 
     def testSSIDUnchRoundTrip(self):
         r = requests.get(self.ADMIN_SSID_URL, auth=getAdminAuth())
@@ -505,20 +505,20 @@ class ConnectBoxAPITestCase(unittest.TestCase):
         r = requests.put(self.ADMIN_SSID_URL, auth=getAdminAuth(),
                          data=json.dumps({"value": initial_ssid}))
         r.raise_for_status()
-        self.assertEquals(self.SUCCESS_RESPONSE, r.json()["result"])
+        self.assertEqual(self.SUCCESS_RESPONSE, r.json()["result"])
         r = requests.get(self.ADMIN_SSID_URL, auth=getAdminAuth())
         r.raise_for_status()
         final_ssid = r.json()["result"][0]
-        self.assertEquals(initial_ssid, final_ssid)
+        self.assertEqual(initial_ssid, final_ssid)
 
     def testSetSSID(self):
         new_ssid = "ssid-%s" % (random.randint(0, 1000000000),)
         r = requests.put(self.ADMIN_SSID_URL, auth=getAdminAuth(),
                          data=json.dumps({"value": new_ssid}))
         r.raise_for_status()
-        self.assertEquals(self.SUCCESS_RESPONSE, r.json()["result"])
+        self.assertEqual(self.SUCCESS_RESPONSE, r.json()["result"])
         r = requests.get(self.ADMIN_SSID_URL, auth=getAdminAuth())
-        self.assertEquals(new_ssid, r.json()["result"][0])
+        self.assertEqual(new_ssid, r.json()["result"][0])
 
     def testBadRequestOnIncorrectRequestType(self):
         # Need to use PUT not POST
