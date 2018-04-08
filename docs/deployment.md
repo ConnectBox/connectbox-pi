@@ -47,7 +47,7 @@ On your desktop, mount the downloaded image and creating a file called ssh in th
 
 ## Install Armbian on NanoPi NEO, Orange Pi Zero or Pine64
 
-Download the appropriate image for your device from the [Armbian download area](https://www.armbian.com/download/) put it into an SD card. Armbian images using a Legacy or Mainline kernel, based on Ubuntu Xenial are supported, though Mainline offers better performance. The [Armbian Getting Started Guide](https://docs.armbian.com/User-Guide_Getting-Started/) is useful. Before running ansible, you need to login and set the root password per the Armbian Getting Started Guide.
+Download the appropriate base-image for your device from the [ConnectBox base-image download area](https://github.com/ConnectBox/armbian-build/releases) and put it onto an SD card. If there are no base images for your device at that location, look in the [Armbian download area](https://www.armbian.com/download/). We require an Armbian images running a Mainline kernel, based on Ubuntu Xenial or Debian Stretch (the legacy kernel may work, but is unsupported). The [Armbian Getting Started Guide](https://docs.armbian.com/User-Guide_Getting-Started/) is useful. Before running ansible, you need to login and set the root password per the Armbian Getting Started Guide.
 
 ## Setup SSH Keys
 
