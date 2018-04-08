@@ -14,12 +14,6 @@
   register: old_style_names
 
 - block:
-  - name: Create usbhost1 device tree overlay for NanoPi NEO internal USB port
-    shell: sed 's/hci0/hci1/g' /boot/dtb/overlay/sun8i-h3-usbhost0.dtbo > /boot/dtb/overlay/sun8i-h3-usbhost1.dtbo
-    args:
-      creates: /boot/dtb/overlay/sun8i-h3-usbhost1.dtbo
-      warn: False  # Can't use either lineinfile or template here
-
   # will have problems if overlay lines are already present, but as that's not
   #  something we see at the moment, we won't try to cater for it
   - name: Activate all usbhost overlays on NanoPi NEO
@@ -84,35 +78,6 @@
   apt:
     name: aptitude
     state: present
-
-# Prevent kernel and dtb upgrades on NEOs so that we don't hit
-#  https://github.com/ConnectBox/connectbox-pi/issues/149
-# This can eventually be removed once we've upstreamed usbhost
-#  dtb changes and we're confident that an in-field kernel upgrade
-#  won't cause problems for the device
-# We use aptitude instead of apt-hold because aptitude's first run clears
-#  the package holds which causes us to upgrade these packages.
-- block:
-  - name: Retrieve list of pinned packages
-    command: apt-mark showholds
-    register: pinned_packages
-    changed_when: False
-
-  # Can't use jinja variables in when clause so we need to
-  #  do this without a loop
-  - name: Pin kernel and dtb packages
-    command: "aptitude hold linux-dtb-dev-sun8i"
-    when: '"linux-dtb-dev-sun8i" not in pinned_packages.stdout'
-
-  - name: Pin kernel and dtb packages
-    command: "aptitude hold linux-image-dev-sun8i"
-    when: '"linux-image-dev-sun8i" not in pinned_packages.stdout'
-
-  - name: Pin kernel and dtb packages
-    command: "aptitude hold linux-u-boot-nanopineo-dev"
-    when: '"linux-u-boot-nanopineo-dev" not in pinned_packages.stdout'
-
-  when: '"NanoPi NEO" in machine_type.stdout'
 
 # Prevent corruption of armbianEnv.txt on unclean shutdown
 # This should be removed when we rebase our images against
