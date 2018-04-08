@@ -1,5 +1,5 @@
 from flask import jsonify, request
-import datasource
+from chat import datasource
 
 def add_message(message):
     return datasource.insert_message(

@@ -80,7 +80,7 @@
 - name: Install packages for connectbox server process
   pip:
     virtualenv: "{{ connectbox_web_root }}/connectbox_virtualenv"  # XXX Could do better?
-    virtualenv_python: python2
+    virtualenv_python: python3
     name: "{{ item }}"
   with_items:
     - flask
