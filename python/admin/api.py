@@ -27,9 +27,13 @@ def set_property(prop):
     prop_string = prop
     if prop_string not in valid_properties:
         abort(400) # bad request
-    if (not request.json) or ("value" not in request.json):
+    possible_json = request.get_json(force=True, silent=True)
+    if not possible_json:
         abort(400) # bad request
-    return _call_command(["set", prop_string, request.json["value"]])
+    target_value = str(possible_json)
+    if "value" in possible_json:
+        target_value = possible_json["value"]
+    return _call_command(["set", prop_string, target_value])
 
 
 def set_system_property():
