@@ -70,20 +70,6 @@ nginx_admin_block: |
         expires -1;
       }
 
-      # Admin worker scripts
-      # pass the PHP scripts to FastCGI server via unix domain socket
-      location ~ ^/admin/(?<script_name>.+\.php)(?<path_info>/.+)$ {
-        root {{ connectbox_web_root }};
-        include fastcgi_params;
-        fastcgi_param SCRIPT_FILENAME $document_root$script_name;
-        fastcgi_param PATH_INFO $path_info;
-        fastcgi_param PATH_TRANSLATED $document_root$path_info;
-        include snippets/fastcgi-php.conf;
-        fastcgi_pass {{ fastcgi_pass_sock }};
-        auth_basic "Access Denied";
-        auth_basic_user_file /usr/local/connectbox/etc/basicauth;
-      }
-
 nginx_chat_block: |
     location /chat {
       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
