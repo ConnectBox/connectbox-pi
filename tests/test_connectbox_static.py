@@ -475,8 +475,8 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
 
 class ConnectBoxAPITestCase(unittest.TestCase):
 
-    ADMIN_SSID_URL = "%s/api.php/ssid" % (getAdminBaseURL(),)
-    ADMIN_HOSTNAME_URL = "%s/api.php/hostname" % (getAdminBaseURL(),)
+    ADMIN_SSID_URL = "%s/api/ssid" % (getAdminBaseURL(),)
+    ADMIN_HOSTNAME_URL = "%s/api/hostname" % (getAdminBaseURL(),)
     SUCCESS_RESPONSE = ["SUCCESS"]
     BAD_REQUEST_TEXT = "BAD REQUEST"
 
