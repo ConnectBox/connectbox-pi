@@ -477,6 +477,7 @@ class ConnectBoxAPITestCase(unittest.TestCase):
 
     ADMIN_SSID_URL = "%s/api/ssid" % (getAdminBaseURL(),)
     ADMIN_HOSTNAME_URL = "%s/api/hostname" % (getAdminBaseURL(),)
+    ADMIN_STATICSITE_URL = "%s/api/staticsite" % (getAdminBaseURL(),)
     SUCCESS_RESPONSE = ["SUCCESS"]
     BAD_REQUEST_TEXT = "BAD REQUEST"
 
@@ -485,11 +486,17 @@ class ConnectBoxAPITestCase(unittest.TestCase):
         r = requests.get(cls.ADMIN_SSID_URL, auth=getAdminAuth())
         r.raise_for_status()
         cls._original_ssid = r.json()["result"][0]
+        r = requests.get(cls.ADMIN_STATICSITE_URL, auth=getAdminAuth())
+        r.raise_for_status()
+        cls._original_staticsite = r.json()["result"][0]
 
     @classmethod
     def tearDownClass(cls):
         r = requests.put(cls.ADMIN_SSID_URL, auth=getAdminAuth(),
                          data=json.dumps({"value": cls._original_ssid}))
+        r.raise_for_status()
+        r = requests.put(cls.ADMIN_STATICSITE_URL, auth=getAdminAuth(),
+                         data=json.dumps({"value": cls._original_staticsite}))
         r.raise_for_status()
 
     def testAdminApiSmoketest(self):
@@ -590,6 +597,13 @@ class ConnectBoxAPITestCase(unittest.TestCase):
         # EM DASH codepoint is a 3 byte character
         # This SSID set should be rejected
         self._testSSIDSetWithLength(u'\N{EM DASH}' * 11)
+
+    def testStaticSiteSet(self):
+        r = requests.put(self.ADMIN_STATICSITE_URL, auth=getAdminAuth(),
+                         data=json.dumps({"value": "true"}))
+        r.raise_for_status()
+        self.assertEqual(r.json()["code"], 0)
+        self.assertEqual(r.json()["result"], self.SUCCESS_RESPONSE)
 
 class ConnectBoxChatTestCase(unittest.TestCase):
     CHAT_MESSAGES_URL = "%s/chat/messages" % (getTestBaseURL())
