@@ -325,10 +325,10 @@ function reload_nginx () {
     echo "Reloading nginx configuration"
   fi
 
-  # gunicorn gets connectbox hostname from an nginx response so restart
+  # gunicorn gets connectbox hostname from an nginx response so reload
   #  gunicorn after we reload nginx
   systemctl reload nginx
-  systemctl restart gunicorn
+  systemctl reload gunicorn
 
   if [ $? -ne 0 ]
   then
