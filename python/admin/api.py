@@ -33,7 +33,7 @@ def set_property_value_wrapped(prop):
     possible_json = request.get_json(force=True, silent=True)
     if (not possible_json) or ("value" not in possible_json):
         _abort_bad_request() # bad request
-    return _call_command(["set", prop_string, possible_json["value"]])
+    return _call_command(["set", prop_string, possible_json["value"].encode("utf-8")])
 
 
 def set_property(prop):
@@ -43,7 +43,7 @@ def set_property(prop):
     possible_json = request.get_json(force=True, silent=True)
     if not possible_json:
         _abort_bad_request() # bad request
-    return _call_command(["set", prop_string, possible_json])
+    return _call_command(["set", prop_string, possible_json.encode("utf-8")])
 
 
 def set_system_property():

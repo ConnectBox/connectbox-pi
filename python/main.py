@@ -6,6 +6,16 @@ from captive_portal.manager import setup_captive_portal_app, show_captive_portal
 from chat.server import register as register_chat
 from admin.api import register as register_admin
 
+# CI may not have locale set.
+import locale
+if locale.getlocale()[1] != "UTF-8":
+    local_lang = locale.getlocale()[0]
+    if local_lang is None:
+        locale.setlocale(locale.LC_ALL, "C.UTF-8")
+    else:
+        locale.setlocale(locale.LC_ALL, local_lang + ".UTF-8")
+
+
 config_parser = configparser.ConfigParser()
 config_parser.readfp(open('%s/defaults.cfg' % os.path.dirname(os.path.abspath(__file__))))
 config_parser.read(['/usr/local/connectbox/etc/connectbox.conf'])
