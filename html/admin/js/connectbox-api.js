@@ -5,7 +5,7 @@ var ConnectBoxApp = (function (App, $) {
   'use strict'
 
   var apiEnum = {
-    ENDPOINT: 'api.php'
+    ENDPOINT: 'api'
   }
 
   function buildApiUrl (resource, params) {

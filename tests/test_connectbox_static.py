@@ -475,8 +475,8 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
 
 class ConnectBoxAPITestCase(unittest.TestCase):
 
-    ADMIN_SSID_URL = "%s/api.php/ssid" % (getAdminBaseURL(),)
-    ADMIN_HOSTNAME_URL = "%s/api.php/hostname" % (getAdminBaseURL(),)
+    ADMIN_SSID_URL = "%s/api/ssid" % (getAdminBaseURL(),)
+    ADMIN_HOSTNAME_URL = "%s/api/hostname" % (getAdminBaseURL(),)
     SUCCESS_RESPONSE = ["SUCCESS"]
     BAD_REQUEST_TEXT = "BAD REQUEST"
 
@@ -527,8 +527,9 @@ class ConnectBoxAPITestCase(unittest.TestCase):
         with self.assertRaises(requests.HTTPError) as cm:
             r.raise_for_status()
 
-        self.assertEqual(cm.exception.response.status_code, 400)
-        self.assertEqual(cm.exception.response.text, self.BAD_REQUEST_TEXT)
+        self.assertEqual(cm.exception.response.status_code, 405)
+        # The respons text is not that important and is framework dependent.
+        #self.assertEqual(cm.exception.response.text, self.BAD_REQUEST_TEXT)
 
     def testBadRequestOnIncorrectDataType(self):
         # Need to use JSON encoded params
