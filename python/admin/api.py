@@ -1,4 +1,4 @@
-import os,subprocess
+import os,subprocess,json
 from flask import Flask,request,abort,jsonify,make_response
 
 valid_properties = ["ssid", "channel", "hostname", "staticsite", "password", "system", "ui-config"]
@@ -35,15 +35,15 @@ def set_property_value_wrapped(prop):
         _abort_bad_request() # bad request
     return _call_command(["set", prop_string, possible_json["value"].encode("utf-8")])
 
-
 def set_property(prop):
     prop_string = prop
     if prop_string not in valid_properties:
         _abort_bad_request() # bad request
-    possible_json = request.get_json(force=True, silent=True)
-    if not possible_json:
+    string_data = request.get_data(as_text=True)
+    if not string_data:
         _abort_bad_request() # bad request
-    return _call_command(["set", prop_string, possible_json.encode("utf-8")])
+
+    return _call_command(["set", prop_string, string_data.encode("utf-8")])
 
 
 def set_system_property():
@@ -71,6 +71,7 @@ def register(app):
         view_func=set_system_property)
     app.add_url_rule(
         rule='/admin/api/ui-config',
+        defaults={'prop': 'ui-config'},
         endpoint='set_property',
         methods=['PUT'],
         view_func=set_property)
