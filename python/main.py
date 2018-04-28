@@ -6,7 +6,7 @@ from captive_portal.manager import setup_captive_portal_app, show_captive_portal
 from chat.server import register as register_chat
 from admin.api import register as register_admin
 
-# CI may not have locale set.
+# Ubuntu CI may not have locale set (see #134)
 import locale
 if locale.getlocale()[1] != "UTF-8":
     local_lang = locale.getlocale()[0]
