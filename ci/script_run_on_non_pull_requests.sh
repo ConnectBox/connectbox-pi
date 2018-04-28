@@ -77,5 +77,6 @@ fi
 # Run web/selenium tests for each host
 for target_host in $(grep -v "^#" ci-inventory | cut -d" " -f1); do
   # Break the build if any test fails
+  echo "Running tests on $target_host";
   TEST_IP=$(dig +short $target_host) python -m unittest discover ../tests || exit 1;
 done

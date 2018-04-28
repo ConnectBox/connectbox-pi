@@ -5,17 +5,6 @@
     name: git
     state: present
 
-- name: install PHP for admin interface
-  apt:
-    name: "{{ php_service }}"
-    state: present
-
-- name: Enable PHP
-  service:
-    name: "{{ php_service }}"
-    enabled: yes
-    state: started
-
 - name: create folders for default content/shared and config
   file:
     path: "{{ item }}"
