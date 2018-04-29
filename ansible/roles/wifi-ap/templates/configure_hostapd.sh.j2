@@ -1,48 +1,80 @@
-#!/bin/sh
+#!/bin/bash
 
-TAG=$(basename $0);
+SYSLOG_TAG=$(basename $0);
 WIFI_INTERFACE={{ client_facing_if }};
 HOSTAPD_CONF=/etc/hostapd/hostapd.conf;
-CRDA_CONFIG=/etc/default/crda;
 
-current_hostapd_cc=$(awk -F= '$1 ~ /^country_code/ {print $2;}' ${HOSTAPD_CONF})
-initial_wifi_interface_state=$(cat /sys/class/net/${WIFI_INTERFACE}/operstate);
 
-# CRDA config sets REGDOMAIN. If that's set, then we treat that as a
-#  deliberate override.
-. ${CRDA_CONFIG};
+function configure_country_code {
+	current_hostapd_cc=$(awk -F= '$1 ~ /^country_code/ {print $2;}' ${HOSTAPD_CONF})
+	initial_wifi_interface_state=$(cat /sys/class/net/${WIFI_INTERFACE}/operstate);
 
-if [ -z "${REGDOMAIN}" ]; then
-	# No CRDA override. Let's scan surrounding networks and take the most
-	#  popular regulatory domain
+	# CRDA config sets REGDOMAIN. If that's set, then we treat that as a
+	#  deliberate override.
+	. /etc/default/crda;
 
-	if [ "$initial_wifi_interface_state" != "up" ]; then
-		ifconfig ${WIFI_INTERFACE} up;
-	fi
-	ambient_cc=$(iw dev ${WIFI_INTERFACE} scan |
-		awk '$1 ~ /Country:/ { print $2;}' |
-		sort |
-		uniq -c |
-		sort -n |
-		tail -1 |
-		awk '{print $2;}');
-	# Leave things as you found them, like your parents said
-	if [ "$initial_wifi_interface_state" = "down" ]; then
-		ifconfig ${WIFI_INTERFACE} down;
-	fi
+	if [ -z "${REGDOMAIN}" ]; then
+		# No CRDA override. Let's scan surrounding networks and take the most
+		#  popular regulatory domain
 
-	# If we can't get any regulatory domains from surrounding networks
-	#  then we have no reason to change what's set in hostapd
-	if [ -z "${ambient_cc}" ]; then
-		new_cc=${current_hostapd_cc};
+		if [ "$initial_wifi_interface_state" != "up" ]; then
+			ifconfig ${WIFI_INTERFACE} up;
+		fi
+		ambient_cc=$(iw dev ${WIFI_INTERFACE} scan |
+			awk '$1 ~ /Country:/ { print $2;}' |
+			sort |
+			uniq -c |
+			sort -n |
+			tail -1 |
+			awk '{print $2;}');
+		# Leave things as you found them, like your parents said
+		if [ "$initial_wifi_interface_state" = "down" ]; then
+			ifconfig ${WIFI_INTERFACE} down;
+		fi
+
+		# If we can't get any regulatory domains from surrounding networks
+		#  then we have no reason to change what's set in hostapd
+		if [ -z "${ambient_cc}" ]; then
+			new_cc=${current_hostapd_cc};
+		else
+			new_cc=${ambient_cc};
+		fi
 	else
-		new_cc=${ambient_cc};
+		new_cc=${REGDOMAIN};
 	fi
-else
-	new_cc=${REGDOMAIN};
-fi
 
-if [ "${new_cc}" != "${current_hostapd_cc}" ]; then
-	logger -t ${TAG} "Setting hostapd country_code from ${current_hostapd_cc} to ${new_cc}";
-	sed -i 's/^country_code.*/country_code='${new_cc}'/' $HOSTAPD_CONF;
-fi
+	if [ "${new_cc}" != "${current_hostapd_cc}" ]; then
+		logger -t ${SYSLOG_TAG} "Setting hostapd country_code from ${current_hostapd_cc} to ${new_cc}";
+		sed -i 's/^country_code.*/country_code='${new_cc}'/' $HOSTAPD_CONF;
+	fi
+}
+
+
+function configure_ht_capab {
+	UEVENT_FILE="/sys/class/net/${WIFI_INTERFACE}/device/uevent"
+	
+	if [ $(grep 'SDIO_ID=02D0:A9A6' ${UEVENT_FILE}) ]; then
+		# AP6212 (onboard) in OPi0+2
+		# BCM2835 in RPi0W
+		# BCM2837 in RPi3
+		# iw list reports "Static SM Power Save" in capabilities for
+		#  this device, but hostapd is unable to start if SMPS-STATIC
+		#  is set. It's unclear why and thus we exclude it.
+		ht_capab="[HT20][SHORT-GI-20][DDDS_CCK-40]";
+	elif [ $(grep 'PRODUCT=148f/5372/101' ${UEVENT_FILE}) ]; then
+		# Realtek 5372 (external USB shipped with Neo Connectbox)
+		# Deliberately do not advertise 40Mhz channels even though they're
+		#  supported because we never want to use them given rapid
+	        #  performance degradation under non-ideal conditions and the
+	        #  difficulty of configuration across regulatory domains
+		ht_capab="[HT20][GF][SHORT-GI-20][TX-STBC][RX-STBC12]";
+	else
+		# We don't recognise this device, so let's be conservative
+		ht_capab="";
+	fi
+	logger -t ${SYSLOG_TAG} "Setting hostapd ht_capab to ${ht_capab}";
+	sed -i 's/^ht_capab=.*/ht_capab='${ht_capab}'/' $HOSTAPD_CONF;
+}
+
+configure_country_code
+configure_ht_capab
