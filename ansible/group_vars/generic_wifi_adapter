@@ -1,3 +1,0 @@
----
-# Sentinel used in hostapd.conf.j2 (see doco there)
-wireless_adapter_capabilities: __default__

@@ -219,8 +219,7 @@ user@ubuntu: $ cp inventory.example inventory
 Open the inventory file in an editor, and uncomment the appropriate line for your device type. For example, you would need to modify the following lines for a RPi3/RPiZero+
 
 ```
-[raspberry_pi_3]
-#192.168.20.183 ansible_user=pi wireless_country_code=AU
+#192.168.20.183
 ```
 
 We want to modify the second line to first remove the leading `#` comment, change the IP address to our RPi3 device's IP address, change the `wireless_country_code` to an [appropriate regulatory domain](https://git.kernel.org/cgit/linux/kernel/git/sforshee/wireless-regdb.git/tree/db.txt) (00 is the default, and may not be appropriate). If you are experimenting with the system, you may want to activate developer mode by setting `developer_mode=true` but know that __developer_mode=true leaves the connectbox in an insecure state__ . Read the Optional Ansible Arguments documentation below to find out whether this is suitable. __developer_mode=true is unsuitable for real-world use or production deployments__
@@ -228,8 +227,7 @@ We want to modify the second line to first remove the leading `#` comment, chang
 Once done you will likely have something of this form, and you should save the file:
 
 ```
-[raspberry_pi_3]
-192.168.88.26 ansible_user=pi wireless_country_code=GB
+192.168.88.26
 ```
 
 Confirm connectivity by running `ansible -i inventory all -m ping` . If you do not see a **pong** response after entering the password, then you'll have to revisit your connectivity before continuing.

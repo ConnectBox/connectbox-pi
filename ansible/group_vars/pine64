@@ -1,3 +1,0 @@
----
-# From: https://github.com/ConnectBox/connectbox-pi/wiki/Wireless-Benchmarking-with-ht_capab-settings
-wireless_adapter_capabilities: "[SHORT-GI-20][MAX-AMSDU-7935]"
