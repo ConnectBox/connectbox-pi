@@ -15,7 +15,7 @@ iface {{ client_facing_if }} inet static
     address {{ client_facing_if_ip_address }}
     netmask {{ client_facing_if_netmask }}
     hostapd /etc/hostapd/hostapd.conf
-    pre-up /etc/hostapd/set_wifi_country_code.sh
+    pre-up /etc/hostapd/configure_hostapd.sh
     # dnsmasq does not always answer DHCP requests after wifi unplug/replug
     #  so we manage it's start and stop here. We always expect wlan0 to be
     #  running on a functioning system, so this dependency on wlan0 is not

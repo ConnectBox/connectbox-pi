@@ -1,5 +1,0 @@
----
-
-# Channel 1 appears to be problematic on the OPi Zero; use anything else
-wireless_channel: 3
-

@@ -15,8 +15,8 @@
 
 - name: Copy script to set regulatory domain
   template:
-    src: set_wifi_country_code.sh.j2
-    dest: /etc/hostapd/set_wifi_country_code.sh
+    src: configure_hostapd.sh.j2
+    dest: /etc/hostapd/configure_hostapd.sh
     owner: root
     group: root
     mode: 0755
