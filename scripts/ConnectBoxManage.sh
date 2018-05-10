@@ -55,6 +55,8 @@ action=$1
 module=$2
 val=$3
 
+logger -t $(basename $0) "$action $module $val"
+
 # --- Locks -------------------------------------------------------
 LOCK_FILE=/tmp/$SUBJECT.lock
 if [ -f "$LOCK_FILE" ]; then
