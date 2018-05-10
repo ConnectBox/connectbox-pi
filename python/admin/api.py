@@ -50,10 +50,8 @@ def set_system_property():
     if (not request.json) or ("value" not in request.json):
         _abort_bad_request() # bad request
 
-    if request.json["value"] in ["shutdown", "reboot"]:
-        # Safe as input is limited
-        subprocess.Popen("sleep 1; " + request.json["value"], shell=True)
-        return jsonify(code=0, result="SUCCESS")
+    if not request.json["value"] in ["shutdown", "reboot", "unmountusb", "reset"]:
+        _abort_bad_request() # bad request
 
     return _call_command([request.json["value"]])
 
