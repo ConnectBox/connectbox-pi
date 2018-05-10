@@ -11,4 +11,9 @@ server {
 {{ nginx_chat_block }}
 {{ nginx_admin_block }}
 
+    # Admin interface
+    location /admin {
+      alias {{ connectbox_default_content_root }};
+      index index.html;
+    }
 }

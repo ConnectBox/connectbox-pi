@@ -35,7 +35,3 @@ All files located in directories named "external" are externally
 maintained libraries used by this software which have their own
 licenses; we recommend you read them, as their terms may differ from
 the terms above.
-
-All files located in the "html/client/fonts" directory are from
-Font Awesome by Dave Gandy - http://fontawesome.io and are licensed
-under the SIL OFL 1.1 - http://scripts.sil.org/OFL .
