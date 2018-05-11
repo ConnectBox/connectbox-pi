@@ -70,35 +70,6 @@ def getAdminAuth():
     return requests.auth.HTTPBasicAuth(ADMIN_USER, ADMIN_PASSWORD)
 
 
-class ConnectBoxBasicTestCase(unittest.TestCase):
-
-    def testContentResponseType(self):
-        # URLs under content should return json
-        r = requests.get("%s/content/" % (getTestBaseURL(),))
-        r.raise_for_status()
-        self.assertIsInstance(r.json(), list)
-
-    def testAdminNeedsAuth(self):
-        r = requests.get("%s/" % (getAdminBaseURL(),))
-        # No raise_for_status because we're checking for a 401
-        self.assertEqual(r.status_code, 401)
-
-    def testAdminNoTrailingSlashRequired(self):
-        r = requests.get("%s" % (getAdminBaseURL(),), auth=getAdminAuth())
-        r.raise_for_status()
-        self.assertIn("ConnectBox Admin Dashboard", r.text)
-
-    def testAdminPageTitle(self):
-        r = requests.get("%s/" % (getAdminBaseURL(),), auth=getAdminAuth())
-        r.raise_for_status()
-        self.assertIn("ConnectBox Admin Dashboard", r.text)
-
-    def testTextInDocumentTitle(self):
-        r = requests.get("%s/" % (getTestBaseURL(),))
-        r.raise_for_status()
-        self.assertIn("<title>ConnectBox</title>", r.text)
-
-
 class ConnectBoxDNSTestCase(unittest.TestCase):
     """Behavioural tests for the dnsmasq server"""
 
