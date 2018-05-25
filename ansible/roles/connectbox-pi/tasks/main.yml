@@ -21,7 +21,7 @@
 
 - name: Create connectbox version file
   copy:
-    content: "{{ connectbox_version }}"
+    content: "{{ connectbox_version }}\n"
     dest: /etc/connectbox-release
 
 - name: Create connectbox group
