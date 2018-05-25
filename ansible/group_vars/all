@@ -3,6 +3,8 @@
 #  put in as host_vars, the IP address of the device will be different
 #  for each deployment, so it's easier to put it here.
 
+connectbox_version: "{{ 'dev-%y%m%d' | strftime }}"
+
 # Parameterised to allow overriding during CI builds, where we want to
 #  test some client-facing capabilities but do not have a wifi interface
 client_facing_if: "wlan0"

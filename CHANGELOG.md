@@ -5,12 +5,23 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 This project indentifies releases by release date.
 
-Current open Issues: https://github.com/ConnectBox/connectbox-pi/issues?q=is%3Aopen+is%3Aissue+milestone%3A%2225-unit+pilot%22
-
-
 # Unreleased
 
 *
+
+# 20180526
+
+* Changed: Admin API migrated to python
+* Removed: PHP packages are no longer included by default (they're still available through the system package manager)
+* Fixed: Folder icon rendering issues [Issue #233](https://github.com/ConnectBox/connectbox-pi/issues/233)
+* Fixed: NEO ethernet MAC changes at power cycle [Issue #237](https://github.com/ConnectBox/connectbox-pi/issues/237)
+* Added: Packages and system overlays required for future OLED integration
+* Added: ConnectBox build number under /etc/connectbox-release (not exposed in UI yet)
+* Changed: Optimised device-specific wifi parameters are applied at device startup, rather than hardcoded (allowing experimentation with other wifi adapters)
+
+# 20180418
+
+* Changed: Switch to Armbian 5.41 with a 4.14y kernel
 
 # 20180122
 
@@ -64,7 +75,7 @@ Current open Issues: https://github.com/ConnectBox/connectbox-pi/issues?q=is%3Ao
 
 * Fixed: Ethernet MAC address changes on each reboot: [Issue #124](https://github.com/ConnectBox/connectbox-pi/issues/124)
 * Fixed: Image does not expose all available space on the microsd card [Issue #163](https://github.com/ConnectBox/connectbox-pi/issues/163)
-* Added: Attempt to set the WiFi Regulatory domain automatically based on the regulatory domain of surrounding devices [PR #166](https://github.com/ConnectBox/connectbox-pi/pull/166) 
+* Added: Attempt to set the WiFi Regulatory domain automatically based on the regulatory domain of surrounding devices [PR #166](https://github.com/ConnectBox/connectbox-pi/pull/166)
 
 # 20170827
 

@@ -19,6 +19,11 @@
     block: |
       127.0.0.1 {{ connectbox_default_hostname }}
 
+- name: Create connectbox version file
+  copy:
+    content: "{{ connectbox_version }}\n"
+    dest: /etc/connectbox-release
+
 - name: Create connectbox group
   group:
     name: _connectbox
