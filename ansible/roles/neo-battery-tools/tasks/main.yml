@@ -4,17 +4,34 @@
     name: devmem2
     state: present
 
+- name: Install i2c-tools to allow access to the OLED display (via luma)
+  apt:
+    name: i2c-tools
+    state: present
+
+- name: Install packages to allow building of pillow and psutil
+  apt:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - python3-dev
+    - libfreetype6-dev
+    - libjpeg-dev
+
 - name: Make neo battery shutdown virtualenv directory
   file:
     path: "{{ battery_tool_virtualenv_dir }}"
     state: directory
 
+# MAX_CONCURRENCY=1 means Pillow doesn't attempt to compile on all
+#  CPUs, which can cause out-of-memory errors on 256MB Neos
 - name: Setup neo battery shutdown virtualenv (python3)
   pip:
     virtualenv: "{{ battery_tool_virtualenv_dir }}"
     virtualenv_python: python3
-    editable: False
     name: git+https://github.com/ConnectBox/NEO_BatteryLevelShutdown.git
+  environment:
+    MAX_CONCURRENCY: 1
 
 - name: Copy PA6 pulldown resistor systemd service definition
   template:
