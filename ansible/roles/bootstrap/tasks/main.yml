@@ -75,6 +75,23 @@
     update-cache: yes
     cache_valid_time: 86400 # 1 day
 
+# We build our own armbian images, so we need to prevent upstream
+#  kernel, dtb and uboot packages from being installed (lest they
+#  overwrite our changes)
+# This task will bomb if we're running on a sunxi device and using
+#  something other than the "next" branch or using something other
+#  than xenial
+- name: Pin kernel and dtb packages
+  command: "apt-mark hold {{ item }}"
+  when: connectbox_os == "armbian" and "sunxi" in ansible_kernel
+  register: packageheld
+  changed_when: packageheld.stdout.find("already set on hold") == -1
+  with_items:
+    - linux-dtb-next-sunxi
+    - linux-image-next-sunxi
+    - linux-u-boot-nanopineo-next
+    - linux-xenial-root-next-nanopineo
+
 - name: Temporarily shutdown log2ram service on Armbian during package installation
   service:
     name: log2ram
