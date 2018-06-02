@@ -33,6 +33,23 @@
     reboot_required: True
   when: resize2fs_reboot.stat.exists == True
 
+# Disable automated apt-y things before attempting to install packages
+# unattended-upgrades and apt.systemd.daily only run on Ubuntu
+- name: Stop automated apty services
+  service:
+    name: "{{ item }}"
+    state: stopped
+    enabled: no
+  with_items: "{{ apty_services }}"
+
+# Needs to happen before the initial reboot, given the job triggers actions
+#  on @reboot
+- name: Disable armbian auto-update processes
+  file:
+    path: /etc/cron.d/armbian-updates
+    state: absent
+  when: connectbox_os == "armbian"
+
 - name: Reboot device for changes to take effect
   shell: sleep 2 && /sbin/shutdown -r now
   async: 1
@@ -46,15 +63,6 @@
     delay=15
     timeout=300
   when: reboot_required
-
-# Disable automated apt-y things before attempting to install packages
-# unattended-upgrades and apt.systemd.daily only run on Ubuntu
-- name: Stop automated apty services
-  service:
-    name: "{{ item }}"
-    state: stopped
-    enabled: no
-  with_items: "{{ apty_services }}"
 
 # Needed for package upgrades via ansible (aptitude safe-upgrade)
 - name: Install aptitude
