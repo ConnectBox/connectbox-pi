@@ -9,6 +9,12 @@ This project indentifies releases by release date.
 
 *
 
+# 20180603
+
+* Added: Support for OLED HAT (Q3Y2018 HAT).
+* Added: Prevent upstream armbian packages overwriting our kernel and uboot packages
+* Added: Complete disabling of automatic OS updates (allowing ansible-playbook runs to complete without failing on dpkg locks) [Issue #214](https://github.com/ConnectBox/connectbox-pi/issues/214)
+
 # 20180526
 
 * Changed: Admin API migrated to python
