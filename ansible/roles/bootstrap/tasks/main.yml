@@ -89,16 +89,15 @@
 # This task will bomb if we're running on a sunxi device and using
 #  something other than the "next" branch or using something other
 #  than xenial
+# We use aptitude instead of apt-hold because aptitude's first run clears
+#  the package holds which causes us to upgrade these packages.
+# aptitude doesn't give any indication about whether the package was
+#  already on hold, so it's not possible to show whether this task
+#  changed anything (and it's not worth lead-up tasks to work out
+#  whether this task would do anything i.e. using aptitude search ~ahold
 - name: Pin kernel and dtb packages
-  command: "apt-mark hold {{ item }}"
+  command: "aptitude -q hold linux-dtb-next-sunxi linux-image-next-sunxi linux-u-boot-nanopineo-next linux-xenial-root-next-nanopineo"
   when: connectbox_os == "armbian" and "sunxi" in ansible_kernel
-  register: packageheld
-  changed_when: packageheld.stdout.find("already set on hold") == -1
-  with_items:
-    - linux-dtb-next-sunxi
-    - linux-image-next-sunxi
-    - linux-u-boot-nanopineo-next
-    - linux-xenial-root-next-nanopineo
 
 - name: Temporarily shutdown log2ram service on Armbian during package installation
   service:
