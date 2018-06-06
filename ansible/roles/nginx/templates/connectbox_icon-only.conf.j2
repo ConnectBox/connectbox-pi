@@ -30,4 +30,8 @@ server {
     location ~ \.json$ {
       expires -1;
     }
+
+    location / {
+      try_files $uri /index.html;
+    }
 }
