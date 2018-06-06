@@ -446,9 +446,10 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
 
 class ConnectBoxAPITestCase(unittest.TestCase):
 
-    ADMIN_SSID_URL = "%s/api/ssid" % (getAdminBaseURL(),)
-    ADMIN_HOSTNAME_URL = "%s/api/hostname" % (getAdminBaseURL(),)
-    ADMIN_STATICSITE_URL = "%s/api/staticsite" % (getAdminBaseURL(),)
+    API_BASE_URL = "%s/api" % (getAdminBaseURL(),)
+    ADMIN_SSID_URL = "%s/ssid" % API_BASE_URL
+    ADMIN_HOSTNAME_URL = "%s/hostname" % API_BASE_URL
+    ADMIN_STATICSITE_URL = "%s/staticsite" % API_BASE_URL
     SUCCESS_RESPONSE = ["SUCCESS"]
     BAD_REQUEST_TEXT = "BAD REQUEST"
 
@@ -469,6 +470,16 @@ class ConnectBoxAPITestCase(unittest.TestCase):
         r = requests.put(cls.ADMIN_STATICSITE_URL, auth=getAdminAuth(),
                          data=json.dumps({"value": cls._original_staticsite}))
         r.raise_for_status()
+
+    def testAdminNeedsAuth(self):
+        r = requests.get(self.API_BASE_URL)
+        self.assertEqual(r.status_code, 401)
+        r = requests.get(self.ADMIN_SSID_URL)
+        self.assertEqual(r.status_code, 401)
+        r = requests.get(self.ADMIN_HOSTNAME_URL)
+        self.assertEqual(r.status_code, 401)
+        r = requests.get(self.ADMIN_STATICSITE_URL)
+        self.assertEqual(r.status_code, 401)
 
     def testAdminApiSmoketest(self):
         # To catch where there is a gross misconfiguration that breaks
