@@ -6,5 +6,3 @@ wireless_channel: 1
 #  To override, set an entry based on those in the following file:
 # https://git.kernel.org/cgit/linux/kernel/git/sforshee/wireless-regdb.git/tree/db.txt
 wireless_country_code: ""
-# rt5372
-wireless_adapter_capabilities: "[HT20][SHORT-GI-20][TX-STBC][RX-STBC12]"
