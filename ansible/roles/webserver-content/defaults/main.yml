@@ -4,3 +4,4 @@ gunicorn_pid_file: "{{ gunicorn_run_directory }}/pid"
 gunicorn_listen_port: 5000
 gunicorn_user: www-data
 gunicorn_group: www-data
+gunicorn_log_level: "error"
