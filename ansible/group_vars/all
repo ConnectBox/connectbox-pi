@@ -41,16 +41,7 @@ connectbox_client_repo: https://github.com/ConnectBox/connectbox-react-icon-clie
 connectbox_client_path: published/
 
 nginx_admin_block: |
-      # Admin reports interface
-      location /reports {
-        root {{ connectbox_admin_root }};
-        auth_basic "Access Denied";
-        auth_basic_user_file /usr/local/connectbox/etc/basicauth;
-      }
-
       location /admin/api {
-        auth_basic "Access Denied";
-        auth_basic_user_file /usr/local/connectbox/etc/basicauth;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header Host $http_host;
         proxy_redirect off;

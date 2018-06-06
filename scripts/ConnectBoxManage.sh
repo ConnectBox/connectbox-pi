@@ -6,7 +6,7 @@
 
 VERSION=0.1.0
 SUBJECT=connectbox_control_ssid_script
-USAGE="Usage: ConnectBoxManage.sh -dhv [get|set] [ssid|channel|hostname] <value>"
+USAGE="Usage: ConnectBoxManage.sh -dhv [get|set|check] [ssid|channel|hostname|password] <value>"
 HOSTAPD_CONFIG="/etc/hostapd/hostapd.conf"
 HOSTNAME_CONFIG="/etc/hostname"
 HOSTS_CONFIG="/etc/hosts"
@@ -329,8 +329,7 @@ function reload_nginx () {
 
   # gunicorn gets connectbox hostname from an nginx response so reload
   #  gunicorn after we reload nginx
-  systemctl reload nginx
-  systemctl reload gunicorn
+  systemctl reload nginx gunicorn 2>&1 | logger -t $(basename $0)
 
   if [ $? -ne 0 ]
   then
@@ -408,6 +407,22 @@ function restart_hostapd () {
   fi
 }
 
+function check_password () {
+  if [[ -z "${val// }" ]]; then
+    echo "Missing password value"
+    exit 1;
+  fi
+
+  local new_hash=`echo $val | openssl passwd -apr1 -salt $PASSWORD_SALT -stdin`
+  local password=`cat $PASSWORD_CONFIG`
+
+  if [ "admin:$new_hash" = "$password" ]; then
+    success
+  else
+    failure
+  fi
+}
+
 function set_password () {
   if [[ -z "${val// }" ]]; then
     echo "Missing password value"
@@ -426,7 +441,6 @@ function set_password () {
 
   if [ ${PIPESTATUS[0]} -eq 0 ]
   then
-    reload_nginx
     success
   else
     failure
@@ -693,6 +707,17 @@ elif [ "$action" = "reboot" ]; then
   doreboot
 elif [ "$action" = "reset" ]; then
   reset
+elif [ "$action" = "check" ]; then
+  case "$module" in
+    "password")
+      check_password
+      exit 0;
+      ;;
+  *)
+    usage
+    ;;
+
+  esac
 else
   usage
 fi

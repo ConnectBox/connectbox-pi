@@ -1,25 +1,55 @@
-import os,subprocess,json
+import base64,json,logging,os,subprocess
 from flask import Flask,request,abort,jsonify,make_response
 
 valid_properties = ["ssid", "channel", "hostname", "staticsite", "password", "system", "ui-config"]
 
 def _abort_bad_request():
     abort(make_response("BAD REQUEST", 400))
-    
+
+def _abort_unauthorized():
+    abort(make_response("Unauthorized", 401))
 
 def _call_command(extra_args):
     cmd_args = ["sudo", "/usr/local/connectbox/bin/ConnectBoxManage.sh"]
-    called_cmd = subprocess.run(cmd_args + extra_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-    result_string= called_cmd.stdout
+    called_cmd = subprocess.run(
+        cmd_args + extra_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    logging.debug("_call_command" + " ".join(cmd_args))
+    result_string = called_cmd.stdout
     if called_cmd.returncode != 0:
-        result_string= called_cmd.stderr
+        result_string = called_cmd.stderr
 
-    return jsonify(code=called_cmd.returncode,
-           result=result_string.decode("utf-8").rstrip().split("\n"))
+    return jsonify(
+        code=called_cmd.returncode, result=result_string.decode("utf-8").rstrip().split("\n"))
+
+def _authenticate(req):
+    logging.debug("_authenticate")
+    try:
+        auth_header = req.headers.get('Authorization')
+        if auth_header:
+            if auth_header.startswith("Basic "):
+                decoded = base64.b64decode(auth_header.split()[1]).decode('utf-8')
+                credentials = decoded.split(":")
+
+                if len(credentials) == 2:
+                    cmd_args = [
+                        "sudo",
+                        "/usr/local/connectbox/bin/ConnectBoxManage.sh",
+                        "check", "password", credentials[1]]
+                    called_cmd = subprocess.run(
+                        cmd_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+                    if called_cmd.returncode == 0:
+                        return
+    except:
+        pass
+
+    _abort_unauthorized()
 
 
 def get_property(prop):
+    logging.debug("get_property")
+    _authenticate(request)
+
     prop_string = prop
     if prop_string not in valid_properties:
         _abort_bad_request()
@@ -27,6 +57,9 @@ def get_property(prop):
 
 
 def set_property_value_wrapped(prop):
+    logging.debug("set_property_value_wrapped")
+    _authenticate(request)
+
     prop_string = prop
     if prop_string not in valid_properties:
         _abort_bad_request() # bad request
@@ -36,6 +69,9 @@ def set_property_value_wrapped(prop):
     return _call_command(["set", prop_string, possible_json["value"].encode("utf-8")])
 
 def set_property(prop):
+    logging.debug("set_property")
+    _authenticate(request)
+
     prop_string = prop
     if prop_string not in valid_properties:
         _abort_bad_request() # bad request
@@ -47,6 +83,9 @@ def set_property(prop):
 
 
 def set_system_property():
+    logging.debug("set_system_property")
+    _authenticate(request)
+
     if (not request.json) or ("value" not in request.json):
         _abort_bad_request() # bad request
 
