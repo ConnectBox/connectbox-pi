@@ -102,13 +102,6 @@ function restore_ui_config () {
     if [ ${PIPESTATUS[0]} -ne 0 ]
     then
       failure
-    else
-      hostname `cat $UI_CONFIG` 2>&1 | logger -t $(basename $0)
-
-      if [ ${PIPESTATUS[0]} -ne 0 ]
-      then
-        failure
-      fi
     fi
   fi
 }
