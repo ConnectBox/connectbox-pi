@@ -3,6 +3,13 @@ from flask import Flask,request,abort,jsonify,make_response
 
 valid_properties = ["ssid", "channel", "hostname", "staticsite", "password", "system", "ui-config"]
 
+connectbox_version = 'dev'
+try:
+    with open('/etc/connectbox-release', 'r') as version_file:
+        connectbox_version=version_file.read().replace('\n', '')
+except:
+    pass
+
 def _abort_bad_request():
     abort(make_response("BAD REQUEST", 400))
 
@@ -18,8 +25,11 @@ def _call_command(extra_args):
     if called_cmd.returncode != 0:
         result_string = called_cmd.stderr
 
-    return jsonify(
+    res = jsonify(
         code=called_cmd.returncode, result=result_string.decode("utf-8").rstrip().split("\n"))
+    res.headers['X-Connectbox-Version'] = connectbox_version
+
+    return res
 
 def _authenticate(req):
     logging.debug("_authenticate")
