@@ -1,5 +1,5 @@
-import base64,json,logging,os,subprocess
-from flask import Flask,request,abort,jsonify,make_response
+import base64,logging,os,subprocess
+from flask import request,abort,jsonify,make_response
 
 valid_properties = ["ssid", "channel", "hostname", "staticsite", "password", "system", "ui-config"]
 
@@ -7,8 +7,8 @@ connectbox_version = 'dev'
 try:
     with open('/etc/connectbox-release', 'r') as version_file:
         connectbox_version=version_file.read().replace('\n', '')
-except:
-    pass
+except Exception as err:
+    logging.warn('Error reading release: %s' % str(err))
 
 def _abort_bad_request():
     abort(make_response("BAD REQUEST", 400))
@@ -50,8 +50,8 @@ def _authenticate(req):
 
                     if called_cmd.returncode == 0:
                         return
-    except:
-        pass
+    except Exception as err:
+        logging.warn('Error authenticating request: %s' % str(err))
 
     _abort_unauthorized()
 
@@ -104,8 +104,18 @@ def set_system_property():
 
     return _call_command([request.json["value"]])
 
+def not_authorized():
+    _abort_unauthorized()
 
 def register(app):
+    app.add_url_rule(
+        rule='/admin/api',
+        endpoint='not_authorized',
+        view_func=not_authorized)
+    app.add_url_rule(
+        rule='/admin/api/',
+        endpoint='not_authorized',
+        view_func=not_authorized)
     app.add_url_rule(
         rule='/admin/api/<prop>',
         endpoint='get_property',
