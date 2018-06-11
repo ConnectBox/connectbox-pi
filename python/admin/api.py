@@ -13,8 +13,8 @@ except Exception as err:
 def _abort_bad_request():
     abort(make_response("BAD REQUEST", 400))
 
-def _abort_unauthorized():
-    abort(make_response("Unauthorized", 401))
+def _abort_unauthorized(msg = ""):
+    abort(make_response("Unauthorized: %s" % msg, 401))
 
 def _call_command(extra_args):
     cmd_args = ["sudo", "/usr/local/connectbox/bin/ConnectBoxManage.sh"]
@@ -33,6 +33,8 @@ def _call_command(extra_args):
 
 def _authenticate(req):
     logging.debug("_authenticate")
+    auth_header = "''"
+    debugError = ""
     try:
         auth_header = req.headers.get('Authorization')
         if auth_header:
@@ -51,9 +53,10 @@ def _authenticate(req):
                     if called_cmd.returncode == 0:
                         return
     except Exception as err:
+        debugError = str(err)
         logging.warn('Error authenticating request: %s' % str(err))
 
-    _abort_unauthorized()
+    _abort_unauthorized("%s / %s" % (auth_header, debugError))
 
 
 def get_property(prop):

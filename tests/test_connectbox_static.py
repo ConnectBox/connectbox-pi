@@ -468,6 +468,7 @@ class ConnectBoxAPITestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         r = requests.get(cls.ADMIN_SSID_URL, auth=getAdminAuth())
+        print('debug1 ' + str(r.text))
         r.raise_for_status()
         cls._original_ssid = r.json()["result"][0]
         r = requests.get(cls.ADMIN_STATICSITE_URL, auth=getAdminAuth())
