@@ -34,7 +34,9 @@ def _call_command(extra_args):
 def _authenticate(req):
     logging.debug("_authenticate")
     auth_header = "''"
-    debugError = ""
+    debugError = "-"
+    decoded = "-"
+    result_string = "-"
     try:
         auth_header = req.headers.get('Authorization')
         if auth_header:
@@ -49,14 +51,14 @@ def _authenticate(req):
                         "check", "password", credentials[1]]
                     called_cmd = subprocess.run(
                         cmd_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
+                    result_string = called_cmd.stdout
                     if called_cmd.returncode == 0:
                         return
     except Exception as err:
         debugError = str(err)
         logging.warn('Error authenticating request: %s' % str(err))
 
-    _abort_unauthorized("%s / %s" % (auth_header, debugError))
+    _abort_unauthorized("%s / %s / %s / %s" % (auth_header, debugError, decoded, result_string))
 
 
 def get_property(prop):

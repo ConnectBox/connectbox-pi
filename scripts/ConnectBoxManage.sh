@@ -410,7 +410,9 @@ function check_password () {
   local password=`cat $PASSWORD_CONFIG`
 
   if [ "admin:$new_hash" = "$password" ]; then
-    success
+    #success
+    echo "$new_hash $password"
+    exit 0
   else
     failure
   fi
