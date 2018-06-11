@@ -1,4 +1,4 @@
-import base64,logging,os,subprocess
+import base64,logging,subprocess
 from flask import request,abort,jsonify,make_response
 
 valid_properties = ["ssid", "channel", "hostname", "staticsite", "password", "system", "ui-config"]
