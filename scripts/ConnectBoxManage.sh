@@ -12,7 +12,7 @@ HOSTNAME_CONFIG="/etc/hostname"
 HOSTS_CONFIG="/etc/hosts"
 NGINX_CONFIG="/etc/nginx/sites-enabled/vhosts.conf"
 PASSWORD_CONFIG="/usr/local/connectbox/etc/basicauth"
-PASSWORD_SALT="CBOXFOO2016"
+PASSWORD_SALT="CBOX2018"
 UI_CONFIG="/var/www/connectbox/connectbox_default/config/default.json"
 DEBUG=0
 SUCCESS="SUCCESS"
@@ -414,7 +414,8 @@ function check_password () {
     echo "$new_hash $password"
     exit 0
   else
-    failure
+    echo "$new_hash $password"
+    exit 1
   fi
 }
 
