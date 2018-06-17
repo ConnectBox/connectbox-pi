@@ -17,7 +17,7 @@ Does the minimum required to:
 import datetime
 import os.path
 import requests
-from flask import Flask, redirect, render_template, request, Response
+from flask import redirect, render_template, request, Response
 from ua_parser import user_agent_parser
 from werkzeug.contrib.fixers import ProxyFix
 

@@ -30,7 +30,7 @@ connectbox_app_root: "{{ connectbox_web_root }}/app"
 connectbox_virtualenv: "{{ connectbox_web_root }}/connectbox_virtualenv"
 connectbox_config_root: /etc/connectbox
 connectbox_usb_files_root: /media/usb0
-connectbox_admin_credentials: admin:$apr1$CBOXFOO2$usYeNWIKOX910UnI/jugh.
+connectbox_admin_credentials: admin:$apr1$CBOX2018$RlXBoHRRoiG3vMC7PS07q.
 connectbox_default_hostname: connectbox
 connectbox_log_dir: /var/log/connectbox
 connectbox_access_log: "{{ connectbox_log_dir }}/connectbox-access.log"
@@ -39,33 +39,22 @@ connectbox_error_log:  "{{ connectbox_log_dir }}/connectbox-error.log"
 access_log_analyzer_repo: https://github.com/ConnectBox/access-log-analyzer.git
 connectbox_client_repo: https://github.com/ConnectBox/connectbox-react-icon-client.git
 connectbox_client_path: published/
-connectbox_reports_repo: https://github.com/ConnectBox/connectbox-reports.git
-connectbox_reports_path: published/
 
 nginx_admin_block: |
-      # Admin interface
-      location /admin {
-        root {{ connectbox_web_root }};
-        auth_basic "Access Denied";
-        auth_basic_user_file /usr/local/connectbox/etc/basicauth;
-      }
-
-      # Admin reports interface
-      location /reports {
-        root {{ connectbox_admin_root }};
-        auth_basic "Access Denied";
-        auth_basic_user_file /usr/local/connectbox/etc/basicauth;
-      }
-
       location /admin/api {
-        auth_basic "Access Denied";
-        auth_basic_user_file /usr/local/connectbox/etc/basicauth;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header Host $http_host;
         proxy_redirect off;
         proxy_pass http://127.0.0.1:{{ gunicorn_listen_port }}/admin/api;
         # Never cache
         expires -1;
+      }
+
+      location /__connectbox_assets__ {
+        alias {{ connectbox_default_content_root }};
+        location ~ \.json$ {
+          expires -1;
+        }
       }
 
 nginx_chat_block: |

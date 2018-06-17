@@ -70,35 +70,6 @@ def getAdminAuth():
     return requests.auth.HTTPBasicAuth(ADMIN_USER, ADMIN_PASSWORD)
 
 
-class ConnectBoxBasicTestCase(unittest.TestCase):
-
-    def testContentResponseType(self):
-        # URLs under content should return json
-        r = requests.get("%s/content/" % (getTestBaseURL(),))
-        r.raise_for_status()
-        self.assertIsInstance(r.json(), list)
-
-    def testAdminNeedsAuth(self):
-        r = requests.get("%s/" % (getAdminBaseURL(),))
-        # No raise_for_status because we're checking for a 401
-        self.assertEqual(r.status_code, 401)
-
-    def testAdminNoTrailingSlashRequired(self):
-        r = requests.get("%s" % (getAdminBaseURL(),), auth=getAdminAuth())
-        r.raise_for_status()
-        self.assertIn("ConnectBox Admin Dashboard", r.text)
-
-    def testAdminPageTitle(self):
-        r = requests.get("%s/" % (getAdminBaseURL(),), auth=getAdminAuth())
-        r.raise_for_status()
-        self.assertIn("ConnectBox Admin Dashboard", r.text)
-
-    def testTextInDocumentTitle(self):
-        r = requests.get("%s/" % (getTestBaseURL(),))
-        r.raise_for_status()
-        self.assertIn("<title>ConnectBox</title>", r.text)
-
-
 class ConnectBoxDNSTestCase(unittest.TestCase):
     """Behavioural tests for the dnsmasq server"""
 
@@ -472,12 +443,25 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
         r.raise_for_status()
         self.assertFalse(r.is_redirect)
 
+class ConnectBoxBasicTestCase(unittest.TestCase):
+    def testContentResponseType(self):
+        # URLs under content should return json
+        r = requests.get("%s/content/" % (getTestBaseURL(),))
+        r.raise_for_status()
+        self.assertIsInstance(r.json(), list)
+
+    def testTextInDocumentTitle(self):
+        r = requests.get("%s/" % (getTestBaseURL(),))
+        r.raise_for_status()
+        self.assertIn("<title>ConnectBox</title>", r.text)
 
 class ConnectBoxAPITestCase(unittest.TestCase):
 
-    ADMIN_SSID_URL = "%s/api/ssid" % (getAdminBaseURL(),)
-    ADMIN_HOSTNAME_URL = "%s/api/hostname" % (getAdminBaseURL(),)
-    ADMIN_STATICSITE_URL = "%s/api/staticsite" % (getAdminBaseURL(),)
+    API_BASE_URL = "%s/api" % (getAdminBaseURL(),)
+    ADMIN_SSID_URL = "%s/ssid" % API_BASE_URL
+    ADMIN_HOSTNAME_URL = "%s/hostname" % API_BASE_URL
+    ADMIN_STATICSITE_URL = "%s/staticsite" % API_BASE_URL
+    ADMIN_SYSTEM_URL = "%s/system" % API_BASE_URL
     SUCCESS_RESPONSE = ["SUCCESS"]
     BAD_REQUEST_TEXT = "BAD REQUEST"
 
@@ -489,6 +473,9 @@ class ConnectBoxAPITestCase(unittest.TestCase):
         r = requests.get(cls.ADMIN_STATICSITE_URL, auth=getAdminAuth())
         r.raise_for_status()
         cls._original_staticsite = r.json()["result"][0]
+        r = requests.get(cls.ADMIN_HOSTNAME_URL, auth=getAdminAuth())
+        r.raise_for_status()
+        cls._original_hostname = r.json()["result"][0]
 
     @classmethod
     def tearDownClass(cls):
@@ -498,6 +485,19 @@ class ConnectBoxAPITestCase(unittest.TestCase):
         r = requests.put(cls.ADMIN_STATICSITE_URL, auth=getAdminAuth(),
                          data=json.dumps({"value": cls._original_staticsite}))
         r.raise_for_status()
+        r = requests.put(cls.ADMIN_HOSTNAME_URL, auth=getAdminAuth(),
+                         data=json.dumps({"value": cls._original_hostname}))
+        r.raise_for_status()
+
+    def testAdminNeedsAuth(self):
+        r = requests.get(self.API_BASE_URL)
+        self.assertEqual(r.status_code, 401)
+        r = requests.get(self.ADMIN_SSID_URL)
+        self.assertEqual(r.status_code, 401)
+        r = requests.get(self.ADMIN_HOSTNAME_URL)
+        self.assertEqual(r.status_code, 401)
+        r = requests.get(self.ADMIN_STATICSITE_URL)
+        self.assertEqual(r.status_code, 401)
 
     def testAdminApiSmoketest(self):
         # To catch where there is a gross misconfiguration that breaks
@@ -505,6 +505,29 @@ class ConnectBoxAPITestCase(unittest.TestCase):
         r = requests.get(self.ADMIN_HOSTNAME_URL, auth=getAdminAuth())
         r.raise_for_status()
         self.assertEqual(r.json()["code"], 0)
+
+    def testFactoryReset(self):
+        r = requests.get(self.ADMIN_HOSTNAME_URL, auth=getAdminAuth())
+        r.raise_for_status()
+        hostname = r.json()["result"][0]
+        try:
+            expected_hostname = "foobar"
+            r = requests.put(self.ADMIN_HOSTNAME_URL, auth=getAdminAuth(),
+                         json={"value": expected_hostname})
+            r.raise_for_status()
+
+            r = requests.get(self.ADMIN_HOSTNAME_URL, auth=getAdminAuth())
+            r.raise_for_status()
+            updated_hostname = r.json()["result"][0]
+            self.assertEqual(expected_hostname, updated_hostname)
+        finally:
+            r = requests.post(self.ADMIN_SYSTEM_URL, auth=getAdminAuth(),
+                        json={"value": "reset"})
+            r.raise_for_status()
+            r = requests.get(self.ADMIN_HOSTNAME_URL, auth=getAdminAuth())
+            r.raise_for_status()
+            reset_hostname = r.json()["result"][0]
+            self.assertEqual(hostname, reset_hostname)
 
     def testSSIDUnchRoundTrip(self):
         r = requests.get(self.ADMIN_SSID_URL, auth=getAdminAuth())
@@ -599,11 +622,18 @@ class ConnectBoxAPITestCase(unittest.TestCase):
         self._testSSIDSetWithLength(u'\N{EM DASH}' * 11)
 
     def testStaticSiteSet(self):
-        r = requests.put(self.ADMIN_STATICSITE_URL, auth=getAdminAuth(),
-                         data=json.dumps({"value": "true"}))
-        r.raise_for_status()
-        self.assertEqual(r.json()["code"], 0)
-        self.assertEqual(r.json()["result"], self.SUCCESS_RESPONSE)
+        try:
+            r = requests.put(self.ADMIN_STATICSITE_URL, auth=getAdminAuth(),
+                             data=json.dumps({"value": "true"}))
+            r.raise_for_status()
+            self.assertEqual(r.json()["code"], 0)
+            self.assertEqual(r.json()["result"], self.SUCCESS_RESPONSE)
+        finally:
+            r = requests.put(self.ADMIN_STATICSITE_URL, auth=getAdminAuth(),
+                             data=json.dumps({"value": "false"}))
+            r.raise_for_status()
+            self.assertEqual(r.json()["code"], 0)
+            self.assertEqual(r.json()["result"], self.SUCCESS_RESPONSE)
 
 class ConnectBoxChatTestCase(unittest.TestCase):
     CHAT_MESSAGES_URL = "%s/chat/messages" % (getTestBaseURL())
