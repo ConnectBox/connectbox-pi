@@ -4,7 +4,7 @@ If you're developing the interface, it's often faster to do development on a vir
 
 ## Get Ansible
 
-Whether you're using Vagrant or developing directly against a device, you'll need Ansible to perform the setup. To develop the Ansible playbooks, or develop the ConnectBox software, you'll need to have Ansible 2.1+ and some extra tools. From the directory containing this README, run:
+Whether you're using Vagrant or developing directly against a device, you'll need Ansible to perform the setup. To develop the Ansible playbooks, or develop the ConnectBox software, you'll need to have Ansible 2.4+ and some extra tools. From the directory containing this README, run:
 
 ```bash
 $ mkdir ~/.virtualenvs
@@ -22,11 +22,20 @@ $ pip install -r requirements.txt
 1. Run the tests. In the same directory as the `Vagrantfile` run: `TEST_IP=172.28.128.3 python -m unittest discover tests` (assuming your VM IP address is `172.28.128.3`). All the tests should pass.
 1. The WiFi Point is not active when running from a virtual machine, but you can still view the ConnectBox Site by browsing to the address e.g. http://ubuntu-vagrant.connectbox/
 
-## Developing against a Device
+## Developing against a device from a base image
 
 1. This is identical to deploying a new device, so follow the instructions in the [deployment.md](deployment.md) documentation. You probably want to run the Ansible playbook many times as you do your development, so you will likely want to specify the `developer_mode` variable on your commandline on in the Ansible inventory.
 
+## Developing against a device from a ConnectBox release image
+
+Pre-made release images are distributed on GitHub (https://github.com/ConnectBox/connectbox-pi/releases) . sshd is not running on pre-made release images. To permanently enable it, make a directory called `.connectbox` on your USB storage device and place a file named `enable-ssh` in that folder. Insert your USB storage into the ConnectBox and power it on. Once the system has booted, you will be able to ssh to the ConnectBox as `root/connectbox`. Please change the root password immediately.
+
+## Connecting to the ConnectBox
+
 1. You can access the ConnectBox site by connecting to a WiFi point named "ConnectBox - Free Media". Once connected to the WiFi point, go somewhere (anywhere) in your browser and you should be redirected to the ConnectBox site.
 1. You can also access the ConnectBox Site over ethernet. To do so add an entry in `/etc/hosts` on the machine where you ran Ansible, add the line `<ip-of-your-device> connectbox` . Then browse to http://connectbox
-1. Run the tests. In this directory: `TEST_IP=<ip-of-your-device> python -m unittest discover tests` . All the tests should pass.
+
+# Tests
+
+1. We have a test suite. From the parent directory of this document, run: `TEST_IP=<ip-of-your-device> python -m unittest discover tests` . All the tests should pass.
 

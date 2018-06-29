@@ -9,6 +9,11 @@ This project indentifies releases by release date.
 
 *
 
+# 20180630
+
+* Changed: Images no longer have ssh enabled by default. To enable ssh, create .connectbox/enable-ssh on your USB storage, insert the USB storage and boot the device. Please change the root password immediately after booting
+* Changed: The admin interface has been rewritten using React (matching the icon-only interface)
+
 # 20180604
 
 * Fixed: Prevent upstream armbian packages overwriting our kernel and uboot packages (this time compatible with aptitude's behaviour)
