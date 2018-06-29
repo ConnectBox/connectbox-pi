@@ -1,6 +1,6 @@
 [Unit]
 Description=Activate sshd based on existance of user-managed file
-ConditionPathExists=/media/usb0/.connectbox/ssh
+ConditionPathExists=/media/usb0/.connectbox/enable-ssh
 # systemd-udevd mounts USB storage
 Wants=systemd-udevd.service
 [Service]
