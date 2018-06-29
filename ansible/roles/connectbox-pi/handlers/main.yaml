@@ -1,4 +1,13 @@
 ---
+# No need to start this service given it's an at-boot one-shot
+# Must do a daemon reload so that systemd knows about this new service
+- name: Enable sshswitch service
+  systemd:
+    name: sshswitch.service
+    enabled: yes
+    daemon_reload: yes
+
+
 # Skip lint because there's no way that ansible-lint can know at build time
 #  that we're legitimately use shell because of the && that is always
 #  present when this is run.

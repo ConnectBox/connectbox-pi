@@ -180,6 +180,13 @@
     state: absent
   when: not developer_mode and ansible_lsb["id"] == "Raspbian"
 
+- name: Add service to allow administrators to activate sshd
+  copy:
+    src: sshswitch.service
+    dest: /lib/systemd/system
+  when: not developer_mode and connectbox_os == "armbian"
+  notify: Enable sshswitch service
+
 # sshd forks child processes to handle connections, so stopping and disabling
 #  sshd doesn't disconnect the session that's actually doing the stopping and
 #  disabling (or the control session if pipelining is in use)

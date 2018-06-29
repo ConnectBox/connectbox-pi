@@ -1,0 +1,11 @@
+[Unit]
+Description=Activate sshd based on existance of user-managed file
+ConditionPathExists=/media/usb0/.connectbox/ssh
+# systemd-udevd mounts USB storage
+Wants=systemd-udevd.service
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c "systemctl is-active ssh.service || systemctl enable ssh.service && systemctl start ssh.service"
+[Install]
+WantedBy=multi-user.target
+
