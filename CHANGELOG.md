@@ -7,7 +7,8 @@ This project indentifies releases by release date.
 
 # Unreleased
 
-*
+* Changed: The firewall no longer blocks access to ssh on the wifi interface
+* Changed: Make sshswitch service a drop-in, so that it overrides the raspbian service by the same name
 
 # 20180630
 

@@ -70,16 +70,11 @@ nginx_chat_block: |
 # Don't perform image prep tasks unless overridden
 do_image_preparation: False
 
-# i.e. allow inbound ssh from all interfaces
-# Overriden in bootstrap role for non-developer mode
-iptables_ssh_in_interface: ""
-
 firewall_v4_group_rules:
   150 redirect http:
     - -t nat -A PREROUTING -s {{ client_facing_if_network_cidr }} -p tcp --dport 80 -j DNAT --to {{ client_facing_if_ip_address }}:80
-  # Overriding default - we only want ssh on the wired interface
   200 allow ssh:
-    - -A INPUT -p tcp {{ iptables_ssh_in_interface }} --dport ssh -j ACCEPT
+    - -A INPUT -p tcp --dport ssh -j ACCEPT
   300 allow dhcp:
     - -A INPUT -p udp --dport bootps -j ACCEPT
   350 allow dns:

@@ -9,16 +9,6 @@
     block: |
       127.0.0.1 {{ connectbox_default_hostname }}
 
-- name: Configure hostname
-  hostname:
-    name: "{{ connectbox_default_hostname }}"
-
-- name: Add hosts entry
-  blockinfile:
-    dest: /etc/hosts
-    block: |
-      127.0.0.1 {{ connectbox_default_hostname }}
-
 - name: Create connectbox version file
   copy:
     content: "{{ connectbox_version }}\n"
@@ -174,17 +164,16 @@
   tags:
   - full-build-only
 
-- name: Make sure /boot/ssh does not exist on Raspbian so sshd isn't re-enabled on boot
-  file:
-    path: /boot/ssh
-    state: absent
-  when: not developer_mode and ansible_lsb["id"] == "Raspbian"
-
+# We place this unit file in /etc/systemd/system rather than /lib/systemd/system
+#  because raspbian already has a service by this name and we want to override it.
+# We don't need to make sure /boot/ssh is absent on raspbian, because by stopping
+#  sshd (below) and dropping in this unit file, the default raspbian sshswitch
+#  that activates sshd in those circumstances will never run
 - name: Add service to allow administrators to activate sshd
   copy:
     src: sshswitch.service
-    dest: /lib/systemd/system
-  when: not developer_mode and connectbox_os == "armbian"
+    dest: /etc/systemd/system
+  when: not developer_mode
   notify: Enable sshswitch service
 
 # sshd forks child processes to handle connections, so stopping and disabling
