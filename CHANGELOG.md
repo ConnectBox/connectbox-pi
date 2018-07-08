@@ -7,6 +7,11 @@ This project indentifies releases by release date.
 
 # Unreleased
 
+*
+
+# 20180708
+
+* Fixed: Admin system actions report "not initiated" despite performing action [Issue #247](https://github.com/ConnectBox/connectbox-pi/issues/247)
 * Changed: The firewall no longer blocks access to ssh on the wifi interface
 * Changed: Make sshswitch service a drop-in, so that it overrides the raspbian service by the same name
 
