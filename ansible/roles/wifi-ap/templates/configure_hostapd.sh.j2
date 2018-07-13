@@ -68,6 +68,18 @@ function configure_ht_capab {
 	        #  performance degradation under non-ideal conditions and the
 	        #  difficulty of configuration across regulatory domains
 		ht_capab="[HT20][GF][SHORT-GI-20][TX-STBC][RX-STBC12]";
+	elif [ $(grep 'PRODUCT=bda/8812/0' ${UEVENT_FILE}) ]; then
+		# rtl 8812au 802.11ac device. ht_capab is only used for
+		#  802.11n. 802.11ac required vht_capab, which we're not
+		#  doing yet.
+		# iw list reports "Static SM Power Save" in capabilities for
+		#  this device, but hostapd is unable to start if SMPS-STATIC
+		#  is set. It's unclear why and thus we exclude it.
+		# Deliberately do not advertise 40Mhz channels even though they're
+		#  supported because we never want to use them given rapid
+	        #  performance degradation under non-ideal conditions and the
+	        #  difficulty of configuration across regulatory domains
+		ht_capab="[HT20][GF][SHORT-GI-20][RX-STBC1][MAX-AMSDU-7935]"
 	else
 		# We don't recognise this device, so let's be conservative
 		ht_capab="";

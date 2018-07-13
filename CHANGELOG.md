@@ -7,7 +7,7 @@ This project indentifies releases by release date.
 
 # Unreleased
 
-*
+* Add optimised 2.4Ghz parameters for the likely next wifi chipset (rtl8812au)
 
 # 20180708
 
