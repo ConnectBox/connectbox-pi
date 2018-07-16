@@ -118,48 +118,47 @@ def get_link_type(ua_str):
     return LINK_OPS["TEXT"]
 
 
-def add_authorised_client():
-    ip_addr_str = request.headers["X-Forwarded-For"]
-    register_client(ip_addr_str)
-    return show_captive_portal_welcome()
-
-
 def register_client(ip_addr_str):
     _client_map[ip_addr_str] = datetime.datetime.now()
 
 
-def welcome_or_serve_template(template):
+def update_client_last_seen(ip_addr_str):
+    _client_map[ip_addr_str] = datetime.datetime.now()
+
+
+def register_and_show_connected():
+    ip_addr_str = request.headers["X-Forwarded-For"]
+    register_client(ip_addr_str)
+    return show_connected()
+
+
+def show_success_or_show_connected():
     source_ip = request.headers["X-Forwarded-For"]
     if is_recent_registered_client(source_ip):
-        # Update last-seen time
-        register_client(source_ip)
-        return render_template(template)
+        update_client_last_seen(source_ip)
+        return render_template("success.html")
 
-    return add_authorised_client()
+    return register_and_show_connected()
 
 
-def handle_success_html():
-    """Captive Portal Check for iOS <v9 and MacOS pre-yosemite
-
+def handle_ios_macos():
+    """Handle iOS and MacOS interactions
+    iOS <v9 and MacOS pre-yosemite
     See: https://forum.piratebox.cc/read.php?9,8927
-    No need to check for user agent, because the default server does not serve
-    the connectbox interface, so we don't need to avoid name clashes.
-    """
-    return welcome_or_serve_template("success.html")
 
-
-def handle_hotspot_detect_html():
-    """Captive portal check for iOS >= v9 and MacOS Yosemite and later
-
+    iOS >= v9 and MacOS Yosemite and later:
     # pylint: disable=line-too-long
     See: https://apple.stackexchange.com/questions/45418/how-to-automatically-login-to-captive-portals-on-os-x
     """
     ua_str = request.headers.get("User-agent", "")
-    # wispr is the captive portal agent.
-    if "wispr" in ua_str:
-        return welcome_or_serve_template("success.html")
+    if "CaptiveNetworkSupport" in ua_str:
+        # CaptiveNetworkSupport/wispr is the captive portal agent.
+        # Always show "success" after initial interaction
+        return show_success_or_show_connected()
 
-    return add_authorised_client()
+    # We're the captive portal browser.
+    # Show connected message after initial interaction
+    return register_and_show_connected()
 
 
 def remove_authorised_client():
@@ -172,14 +171,14 @@ def remove_authorised_client():
 
 
 def handle_wifistub_html():
-    return show_captive_portal_welcome()
+    return show_connected()
 
 
 def handle_ncsi_txt():
-    return show_captive_portal_welcome()
+    return show_connected()
 
 
-def show_captive_portal_welcome():
+def show_connected():
     ua_str = request.headers.get("User-agent", "")
     return render_template(
         "connected.html",
@@ -190,28 +189,30 @@ def show_captive_portal_welcome():
 
 
 def setup_captive_portal_app(cpm):
+    # Captive Portal Check for iOS <v9 and MacOS pre-yosemite
     cpm.add_url_rule('/success.html',
-                     'success',
-                     handle_success_html)
+                     'handle_ios_macos',
+                     handle_ios_macos)
     # iOS from captive portal
     cpm.add_url_rule('/library/test/success.html',
-                     'success',
-                     handle_success_html)
+                     'handle_ios_macos',
+                     handle_ios_macos)
+    # Captive portal check for iOS >= v9 and MacOS Yosemite and later
     cpm.add_url_rule('/hotspot-detect.html',
-                     'hotspot-detect',
-                     handle_hotspot_detect_html)
+                     'handle_ios_macos',
+                     handle_ios_macos)
     # Android <= v6 (possibly later too)
     # pylint: disable=line-too-long
     # See: https://www.chromium.org/chromium-os/chromiumos-design-docs/network-portal-detection
     cpm.add_url_rule('/generate_204',
                      'welcome',
-                     show_captive_portal_welcome)
+                     show_connected)
     # Fallback method introduced in Android 7
     # pylint: disable=line-too-long
     # See: https://android.googlesource.com/platform/frameworks/base/+/master/services/core/java/com/android/server/connectivity/NetworkMonitor.java#92
     cpm.add_url_rule('/gen_204',
                      'welcome',
-                     show_captive_portal_welcome)
+                     show_connected)
     # Captive Portal check for Amazon Kindle Fire
     cpm.add_url_rule('/kindle-wifi/wifistub.html',
                      'handle_wifistub_html',
@@ -224,7 +225,7 @@ def setup_captive_portal_app(cpm):
     # cpm.add_url_rule('/_authorised_clients',
     #                  'auth', get_authorised_clients, methods=['GET'])
     cpm.add_url_rule('/_authorised_clients',
-                     'auth', add_authorised_client, methods=['POST'])
+                     'auth', register_and_show_connected, methods=['POST'])
     cpm.add_url_rule('/_authorised_clients',
                      'deauth', remove_authorised_client, methods=['DELETE'])
     cpm.add_url_rule('/_redirect_to_connectbox',
