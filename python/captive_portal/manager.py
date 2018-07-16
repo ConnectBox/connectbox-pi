@@ -25,12 +25,6 @@ from werkzeug.contrib.fixers import ProxyFix
 LINK_OPS = {
     "TEXT": "text",
     "HREF": "href",
-    "JS_DOC_LOC_HREF": "javascript_document_location_href",
-    "JS_WIN_LOC_HREF": "javascript_window_location_href",
-    "JS_WIN_OPEN": "javascript_window_open",
-    "JS_WIN_OPEN_BLANK": "javascript_window_open_blank",
-    "JS_HREF_NORMAL_CLICK": "javascript_href_normal_click",
-    "JS_HREF_BLANK_CLICK": "javascript_href_blank_click",
 }
 # pylint: disable=invalid-name
 _client_map = {}
