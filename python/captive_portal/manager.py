@@ -118,10 +118,8 @@ def get_link_type(ua_str):
     return LINK_OPS["TEXT"]
 
 
-def add_authorised_client(ip_addr_str=None):
-    if ip_addr_str is None:
-        ip_addr_str = request.headers["X-Forwarded-For"]
-
+def add_authorised_client():
+    ip_addr_str = request.headers["X-Forwarded-For"]
     register_client(ip_addr_str)
     return show_captive_portal_welcome()
 
@@ -164,13 +162,9 @@ def handle_hotspot_detect_html():
     return add_authorised_client()
 
 
-def remove_authorised_client(ip_addr_str=None):
+def remove_authorised_client():
     """Forgets that a client has been seen recently to allow running tests"""
-    if ip_addr_str:
-        source_ip = ip_addr_str
-    else:
-        source_ip = request.headers["X-Forwarded-For"]
-
+    source_ip = request.headers["X-Forwarded-For"]
     if source_ip in _client_map:
         del _client_map[source_ip]
 
@@ -231,12 +225,8 @@ def setup_captive_portal_app(cpm):
     #                  'auth', get_authorised_clients, methods=['GET'])
     cpm.add_url_rule('/_authorised_clients',
                      'auth', add_authorised_client, methods=['POST'])
-    cpm.add_url_rule('/_authorised_clients/<ip_addr_str>',
-                     'auth_ip', add_authorised_client, methods=['PUT'])
     cpm.add_url_rule('/_authorised_clients',
                      'deauth', remove_authorised_client, methods=['DELETE'])
-    cpm.add_url_rule('/_authorised_clients/<ip_addr_str>',
-                     'deauth_ip', remove_authorised_client, methods=['DELETE'])
     cpm.add_url_rule('/_redirect_to_connectbox',
                      'redirect', redirect_to_connectbox)
     cpm.wsgi_app = ProxyFix(cpm.wsgi_app)
