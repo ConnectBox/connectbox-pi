@@ -72,7 +72,7 @@ def get_dhcp_lease_secs():
     return dhcp_lease_secs
 
 
-def is_recent_authorised_client(ip_addr_str):
+def is_recent_registered_client(ip_addr_str):
     """
     Checks whether this IP has gone through this CP recently
 
@@ -132,7 +132,7 @@ def register_client(ip_addr_str):
 
 def welcome_or_serve_template(template):
     source_ip = request.headers["X-Forwarded-For"]
-    if is_recent_authorised_client(source_ip):
+    if is_recent_registered_client(source_ip):
         # Update last-seen time
         register_client(source_ip)
         return render_template(template)
@@ -140,9 +140,8 @@ def welcome_or_serve_template(template):
     return add_authorised_client()
 
 
-# pylint: disable=invalid-name
-def cp_check_ios_lt_v9_macos_lt_v1010():
-    """Captive Portal Check for iOS and MacOS pre-yosemite
+def handle_success_html():
+    """Captive Portal Check for iOS <v9 and MacOS pre-yosemite
 
     See: https://forum.piratebox.cc/read.php?9,8927
     No need to check for user agent, because the default server does not serve
@@ -151,17 +150,14 @@ def cp_check_ios_lt_v9_macos_lt_v1010():
     return welcome_or_serve_template("success.html")
 
 
-# pylint: disable=invalid-name
-def cp_check_ios_gte_v9_macos_gte_v1010():
-    """Captive portal check for MacOS Yosemite and later
+def handle_hotspot_detect_html():
+    """Captive portal check for iOS >= v9 and MacOS Yosemite and later
 
     # pylint: disable=line-too-long
     See: https://apple.stackexchange.com/questions/45418/how-to-automatically-login-to-captive-portals-on-os-x
-
-    No need to check for user agent, because the default server does not serve
-    the connectbox interface, so we don't need to avoid name clashes.
     """
     ua_str = request.headers.get("User-agent", "")
+    # wispr is the captive portal agent.
     if "wispr" in ua_str:
         return welcome_or_serve_template("success.html")
 
@@ -181,6 +177,14 @@ def remove_authorised_client(ip_addr_str=None):
     return Response(status=204)
 
 
+def handle_wifistub_html():
+    return show_captive_portal_welcome()
+
+
+def handle_ncsi_txt():
+    return show_captive_portal_welcome()
+
+
 def show_captive_portal_welcome():
     ua_str = request.headers.get("User-agent", "")
     return render_template(
@@ -194,30 +198,35 @@ def show_captive_portal_welcome():
 def setup_captive_portal_app(cpm):
     cpm.add_url_rule('/success.html',
                      'success',
-                     cp_check_ios_lt_v9_macos_lt_v1010)
+                     handle_success_html)
     # iOS from captive portal
     cpm.add_url_rule('/library/test/success.html',
                      'success',
-                     cp_check_ios_lt_v9_macos_lt_v1010)
+                     handle_success_html)
     cpm.add_url_rule('/hotspot-detect.html',
-                     'hotspot-detect', cp_check_ios_gte_v9_macos_gte_v1010)
+                     'hotspot-detect',
+                     handle_hotspot_detect_html)
     # Android <= v6 (possibly later too)
     # pylint: disable=line-too-long
     # See: https://www.chromium.org/chromium-os/chromiumos-design-docs/network-portal-detection
-    cpm.add_url_rule('/generate_204', 'welcome',
+    cpm.add_url_rule('/generate_204',
+                     'welcome',
                      show_captive_portal_welcome)
     # Fallback method introduced in Android 7
     # pylint: disable=line-too-long
     # See: https://android.googlesource.com/platform/frameworks/base/+/master/services/core/java/com/android/server/connectivity/NetworkMonitor.java#92
-    cpm.add_url_rule('/gen_204', 'welcome',
+    cpm.add_url_rule('/gen_204',
+                     'welcome',
                      show_captive_portal_welcome)
     # Captive Portal check for Amazon Kindle Fire
-    cpm.add_url_rule('/kindle-wifi/wifistub.html', 'welcome',
-                     show_captive_portal_welcome)
+    cpm.add_url_rule('/kindle-wifi/wifistub.html',
+                     'handle_wifistub_html',
+                     handle_wifistub_html)
     # Captive Portal check for Windows
     # See: https://technet.microsoft.com/en-us/library/cc766017(v=ws.10).aspx
-    cpm.add_url_rule('/ncsi.txt', 'welcome',
-                     show_captive_portal_welcome)
+    cpm.add_url_rule('/ncsi.txt',
+                     'handle_ncsi_txt',
+                     handle_ncsi_txt)
     # cpm.add_url_rule('/_authorised_clients',
     #                  'auth', get_authorised_clients, methods=['GET'])
     cpm.add_url_rule('/_authorised_clients',
