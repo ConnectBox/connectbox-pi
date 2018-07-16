@@ -15,6 +15,7 @@ Does the minimum required to:
 """
 
 import datetime
+import functools
 import os.path
 import requests
 from flask import redirect, render_template, request, Response
@@ -31,10 +32,10 @@ LINK_OPS = {
     "JS_HREF_NORMAL_CLICK": "javascript_href_normal_click",
     "JS_HREF_BLANK_CLICK": "javascript_href_blank_click",
 }
+# pylint: disable=invalid-name
 _client_map = {}
 DHCP_FALLBACK_LEASE_SECS = 86400  # 1 day
 REAL_HOST_REDIRECT_URL = "http://127.0.0.1/to-hostname"
-_real_connectbox_url = None
 
 
 def redirect_to_connectbox():
@@ -42,9 +43,10 @@ def redirect_to_connectbox():
     #  authorise because it'll interfere with the client-specific
     #  authorisation workflow. We assume that the client-specific
     #  workflow will be done separately.
-    return redirect(_real_connectbox_url)
+    return redirect(get_real_connectbox_url())
 
 
+@functools.lru_cache()
 def get_real_connectbox_url():
     """Get the hostname where the connectbox can be found
 
@@ -53,14 +55,12 @@ def get_real_connectbox_url():
     an ugly URL like http://a.b.c.d/some-redirect in the captive portal
     page. So we use the value from that redirect to present a nice URL.
     """
-    global _real_connectbox_url
-    if not _real_connectbox_url:
-        resp = requests.get(REAL_HOST_REDIRECT_URL,
-                            allow_redirects=False)
-        _real_connectbox_url = resp.headers["Location"]
-    return _real_connectbox_url
+    resp = requests.get(REAL_HOST_REDIRECT_URL,
+                        allow_redirects=False)
+    return resp.headers["Location"]
 
 
+@functools.lru_cache()
 def get_dhcp_lease_secs():
     """Extract lease time from /etc/dnsmasq.conf
 
@@ -68,14 +68,14 @@ def get_dhcp_lease_secs():
     """
     # So we have a valid lease time if we can't parse the file for
     #  some reason (this shouldn't ever be necessary)
-    _dhcp_lease_secs = DHCP_FALLBACK_LEASE_SECS
+    dhcp_lease_secs = DHCP_FALLBACK_LEASE_SECS
     dnsmasq_file = "/etc/dnsmasq.conf"
     if os.path.isfile(dnsmasq_file):
         with open(dnsmasq_file) as dnsmasq_conf:
             for line in dnsmasq_conf:
                 if line[:10] == "dhcp_range":
-                    _dhcp_lease_secs = int(line.split(",")[-1])
-    return _dhcp_lease_secs
+                    dhcp_lease_secs = int(line.split(",")[-1])
+    return dhcp_lease_secs
 
 
 def is_recent_authorised_client(ip_addr_str):
@@ -104,13 +104,15 @@ def get_link_type(ua_str):
             user_agent["os"]["major"] == "9":
         # iOS 9 can open links from the captive portal agent in the browser
         return LINK_OPS["HREF"]
-    elif user_agent["os"]["family"] == "Mac OS X" and \
+
+    if user_agent["os"]["family"] == "Mac OS X" and \
             user_agent["os"]["major"] == "10" and \
             user_agent["os"]["minor"] == "12":
         # Sierra (10.12) can open links from the captive portal agent in
         #  the browser
         return LINK_OPS["HREF"]
-    elif user_agent["os"]["family"] == "Android" and \
+
+    if user_agent["os"]["family"] == "Android" and \
             (user_agent["os"]["major"] == "5" or
              user_agent["os"]["major"] == "6"):
         # Lollipop (Android v5) and Marshmallow (Android v6) can render links,
@@ -144,6 +146,7 @@ def welcome_or_serve_template(template):
     return add_authorised_client()
 
 
+# pylint: disable=invalid-name
 def cp_check_ios_lt_v9_macos_lt_v1010():
     """Captive Portal Check for iOS and MacOS pre-yosemite
 
@@ -154,10 +157,11 @@ def cp_check_ios_lt_v9_macos_lt_v1010():
     return welcome_or_serve_template("success.html")
 
 
+# pylint: disable=invalid-name
 def cp_check_ios_gte_v9_macos_gte_v1010():
     """Captive portal check for MacOS Yosemite and later
 
-    # noqa (ignore line length check for URLs)
+    # pylint: disable=line-too-long
     See: https://apple.stackexchange.com/questions/45418/how-to-automatically-login-to-captive-portals-on-os-x
 
     No need to check for user agent, because the default server does not serve
@@ -172,7 +176,11 @@ def cp_check_ios_gte_v9_macos_gte_v1010():
 
 def remove_authorised_client(ip_addr_str=None):
     """Forgets that a client has been seen recently to allow running tests"""
-    source_ip = request.headers["X-Forwarded-For"]
+    if ip_addr_str:
+        source_ip = ip_addr_str
+    else:
+        source_ip = request.headers["X-Forwarded-For"]
+
     if source_ip in _client_map:
         del _client_map[source_ip]
 
@@ -200,12 +208,13 @@ def setup_captive_portal_app(cpm):
     cpm.add_url_rule('/hotspot-detect.html',
                      'hotspot-detect', cp_check_ios_gte_v9_macos_gte_v1010)
     # Android <= v6 (possibly later too)
-    # noqa: See: https://www.chromium.org/chromium-os/chromiumos-design-docs/network-portal-detection
+    # pylint: disable=line-too-long
+    # See: https://www.chromium.org/chromium-os/chromiumos-design-docs/network-portal-detection
     cpm.add_url_rule('/generate_204', 'welcome',
                      show_captive_portal_welcome)
     # Fallback method introduced in Android 7
-    # See:
-    # noqa: https://android.googlesource.com/platform/frameworks/base/+/master/services/core/java/com/android/server/connectivity/NetworkMonitor.java#92
+    # pylint: disable=line-too-long
+    # See: https://android.googlesource.com/platform/frameworks/base/+/master/services/core/java/com/android/server/connectivity/NetworkMonitor.java#92
     cpm.add_url_rule('/gen_204', 'welcome',
                      show_captive_portal_welcome)
     # Captive Portal check for Amazon Kindle Fire
@@ -228,5 +237,3 @@ def setup_captive_portal_app(cpm):
     cpm.add_url_rule('/_redirect_to_connectbox',
                      'redirect', redirect_to_connectbox)
     cpm.wsgi_app = ProxyFix(cpm.wsgi_app)
-
-_dhcp_lease_secs = get_dhcp_lease_secs()
