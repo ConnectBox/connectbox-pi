@@ -118,6 +118,36 @@ def get_link_type(ua_str):
     return LINK_OPS["TEXT"]
 
 
+def is_android_cpa_requiring_204():
+    """Does this captive portal agent need a 204 during its lifecycle?
+
+    Android 7 and 8 CPAs fallback to cellular if they don't receive
+    a 204 (and this generally manifests as broken DNS within the
+    user's regular browser). Earlier Android CPAs will not fallback
+    to cellular under these conditions, and indeed will close any
+    open captive portal browsers if they receive a 204
+    """
+    ua_str = request.headers.get("User-agent", "")
+    user_agent = user_agent_parser.Parse(ua_str)
+    # Android CPBs all advertise themselves as Android
+    # Android CPAs for <= v7 are Dalvik.
+    # Android CPAs for v8 (and above?) don't even
+    #  list themselves as Android, but if we're here
+    #  we're (very likely to be) on an Android platform
+    #  so we can assume that the lack of Android in the
+    #  user agent string indicates that we're a v8 CPA.
+    if user_agent["os"]["family"] != "Android":
+        # We're a v8 CPA.
+        return True
+
+    if user_agent["os"]["family"] == "Android" and \
+            user_agent["os"]["major"] == "7" and \
+            "Dalvik" in ua_str:
+        return True
+
+    return False
+
+
 def register_client(ip_addr_str):
     _client_map[ip_addr_str] = datetime.datetime.now()
 
@@ -130,6 +160,14 @@ def register_and_show_connected():
     ip_addr_str = request.headers["X-Forwarded-For"]
     register_client(ip_addr_str)
     return show_connected()
+
+def register_or_give_204():
+    source_ip = request.headers["X-Forwarded-For"]
+    if is_recent_registered_client(source_ip):
+        update_client_last_seen(source_ip)
+        return Response(status=204)
+
+    return register_and_show_connected()
 
 
 def show_success_or_show_connected():
@@ -159,6 +197,18 @@ def handle_ios_macos():
     # We're the captive portal browser.
     # Show connected message after initial interaction
     return register_and_show_connected()
+
+
+def handle_android():
+    """Handle Android interactions"""
+    if is_android_cpa_requiring_204():
+        # We only want to send a 204 to some Android CPAs
+        #  given <= v6 close CPB sessions when they receive
+        #  a 204, and the CPB session is the way that we provide
+        #  instructions on how to get to content
+        return register_or_give_204()
+
+    return show_connected()
 
 
 def remove_authorised_client():
@@ -205,14 +255,14 @@ def setup_captive_portal_app(cpm):
     # pylint: disable=line-too-long
     # See: https://www.chromium.org/chromium-os/chromiumos-design-docs/network-portal-detection
     cpm.add_url_rule('/generate_204',
-                     'welcome',
-                     show_connected)
+                     'handle_android',
+                     handle_android)
     # Fallback method introduced in Android 7
     # pylint: disable=line-too-long
     # See: https://android.googlesource.com/platform/frameworks/base/+/master/services/core/java/com/android/server/connectivity/NetworkMonitor.java#92
     cpm.add_url_rule('/gen_204',
-                     'welcome',
-                     show_connected)
+                     'handle_android',
+                     handle_android)
     # Captive Portal check for Amazon Kindle Fire
     cpm.add_url_rule('/kindle-wifi/wifistub.html',
                      'handle_wifistub_html',
