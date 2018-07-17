@@ -1,8 +1,8 @@
-import dns.resolver
 import json
 import os
 import unittest
 import random
+import dns.resolver
 import requests
 
 TEST_IP_ENV_VAR = "TEST_IP"
@@ -277,6 +277,8 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
                          (getTestTarget(),), headers=headers)
         r.raise_for_status()
         # 4. Connectbox replies that internet access is still not available
+        #    At no point do we want to provide a 204 to the captive portal
+        #    agent (dalvik)
         self.assertEqual(r.status_code, 200)
         # 5. On receipt of something other than a 204, the device shows a
         #    "Sign-in to network" notification.
@@ -310,7 +312,7 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
         # 1. Device sends generate_204 request
         headers = requests.utils.default_headers()
         # This is the UA from a Nexus 7 phone, but let's assume that it's
-        #  representative of over Android 6 (marshmallow) devices
+        #  representative of other Android 6 (marshmallow) devices
         headers.update({"User-Agent": "Dalvik/2.1.0 (Linux; U; Android 6.0.1; "
                         "Nexus 7 Build/MOB30X)"})
         r = requests.get("http://%s/generate_204" %
@@ -333,7 +335,8 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
         #    We assume that the user responds to this notification, which
         #    causes the Android captive portal browser to send a request
         #    to the generate_204 URL
-        headers.update({"User-Agent": "Mozilla/5.0 (Linux; Android 6.0.1; "
+        headers.update({"User-Agent":
+                        "Mozilla/5.0 (Linux; Android 6.0.1; "
                         "Nexus 7 Build/MOB30X; wv) AppleWebKit/537.36 "
                         "(KHTML, like Gecko) Version/4.0 Chrome/61.0.3163.98 "
                         "Safari/537.36"})
@@ -344,6 +347,59 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
         self.assertIn(self.CAPTIVE_PORTAL_SEARCH_TEXT, r.text)
         # We don't want to show URLs in this captive portal browser
         self.assertNotIn("href=", r.text.lower())
+
+
+    def testAndroid8CaptivePortalResponse(self):
+        """Android 8
+
+        Android 8 devices fall back to cellular unless the CPA receives a 204
+        (which must happen within ~40 seconds of the first CPA request)
+        """
+        cpa_ua = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 " \
+                 "(KHTML, like Gecko) Chrome/52.0.2743.82 Safari/537.36"
+        cpb_ua = "Mozilla/5.0 (Linux; Android 8.0.0; Mi A1 " \
+                 "Build/OPR1.170623.026; wv) AppleWebKit/537.36 " \
+                 "(KHTML, like Gecko) Version/4.0 Chrome/67.0.3396.87 " \
+                 "Mobile Safari/537.36"
+        # XXX A7 follows the same process... create a test
+        # 1. Device sends generate_204 request
+        headers = requests.utils.default_headers()
+        # This is the UA from a Mi A1, but let's assume that it's
+        #  representative of other Android 8 (oreo) devices
+        # Notice the lack of an android reference, or a dalvik reference
+        #  as we had in <= v6 (and possibly v7?)
+        headers.update({"User-Agent": cpa_ua})
+        r = requests.get("http://%s/generate_204" %
+                         (getTestTarget(),), headers=headers)
+        r.raise_for_status()
+        # 2. Connectbox provides response that indicates no internet to
+        #    trigger raising of the captive portal browser
+        self.assertEqual(r.status_code, 200)
+        # 3. Captive portal browser sends the same request.
+        headers.update({"User-Agent": cpb_ua})
+        r = requests.get("http://%s/generate_204" %
+                         (getTestTarget(),), headers=headers)
+        r.raise_for_status()
+        # 4. Connectbox replies that internet access is still not available
+        #    but sends the connected page.
+        self.assertIn(self.CAPTIVE_PORTAL_SEARCH_TEXT, r.text)
+        # 5. Captive portal Agent sends the same request
+        headers.update({"User-Agent": cpa_ua})
+        r = requests.get("http://%s/generate_204" %
+                         (getTestTarget(),), headers=headers)
+        r.raise_for_status()
+        # 6. Connectbox replies that internet access is available
+        self.assertEqual(r.status_code, 204)
+        # 7. Captive portal browser sends the same request.
+        headers.update({"User-Agent": cpb_ua})
+        r = requests.get("http://%s/generate_204" %
+                         (getTestTarget(),), headers=headers)
+        r.raise_for_status()
+        # 8. Connectbox provides a response with a text-URL
+        self.assertIn(self.CAPTIVE_PORTAL_SEARCH_TEXT, r.text)
+        # We don't want to show URLs in this captive portal browser
+        self.assertNotIn("href=", r.text.lower())
+
 
     def testUnrecognisedRequestsDoNotAuthoriseClient(self):
         """We don't want to authorise clients when they request an unknown URL
@@ -370,27 +426,61 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
         #    internet
         self.assertNotIn("<BODY>\nSuccess\n</BODY>", r.text)
 
-    def testAndroid7FallbackCaptivePortalResponse(self):
+    def _testAndroid7Workflow(self, magic_endpoint):
         """Return a 204 status code to bypass Android captive portal login"""
         # Strictly this should be requesting
         #  http://clients3.google.com/gen_204 but it's easier to test, and
         #  functionally equivalent to send to the default vhost
-        r = requests.get("http://%s/gen_204" % (getTestTarget(),))
+        # These are from a BLU Vivo XL2, but let's assume they're
+        #  representative of Android 7 devices
+        # This device has its captive_portal_server set to www.androidbak.net
+        #  (this was not an end-user modification). It doesn't matter, though
+        #  because we don't check the domain when triggering the workflow
+        cpa_ua = "Dalvik/2.1.0 (Linux; U; Android 7.0; Vivo XL2 Build/NRD90M)"
+        cpb_ua = "Mozilla/5.0 (Linux; Android 7.0; Vivo XL2 Build/NRD90M; " \
+                 "wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 " \
+                 "Chrome/67.0.3396.87 Mobile Safari/537.36"
+        # 1. Device sends generate_204 request
+        headers = requests.utils.default_headers()
+        headers.update({"User-Agent": cpa_ua})
+        r = requests.get("http://%s/%s" %
+                         (getTestTarget(), magic_endpoint), headers=headers)
         r.raise_for_status()
-        # 2. Connectbox provides response that indicates no internet
-        #    We also make sure we get a captive portal page on this
-        #    request.
+        # 2. Connectbox provides response that indicates no internet to
+        #    trigger raising of the captive portal browser
+        self.assertEqual(r.status_code, 200)
+        # 3. Captive portal browser sends the same request.
+        headers.update({"User-Agent": cpb_ua})
+        r = requests.get("http://%s/%s" %
+                         (getTestTarget(), magic_endpoint), headers=headers)
+        r.raise_for_status()
+        # 4. Connectbox replies that internet access is still not available
+        #    but sends the connected page.
         self.assertEqual(r.status_code, 200)
         self.assertIn(self.CAPTIVE_PORTAL_SEARCH_TEXT, r.text)
-        # 3. Device tries again
-        r = requests.get("http://%s/gen_204" % (getTestTarget(),))
+        # 5. Captive portal Agent sends the same request
+        headers.update({"User-Agent": cpa_ua})
+        r = requests.get("http://%s/%s" %
+                         (getTestTarget(), magic_endpoint), headers=headers)
         r.raise_for_status()
-        # 4. Connectbox provides response that indicates no internet
-        #    confirming that the device is not being registered
-        #    We also make sure we get a captive portal page on this
-        #    request.
+        # 6. Connectbox replies that internet access is available
+        self.assertEqual(r.status_code, 204)
+        # 7. Captive portal browser sends the same request.
+        headers.update({"User-Agent": cpb_ua})
+        r = requests.get("http://%s/%s" %
+                         (getTestTarget(), magic_endpoint), headers=headers)
+        r.raise_for_status()
+        # 8. Connectbox provides a response with a text-URL
         self.assertEqual(r.status_code, 200)
         self.assertIn(self.CAPTIVE_PORTAL_SEARCH_TEXT, r.text)
+        # We don't want to show URLs in this captive portal browser
+        self.assertNotIn("href=", r.text.lower())
+
+    def testAndroid7CaptivePortalResponse(self):
+        self._testAndroid7Workflow("generate_204")
+
+    def testAndroid7FallbackCaptivePortalResponse(self):
+        self._testAndroid7Workflow("gen_204")
 
     def testWindowsCaptivePortalResponse(self):
         """Bounce Windows to the captive portal welcome page"""
