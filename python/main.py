@@ -2,7 +2,7 @@ import os
 from six.moves import configparser
 
 from flask import Flask
-from captive_portal.manager import setup_captive_portal_app, show_captive_portal_welcome
+from captive_portal.manager import setup_captive_portal_app, show_connected
 from chat.server import register as register_chat
 from admin.api import register as register_admin
 
@@ -38,7 +38,7 @@ register_admin(app)
 @app.errorhandler(404)
 def default_view(_):
     """Handle all URLs and send them to the captive portal welcome page"""
-    return show_captive_portal_welcome()
+    return show_connected()
 
 # @app.route('/foo')
 # def foo():
