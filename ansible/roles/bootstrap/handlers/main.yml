@@ -1,5 +1,1 @@
 ---
-- name: Start log2ram service
-  service:
-    name: log2ram
-    state: started

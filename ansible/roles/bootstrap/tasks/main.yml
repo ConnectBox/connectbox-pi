@@ -106,13 +106,6 @@
   command: "aptitude -q hold linux-dtb-next-sunxi linux-image-next-sunxi linux-u-boot-nanopineo-next linux-xenial-root-next-nanopineo"
   when: connectbox_os == "armbian" and "sunxi" in ansible_kernel
 
-- name: Temporarily shutdown log2ram service on Armbian during package installation
-  service:
-    name: log2ram
-    state: stopped
-  when: connectbox_os == "armbian"
-  notify: Start log2ram service
-
 # Needed by Debian Stretch
 - name: Install openresolv
   apt:
