@@ -14,9 +14,9 @@ Does the minimum required to:
   and audio players and PDF viewing).
 """
 
-import datetime
 import functools
 import os.path
+import time
 import requests
 from flask import redirect, render_template, request, Response
 from ua_parser import user_agent_parser
@@ -27,8 +27,9 @@ LINK_OPS = {
     "HREF": "href",
 }
 # pylint: disable=invalid-name
-_client_map = {}
+_last_captive_portal_session_start_time = {}
 DHCP_FALLBACK_LEASE_SECS = 86400  # 1 day
+MAX_ASSUMED_CP_SESSION_TIME_SECS = 300
 REAL_HOST_REDIRECT_URL = "http://127.0.0.1/to-hostname"
 
 
@@ -72,7 +73,7 @@ def get_dhcp_lease_secs():
     return dhcp_lease_secs
 
 
-def is_recent_registered_client(ip_addr_str):
+def client_is_rejoining_network():
     """
     Checks whether this IP has gone through this CP recently
 
@@ -81,16 +82,30 @@ def is_recent_registered_client(ip_addr_str):
     is bad, and they shouldn't need a pointer to the content (which
     is what the captive portal browser provides).
 
+    We differentiate rejoining the network as opposed to continuing the
+    same captive portal session, and we do this by saying that a rejoin
+    is only happening if it's more than MAX_ASSUMED_CP_SESSION_TIME_SECS
+    after the last session started
+
     We base our recency criteria on the DHCP lease time
     """
-    diff_client_recency_criteria = \
-        datetime.timedelta(seconds=get_dhcp_lease_secs())
-    last_registered_time = _client_map.get(ip_addr_str)
-    if last_registered_time:
-        time_since_reg = datetime.datetime.now() - last_registered_time
-        return time_since_reg < diff_client_recency_criteria
+    ip_addr_str = request.headers["X-Forwarded-For"]
+    diff_client_recency_criteria = get_dhcp_lease_secs()
+    last_session_start_time = _last_captive_portal_session_start_time.get(ip_addr_str)
+    if last_session_start_time:
+        secs_since_last_sess_start = time.time() - last_session_start_time
+        return secs_since_last_sess_start < diff_client_recency_criteria and \
+            secs_since_last_sess_start > MAX_ASSUMED_CP_SESSION_TIME_SECS
     return False
 
+
+def is_new_captive_portal_session():
+    ip_addr_str = request.headers["X-Forwarded-For"]
+    last_session_start_time = _last_captive_portal_session_start_time.get(ip_addr_str)
+    if last_session_start_time:
+        secs_since_last_sess_start = time.time() - last_session_start_time
+        return secs_since_last_sess_start > MAX_ASSUMED_CP_SESSION_TIME_SECS
+    return True
 
 def get_link_type(ua_str):
     user_agent = user_agent_parser.Parse(ua_str)
@@ -118,14 +133,17 @@ def get_link_type(ua_str):
     return LINK_OPS["TEXT"]
 
 
-def is_android_cpa_requiring_204():
-    """Does this captive portal agent need a 204 during its lifecycle?
+def android_cpa_needs_204_now():
+    """Does this captive portal agent need a 204 right now?
 
     Android 7 and 8 CPAs fallback to cellular if they don't receive
     a 204 (and this generally manifests as broken DNS within the
     user's regular browser). Earlier Android CPAs will not fallback
-    to cellular under these conditions, and indeed will close any
-    open captive portal browsers if they receive a 204
+    to cellular under these conditions
+
+    Android 7 and earlier close the CBP when they receive a 204,
+    so we don't want to do that if we don't have to, and if we must
+    then we maximise the time that the user can see the CPA.
     """
     ua_str = request.headers.get("User-agent", "")
     user_agent = user_agent_parser.Parse(ua_str)
@@ -137,7 +155,7 @@ def is_android_cpa_requiring_204():
     #  so we can assume that the lack of Android in the
     #  user agent string indicates that we're a v8 CPA.
     if user_agent["os"]["family"] != "Android":
-        # We're a v8 CPA.
+        # We're a v8 CPA. OK to send a 204 anytime
         return True
 
     if user_agent["os"]["family"] == "Android" and \
@@ -145,36 +163,30 @@ def is_android_cpa_requiring_204():
             "Dalvik" in ua_str:
         return True
 
+    # Never send a 204
     return False
 
 
-def register_client(ip_addr_str):
-    _client_map[ip_addr_str] = datetime.datetime.now()
-
-
-def update_client_last_seen(ip_addr_str):
-    _client_map[ip_addr_str] = datetime.datetime.now()
+def register_captive_portal_session_start():
+    ip_addr_str = request.headers["X-Forwarded-For"]
+    last = _last_captive_portal_session_start_time.get(ip_addr_str, 0)
+    if last < time.time() - MAX_ASSUMED_CP_SESSION_TIME_SECS:
+        # Treat as a new session and update session start time
+        _last_captive_portal_session_start_time[ip_addr_str] = \
+            time.time()
 
 
 def register_and_show_connected():
-    ip_addr_str = request.headers["X-Forwarded-For"]
-    register_client(ip_addr_str)
     return show_connected()
 
 def register_or_give_204():
-    source_ip = request.headers["X-Forwarded-For"]
-    if is_recent_registered_client(source_ip):
-        update_client_last_seen(source_ip)
+    if client_is_rejoining_network():
         return Response(status=204)
 
     return register_and_show_connected()
 
 
 def show_success_or_show_connected():
-    source_ip = request.headers["X-Forwarded-For"]
-    if is_recent_registered_client(source_ip):
-        update_client_last_seen(source_ip)
-        return render_template("success.html")
 
     return register_and_show_connected()
 
@@ -188,25 +200,43 @@ def handle_ios_macos():
     # pylint: disable=line-too-long
     See: https://apple.stackexchange.com/questions/45418/how-to-automatically-login-to-captive-portals-on-os-x
     """
+    if client_is_rejoining_network():
+        # Don't raise captive portal browser
+        register_captive_portal_session_start()
+        return render_template("success.html")
+
+    if is_new_captive_portal_session():
+        register_captive_portal_session_start()
+        # raise captive portal browser by not showing success.html
+        return show_connected()
+
     ua_str = request.headers.get("User-agent", "")
     if "CaptiveNetworkSupport" in ua_str:
         # CaptiveNetworkSupport/wispr is the captive portal agent.
         # Always show "success" after initial interaction
-        return show_success_or_show_connected()
+        return render_template("success.html")
 
     # We're the captive portal browser.
     # Show connected message after initial interaction
-    return register_and_show_connected()
+    return show_connected()
 
 
 def handle_android():
     """Handle Android interactions"""
-    if is_android_cpa_requiring_204():
+    if client_is_rejoining_network():
+        # Don't raise captive portal browser
+        register_captive_portal_session_start()
+        return Response(status=204)
+
+    if is_new_captive_portal_session():
+        register_captive_portal_session_start()
+        # raise captive portal browser by not providing a 204
+        return show_connected()
+
+    if android_cpa_needs_204_now():
         # We only want to send a 204 to some Android CPAs
-        #  given <= v6 close CPB sessions when they receive
-        #  a 204, and the CPB session is the way that we provide
-        #  instructions on how to get to content
-        return register_or_give_204()
+        #  and only under certain circumstances
+        return Response(status=204)
 
     return show_connected()
 
@@ -214,17 +244,19 @@ def handle_android():
 def remove_authorised_client():
     """Forgets that a client has been seen recently to allow running tests"""
     source_ip = request.headers["X-Forwarded-For"]
-    if source_ip in _client_map:
-        del _client_map[source_ip]
+    if source_ip in _last_captive_portal_session_start_time:
+        del _last_captive_portal_session_start_time[source_ip]
 
     return Response(status=204)
 
 
 def handle_wifistub_html():
+    register_captive_portal_session_start()
     return show_connected()
 
 
 def handle_ncsi_txt():
+    register_captive_portal_session_start()
     return show_connected()
 
 
