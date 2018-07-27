@@ -101,15 +101,17 @@ def get_link_type(ua_str):
     """
     user_agent = user_agent_parser.Parse(ua_str)
     if user_agent["os"]["family"] == "iOS" and \
-            user_agent["os"]["major"] == "9":
-        # iOS 9 can open links from the captive portal agent in the browser
+            user_agent["os"]["major"] in ("9", "11"):
+        # iOS 9 and iOS 11 can open links from the captive portal browser
+        #  in the system browser. iOS 10 cannot - the link opens in the
+        #  captive portal browser itself.
         return LINK_OPS["HREF"]
 
     if user_agent["os"]["family"] == "Mac OS X" and \
             user_agent["os"]["major"] == "10" and \
-            user_agent["os"]["minor"] == "12":
-        # Sierra (10.12) can open links from the captive portal agent in
-        #  the browser
+       user_agent["os"]["minor"] in ("12", "13"):
+        # Sierra (10.12) and High Sierra (10.13) can open links from the
+        #  captive portal browser in the system browser
         return LINK_OPS["HREF"]
 
     return LINK_OPS["TEXT"]
