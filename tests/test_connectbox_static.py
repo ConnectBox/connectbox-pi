@@ -1,5 +1,6 @@
 import json
 import os
+import time
 import unittest
 import random
 import dns.resolver

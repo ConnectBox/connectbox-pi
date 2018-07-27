@@ -73,6 +73,13 @@ def get_dhcp_lease_secs():
     return dhcp_lease_secs
 
 
+def secs_since_last_session_start():
+    ip_addr_str = request.headers["X-Forwarded-For"]
+    last_session_start_time = \
+        _last_captive_portal_session_start_time.get(ip_addr_str, 0)
+    return time.time() - last_session_start_time
+
+
 def client_is_rejoining_network():
     """
     Checks whether this IP has gone through this CP recently
@@ -89,23 +96,14 @@ def client_is_rejoining_network():
 
     We base our recency criteria on the DHCP lease time
     """
-    ip_addr_str = request.headers["X-Forwarded-For"]
-    diff_client_recency_criteria = get_dhcp_lease_secs()
-    last_session_start_time = _last_captive_portal_session_start_time.get(ip_addr_str)
-    if last_session_start_time:
-        secs_since_last_sess_start = time.time() - last_session_start_time
-        return secs_since_last_sess_start < diff_client_recency_criteria and \
-            secs_since_last_sess_start > MAX_ASSUMED_CP_SESSION_TIME_SECS
-    return False
+    max_time_without_showing_cp = get_dhcp_lease_secs()
+    secs_since_last_sess_start = secs_since_last_session_start()
+    return secs_since_last_sess_start < max_time_without_showing_cp and \
+        secs_since_last_sess_start > MAX_ASSUMED_CP_SESSION_TIME_SECS
 
 
 def is_new_captive_portal_session():
-    ip_addr_str = request.headers["X-Forwarded-For"]
-    last_session_start_time = _last_captive_portal_session_start_time.get(ip_addr_str)
-    if last_session_start_time:
-        secs_since_last_sess_start = time.time() - last_session_start_time
-        return secs_since_last_sess_start > MAX_ASSUMED_CP_SESSION_TIME_SECS
-    return True
+    return secs_since_last_session_start() > MAX_ASSUMED_CP_SESSION_TIME_SECS
 
 def get_link_type(ua_str):
     user_agent = user_agent_parser.Parse(ua_str)
@@ -161,7 +159,9 @@ def android_cpa_needs_204_now():
     if user_agent["os"]["family"] == "Android" and \
             user_agent["os"]["major"] == "7" and \
             "Dalvik" in ua_str:
-        return True
+        # XXX explain why
+        # XXX unmagic this number
+        return secs_since_last_session_start() > 20
 
     # Never send a 204
     return False
