@@ -1,5 +1,6 @@
 import json
 import os
+import time
 import unittest
 import random
 import dns.resolver
@@ -455,26 +456,31 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
                          (getTestTarget(), magic_endpoint), headers=headers)
         r.raise_for_status()
         # 4. Connectbox replies that internet access is still not available
-        #    but sends the connected page.
+        #    but sends the connected page (containing a text URL)
         self.assertEqual(r.status_code, 200)
         self.assertIn(self.CAPTIVE_PORTAL_SEARCH_TEXT, r.text)
+        # We don't want to show URLs in this captive portal browser
+        self.assertNotIn("href=", r.text.lower())
         # 5. Captive portal Agent sends the same request
         headers.update({"User-Agent": cpa_ua})
         r = requests.get("http://%s/%s" %
                          (getTestTarget(), magic_endpoint), headers=headers)
         r.raise_for_status()
-        # 6. Connectbox replies that internet access is available
-        self.assertEqual(r.status_code, 204)
-        # 7. Captive portal browser sends the same request.
-        headers.update({"User-Agent": cpb_ua})
+        # 6. Connectbox replies that internet access is still not available
+        #    because we don't want to close the cpb
+        self.assertEqual(r.status_code, 200)
+        # We wait for 30 seconds (just a little longer than
+        #  ANDROID_7_CPA_MAX_SECS_WITHOUT_204)
+        time.sleep(35)
+        # 6. Captive portal agent sends the same request, now that the
+        #    witholding 204 perioud is done.
+        headers.update({"User-Agent": cpa_ua})
         r = requests.get("http://%s/%s" %
                          (getTestTarget(), magic_endpoint), headers=headers)
         r.raise_for_status()
-        # 8. Connectbox provides a response with a text-URL
-        self.assertEqual(r.status_code, 200)
-        self.assertIn(self.CAPTIVE_PORTAL_SEARCH_TEXT, r.text)
-        # We don't want to show URLs in this captive portal browser
-        self.assertNotIn("href=", r.text.lower())
+        # 6. Connectbox replies that internet access is now available, which
+        #    closes the CPB
+        self.assertEqual(r.status_code, 204)
 
     def testAndroid7CaptivePortalResponse(self):
         self._testAndroid7Workflow("generate_204")

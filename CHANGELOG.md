@@ -7,7 +7,18 @@ This project indentifies releases by release date.
 
 # Unreleased
 
-* Add optimised 2.4Ghz parameters for the likely next wifi chipset (rtl8812au)
+*
+
+# 20180728
+
+* Fixed: Android 7 devices only showed captive portal instructions momentarily [Issue #251](https://github.com/ConnectBox/connectbox-pi/issues/251)
+* Changed: Display a link rather than a text URL in the captive portal for MacOS 10.13 (High Sierra) devices
+* Changed: Display a link rather than a text URL in the captive portal for iOS 11 devices
+
+# 20180717
+
+* Added: Optimised 2.4Ghz parameters for the likely next wifi chipset (rtl8812au)
+* Fixed: Android 8 devices with active celluar connections were unable to remain connected to the captive portal [Issue #250](https://github.com/ConnectBox/connectbox-pi/issues/250)
 
 # 20180708
 
