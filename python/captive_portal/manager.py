@@ -15,7 +15,6 @@ Does the minimum required to:
 """
 
 import functools
-import os.path
 import time
 import requests
 from flask import redirect, render_template, request, Response
@@ -28,16 +27,20 @@ LINK_OPS = {
 }
 # pylint: disable=invalid-name
 _last_captive_portal_session_start_time = {}
-DHCP_FALLBACK_LEASE_SECS = 86400  # 1 day
 MAX_ASSUMED_CP_SESSION_TIME_SECS = 300
+MAX_TIME_WITHOUT_SHOWING_CP_SECS = 86400  # 1 day
+ANDROID_7_CPA_MAX_SECS_WITHOUT_204 = 30
 REAL_HOST_REDIRECT_URL = "http://127.0.0.1/to-hostname"
 
 
 def redirect_to_connectbox():
-    # Redirect to connectbox, but don't authorise. We don't want to
-    #  authorise because it'll interfere with the client-specific
-    #  authorisation workflow. We assume that the client-specific
-    #  workflow will be done separately.
+    """
+    Redirect to connectbox, but don't start a session.
+
+    We don't want to start a session authorise because it'll interfere
+    with the client-specific session logic. We assume that the client-specific
+    session logic will be done separately.
+    """
     return redirect(get_real_connectbox_url())
 
 
@@ -53,24 +56,6 @@ def get_real_connectbox_url():
     resp = requests.get(REAL_HOST_REDIRECT_URL,
                         allow_redirects=False)
     return resp.headers["Location"]
-
-
-@functools.lru_cache()
-def get_dhcp_lease_secs():
-    """Extract lease time from /etc/dnsmasq.conf
-
-    dhcp-range=10.129.0.2,10.129.0.250,255.255.255.0,300
-    """
-    # So we have a valid lease time if we can't parse the file for
-    #  some reason (this shouldn't ever be necessary)
-    dhcp_lease_secs = DHCP_FALLBACK_LEASE_SECS
-    dnsmasq_file = "/etc/dnsmasq.conf"
-    if os.path.isfile(dnsmasq_file):
-        with open(dnsmasq_file) as dnsmasq_conf:
-            for line in dnsmasq_conf:
-                if line[:10] == "dhcp_range":
-                    dhcp_lease_secs = int(line.split(",")[-1])
-    return dhcp_lease_secs
 
 
 def secs_since_last_session_start():
@@ -96,16 +81,24 @@ def client_is_rejoining_network():
 
     We base our recency criteria on the DHCP lease time
     """
-    max_time_without_showing_cp = get_dhcp_lease_secs()
     secs_since_last_sess_start = secs_since_last_session_start()
-    return secs_since_last_sess_start < max_time_without_showing_cp and \
+    return secs_since_last_sess_start < MAX_TIME_WITHOUT_SHOWING_CP_SECS and \
         secs_since_last_sess_start > MAX_ASSUMED_CP_SESSION_TIME_SECS
 
 
 def is_new_captive_portal_session():
     return secs_since_last_session_start() > MAX_ASSUMED_CP_SESSION_TIME_SECS
 
+
 def get_link_type(ua_str):
+    """Return whether the device can show useable hrefs
+
+
+    Lollipop (Android v5) and Marshmallow (Android v6) can render links,
+     and can execute javascript but all operations keep the device
+     trapped in the reduced-capability captive portal browsers and we
+     don't want that, so we just show text
+    """
     user_agent = user_agent_parser.Parse(ua_str)
     if user_agent["os"]["family"] == "iOS" and \
             user_agent["os"]["major"] == "9":
@@ -118,15 +111,6 @@ def get_link_type(ua_str):
         # Sierra (10.12) can open links from the captive portal agent in
         #  the browser
         return LINK_OPS["HREF"]
-
-    if user_agent["os"]["family"] == "Android" and \
-            (user_agent["os"]["major"] == "5" or
-             user_agent["os"]["major"] == "6"):
-        # Lollipop (Android v5) and Marshmallow (Android v6) can render links,
-        #  and can execute javascript but all operations keep the device
-        #  trapped in the reduced-capability captive portal browsers and we
-        #  don't want that, so we just show text
-        return LINK_OPS["TEXT"]
 
     return LINK_OPS["TEXT"]
 
@@ -159,9 +143,16 @@ def android_cpa_needs_204_now():
     if user_agent["os"]["family"] == "Android" and \
             user_agent["os"]["major"] == "7" and \
             "Dalvik" in ua_str:
-        # XXX explain why
-        # XXX unmagic this number
-        return secs_since_last_session_start() > 20
+        # Android 7 needs to see a 204 within about 40 seconds of its
+        #  initial captive portal request. If it doesn't see one, it'll
+        #  fall back to cellular. Unfortauntely when it does see a 204
+        #  it closes the CPB, thus removing access to our instructions
+        #  that explain on how to find the content.
+        # We want to give the user time to read the instructions in the
+        #  cpb, but want to avoid the fallback to cellular, so we wait
+        #  for a period that's less than 40 seconds.
+        return secs_since_last_session_start() > \
+            ANDROID_7_CPA_MAX_SECS_WITHOUT_204
 
     # Never send a 204
     return False
@@ -177,18 +168,8 @@ def register_captive_portal_session_start():
 
 
 def register_and_show_connected():
+    register_captive_portal_session_start()
     return show_connected()
-
-def register_or_give_204():
-    if client_is_rejoining_network():
-        return Response(status=204)
-
-    return register_and_show_connected()
-
-
-def show_success_or_show_connected():
-
-    return register_and_show_connected()
 
 
 def handle_ios_macos():
@@ -283,7 +264,7 @@ def setup_captive_portal_app(cpm):
     cpm.add_url_rule('/hotspot-detect.html',
                      'handle_ios_macos',
                      handle_ios_macos)
-    # Android <= v6 (possibly later too)
+    # Android <= v8 (possibly later too)
     # pylint: disable=line-too-long
     # See: https://www.chromium.org/chromium-os/chromiumos-design-docs/network-portal-detection
     cpm.add_url_rule('/generate_204',
@@ -304,8 +285,6 @@ def setup_captive_portal_app(cpm):
     cpm.add_url_rule('/ncsi.txt',
                      'handle_ncsi_txt',
                      handle_ncsi_txt)
-    # cpm.add_url_rule('/_authorised_clients',
-    #                  'auth', get_authorised_clients, methods=['GET'])
     cpm.add_url_rule('/_authorised_clients',
                      'auth', register_and_show_connected, methods=['POST'])
     cpm.add_url_rule('/_authorised_clients',

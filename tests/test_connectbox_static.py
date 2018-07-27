@@ -469,8 +469,9 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
         # 6. Connectbox replies that internet access is still not available
         #    because we don't want to close the cpb
         self.assertEqual(r.status_code, 200)
-        # We wait for 30 seconds
-        time.sleep(30)
+        # We wait for 30 seconds (just a little longer than
+        #  ANDROID_7_CPA_MAX_SECS_WITHOUT_204)
+        time.sleep(35)
         # 6. Captive portal agent sends the same request, now that the
         #    witholding 204 perioud is done.
         headers.update({"User-Agent": cpa_ua})
