@@ -455,6 +455,22 @@ function set_staticsite () {
     exit 1;
   fi
 
+  if [ ! -f /media/usb0/index.html ]; then
+    indexfile='<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+      <html lang="en">
+      <head>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8">
+        <title>Created Index.html File</title>
+      </head>
+      <body>
+          <h1>Welcome to your ConnectBox!</h1>
+          <p>Your ConnectBox is configured for running static webpages buy you do not have an index.html page 
+          on your storage device so we created this one for you. You can edit this page to make one.</p>
+      </body>
+      </html>'
+    echo "$indexfile" > /media/usb0/index.html
+  fi
+
   symlink="/etc/nginx/sites-enabled/connectbox_interface.conf"
   rm /etc/nginx/sites-enabled/connectbox_interface.conf 2>&1 | logger -t $(basename $0)
   if [ ${PIPESTATUS[0]} -eq 0 ]
