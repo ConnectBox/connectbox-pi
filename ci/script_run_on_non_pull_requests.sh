@@ -71,7 +71,7 @@ if [ "$TRAVIS_BRANCH" = "master" ]; then
   ansible-playbook -i ci-inventory ../ansible/site.yml || exit 1;
 else
   # Do essential steps of a deployment to keep things fast
-  ansible-playbook -vvv -i ci-inventory --skip-tags=full-build-only ../ansible/site.yml || exit 1;
+  ANSIBLE_STRATEGY_PLUGINS=$TRAVIS_BUILD_DIR/ansible/plugins/mitogen-0.2.2/ansible_mitogen/plugins/strategy ansible-playbook -vvv -i ci-inventory --skip-tags=full-build-only ../ansible/site.yml || exit 1;
 fi
 
 # Run web/selenium tests for each host
