@@ -464,7 +464,7 @@ function set_staticsite () {
       </head>
       <body>
           <h1>Welcome to your ConnectBox!</h1>
-          <p>Your ConnectBox is configured for running static webpages buy you do not have an index.html page 
+          <p>Your ConnectBox is configured for running static webpages but you do not have an index.html page 
           on your storage device so we created this one for you. You can edit this page to make one.</p>
       </body>
       </html>'
