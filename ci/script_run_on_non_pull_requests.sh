@@ -71,7 +71,7 @@ if [ "$TRAVIS_BRANCH" = "master" ]; then
   ansible-playbook -i ci-inventory ../ansible/site.yml || exit 1;
 else
   # Do essential steps of a deployment to keep things fast
-  ansible-playbook -i ci-inventory --skip-tags=full-build-only ../ansible/site.yml || exit 1;
+  ansible-playbook -vvv -i ci-inventory --skip-tags=full-build-only ../ansible/site.yml || exit 1;
 fi
 
 # Run web/selenium tests for each host
