@@ -5,7 +5,7 @@
 #    pip-compile --output-file requirements.txt requirements.in
 #
 ansible-lint==3.4.15
-ansible==2.4
+ansible==2.4.5
 asn1crypto==0.22.0        # via cryptography
 bcrypt==3.1.3             # via paramiko
 certifi==2017.7.27.1      # via requests
