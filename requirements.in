@@ -1,4 +1,4 @@
-ansible==2.4
+ansible==2.4.5
 ansible-lint
 flake8
 Flask==0.12.2
