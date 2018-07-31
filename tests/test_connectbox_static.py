@@ -1,3 +1,4 @@
+import functools
 import json
 import os
 import time
@@ -11,11 +12,8 @@ TEST_IP_ENV_VAR = "TEST_IP"
 # Default creds. Will need a way to override these when it changes
 ADMIN_USER = "admin"
 ADMIN_PASSWORD = "connectbox"
-_testBaseURL = ""
 # Text in the welcome template
 WELCOME_TEMPLATE_TEXT_SAMPLE = "<TITLE>Connected to ConnectBox Wifi</TITLE>"
-# Corresponds to the 302 in the nginx default vhost config
-FINAL_302_PAGE_SUFFIX = "to-hostname"
 
 
 def getTestTarget():
@@ -27,40 +25,23 @@ def getTestTarget():
         raise RuntimeError(error_msg)
 
 
+@functools.lru_cache()
 def getTestBaseURL():
-    """Gets the ConnectBox base URL, solely from the IP address
+    """Gets the ConnectBox base URL, solely from the IP address """
 
-    1. Deregister client to ensure correct state
-    2. First request to register client
-    3. Subsequent request to receive 302 back to nginx
-    4. Final request that uses nginx to 302 to ConnectBox vhost
-    5. Deregister client to ensure correct state for subsequent requests
-
-    Steps 3 & 4 happen in one requests.get because it follow redirects
-    """
-
-    global _testBaseURL
-    if not _testBaseURL:
-        # Deregister
-        r = requests.delete("http://%s/_authorised_clients" %
-                            (getTestTarget(),))
-        r.raise_for_status()
-        # Register (no redirects given)
-        r = requests.post("http://%s/_authorised_clients" %
-                          (getTestTarget(),),)
-        r.raise_for_status()
-        # bounce through the 302, and retrieve the base connectbox page
-        r = requests.get("http://%s/_redirect_to_connectbox" %
-                         (getTestTarget(),),)
-        r.raise_for_status()
-        # and this is the ConnectBox base URL that we want
-        _testBaseURL = r.url
-        # Deregister the client, so that the test case that triggered
-        #  this request starts with a clean slate
-        r = requests.delete("http://%s/_authorised_clients" %
-                            (getTestTarget(),))
-        r.raise_for_status()
-    return _testBaseURL
+    # bounce through the 302, and retrieve the base connectbox page
+    # We use the special "go" vhost as a host header, because this
+    #  means we don't have to control DNS on the machine running
+    #  these tests, and we don't need to expose a route in the CP
+    #  flask App that gets us the base connectbox page
+    r = requests.get(
+        "http://%s/" % (getTestTarget(),),
+        headers = {"Host": "go"},
+        allow_redirects=False
+    )
+    r.raise_for_status()
+    # and this is the ConnectBox base URL that we want
+    return r.headers["Location"]
 
 
 def getAdminBaseURL():
@@ -167,7 +148,7 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
                          (getTestTarget(),), headers=headers)
         r.raise_for_status()
         # 4. We send a welcome page, with a link to click
-        self.assertIn("<a href='%s'" % (getTestBaseURL(),), r.text)
+        self.assertIn("<a href='http://go'", r.text)
         # 5. Device sends wispr hotspot-detect.html request
         headers = requests.utils.default_headers()
         headers.update({"User-Agent": "CaptiveNetworkSupport-325.10.1 wispr"})
@@ -204,7 +185,7 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
         #    exiting of the captive portal browser by clicking on a link. We
         #    do send a text URL for cutting and pasting
         self.assertNotIn("<a href=", r.text)
-        self.assertIn(getTestBaseURL(), r.text)
+        self.assertIn("http://go", r.text)
         # 5. Device sends wispr hotspot-detect.html request
         headers = requests.utils.default_headers()
         headers.update({"User-Agent": "CaptiveNetworkSupport-346.50.1 wispr"})
@@ -239,7 +220,7 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
                          (getTestTarget(),), headers=headers)
         r.raise_for_status()
         # 4. Connectbox sends a welcome page, with a link to click
-        self.assertIn("<a href='%s'" % (getTestBaseURL(),), r.text)
+        self.assertIn("<a href='http://go'", r.text)
         # 5. Device sends wispr hotspot-detect.html request
         headers = requests.utils.default_headers()
         headers.update({"User-Agent": "CaptiveNetworkSupport-346.50.1 wispr"})

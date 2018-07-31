@@ -1,3 +1,8 @@
+server {
+    listen 80;
+    server_name go;
+    return 302 http://$hostname;
+}
 
 server {
     listen *:80 default_server;
@@ -14,11 +19,5 @@ server {
       proxy_pass http://127.0.0.1:{{ gunicorn_listen_port }};
       # Never cache
       expires -1;
-    }
-    
-    # Bounce to the real server definition to save the captive portal
-    #  manager from needing to find and store the real hostname
-    location /to-hostname {
-      return 302 http://$hostname;
     }
 }
