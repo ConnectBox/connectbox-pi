@@ -14,7 +14,6 @@ Does the minimum required to:
   and audio players and PDF viewing).
 """
 
-import functools
 import time
 import requests
 from flask import redirect, render_template, request, Response
@@ -30,32 +29,6 @@ _last_captive_portal_session_start_time = {}
 MAX_ASSUMED_CP_SESSION_TIME_SECS = 300
 MAX_TIME_WITHOUT_SHOWING_CP_SECS = 86400  # 1 day
 ANDROID_7_CPA_MAX_SECS_WITHOUT_204 = 30
-REAL_HOST_REDIRECT_URL = "http://127.0.0.1/to-hostname"
-
-
-def redirect_to_connectbox():
-    """
-    Redirect to connectbox, but don't start a session.
-
-    We don't want to start a session authorise because it'll interfere
-    with the client-specific session logic. We assume that the client-specific
-    session logic will be done separately.
-    """
-    return redirect(get_real_connectbox_url())
-
-
-@functools.lru_cache()
-def get_real_connectbox_url():
-    """Get the hostname where the connectbox can be found
-
-    We could remove the need for this if we had a redirect in nginx from
-    the default vhost to the connectbox host but that would mean putting
-    an ugly URL like http://a.b.c.d/some-redirect in the captive portal
-    page. So we use the value from that redirect to present a nice URL.
-    """
-    resp = requests.get(REAL_HOST_REDIRECT_URL,
-                        allow_redirects=False)
-    return resp.headers["Location"]
 
 
 def secs_since_last_session_start():
@@ -247,7 +220,7 @@ def show_connected():
     ua_str = request.headers.get("User-agent", "")
     return render_template(
         "connected.html",
-        connectbox_url=get_real_connectbox_url(),
+        connectbox_url="http://go",
         LINK_OPS=LINK_OPS,
         link_type=get_link_type(ua_str),
     )
@@ -291,6 +264,4 @@ def setup_captive_portal_app(cpm):
                      'auth', register_and_show_connected, methods=['POST'])
     cpm.add_url_rule('/_authorised_clients',
                      'deauth', remove_authorised_client, methods=['DELETE'])
-    cpm.add_url_rule('/_redirect_to_connectbox',
-                     'redirect', redirect_to_connectbox)
     cpm.wsgi_app = ProxyFix(cpm.wsgi_app)
