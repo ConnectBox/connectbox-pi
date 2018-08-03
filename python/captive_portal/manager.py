@@ -16,7 +16,7 @@ Does the minimum required to:
 
 import time
 import requests
-from flask import redirect, render_template, request, Response
+from flask import redirect, render_template, request, Response, url_for
 from ua_parser import user_agent_parser
 from werkzeug.contrib.fixers import ProxyFix
 
@@ -218,10 +218,20 @@ def handle_ncsi_txt():
 
 def show_connected():
     ua_str = request.headers.get("User-agent", "")
+    user_agent = user_agent_parser.Parse(ua_str)
+    if user_agent["os"]["family"] == "iOS" or \
+           user_agent["os"]["family"] == "Mac OS X":
+        icon_type = "safari"
+    else:
+        icon_type = "chrome"
+
+    browser_icon = \
+        url_for('static', filename='go-animation-%s.gif' % (icon_type,))
     return render_template(
         "connected.html",
         connectbox_url="http://go",
         LINK_OPS=LINK_OPS,
+        browser_icon=browser_icon,
         link_type=get_link_type(ua_str),
     )
 
