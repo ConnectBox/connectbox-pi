@@ -69,6 +69,7 @@
     path=/etc/default/locale
     state=present
     line="LC_ALL=en_US.UTF-8"
+  when: connectbox_os == "armbian"
 
 # Needed for package upgrades via ansible (aptitude safe-upgrade)
 - name: Install aptitude
