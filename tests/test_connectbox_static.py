@@ -281,7 +281,6 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
         # We don't want to show URLs in this captive portal browser
         self.assertNotIn("href=", r.text.lower())
 
-    @unittest.skip("Some android 6 devices have different workflow")
     def testAndroid6CaptivePortalResponse(self):
         """Android 6 ConnectBox connection workflow
         """
@@ -301,9 +300,6 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
                          (getTestTarget(),), headers=headers)
         r.raise_for_status()
         # 2. Connectbox provides response that indicates no internet
-        #    but schedules access to be granted after
-        #    ANDROID_V6_REGISTRATION_DELAY_SECS. We don't want to wait that
-        #    long during a test run, so we'll just assume that it works.
         self.assertEqual(r.status_code, 200)
         # 3. Device send another generate_204 request within a few seconds
         r = requests.get("http://%s/generate_204" %
@@ -331,6 +327,7 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
         self.assertNotIn("href=", r.text.lower())
 
 
+    @unittest.skip("Skip while determining correct behaviour")
     def testAndroid8CaptivePortalResponse(self):
         """Android 8
 
@@ -343,7 +340,6 @@ class ConnectBoxDefaultVHostTestCase(unittest.TestCase):
                  "Build/OPR1.170623.026; wv) AppleWebKit/537.36 " \
                  "(KHTML, like Gecko) Version/4.0 Chrome/67.0.3396.87 " \
                  "Mobile Safari/537.36"
-        # XXX A7 follows the same process... create a test
         # 1. Device sends generate_204 request
         headers = requests.utils.default_headers()
         # This is the UA from a Mi A1, but let's assume that it's

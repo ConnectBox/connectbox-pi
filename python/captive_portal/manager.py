@@ -28,7 +28,7 @@ LINK_OPS = {
 _last_captive_portal_session_start_time = {}
 MAX_ASSUMED_CP_SESSION_TIME_SECS = 300
 MAX_TIME_WITHOUT_SHOWING_CP_SECS = 86400  # 1 day
-ANDROID_7_CPA_MAX_SECS_WITHOUT_204 = 30
+ANDROID_7_CPA_MAX_SECS_WITHOUT_204 = 15
 
 
 def secs_since_last_session_start():
@@ -97,26 +97,12 @@ def android_cpa_needs_204_now():
     a 204 (and this generally manifests as broken DNS within the
     user's regular browser). Earlier Android CPAs will not fallback
     to cellular under these conditions
-
-    Android 7 and earlier close the CBP when they receive a 204,
-    so we don't want to do that if we don't have to, and if we must
-    then we maximise the time that the user can see the CPA.
     """
     ua_str = request.headers.get("User-agent", "")
     user_agent = user_agent_parser.Parse(ua_str)
-    # Android CPBs all advertise themselves as Android
-    # Android CPAs for <= v7 are Dalvik.
-    # Android CPAs for v8 (and above?) don't even
-    #  list themselves as Android, but if we're here
-    #  we're (very likely to be) on an Android platform
-    #  so we can assume that the lack of Android in the
-    #  user agent string indicates that we're a v8 CPA.
-    if user_agent["os"]["family"] != "Android":
-        # We're a v8 CPA. OK to send a 204 anytime
-        return True
-
+    # Android CPAs all advertise themselves as Dalvik.
     if user_agent["os"]["family"] == "Android" and \
-            user_agent["os"]["major"] == "7" and \
+            int(user_agent["os"]["major"]) >= 7 and \
             "Dalvik" in ua_str:
         # Android 7 needs to see a 204 within about 40 seconds of its
         #  initial captive portal request. If it doesn't see one, it'll
