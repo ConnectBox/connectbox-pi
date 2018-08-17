@@ -7,6 +7,11 @@ This project indentifies releases by release date.
 
 # Unreleased
 
+* Changed: Show full URL in captive portal animations
+* Added: Generate a basic index.html when activating static site mode, if one doesn't exist
+
+# 20180809
+
 * Added: Show animation in the captive portal browser to demonstrate how to get to content
 * Added: Finish setting of locale on Armbian devices
 
