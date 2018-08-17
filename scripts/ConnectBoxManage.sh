@@ -462,6 +462,21 @@ function set_staticsite () {
     conf="connectbox_icon-only.conf"
     if [[ "$val" == "true" ]]; then
       conf="connectbox_static-site.conf"
+      if [ ! -f /media/usb0/index.html ]; then
+        indexfile='<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+        <html lang="en">
+        <head>
+          <meta http-equiv="content-type" content="text/html; charset=utf-8">
+          <title>Created Index.html File</title>
+        </head>
+        <body>
+            <h1>Welcome to your ConnectBox!</h1>
+            <p>Your ConnectBox is configured for running static webpages but you do not have an index.html page 
+            on your storage device so we created this one for you. You can edit this page to make one.</p>
+        </body>
+        </html>'
+        echo "$indexfile" > /media/usb0/index.html
+      fi    
     fi
     ln -s "/etc/nginx/sites-available/${conf}" ${symlink} 2>&1 | logger -t $(basename $0)
 
