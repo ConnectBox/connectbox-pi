@@ -14,10 +14,9 @@ Does the minimum required to:
   and audio players and PDF viewing).
 """
 
-import functools
 import time
 import requests
-from flask import redirect, render_template, request, Response
+from flask import redirect, render_template, request, Response, url_for
 from ua_parser import user_agent_parser
 from werkzeug.contrib.fixers import ProxyFix
 
@@ -29,33 +28,7 @@ LINK_OPS = {
 _last_captive_portal_session_start_time = {}
 MAX_ASSUMED_CP_SESSION_TIME_SECS = 300
 MAX_TIME_WITHOUT_SHOWING_CP_SECS = 86400  # 1 day
-ANDROID_7_CPA_MAX_SECS_WITHOUT_204 = 30
-REAL_HOST_REDIRECT_URL = "http://127.0.0.1/to-hostname"
-
-
-def redirect_to_connectbox():
-    """
-    Redirect to connectbox, but don't start a session.
-
-    We don't want to start a session authorise because it'll interfere
-    with the client-specific session logic. We assume that the client-specific
-    session logic will be done separately.
-    """
-    return redirect(get_real_connectbox_url())
-
-
-@functools.lru_cache()
-def get_real_connectbox_url():
-    """Get the hostname where the connectbox can be found
-
-    We could remove the need for this if we had a redirect in nginx from
-    the default vhost to the connectbox host but that would mean putting
-    an ugly URL like http://a.b.c.d/some-redirect in the captive portal
-    page. So we use the value from that redirect to present a nice URL.
-    """
-    resp = requests.get(REAL_HOST_REDIRECT_URL,
-                        allow_redirects=False)
-    return resp.headers["Location"]
+ANDROID_7_CPA_MAX_SECS_WITHOUT_204 = 15
 
 
 def secs_since_last_session_start():
@@ -124,26 +97,12 @@ def android_cpa_needs_204_now():
     a 204 (and this generally manifests as broken DNS within the
     user's regular browser). Earlier Android CPAs will not fallback
     to cellular under these conditions
-
-    Android 7 and earlier close the CBP when they receive a 204,
-    so we don't want to do that if we don't have to, and if we must
-    then we maximise the time that the user can see the CPA.
     """
     ua_str = request.headers.get("User-agent", "")
     user_agent = user_agent_parser.Parse(ua_str)
-    # Android CPBs all advertise themselves as Android
-    # Android CPAs for <= v7 are Dalvik.
-    # Android CPAs for v8 (and above?) don't even
-    #  list themselves as Android, but if we're here
-    #  we're (very likely to be) on an Android platform
-    #  so we can assume that the lack of Android in the
-    #  user agent string indicates that we're a v8 CPA.
-    if user_agent["os"]["family"] != "Android":
-        # We're a v8 CPA. OK to send a 204 anytime
-        return True
-
+    # Android CPAs all advertise themselves as Dalvik.
     if user_agent["os"]["family"] == "Android" and \
-            user_agent["os"]["major"] == "7" and \
+            int(user_agent["os"]["major"]) >= 7 and \
             "Dalvik" in ua_str:
         # Android 7 needs to see a 204 within about 40 seconds of its
         #  initial captive portal request. If it doesn't see one, it'll
@@ -245,10 +204,20 @@ def handle_ncsi_txt():
 
 def show_connected():
     ua_str = request.headers.get("User-agent", "")
+    user_agent = user_agent_parser.Parse(ua_str)
+    if user_agent["os"]["family"] == "iOS" or \
+           user_agent["os"]["family"] == "Mac OS X":
+        icon_type = "safari"
+    else:
+        icon_type = "chrome"
+
+    browser_icon = \
+        url_for('static', filename='go-animation-%s.gif' % (icon_type,))
     return render_template(
         "connected.html",
-        connectbox_url=get_real_connectbox_url(),
+        connectbox_url="http://go",
         LINK_OPS=LINK_OPS,
+        browser_icon=browser_icon,
         link_type=get_link_type(ua_str),
     )
 
@@ -291,6 +260,4 @@ def setup_captive_portal_app(cpm):
                      'auth', register_and_show_connected, methods=['POST'])
     cpm.add_url_rule('/_authorised_clients',
                      'deauth', remove_authorised_client, methods=['DELETE'])
-    cpm.add_url_rule('/_redirect_to_connectbox',
-                     'redirect', redirect_to_connectbox)
     cpm.wsgi_app = ProxyFix(cpm.wsgi_app)

@@ -7,7 +7,8 @@ This project indentifies releases by release date.
 
 # Unreleased
 
-*
+* Added: Show animation in the captive portal browser to demonstrate how to get to content
+* Added: Finish setting of locale on Armbian devices
 
 # 20180728
 

@@ -5,9 +5,12 @@
 </HEAD>
 <BODY>
 {% if link_type == "href" %}
-<a href='{{ connectbox_url }}'>Go To ConnectBox</a>
+<a href='{{ connectbox_url }}'>Go to http://go</a>
 {% else %}
-<strong>Go to ConnectBox: <span style="color: #0000ff;">{{ connectbox_url }}</span></strong>
+<strong>Go to <span style="color: #0000ff;">{{ connectbox_url }}</span></strong>
 {% endif %}
+<p>
+<img src="{{ browser_icon }}" alt="Type http://go in your browser"/>
+</p>
 </BODY>
 </HTML>
