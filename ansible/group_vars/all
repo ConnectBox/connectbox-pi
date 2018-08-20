@@ -16,7 +16,14 @@ client_facing_if: "wlan0"
 #  dns-dhcp role)
 client_facing_if_ip_address: 10.129.0.1
 client_facing_if_netmask: 255.255.0.0
-client_facing_if_network_cidr: 10.129.0.0/16
+# Samsung J3 and friends expect a non-private IP address for their internet
+#  connectivity checks. It doesn't need to be routable, so we pick something.
+non_private_captive_portal_ip: 172.217.3.174
+hosts_requiring_non_private_captive_portal_ip:
+- clients1.google.com
+- clients3.google.com
+- connectivitycheck.gstatic.com
+- connectivitycheck.android.com
 
 # Used to serve dns on LAN in developer mode, principally for testing.
 # In situations where there are multiple wired ethernet interfaces, this is
@@ -71,8 +78,6 @@ nginx_chat_block: |
 do_image_preparation: False
 
 firewall_v4_group_rules:
-  150 redirect http:
-    - -t nat -A PREROUTING -s {{ client_facing_if_network_cidr }} -p tcp --dport 80 -j DNAT --to {{ client_facing_if_ip_address }}:80
   200 allow ssh:
     - -A INPUT -p tcp --dport ssh -j ACCEPT
   300 allow dhcp:
