@@ -16,9 +16,16 @@ iface {{ client_facing_if }} inet static
     netmask {{ client_facing_if_netmask }}
     hostapd /etc/hostapd/hostapd.conf
     pre-up /etc/hostapd/configure_hostapd.sh
+    # Add an extra address to answer captive portal non-private range traffic
+    # We were DNAT'ing port 80 traffic previously, but having a real interface
+    #  with the address means it can respond to ICMP and http and indeed anything
+    #  else we want without a DNAT rule for each. A complete REDIRECT instead of
+    #  DNAT affects DHCP.
+    up ip addr add {{ non_private_captive_portal_ip }}/24 dev $IFACE label $IFACE:0
     # dnsmasq does not always answer DHCP requests after wifi unplug/replug
     #  so we manage it's start and stop here. We always expect wlan0 to be
     #  running on a functioning system, so this dependency on wlan0 is not
     #  a problem.
     post-up systemctl start dnsmasq
     pre-down systemctl stop dnsmasq
+    down ip addr del {{ non_private_captive_portal_ip }}/24 dev $IFACE label $IFACE:0

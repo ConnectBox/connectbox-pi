@@ -17,10 +17,9 @@ no-resolv
 
 # Return Akami addresses for Android devices to display the captive portal
 # They don't need to be routable, just non-private IP space
-address=/clients1.google.com/172.217.3.174
-address=/clients3.google.com/172.217.3.174
-address=/connectivitycheck.gstatic.com/172.217.3.174
-address=/connectivitycheck.android.com/172.217.3.174
+{% for host in hosts_requiring_non_private_captive_portal_ip %}
+address=/{{ host }}/{{ non_private_captive_portal_ip }}
+{% endfor %}
 
 # Return the connectbox-pi address for all queries, unless they match dhcp
 #  leases or are answered from /etc/hosts
