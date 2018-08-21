@@ -9,6 +9,7 @@ This project indentifies releases by release date.
 
 * Changed: Show full URL in captive portal animations
 * Added: Generate a basic index.html when activating static site mode, if one doesn't exist
+* Changed: Only use mitogen ansible strategies in CI to avoid causing swapping on small devices
 
 # 20180809
 
