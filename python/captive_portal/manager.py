@@ -135,11 +135,6 @@ def register_captive_portal_session_start():
             time.time()
 
 
-def register_and_show_connected():
-    register_captive_portal_session_start()
-    return show_connected()
-
-
 def handle_ios_macos():
     """Handle iOS and MacOS interactions
     iOS <v9 and MacOS pre-yosemite
@@ -281,8 +276,6 @@ def setup_captive_portal_app(cpm):
                      'handle_ncsi_txt',
                      handle_ncsi_txt,
                      methods=["GET", "POST"])
-    cpm.add_url_rule('/_authorised_clients',
-                     'auth', register_and_show_connected, methods=['POST'])
     cpm.add_url_rule('/_authorised_clients',
                      'deauth', remove_authorised_client, methods=['DELETE'])
     cpm.wsgi_app = ProxyFix(cpm.wsgi_app)
