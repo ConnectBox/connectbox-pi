@@ -28,7 +28,8 @@ LINK_OPS = {
 _last_captive_portal_session_start_time = {}
 MAX_ASSUMED_CP_SESSION_TIME_SECS = 300
 MAX_TIME_WITHOUT_SHOWING_CP_SECS = 86400  # 1 day
-ANDROID_7_CPA_MAX_SECS_WITHOUT_204 = 15
+
+_android_has_acked_cp_instructions = {}
 
 
 def secs_since_last_session_start():
@@ -93,29 +94,34 @@ def get_link_type(ua_str):
 def android_cpa_needs_204_now():
     """Does this captive portal agent need a 204 right now?
 
-    Android 7 and 8 CPAs fallback to cellular if they don't receive
-    a 204 (and this generally manifests as broken DNS within the
-    user's regular browser). Earlier Android CPAs will not fallback
-    to cellular under these conditions
+    We expect the user agents to go through various states before receiving
+    a 204. This is particularly important for Android >= 7.1, which falls back
+    to cellular if it doesn't get a 204 at the right time.
     """
     ua_str = request.headers.get("User-agent", "")
     user_agent = user_agent_parser.Parse(ua_str)
-    # Android CPAs all advertise themselves as Dalvik.
-    if user_agent["os"]["family"] == "Android" and \
-            int(user_agent["os"]["major"]) >= 7 and \
-            "Dalvik" in ua_str:
-        # Android 7 needs to see a 204 within about 40 seconds of its
-        #  initial captive portal request. If it doesn't see one, it'll
-        #  fall back to cellular. Unfortauntely when it does see a 204
-        #  it closes the CPB, thus removing access to our instructions
-        #  that explain on how to find the content.
-        # We want to give the user time to read the instructions in the
-        #  cpb, but want to avoid the fallback to cellular, so we wait
-        #  for a period that's less than 40 seconds.
-        return secs_since_last_session_start() > \
-            ANDROID_7_CPA_MAX_SECS_WITHOUT_204
+    source_ip = request.headers["X-Forwarded-For"]
 
-    # Never send a 204
+    if "Android" not in ua_str:
+        # We're the "X11" agent in Android 7.1+
+        return _android_has_acked_cp_instructions.get(source_ip, False)
+
+    # Let's not assume that everything has an os.major or minor that can be
+    #  cast to an int
+    try:
+        #
+        v_seven_one_or_above = (
+            (int(user_agent["os"]["major"]) == 7 and
+             int(user_agent["os"]["minor"]) >= 1) or
+            int(user_agent["os"]["major"]) >= 8
+        )
+    except ValueError:
+        v_seven_one_or_above = False
+
+    if v_seven_one_or_above and "Dalvik" in ua_str:
+        return _android_has_acked_cp_instructions.get(source_ip, False)
+
+    # We're the Android Webkit agent, never send a 204
     return False
 
 
@@ -165,22 +171,20 @@ def handle_ios_macos():
 
 def handle_android():
     """Handle Android interactions"""
-    if client_is_rejoining_network():
-        # Don't raise captive portal browser
-        register_captive_portal_session_start()
-        return Response(status=204)
-
+    # We don't check if the client is rejoining the network, because the
+    # behaviour is different and cellular 7.1+ devices don't detect the
+    #  internet despite being sent a 204.
     if is_new_captive_portal_session():
         register_captive_portal_session_start()
-        # raise captive portal browser by not providing a 204
-        return show_connected()
+
+    source_ip = request.headers["X-Forwarded-For"]
+    if request.method == "POST":
+        _android_has_acked_cp_instructions[source_ip] = True
 
     if android_cpa_needs_204_now():
-        # We only want to send a 204 to some Android CPAs
-        #  and only under certain circumstances
         return Response(status=204)
-
-    return show_connected()
+    else:
+        return show_connected()
 
 
 def remove_authorised_client():
@@ -188,6 +192,9 @@ def remove_authorised_client():
     source_ip = request.headers["X-Forwarded-For"]
     if source_ip in _last_captive_portal_session_start_time:
         del _last_captive_portal_session_start_time[source_ip]
+
+    if source_ip in _android_has_acked_cp_instructions:
+        del _android_has_acked_cp_instructions[source_ip]
 
     return Response(status=204)
 
@@ -226,36 +233,43 @@ def setup_captive_portal_app(cpm):
     # Captive Portal Check for iOS <v9 and MacOS pre-yosemite
     cpm.add_url_rule('/success.html',
                      'handle_ios_macos',
-                     handle_ios_macos)
+                     handle_ios_macos,
+                     methods=["GET", "POST"])
     # iOS from captive portal
     cpm.add_url_rule('/library/test/success.html',
                      'handle_ios_macos',
-                     handle_ios_macos)
+                     handle_ios_macos,
+                     methods=["GET", "POST"])
     # Captive portal check for iOS >= v9 and MacOS Yosemite and later
     cpm.add_url_rule('/hotspot-detect.html',
                      'handle_ios_macos',
-                     handle_ios_macos)
+                     handle_ios_macos,
+                     methods=["GET", "POST"])
     # Android <= v8 (possibly later too)
     # pylint: disable=line-too-long
     # See: https://www.chromium.org/chromium-os/chromiumos-design-docs/network-portal-detection
     cpm.add_url_rule('/generate_204',
                      'handle_android',
-                     handle_android)
+                     handle_android,
+                     methods=["GET", "POST"])
     # Fallback method introduced in Android 7
     # pylint: disable=line-too-long
     # See: https://android.googlesource.com/platform/frameworks/base/+/master/services/core/java/com/android/server/connectivity/NetworkMonitor.java#92
     cpm.add_url_rule('/gen_204',
                      'handle_android',
-                     handle_android)
+                     handle_android,
+                     methods=["GET", "POST"])
     # Captive Portal check for Amazon Kindle Fire
     cpm.add_url_rule('/kindle-wifi/wifistub.html',
                      'handle_wifistub_html',
-                     handle_wifistub_html)
+                     handle_wifistub_html,
+                     methods=["GET", "POST"])
     # Captive Portal check for Windows
     # See: https://technet.microsoft.com/en-us/library/cc766017(v=ws.10).aspx
     cpm.add_url_rule('/ncsi.txt',
                      'handle_ncsi_txt',
-                     handle_ncsi_txt)
+                     handle_ncsi_txt,
+                     methods=["GET", "POST"])
     cpm.add_url_rule('/_authorised_clients',
                      'auth', register_and_show_connected, methods=['POST'])
     cpm.add_url_rule('/_authorised_clients',
