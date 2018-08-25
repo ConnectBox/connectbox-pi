@@ -108,18 +108,16 @@ def android_cpa_needs_204_now():
         return _android_has_acked_cp_instructions.get(source_ip, False)
 
     # Let's not assume that everything has an os.major or minor that can be
-    #  cast to an int
+    #  cast to an int.
     try:
         #
-        v_seven_one_or_above = (
-            (int(user_agent["os"]["major"]) == 7 and
-             int(user_agent["os"]["minor"]) >= 1) or
-            int(user_agent["os"]["major"]) >= 8
-        )
+        v_six_or_above = int(user_agent["os"]["major"]) >= 6
     except ValueError:
-        v_seven_one_or_above = False
+        v_six_or_above = False
 
-    if v_seven_one_or_above and "Dalvik" in ua_str:
+    # 5.0.1 shows a confusing webpage unavailable page when Dalvik receives
+    #  a 204 response after a POST.
+    if v_six_or_above and "Dalvik" in ua_str:
         return _android_has_acked_cp_instructions.get(source_ip, False)
 
     # We're the Android Webkit agent, never send a 204
