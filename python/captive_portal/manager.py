@@ -104,6 +104,7 @@ def android_cpa_needs_204_now():
 
     if "Android" not in ua_str:
         # We're the "X11" agent in Android 7.1+
+        # Only show a 204 if the user has pressed "OK" on the CP screen
         return _android_has_acked_cp_instructions.get(source_ip, False)
 
     # Let's not assume that everything has an os.major or minor that can be
@@ -174,10 +175,20 @@ def handle_android():
     # We don't check if the client is rejoining the network, because the
     # behaviour is different and cellular 7.1+ devices don't detect the
     #  internet despite being sent a 204.
-    if is_new_captive_portal_session():
-        register_captive_portal_session_start()
-
     source_ip = request.headers["X-Forwarded-For"]
+    if is_new_captive_portal_session():
+        if source_ip in _android_has_acked_cp_instructions:
+            del _android_has_acked_cp_instructions[source_ip]
+
+    # The X11 captive portal agent periodically checks for internet access.
+    # It's the only agent that hits this endpoint after the captive portal
+    #  browser has been seen, and as the X11 agent doesn't detect internet
+    #  access after a reconnect to the network, despite a 204. Updating the
+    #  session start time means that eventually this won't been seen as an
+    #  existing captive portal session and we won't send a 204, which
+    #  will cause the "sign-in to wifi" sheet to come up.
+    register_captive_portal_session_start()
+
     if request.method == "POST":
         _android_has_acked_cp_instructions[source_ip] = True
 
