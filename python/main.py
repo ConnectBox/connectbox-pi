@@ -2,7 +2,6 @@ import os
 from six.moves import configparser
 
 from flask import Flask
-from captive_portal.manager import setup_captive_portal_app, show_connected
 from chat.server import register as register_chat
 from admin.api import register as register_admin
 
@@ -28,17 +27,8 @@ def chat_connection_info():
 
 app = Flask(__name__)
 
-setup_captive_portal_app(app)
 register_chat(app, chat_connection_info)
 register_admin(app)
-
-# There's no simple way to set an error handler without using a decorator
-#  but that requires app to be defined at the top level, and before use of
-#  the decorator.
-@app.errorhandler(404)
-def default_view(_):
-    """Handle all URLs and send them to the captive portal welcome page"""
-    return show_connected()
 
 # @app.route('/foo')
 # def foo():
