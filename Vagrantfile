@@ -17,7 +17,7 @@ Vagrant.configure(2) do |config|
   config.vm.define "stretch" do |stretch|
     stretch.vm.box = "generic/debian9"
     stretch.vm.network "private_network", ip: "172.28.128.5"
-    stretch.vm.post_up_message = "ConnectBox (Debian Stretch) provisioned in developer mode. IP: 172.28.128.5, hostname: stretch-vagrant.connectbox. You probably want '172.28.128.5 stretch-vagrant.connectbox' in /etc/hosts"
+    stretch.vm.post_up_message = "ConnectBox (Debian Stretch) provisioned in developer mode. IP: 172.28.128.5, hostname: stretch-vagrant.connectbox. You probably want '172.28.128.5 stretch-vagrant.connectbox resettest-stretch-vagrant.connectbox' in /etc/hosts"
 
     stretch.vm.provision "ansible" do |ansible|
       ansible.playbook = "ansible/site.yml"
@@ -38,7 +38,7 @@ Vagrant.configure(2) do |config|
     #  https://bugs.launchpad.net/cloud-images/+bug/1569237
     ubuntu.vm.box = "bento/ubuntu-16.04"
     ubuntu.vm.network "private_network", ip: "172.28.128.4"
-    ubuntu.vm.post_up_message = "ConnectBox (Ubuntu Xenial) provisioned in developer mode. IP: 172.28.128.4, hostname: ubuntu-vagrant.connectbox. You probably want '172.28.128.4 ubuntu-vagrant.connectbox' in /etc/hosts"
+    ubuntu.vm.post_up_message = "ConnectBox (Ubuntu Xenial) provisioned in developer mode. IP: 172.28.128.4, hostname: ubuntu-vagrant.connectbox. You probably want '172.28.128.4 ubuntu-vagrant.connectbox resettest-ubuntu-vagrant.connectbox' in /etc/hosts"
 
     ubuntu.vm.provision "ansible" do |ansible|
       ansible.playbook = "ansible/site.yml"

@@ -588,7 +588,7 @@ class ConnectBoxAPITestCase(unittest.TestCase):
         r.raise_for_status()
         hostname = r.json()["result"][0]
 
-        expected_hostname = "foobar%s" % (hostname,)
+        expected_hostname = "resettest-%s" % (hostname,)
         r = requests.put(self.ADMIN_HOSTNAME_URL, auth=getAdminAuth(),
                      json={"value": expected_hostname})
         r.raise_for_status()
@@ -596,7 +596,7 @@ class ConnectBoxAPITestCase(unittest.TestCase):
         # hostname has changed. Need to have admin hostname url point to
         #  new host until we've successfully reset
         # This will fail when retrieving the json if the hostname i.e.
-        #  foobar<originalhostname> can't be resolved by the machine
+        #  resettest-<originalhostname> can't be resolved by the machine
         #  running the tests. You'll have to add extra DNS entries if
         #  that happens
         newAdminHostnameURL = "%s/api/hostname" % (getAdminBaseURL(),)
