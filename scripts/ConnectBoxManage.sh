@@ -320,9 +320,7 @@ function reload_nginx () {
     echo "Reloading nginx configuration"
   fi
 
-  # captive portal gets connectbox hostname from an nginx response so reload
-  #  it after we reload nginx
-  systemctl reload nginx captiveportal 2>&1 | logger -t $(basename $0)
+  systemctl reload nginx 2>&1 | logger -t $(basename $0)
 
   if [ $? -ne 0 ]
   then
