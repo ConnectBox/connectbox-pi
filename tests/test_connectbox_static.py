@@ -588,7 +588,7 @@ class ConnectBoxAPITestCase(unittest.TestCase):
         r.raise_for_status()
         hostname = r.json()["result"][0]
 
-        expected_hostname = "foobar"
+        expected_hostname = "foobar%s" % (hostname,)
         r = requests.put(self.ADMIN_HOSTNAME_URL, auth=getAdminAuth(),
                      json={"value": expected_hostname})
         r.raise_for_status()
