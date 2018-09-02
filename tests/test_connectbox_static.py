@@ -595,6 +595,10 @@ class ConnectBoxAPITestCase(unittest.TestCase):
 
         # hostname has changed. Need to have admin hostname url point to
         #  new host until we've successfully reset
+        # This will fail when retrieving the json if the hostname i.e.
+        #  foobar<originalhostname> can't be resolved by the machine
+        #  running the tests. You'll have to add extra DNS entries if
+        #  that happens
         newAdminHostnameURL = "%s/api/hostname" % (getAdminBaseURL(),)
         newSystemURL = "%s/api/system" % (getAdminBaseURL(),)
         r = requests.get(newAdminHostnameURL, auth=getAdminAuth())
