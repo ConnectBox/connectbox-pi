@@ -15,7 +15,7 @@ Vagrant.configure(2) do |config|
 
   # Debian Stretch
   config.vm.define "stretch" do |stretch|
-    stretch.vm.box = "debian/stretch64"
+    stretch.vm.box = "generic/debian9"
     stretch.vm.network "private_network", ip: "172.28.128.5"
     stretch.vm.post_up_message = "ConnectBox (Debian Stretch) provisioned in developer mode. IP: 172.28.128.5, hostname: stretch-vagrant.connectbox. You probably want '172.28.128.5 stretch-vagrant.connectbox' in /etc/hosts"
 

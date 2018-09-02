@@ -7,6 +7,11 @@ This project indentifies releases by release date.
 
 # Unreleased
 
+* Changed: Extract captive portal into Connectbox/simple-offline-captive-portal
+* Changed: Run captive portal as a separate service from chat and admin
+
+# 20180825
+
 * Changed: Show full URL in captive portal animations
 * Added: Generate a basic index.html when activating static site mode, if one doesn't exist
 * Changed: Only use mitogen ansible strategies in CI to avoid causing swapping on small devices

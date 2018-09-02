@@ -23,6 +23,7 @@ data "aws_route53_zone" "selected" {
   name         = "connectbox.org."
 }
 
+# foobar records are used in testFactoryReset method
 resource "aws_route53_record" "stretch" {
   zone_id = "${data.aws_route53_zone.selected.zone_id}"
   name    = "stretch.${var.ci-dns-prefix}.${data.aws_route53_zone.selected.name}"
@@ -31,9 +32,24 @@ resource "aws_route53_record" "stretch" {
   records = ["${aws_instance.connectbox-stretch-server.public_ip}"]
 }
 
+resource "aws_route53_record" "foobarstretch" {
+  zone_id = "${data.aws_route53_zone.selected.zone_id}"
+  name    = "foobarstretch.${var.ci-dns-prefix}.${data.aws_route53_zone.selected.name}"
+  type    = "A"
+  ttl     = "1"
+  records = ["${aws_instance.connectbox-stretch-server.public_ip}"]
+}
+
 resource "aws_route53_record" "ubuntu" {
   zone_id = "${data.aws_route53_zone.selected.zone_id}"
   name    = "ubuntu.${var.ci-dns-prefix}.${data.aws_route53_zone.selected.name}"
+  type    = "A"
+  ttl     = "1"
+  records = ["${aws_instance.connectbox-ubuntu-server.public_ip}"]
+}
+resource "aws_route53_record" "foobarubuntu" {
+  zone_id = "${data.aws_route53_zone.selected.zone_id}"
+  name    = "foobarubuntu.${var.ci-dns-prefix}.${data.aws_route53_zone.selected.name}"
   type    = "A"
   ttl     = "1"
   records = ["${aws_instance.connectbox-ubuntu-server.public_ip}"]

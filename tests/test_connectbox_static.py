@@ -25,7 +25,6 @@ def getTestTarget():
         raise RuntimeError(error_msg)
 
 
-@functools.lru_cache()
 def getTestBaseURL():
     """Gets the ConnectBox base URL, solely from the IP address """
 
@@ -532,6 +531,7 @@ class ConnectBoxBasicTestCase(unittest.TestCase):
         r.raise_for_status()
         self.assertIn("<title>ConnectBox</title>", r.text)
 
+
 class ConnectBoxAPITestCase(unittest.TestCase):
 
     API_BASE_URL = "%s/api" % (getAdminBaseURL(),)
@@ -587,24 +587,32 @@ class ConnectBoxAPITestCase(unittest.TestCase):
         r = requests.get(self.ADMIN_HOSTNAME_URL, auth=getAdminAuth())
         r.raise_for_status()
         hostname = r.json()["result"][0]
-        try:
-            expected_hostname = "foobar"
-            r = requests.put(self.ADMIN_HOSTNAME_URL, auth=getAdminAuth(),
-                         json={"value": expected_hostname})
-            r.raise_for_status()
 
-            r = requests.get(self.ADMIN_HOSTNAME_URL, auth=getAdminAuth())
-            r.raise_for_status()
-            updated_hostname = r.json()["result"][0]
-            self.assertEqual(expected_hostname, updated_hostname)
-        finally:
-            r = requests.post(self.ADMIN_SYSTEM_URL, auth=getAdminAuth(),
-                        json={"value": "reset"})
-            r.raise_for_status()
-            r = requests.get(self.ADMIN_HOSTNAME_URL, auth=getAdminAuth())
-            r.raise_for_status()
-            reset_hostname = r.json()["result"][0]
-            self.assertEqual(hostname, reset_hostname)
+        expected_hostname = "foobar%s" % (hostname,)
+        r = requests.put(self.ADMIN_HOSTNAME_URL, auth=getAdminAuth(),
+                     json={"value": expected_hostname})
+        r.raise_for_status()
+
+        # hostname has changed. Need to have admin hostname url point to
+        #  new host until we've successfully reset
+        # This will fail when retrieving the json if the hostname i.e.
+        #  foobar<originalhostname> can't be resolved by the machine
+        #  running the tests. You'll have to add extra DNS entries if
+        #  that happens
+        newAdminHostnameURL = "%s/api/hostname" % (getAdminBaseURL(),)
+        newSystemURL = "%s/api/system" % (getAdminBaseURL(),)
+        r = requests.get(newAdminHostnameURL, auth=getAdminAuth())
+        r.raise_for_status()
+        updated_hostname = r.json()["result"][0]
+        self.assertEqual(expected_hostname, updated_hostname)
+
+        r = requests.post(newSystemURL, auth=getAdminAuth(),
+                    json={"value": "reset"})
+        r.raise_for_status()
+        r = requests.get(self.ADMIN_HOSTNAME_URL, auth=getAdminAuth())
+        r.raise_for_status()
+        reset_hostname = r.json()["result"][0]
+        self.assertEqual(hostname, reset_hostname)
 
     def testSSIDUnchRoundTrip(self):
         r = requests.get(self.ADMIN_SSID_URL, auth=getAdminAuth())

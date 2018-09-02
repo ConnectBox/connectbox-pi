@@ -320,9 +320,7 @@ function reload_nginx () {
     echo "Reloading nginx configuration"
   fi
 
-  # gunicorn gets connectbox hostname from an nginx response so reload
-  #  gunicorn after we reload nginx
-  systemctl reload nginx gunicorn 2>&1 | logger -t $(basename $0)
+  systemctl reload nginx 2>&1 | logger -t $(basename $0)
 
   if [ $? -ne 0 ]
   then
