@@ -25,6 +25,8 @@ hosts_requiring_non_private_captive_portal_ip:
 - connectivitycheck.gstatic.com
 - connectivitycheck.android.com
 
+captiveportal_listen_port: 5001
+
 # Used to serve dns on LAN in developer mode, principally for testing.
 # In situations where there are multiple wired ethernet interfaces, this is
 #  not necessarily the same interface as the one used for SSH.

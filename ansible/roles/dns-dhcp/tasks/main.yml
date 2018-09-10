@@ -7,6 +7,22 @@
     group: root
     mode: 0644
 
+- name: Create dnsmasq directory
+  file:
+    path: /etc/dnsmasq
+    state: directory
+    owner: root
+    group: root
+    mode: 0700
+
+- name: Copy script used by dhcp-script handler
+  template:
+    src: process-dhcp-event.sh.j2
+    dest: /etc/dnsmasq/process-dhcp-event.sh
+    owner: root
+    group: root
+    mode: 0700
+
 # Note that the handler must do a restart instead of a reload as some of
 #  these defaults are only read at startup
 - name: Create defaults for dnsmasq used when starting dnsmasq (including not adding the local machine as a resolver)
