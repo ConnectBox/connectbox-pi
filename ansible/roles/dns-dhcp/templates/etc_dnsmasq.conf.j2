@@ -5,6 +5,9 @@
 # or DHCP then a "not found" answer is returned.
 domain-needed
 
+# Run whenever there's a dhcp event
+dhcp-script=/etc/dnsmasq/process-dhcp-event.sh
+
 # Bogus private reverse lookups. All reverse lookups for private IP ranges
 #  (ie 192.168.x.x, etc) which are not found in /etc/hosts or the DHCP leases
 #  file are answered with "no such domain" rather than being forwarded
