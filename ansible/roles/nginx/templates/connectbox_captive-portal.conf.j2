@@ -11,14 +11,22 @@ server {
     access_log {{ connectbox_log_dir }}/captive_portal-access.log;
     error_log {{ connectbox_log_dir }}/captive_portal-error.log error;
     rewrite_log on;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header Host $http_host;
+    proxy_redirect off;
+    # Never cache
+    expires -1;
     
-    location / {
-      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-      proxy_set_header Host $http_host;
-      proxy_redirect off;
+    # This endpoint can force captive portal reauthentication.
+    # Only allow it from the host itself.
+    location /handle_dhcp_event {
+      allow 127.0.0.1;
+      deny all;
       proxy_pass http://127.0.0.1:{{ captiveportal_listen_port }};
-      # Never cache
-      expires -1;
+    }
+
+    location / {
+      proxy_pass http://127.0.0.1:{{ captiveportal_listen_port }};
     }
 
 }

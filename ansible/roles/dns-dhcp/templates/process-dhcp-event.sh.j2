@@ -11,4 +11,4 @@ CLIENT_NAME=$4
 #  invoke this script (this script runs with an 'init' event at dnsmasq
 #  startup, so we ignore the exit status from curl. We don't care for it
 #  anyway, so that's no great loss.
-curl -d "dhcp_ip=$3" -d "operation=$1" http://127.0.0.1:{{ captiveportal_listen_port }}/handle_dhcp_event || true
+curl -d "dhcp_ip=$3" -d "operation=$1" http://127.0.0.1/handle_dhcp_event || true
