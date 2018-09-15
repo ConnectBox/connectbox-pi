@@ -7,8 +7,22 @@ This project indentifies releases by release date.
 
 # Unreleased
 
+*
+
+# 20180915
+
+* Changed: Further enbiggening the OK button on the captive portal page
+* Changed: Do not create captive portal log file from flask process, which would prevent startup after log rotation
+
+# 20180911
+
+* Fixed: Android 7.1 is shown captive portal window when rejoining network
+* Fixed: Android 7.1 no longer falls back to cellular after 5 minutes
 * Changed: Extract captive portal into Connectbox/simple-offline-captive-portal
 * Changed: Run captive portal as a separate service from chat and admin
+* Changed: Only show OK button on captive portal page for Android, and only for >= v6
+* Changed: Enbiggen the OK button on the captive portal page
+* Changed: Python module bumps for CVE-2018-7750 and CVE-2018-10903
 
 # 20180825
 
