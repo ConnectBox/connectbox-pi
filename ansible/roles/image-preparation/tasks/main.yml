@@ -178,6 +178,8 @@
     - rcconf
     - toilet
     - toilet-fonts
+    - toilet
+    - toilet-fonts
     - xkb-data
 
 - name: Purge aptitude
@@ -208,37 +210,6 @@
   command: /usr/bin/raspi-config --expand-rootfs
   when: connectbox_os == "raspbian"
 
-# Truncate various log files. We also do this at actual image creation time,
-#  but this is a step back to a more cohesive solution
-
-- name: Empty log files
-  copy:
-    dest: "{{ item.path }}"
-    content: ""
-    force: yes
-    owner: "{{ item.o }}"
-    group: "{{ item.g }}"
-    mode: "{{ item.p }}"
-  with_items:
-    - { o: "root", g: "root", p: "0644", path: "/var/log/alternatives.log" }
-    - { o: "root", g: "root", p: "0644", path: "/var/log/armhwinfo.log" }
-    - { o: "syslog", g: "adm", p: "0640", path: "/var/log/auth.log" }
-    - { o: "root", g: "root", p: "0644", path: "/var/log/bootstrap.log" }
-    - { o: "root", g: "utmp", p: "0600", path: "/var/log/btmp" }
-    - { o: "root", g: "adm", p: "0640", path: "/var/log/dmesg" }
-    - { o: "root", g: "root", p: "0644", path: "/var/log/dpkg.log" }
-    - { o: "root", g: "root", p: "0644", path: "/var/log/faillog" }
-    - { o: "root", g: "root", p: "0640", path: "/var/log/kern.log" }
-    - { o: "root", g: "utmp", p: "0664", path: "/var/log/lastlog" }
-    - { o: "syslog", g: "adm", p: "0640", path: "/var/log/syslog" }
-    - { o: "root", g: "utmp", p: "0664", path: "/var/log/wtmp" }
-    - { o: "root", g: "root", p: "0644", path: "/var/log/apt/history.log" }
-    - { o: "root", g: "adm", p: "0640", path: "/var/log/apt/term.log" }
-    - { o: "www-data", g: "adm", p: "0640", path: "/var/log/nginx/access.log" }
-    - { o: "www-data", g: "adm", p: "0640", path: "/var/log/nginx/error.log" }
-    - { o: "root", g: "root", p: "0640",
-        path: "/var/log/unattended-upgrades/unattended-upgrades-shutdown.log" }
-
 - name: Schedule Final Handlers
   assert:
     that: True
@@ -246,4 +217,3 @@
   notify:
     - Warn against rebooting
     - Perform final shutdown
-
