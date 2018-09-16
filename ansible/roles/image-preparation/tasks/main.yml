@@ -178,8 +178,6 @@
     - rcconf
     - toilet
     - toilet-fonts
-    - toilet
-    - toilet-fonts
     - xkb-data
 
 - name: Purge aptitude
