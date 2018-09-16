@@ -1,7 +1,7 @@
 ---
 - name: Install nginx
   apt:
-    name: nginx
+    name: nginx-light
     state: present
 
 - name: Remove OS default nginx vhost
