@@ -237,7 +237,7 @@
     - { o: "www-data", g: "adm", p: "0640", path: "/var/log/nginx/access.log" }
     - { o: "www-data", g: "adm", p: "0640", path: "/var/log/nginx/error.log" }
     - { o: "root", g: "root", p: "0640",
-	path: "/var/log/unattended-upgrades/unattended-upgrades-shutdown.log" }
+        path: "/var/log/unattended-upgrades/unattended-upgrades-shutdown.log" }
 
 - name: Schedule Final Handlers
   assert:
