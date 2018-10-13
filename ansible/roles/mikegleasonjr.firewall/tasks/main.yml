@@ -1,8 +1,8 @@
 ---
-- import_tasks: rules.yml
+- include_tasks: rules.yml
 
-- import_tasks: persist-debian.yml
+- include_tasks: persist-debian.yml
   when: ansible_os_family == 'Debian'
 
-- import_tasks: persist-redhat.yml
+- include_tasks: persist-redhat.yml
   when: ansible_os_family == 'RedHat'
