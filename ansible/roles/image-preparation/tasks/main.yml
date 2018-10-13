@@ -87,7 +87,6 @@
   with_items:
     - bash-completion
     - command-not-found
-    - curl
     - dnsutils
     - dosfstools
     - html2text
