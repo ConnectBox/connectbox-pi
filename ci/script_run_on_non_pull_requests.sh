@@ -68,10 +68,10 @@ if [ "$TRAVIS_BRANCH" = "master" ]; then
   ansible-playbook -i ci-inventory ../ansible/site.yml || exit 1;
   # Perform a re-run of the playbooks, to see whether they run cleanly and
   #  without marking any task as changed
-  ansible-playbook -i ci-inventory ../ansible/site.yml || exit 1;
+  ansible-playbook -i ci-inventory -e shutdown_in_image_preparation=False -e do_image_preparation=True ../ansible/site.yml || exit 1;
 else
   # Do essential steps of a deployment to keep things fast
-  ansible-playbook -i ci-inventory --skip-tags=full-build-only ../ansible/site.yml || exit 1;
+  ansible-playbook -i ci-inventory -e shutdown_in_image_preparation=False -e do_image_preparation=True --skip-tags=full-build-only ../ansible/site.yml || exit 1;
 fi
 
 # Run web/selenium tests for each host
