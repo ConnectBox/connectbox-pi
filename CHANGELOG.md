@@ -7,7 +7,9 @@ This project indentifies releases by release date.
 
 # Unreleased
 
-*
+* Changed: Upgrade to Ansible 2.6.5.
+* Changed: Run image preparation logic in CI
+* Removed: Many OS packages that are not required for ConnectBox operation but took disk space
 
 # 20180915
 
