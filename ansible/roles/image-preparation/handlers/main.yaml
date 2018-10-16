@@ -16,5 +16,6 @@
     warn: no
   async: 1
   poll: 0
+  when: shutdown_in_image_preparation
   tags:
   - skip_ansible_lint
