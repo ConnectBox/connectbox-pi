@@ -164,17 +164,12 @@
   tags:
   - full-build-only
 
-# We place this unit file in /etc/systemd/system rather than /lib/systemd/system
-#  because raspbian already has a service by this name and we want to override it.
-# We don't need to make sure /boot/ssh is absent on raspbian, because by stopping
-#  sshd (below) and dropping in this unit file, the default raspbian sshswitch
-#  that activates sshd in those circumstances will never run
 - name: Add service to allow administrators to activate sshd
   copy:
-    src: sshswitch.service
+    src: connectbox-sshswitch.service
     dest: /etc/systemd/system
   when: not developer_mode
-  notify: Enable sshswitch service
+  notify: Enable connectbox sshswitch service
 
 # sshd forks child processes to handle connections, so stopping and disabling
 #  sshd doesn't disconnect the session that's actually doing the stopping and

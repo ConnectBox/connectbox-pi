@@ -7,6 +7,10 @@ This project indentifies releases by release date.
 
 # Unreleased
 
+* Fixed: Allow sshd to be enabled on Raspberry Pi devices by the usual .connectbox/enable-ssh method via USB storage
+
+# 20181016
+
 * Changed: Upgrade to Ansible 2.6.5.
 * Changed: Run image preparation logic in CI
 * Removed: Many OS packages that are not required for ConnectBox operation but took disk space
