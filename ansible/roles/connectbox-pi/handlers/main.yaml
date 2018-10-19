@@ -1,9 +1,9 @@
 ---
 # No need to start this service given it's an at-boot one-shot
 # Must do a daemon reload so that systemd knows about this new service
-- name: Enable sshswitch service
+- name: Enable connectbox sshswitch service
   systemd:
-    name: sshswitch.service
+    name: connectbox-sshswitch.service
     enabled: yes
     daemon_reload: yes
 
