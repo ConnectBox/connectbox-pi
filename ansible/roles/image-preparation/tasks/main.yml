@@ -104,6 +104,7 @@
     - vim-runtime
     - wget
 
+# Don't run on raspbian until https://github.com/ConnectBox/connectbox-pi/issues/276 is fixed
 - name: Purge other packages
   apt:
     name: "{{ item }}"
@@ -178,6 +179,7 @@
     - toilet
     - toilet-fonts
     - xkb-data
+  when: connectbox_os != "raspbian"
 
 - name: Purge aptitude
   apt:
