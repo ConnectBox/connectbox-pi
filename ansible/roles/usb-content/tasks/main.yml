@@ -18,10 +18,16 @@
     - Reload udev rules
     - Warn to remount USB
 
+- name: Create drop-in directory for systemd-udevd
+  file:
+    path: /etc/systemd/system/systemd-udevd.service.d
+    state: directory
+
 - name: Teach systemd-udev to expose mount points to the system
-  lineinfile:
-    path: /lib/systemd/system/systemd-udevd.service
-    regexp: '^MountFlags='
-    line: 'MountFlags=shared'
+  copy:
+    dest: /etc/systemd/system/systemd-udevd.service.d/mountflags.conf
+    content: |
+      [Service]
+      MountFlags=shared
   notify:
     - Reload systemd-udevd unit file and restart service
