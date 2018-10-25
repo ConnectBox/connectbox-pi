@@ -26,13 +26,6 @@ macaddr_acl=0 # accept unless in deny list
 supported_rates=60 90 120 180 240 360 480 540
 basic_rates=60 120 240
 
-{% if connectbox_os == "armbian" %}
-# Beacon rate is minimum OFDM rate
-# beacon_rate is only available on hostapd >= v2.6, which only
-#  ships with armbian
-beacon_rate=60
-{% endif %}
-
 # IEEE 802.11 specifies two authentication algorithms. hostapd can be
 # configured to allow both of these or only one. Open system authentication
 # should be used with IEEE 802.1X.
