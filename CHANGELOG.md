@@ -7,7 +7,12 @@ This project indentifies releases by release date.
 
 # Unreleased
 
+* Changed: Disabled non-OFDM Wifi rates to improve overall throughput when a connected client has a bad connection
+
+# 20181021
+
 * Fixed: Allow sshd to be enabled on Raspberry Pi devices by the usual .connectbox/enable-ssh method via USB storage
+* Added: "Return to main interface" button in the admin area [Issue #274](https://github.com/ConnectBox/connectbox-pi/issues/274)
 
 # 20181016
 
