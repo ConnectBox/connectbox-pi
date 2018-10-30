@@ -11,11 +11,6 @@
   args:
     creates: /usr/bin/devmem2
 
-- name: Install devmem2 to allow resistor configuration
-  apt:
-    name: devmem2
-    state: present
-
 - name: Install packages to allow building of pillow and psutil
   apt:
     name: "{{ item }}"
