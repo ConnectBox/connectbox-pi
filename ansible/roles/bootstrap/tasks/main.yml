@@ -10,7 +10,7 @@
     dest: /etc/udev/rules.d/80-net-setup-link.rules
     src: /dev/null
     state: link
-  when: ansible_distribution == "Ubuntu" and ansible_virtualization_type == "NA"
+  when: ansible_virtualization_type == "NA"
   register: old_style_names
 
 - name: Request reboot if interface naming style has changed
