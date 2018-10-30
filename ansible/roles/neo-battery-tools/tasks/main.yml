@@ -1,4 +1,16 @@
 ---
+# devmem2 isn't available on debian, and is trivial, so we just build it
+
+- name: Copy devmem2 source
+  copy:
+    src: devmem2.c
+    dest: /tmp/devmem2.c
+
+- name: build devmem2 binary in expected location
+  command: gcc -o /usr/bin/devmem2 /tmp/devmem2.c
+  args:
+    creates: /usr/bin/devmem2
+
 - name: Install devmem2 to allow resistor configuration
   apt:
     name: devmem2
