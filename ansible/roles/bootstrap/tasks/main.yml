@@ -10,7 +10,7 @@
     dest: /etc/udev/rules.d/80-net-setup-link.rules
     src: /dev/null
     state: link
-  when: ansible_distribution == "Ubuntu" and ansible_virtualization_type == "NA"
+  when: ansible_virtualization_type == "NA"
   register: old_style_names
 
 - name: Request reboot if interface naming style has changed
@@ -95,7 +95,7 @@
 #  overwrite our changes)
 # This task will bomb if we're running on a sunxi device and using
 #  something other than the "next" branch or using something other
-#  than xenial
+#  than stretch
 # We use aptitude instead of apt-hold because aptitude's first run clears
 #  the package holds which causes us to upgrade these packages.
 # aptitude doesn't give any indication about whether the package was
@@ -103,15 +103,8 @@
 #  changed anything (and it's not worth lead-up tasks to work out
 #  whether this task would do anything i.e. using aptitude search ~ahold
 - name: Pin kernel and dtb packages
-  command: "aptitude -q hold linux-dtb-next-sunxi linux-image-next-sunxi linux-u-boot-nanopineo-next linux-xenial-root-next-nanopineo"
+  command: "aptitude -q hold linux-dtb-next-sunxi linux-image-next-sunxi linux-u-boot-nanopineo-next linux-stretch-root-next-nanopineo"
   when: connectbox_os == "armbian" and "sunxi" in ansible_kernel
-
-- name: Temporarily shutdown log2ram service on Armbian during package installation
-  service:
-    name: log2ram
-    state: stopped
-  when: connectbox_os == "armbian"
-  notify: Start log2ram service
 
 # Needed by Debian Stretch
 - name: Install openresolv
