@@ -106,6 +106,16 @@
   command: "aptitude -q hold linux-dtb-next-sunxi linux-image-next-sunxi linux-u-boot-nanopineo-next linux-stretch-root-next-nanopineo"
   when: connectbox_os == "armbian" and "sunxi" in ansible_kernel
 
+# If we ever allow updates of the linux-...-root device package, this will
+#  need to move into a service or some other method (noting the package
+#  overwrites /etc/default/cpufrequtils)
+- name: Enable powersave CPU frequency governor on physical devices (for next restart)
+  lineinfile:
+    path: /etc/default/cpufrequtils
+    regexp: '^GOVERNOR='
+    line: 'GOVERNOR=powersave'
+  when: ansible_virtualization_type == "NA"
+
 # Needed by Debian Stretch
 - name: Install openresolv
   apt:
