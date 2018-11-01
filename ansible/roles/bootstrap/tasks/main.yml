@@ -109,11 +109,14 @@
 # If we ever allow updates of the linux-...-root device package, this will
 #  need to move into a service or some other method (noting the package
 #  overwrites /etc/default/cpufrequtils)
-- name: Enable powersave CPU frequency governor on physical devices (for next restart)
+# See https://www.kernel.org/doc/Documentation/cpu-freq/governors.txt for
+#  an explanation of the governors. The choice to use conservative was
+#  not driven by data, so choose something different if data is available.
+- name: Enable conservative CPU frequency governor on physical devices (for next restart)
   lineinfile:
     path: /etc/default/cpufrequtils
     regexp: '^GOVERNOR='
-    line: 'GOVERNOR=powersave'
+    line: 'GOVERNOR=conservative'
   when: ansible_virtualization_type == "NA"
 
 # Needed by Debian Stretch
