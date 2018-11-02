@@ -7,7 +7,15 @@ This project indentifies releases by release date.
 
 # Unreleased
 
+*
+
+# 20181103
+
 * Changed: Disabled non-OFDM Wifi rates to improve overall throughput when a connected client has a bad connection
+* Fixed: Compatibility with some Android 9 devices that have active cellular plans
+* Changed: Image is now based on Debian Stretch instead of Ubuntu Xenial.
+* Changed: Image rebased against current Armbian sunxi-next.
+* Changed: "conservative" CPU frequency governor is now selected (was: "ondemand")
 
 # 20181021
 
