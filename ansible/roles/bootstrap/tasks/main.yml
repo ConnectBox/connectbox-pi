@@ -117,7 +117,7 @@
     path: /etc/default/cpufrequtils
     regexp: '^GOVERNOR='
     line: 'GOVERNOR=conservative'
-  when: ansible_virtualization_type == "NA"
+  when: connectbox_os == "armbian"
 
 # Needed by Debian Stretch
 - name: Install openresolv
