@@ -35,15 +35,15 @@
   environment:
     MAX_CONCURRENCY: 1
 
-- name: Copy PA6 pulldown resistor systemd service definition
+- name: Copy PA pulldown resistor systemd service definition
   template:
-    src: "{{ pa6_pulldown_enabler_service_name }}.j2"
-    dest: "/etc/systemd/system/{{ pa6_pulldown_enabler_service_name }}"
+    src: "{{ pa_pulldown_enabler_service_name }}.j2"
+    dest: "/etc/systemd/system/{{ pa_pulldown_enabler_service_name }}"
     mode: 0644
     owner: root
     group: root
   notify:
-    - restart pa6 pulldown service
+    - restart pa pulldown service
 
 - name: Copy neo battery shutdown systemd service definition
   template:
@@ -62,5 +62,5 @@
     daemon_reload: yes
     enabled: yes
   with_items:
-    - "{{ pa6_pulldown_enabler_service_name }}"
+    - "{{ pa_pulldown_enabler_service_name }}"
     - "{{ battery_tool_service_name }}"

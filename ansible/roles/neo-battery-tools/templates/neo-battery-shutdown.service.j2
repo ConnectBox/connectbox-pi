@@ -1,9 +1,9 @@
 [Unit]
 Description=ConnectBox NEO Battery Shutdown Service
-After=multi-user.target,{{ pa6_pulldown_enabler_service_name }}
-# We must not start this service if we cannot enable pulldown on PA6
+After=multi-user.target {{ pa_pulldown_enabler_service_name }}
+# We must not start this service if we cannot enable pulldown on PA pins
 #  because it may shutdown non-HAT NEOs
-Requires={{ pa6_pulldown_enabler_service_name }}
+Requires={{ pa_pulldown_enabler_service_name }}
 
 [Service]
 Type=idle
