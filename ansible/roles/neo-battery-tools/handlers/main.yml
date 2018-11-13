@@ -1,7 +1,7 @@
 ---
-- name: restart pa6 pulldown service
+- name: restart pa pulldown service
   systemd:
-    name: "{{ pa6_pulldown_enabler_service_name }}"
+    name: "{{ pa_pulldown_enabler_service_name }}"
     daemon_reload: yes
     state: restarted
 
