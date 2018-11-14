@@ -144,6 +144,8 @@
     - libisccfg140
     - libisl15
     - libksba8
+    - libjpeg8
+    - libjpeg-turbo8
     - liblwres141
     - liblzo2-2
     - libmagic1
