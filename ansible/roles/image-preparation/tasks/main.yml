@@ -132,7 +132,6 @@
     - libdpkg-perl
     - liberror-perl
     - libfftw3-double3
-    - libfreetype6
     - libgd3
     - libgeoip1
     - libgomp1
