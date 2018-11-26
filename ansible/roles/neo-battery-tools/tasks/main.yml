@@ -18,6 +18,7 @@
   with_items:
     - libjpeg62-turbo
     - python3-dev
+    - libfreetype6
     - libfreetype6-dev
     - libjpeg-dev
 
