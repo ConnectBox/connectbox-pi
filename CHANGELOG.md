@@ -9,6 +9,21 @@ This project indentifies releases by release date.
 
 *
 
+# 20181126
+
+* Fixed: Add libfreetype - required for OLED HAT operation
+
+# 20181125
+
+* Changed: Start HAT service earlier in the boot sequence
+* Fixed: Memory leak in connectbox-hat-service that would cause lockup of devices running a Q3Y2018 HAT after a few hours.
+* Fixed: Allow controlled shutdown on devices running a Q1Y2018 HAT by initiating shutdown sequence when battery voltage drops below 3.2V instead of the previous value of 3.0V
+
+# 20181119
+
+* Fixed: Missing library that was preventing OLED HATs from displaying content
+* Added: Code to allow in-development Q4Y2018 HAT to function
+
 # 20181103
 
 * Changed: Disabled non-OFDM Wifi rates to improve overall throughput when a connected client has a bad connection
