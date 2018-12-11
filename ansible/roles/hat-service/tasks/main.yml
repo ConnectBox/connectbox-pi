@@ -24,14 +24,14 @@
 
 - name: Make neo battery shutdown virtualenv directory
   file:
-    path: "{{ battery_tool_virtualenv_dir }}"
+    path: "{{ hat_service_virtualenv_dir }}"
     state: directory
 
 # MAX_CONCURRENCY=1 means Pillow doesn't attempt to compile on all
 #  CPUs, which can cause out-of-memory errors on 256MB Neos
 - name: Setup neo battery shutdown virtualenv (python3)
   pip:
-    virtualenv: "{{ battery_tool_virtualenv_dir }}"
+    virtualenv: "{{ hat_service_virtualenv_dir }}"
     virtualenv_python: python3
     name: git+https://github.com/ConnectBox/NEO_BatteryLevelShutdown.git
   environment:
@@ -49,8 +49,8 @@
 
 - name: Copy neo battery shutdown systemd service definition
   template:
-    src: "{{ battery_tool_service_name }}.j2"
-    dest: "/etc/systemd/system/{{ battery_tool_service_name }}"
+    src: "{{ hat_service_name }}.j2"
+    dest: "/etc/systemd/system/{{ hat_service_name }}"
     mode: 0644
     owner: root
     group: root
@@ -65,4 +65,4 @@
     enabled: yes
   with_items:
     - "{{ pa_pulldown_enabler_service_name }}"
-    - "{{ battery_tool_service_name }}"
+    - "{{ hat_service_name }}"

@@ -7,7 +7,7 @@ Requires={{ pa_pulldown_enabler_service_name }}
 
 [Service]
 Type=simple
-ExecStart={{ battery_tool_virtualenv_dir }}/bin/neo_batterylevelshutdown
+ExecStart={{ hat_service_virtualenv_dir }}/bin/neo_batterylevelshutdown
 
 [Install]
 WantedBy=basic.target

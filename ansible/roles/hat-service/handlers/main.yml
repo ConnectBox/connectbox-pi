@@ -7,7 +7,7 @@
 
 - name: restart neo battery shutdown service
   systemd:
-    name: "{{ battery_tool_service_name }}"
+    name: "{{ hat_service_name }}"
     daemon_reload: yes
     state: restarted
 
