@@ -1,13 +1,13 @@
 [Unit]
 Description=ConnectBox NEO Battery Shutdown Service
-After=multi-user.target {{ pa_pulldown_enabler_service_name }}
+After=basic.target {{ pa_pulldown_enabler_service_name }}
 # We must not start this service if we cannot enable pulldown on PA pins
 #  because it may shutdown non-HAT NEOs
 Requires={{ pa_pulldown_enabler_service_name }}
 
 [Service]
 Type=simple
-ExecStart={{ battery_tool_virtualenv_dir }}/bin/neo_batterylevelshutdown
+ExecStart={{ hat_service_virtualenv_dir }}/bin/neo_batterylevelshutdown
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=basic.target

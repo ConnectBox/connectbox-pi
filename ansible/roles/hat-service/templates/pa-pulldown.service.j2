@@ -1,6 +1,6 @@
 [Unit]
 Description=Enable pulldown resistor on NEO pin PA1 and PA6
-After=multi-user.target
+After=basic.target
 
 [Service]
 Type=oneshot
@@ -26,4 +26,4 @@ Type=oneshot
 ExecStart=/usr/bin/devmem2 0x01c2081c h 0x2008
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=basic.target
