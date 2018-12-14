@@ -9,6 +9,17 @@ This project indentifies releases by release date.
 
 *
 
+# 20181215
+
+* Changed: Allow HAT service to start up earlier in the boot sequence
+* Changed: Allow more frequent HAT button pushes (reduce bounce detection time to 125ms)
+* Added: Improved detection of RTL8812AU devices
+
+# 20181208
+
+* Changed: Dramatically improved responsiveness of buttons on devices with OLED screens
+* Changed: Reduced background power consumption on devices with OLED screens
+
 # 20181126
 
 * Fixed: Add libfreetype - required for OLED HAT operation
