@@ -17,7 +17,6 @@ country_code=00
 hw_mode=g
 ieee80211n=1
 
-# ACS is not supported on the brcmfmac driver (onboard wifi in rpi3)
 channel={{ wireless_channel }}
 macaddr_acl=0 # accept unless in deny list
 
@@ -38,3 +37,5 @@ ignore_broadcast_ssid=0
 wmm_enabled=1  # QOS
 
 ht_capab=
+vht_capab=
+ieee80211ac=0

@@ -6,7 +6,7 @@ HOSTAPD_CONF=/etc/hostapd/hostapd.conf;
 
 
 function configure_country_code {
-  current_hostapd_cc=$(awk -F= '$1 ~ /^country_code/ {print $2;}' ${HOSTAPD_CONF})
+  current_hostapd_cc=$(awk -F= '$1 ~ /^country_code/ {print $2;}' ${HOSTAPD_CONF});
   initial_wifi_interface_state=$(cat /sys/class/net/${WIFI_INTERFACE}/operstate);
 
   # CRDA config sets REGDOMAIN. If that's set, then we treat that as a
@@ -50,6 +50,25 @@ function configure_country_code {
 }
 
 
+function configure_80211ac {
+  UEVENT_FILE="/sys/class/net/${WIFI_INTERFACE}/device/uevent"
+
+  if [ $(grep -E 'PRODUCT=bda/(8812|881a)/0' ${UEVENT_FILE}) ]; then
+    # None of the vht_capab advertised by the hardware (iw list) are
+    #  supported (seemingly, by the driver)
+    vht_capab=""
+    ac_active=1;
+  else
+    # We don't recognise this device, so let's be conservative
+    vht_capab="";
+    ac_active=0;
+  fi
+  logger -t ${SYSLOG_TAG} "Setting hostapd ieee80211ac to ${ac_active}";
+  sed -i 's/^ieee80211ac=.*/ieee80211ac='${ac_active}'/' $HOSTAPD_CONF;
+  logger -t ${SYSLOG_TAG} "Setting hostapd vht_capab to ${vht_capab}";
+  sed -i 's/^vht_capab=.*/vht_capab='${vht_capab}'/' $HOSTAPD_CONF;
+}
+
 function configure_ht_capab {
   UEVENT_FILE="/sys/class/net/${WIFI_INTERFACE}/device/uevent"
 
@@ -80,6 +99,8 @@ function configure_ht_capab {
     #  supported because we never want to use them given rapid
     #  performance degradation under non-ideal conditions and the
     #  difficulty of configuration across regulatory domains
+    # Note that RX-STBC1 is not available for 5GHz on this device
+    #  so we may need to remove it if we enable that band.
     ht_capab="[HT20][GF][SHORT-GI-20][RX-STBC1][MAX-AMSDU-7935]"
   else
     # We don't recognise this device, so let's be conservative
@@ -91,6 +112,7 @@ function configure_ht_capab {
 
 configure_country_code
 configure_ht_capab
+configure_80211ac
 # We may be seeing filesystem corruption due to unclean shutdowns
 # Be conservative and flush to storage
 sync
