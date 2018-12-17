@@ -91,3 +91,6 @@ function configure_ht_capab {
 
 configure_country_code
 configure_ht_capab
+# We may be seeing filesystem corruption due to unclean shutdowns
+# Be conservative and flush to storage
+sync
