@@ -1,6 +1,10 @@
 server {
     listen 80;
-    server_name go;
+    # wi.fi is preferred, because having a domain solves some captive portal
+    #  problems on some devices (e.g. Samsung S8 Android 8.0) and browsers
+    #  (e.g. duckduckgo on Android), but go is kept because it's what we used
+    #  to have and it's simple to keep backward compatibility
+    server_name wi.fi go;
     return 302 http://$hostname;
 }
 
