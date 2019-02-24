@@ -15,7 +15,7 @@ Pre-made release images are distributed on GitHub (https://github.com/ConnectBox
 
 ### Enabling sshd on a pre-made release image
 
-sshd is not running on pre-made release images. To permanently enable it, make a directory called `.connectbox` on your USB storage device and place a file named `enable-ssh` in that folder. Insert your USB storage into the ConnectBox and power it on. Once the system has booted, you will be able to ssh to the ConnectBox as `root/connectbox`. Please change the root password immediately.
+sshd is not running on pre-made release images. To permanently enable it, make a directory called `.connectbox` on your USB storage device and place a file named `enable-ssh` in that folder. Insert your USB storage into the ConnectBox and you will be able to ssh to the ConnectBox as `root/connectbox`. Please change the root password immediately.
 
 ## Install Armbian on NanoPi NEO from scratch
 

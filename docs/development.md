@@ -28,7 +28,7 @@ $ pip install -r requirements.txt
 
 ## Developing against a device from a ConnectBox release image
 
-Pre-made release images are distributed on GitHub (https://github.com/ConnectBox/connectbox-pi/releases) . sshd is not running on pre-made release images. To permanently enable it, make a directory called `.connectbox` on your USB storage device and place a file named `enable-ssh` in that folder. Insert your USB storage into the ConnectBox and power it on. Once the system has booted, you will be able to ssh to the ConnectBox as `root/connectbox`. Please change the root password immediately.
+Pre-made release images are distributed on GitHub (https://github.com/ConnectBox/connectbox-pi/releases) . sshd is not running on pre-made release images. To permanently enable it, make a directory called `.connectbox` on your USB storage device and place a file named `enable-ssh` in that folder. Insert your USB storage into the ConnectBox and you will be able to ssh to the ConnectBox as `root/connectbox`. Please change the root password immediately.
 
 ## Connecting to the ConnectBox
 
