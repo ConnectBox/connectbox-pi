@@ -7,7 +7,7 @@ This project indentifies releases by release date.
 
 # Unreleased
 
-*
+* Changed: Activate sshd when configured USB storage is attached, rather than at boot time.
 
 # 20181215
 
