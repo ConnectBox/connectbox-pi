@@ -1,4 +1,5 @@
 ---
+wifi_configurator_virtualenv_dir: /usr/local/connectbox/wifi_configurator_venv
 developer_mode: False
 # Command to run at the end of the playbook run to potentially disable
 # accounts and sshd
