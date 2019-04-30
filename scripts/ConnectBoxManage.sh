@@ -6,12 +6,13 @@
 
 VERSION=0.1.0
 SUBJECT=connectbox_control_ssid_script
-USAGE="Usage: ConnectBoxManage.sh -dhv [get|set|check] [ssid|channel|hostname|password] <value>"
+USAGE="Usage: ConnectBoxManage.sh -dhv [get|set|check] [ssid|channel|hostname|staticsite|password|ui-config] <value>"
 HOSTAPD_CONFIG="/etc/hostapd/hostapd.conf"
 HOSTNAME_CONFIG="/etc/hostname"
 HOSTS_CONFIG="/etc/hosts"
 NGINX_CONFIG="/etc/nginx/sites-enabled/vhosts.conf"
 PASSWORD_CONFIG="/usr/local/connectbox/etc/basicauth"
+WIFI_CONFIGURATOR="/usr/local/connectbox/wifi_configurator_venv/bin/wifi_configurator"
 PASSWORD_SALT="CBOX2018"
 UI_CONFIG="/var/www/connectbox/connectbox_default/config/default.json"
 DEBUG=0
@@ -585,7 +586,7 @@ function set_channel () {
     echo "Updating channel to '$val'"
   fi
 
-  sed -i "s/^channel=.*/channel=$val/g" $HOSTAPD_CONFIG 2>&1 | logger -t $(basename $0)
+  ${WIFI_CONFIGURATOR} --channel "${val}" | logger -t $(basename $0)
 
   if [ ${PIPESTATUS[0]} -eq 0 ]
   then
@@ -607,6 +608,7 @@ function set_ssid () {
     exit 1;
   fi
 
+  # XXX: Move this check into the wifi configurator
   local ssid_length=`printf "%s" "$val" | wc -c`
 
   if [[ $ssid_length -gt 32 ]]; then
@@ -621,7 +623,7 @@ function set_ssid () {
     echo "Updating ssid to '$val'"
   fi
 
-  sed -i "s/^ssid=.*/ssid=$val/g" $HOSTAPD_CONFIG 2>&1 | logger -t $(basename $0)
+  ${WIFI_CONFIGURATOR} --ssid "${val}" | logger -t $(basename $0)
 
   if [ ${PIPESTATUS[0]} -eq 0 ]
   then

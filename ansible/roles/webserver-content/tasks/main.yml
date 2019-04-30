@@ -1,10 +1,4 @@
 ---
-
-- name: install git for checkout of default content
-  apt:
-    name: git
-    state: present
-
 - name: create folders for default content/shared and config
   file:
     path: "{{ item }}"
@@ -34,17 +28,7 @@
     group: www-data
     recurse: yes
 
-- name: Install packages for python virtualenv
-  apt:
-    name: "{{ item }}"
-    state: present
-  with_items:
-    - python-virtualenv
-    - python-pip
-    - virtualenv
-  tags:
-    - captive_portal
-
+# The chat and admin backend
 - name: Install packages for connectbox server process
   pip:
     virtualenv: "{{ connectbox_web_root }}/connectbox_virtualenv"  # XXX Could do better?
