@@ -1,7 +1,8 @@
 import base64,logging,subprocess
 from flask import request,abort,jsonify,make_response
 
-valid_properties = ["ssid", "channel", "hostname", "staticsite", "password", "system", "ui-config"]
+valid_properties = ["ssid", "channel", "hostname", "staticsite", "password",
+                    "system", "ui-config", "wpa-passphrase"]
 
 connectbox_version = 'dev'
 try:
