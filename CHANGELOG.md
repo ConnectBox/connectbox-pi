@@ -7,7 +7,33 @@ This project indentifies releases by release date.
 
 # Unreleased
 
+* Added: API support for password-protected wifi networks
+
+# 20190420
+
+* Change: Use new base image - base-image-190417 which is based based on sunxi-next (4.19.34).
+
+Noteworthy since last base image (4.14):
+
+* A more efficient idle loop: https://kernelnewbies.org/Linux_4.17#A_more_efficient_idle_loop
+* Better networking experience with the CAKE queue management algorithm: https://kernelnewbies.org/Linux_4.19#Better_networking_experience_with_the_CAKE_queue_management_algorithm
+* TSQ Pacing: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=36148c2bbfbe (see: https://lwn.net/Articles/757643/)
+* Expose ACK RSSI support for data frames: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=81d5439da84419ee35bea54309a9f2c3871b6605
+* Updated RTL8812au driver from v5.1.5 to v5.2.10 (now obtained from Aircrack-ng repo)
+
+# 20190320
+
 * Changed: Activate sshd when configured USB storage is attached, rather than at boot time.
+* Added: Support for copying data from external USB storage to internal storage on OLED-equipped devices
+
+# 20190124
+
+* Added: Show consistent LED flashing patterns on all models to represent battery levels
+* Added: Allow the power switch to trigger a controlled shutdown on Q4Y2018 models (with and without OLEDs)
+* Fixed: Fill the battery icon correctly based on remaining charge in the OLED battery screen
+* Changed: Use http://wi.fi instead of http://go for the captive portal shortcut
+* Changed: Improve the likelihood of a successful controlled shutdown on Q1Y2018 HATs when the battery is exhausted
+* Changed: Turn off orange LED when executing a controlled shutdown
 
 # 20181215
 
