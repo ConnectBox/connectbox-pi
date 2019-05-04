@@ -35,7 +35,7 @@ def getTestBaseURL():
     #  flask App that gets us the base connectbox page
     r = requests.get(
         "http://%s/" % (getTestTarget(),),
-        headers = {"Host": "go"},
+        headers = {"Host": "wi.fi"},
         allow_redirects=False
     )
     r.raise_for_status()
@@ -222,6 +222,11 @@ class ConnectBoxAPITestCase(unittest.TestCase):
         #  resettest-<originalhostname> can't be resolved by the machine
         #  running the tests. You'll have to add extra DNS entries if
         #  that happens
+        # It takes a second or two for nginx to reload config, and this
+        #  happens asynchronously i.e. the back-end script has completed
+        #  so we need to wait a few seconds before continuing or else
+        #  getAdminBaseURL will be the original hostname
+        time.sleep(3)
         newAdminHostnameURL = "%s/api/hostname" % (getAdminBaseURL(),)
         newSystemURL = "%s/api/system" % (getAdminBaseURL(),)
         r = requests.get(newAdminHostnameURL, auth=getAdminAuth())
