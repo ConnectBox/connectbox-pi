@@ -35,7 +35,7 @@ def getTestBaseURL():
     #  flask App that gets us the base connectbox page
     r = requests.get(
         "http://%s/" % (getTestTarget(),),
-        headers = {"Host": "go"},
+        headers = {"Host": "wi.fi"},
         allow_redirects=False
     )
     r.raise_for_status()
@@ -152,6 +152,7 @@ class ConnectBoxAPITestCase(unittest.TestCase):
 
     API_BASE_URL = "%s/api" % (getAdminBaseURL(),)
     ADMIN_SSID_URL = "%s/ssid" % API_BASE_URL
+    ADMIN_WPA_PASSPHRASE_URL = "%s/wpa-passphrase" % API_BASE_URL
     ADMIN_HOSTNAME_URL = "%s/hostname" % API_BASE_URL
     ADMIN_STATICSITE_URL = "%s/staticsite" % API_BASE_URL
     ADMIN_SYSTEM_URL = "%s/system" % API_BASE_URL
@@ -163,6 +164,9 @@ class ConnectBoxAPITestCase(unittest.TestCase):
         r = requests.get(cls.ADMIN_SSID_URL, auth=getAdminAuth())
         r.raise_for_status()
         cls._original_ssid = r.json()["result"][0]
+        r = requests.get(cls.ADMIN_WPA_PASSPHRASE_URL, auth=getAdminAuth())
+        r.raise_for_status()
+        cls._original_wpa_passphrase = r.json()["result"][0]
         r = requests.get(cls.ADMIN_STATICSITE_URL, auth=getAdminAuth())
         r.raise_for_status()
         cls._original_staticsite = r.json()["result"][0]
@@ -174,6 +178,9 @@ class ConnectBoxAPITestCase(unittest.TestCase):
     def tearDownClass(cls):
         r = requests.put(cls.ADMIN_SSID_URL, auth=getAdminAuth(),
                          data=json.dumps({"value": cls._original_ssid}))
+        r.raise_for_status()
+        r = requests.put(cls.ADMIN_WPA_PASSPHRASE_URL, auth=getAdminAuth(),
+                         data=json.dumps({"value": cls._original_wpa_passphrase}))
         r.raise_for_status()
         r = requests.put(cls.ADMIN_STATICSITE_URL, auth=getAdminAuth(),
                          data=json.dumps({"value": cls._original_staticsite}))
@@ -215,6 +222,11 @@ class ConnectBoxAPITestCase(unittest.TestCase):
         #  resettest-<originalhostname> can't be resolved by the machine
         #  running the tests. You'll have to add extra DNS entries if
         #  that happens
+        # It takes a second or two for nginx to reload config, and this
+        #  happens asynchronously i.e. the back-end script has completed
+        #  so we need to wait a few seconds before continuing or else
+        #  getAdminBaseURL will be the original hostname
+        time.sleep(3)
         newAdminHostnameURL = "%s/api/hostname" % (getAdminBaseURL(),)
         newSystemURL = "%s/api/system" % (getAdminBaseURL(),)
         r = requests.get(newAdminHostnameURL, auth=getAdminAuth())
@@ -229,6 +241,63 @@ class ConnectBoxAPITestCase(unittest.TestCase):
         r.raise_for_status()
         reset_hostname = r.json()["result"][0]
         self.assertEqual(hostname, reset_hostname)
+
+    def testWpaPassphraseUnchRoundTrip(self):
+        r = requests.get(self.ADMIN_WPA_PASSPHRASE_URL, auth=getAdminAuth())
+        initial_wpa_passphrase = r.json()["result"][0]
+        r = requests.put(self.ADMIN_WPA_PASSPHRASE_URL, auth=getAdminAuth(),
+                         data=json.dumps({"value": initial_wpa_passphrase}))
+        r.raise_for_status()
+        self.assertEqual(self.SUCCESS_RESPONSE, r.json()["result"])
+        r = requests.get(self.ADMIN_WPA_PASSPHRASE_URL, auth=getAdminAuth())
+        r.raise_for_status()
+        final_wpa_passphrase = r.json()["result"][0]
+        self.assertEqual(initial_wpa_passphrase, final_wpa_passphrase)
+
+    def testActivateAndDeactivateWPA(self):
+        # Activate wpa
+        new_wpa_passphrase = "passphrase-%s" % (random.randint(0, 1000000),)
+        r = requests.put(self.ADMIN_WPA_PASSPHRASE_URL, auth=getAdminAuth(),
+                         data=json.dumps({"value": new_wpa_passphrase}))
+        r.raise_for_status()
+        self.assertEqual(self.SUCCESS_RESPONSE, r.json()["result"])
+        # Deactivate wpa by putting an empty passphrase
+        r = requests.put(self.ADMIN_WPA_PASSPHRASE_URL, auth=getAdminAuth(),
+                         data=json.dumps({"value": ""}))
+        r.raise_for_status()
+        # And check that it's deactivated i.e. that we get an empty
+        #  passphrase back
+        r = requests.get(self.ADMIN_WPA_PASSPHRASE_URL, auth=getAdminAuth())
+        r.raise_for_status()
+        self.assertEqual("", r.json()["result"][0])
+
+    @unittest.skip("API doesn't check these yet")
+    def testWPALengthChecks(self):
+        # 802.11i spec says:
+        # A pass-phrase is a sequence of between 8 and 63 ASCII-encoded
+        # characters. The limit of 63 comes from the desire to distinguish
+        # between a pass-phrase and a PSK displayed as 64 hexadecimal
+        # characters.
+        undersized_passphrase = "a" * 7
+        min_sized_passphrase = "a" * 8
+        max_sized_passphrase = "a" * 63
+        oversized_passphrase = "a" * 64
+        for p in (undersized_passphrase, oversized_passphrase):
+            r = requests.put(self.ADMIN_WPA_PASSPHRASE_URL,
+                             auth=getAdminAuth(),
+                             data=json.dumps({"value": p}))
+            r.raise_for_status()
+            # XXX - what's the failed response?
+            self.assertEqual(self.SUCCESS_RESPONSE, r.json()["result"])
+
+    @unittest.skip("API doesn't check this yet")
+    def testWPAisAciiEncoded(self):
+        # Each character in the pass-phrase must have an encoding in the range
+        # of 32 to 126 (decimal), inclusive. (IEEE Std. 802.11i-2004, Annex
+        # H.4.1)
+
+        # ENG codepoint is a 2 byte character
+        non_ascii_passphrase = u'\N{LATIN SMALL LETTER ENG}' * 8
 
     def testSSIDUnchRoundTrip(self):
         r = requests.get(self.ADMIN_SSID_URL, auth=getAdminAuth())

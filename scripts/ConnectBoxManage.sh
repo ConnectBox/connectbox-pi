@@ -6,7 +6,7 @@
 
 VERSION=0.1.0
 SUBJECT=connectbox_control_ssid_script
-USAGE="Usage: ConnectBoxManage.sh -dhv [get|set|check] [ssid|channel|hostname|staticsite|password|ui-config] <value>"
+USAGE="Usage: ConnectBoxManage.sh -dhv [get|set|check] [ssid|channel|hostname|staticsite|password|ui-config|wpa-passphrase] <value>"
 HOSTAPD_CONFIG="/etc/hostapd/hostapd.conf"
 HOSTNAME_CONFIG="/etc/hostname"
 HOSTS_CONFIG="/etc/hosts"
@@ -597,6 +597,33 @@ function set_channel () {
   fi
 }
 
+function get_wpa_passphrase () {
+  local channel=`grep '^wpa_passphrase=' $HOSTAPD_CONFIG | cut -d"=" -f2`
+  echo ${channel}
+}
+
+function set_wpa_passphrase () {
+  # No need to check for empty value, as empty is legit (it's how we clear
+  #  the passphrase)
+
+  backup_hostapd_config
+
+  # Update the wpa_passphrase property in the hostapd configuration file
+  if [ $DEBUG == 1 ]; then
+    echo "Updating wpa_passphrase to '$val'"
+  fi
+
+  ${WIFI_CONFIGURATOR} --wpa-passphrase "${val}" | logger -t $(basename $0)
+
+  if [ ${PIPESTATUS[0]} -eq 0 ]
+  then
+    restart_hostapd
+    success
+  else
+    failure
+  fi
+}
+
 function get_ssid () {
   local ssid=`grep '^ssid=' $HOSTAPD_CONFIG | cut -d"=" -f2`
   echo ${ssid};
@@ -665,6 +692,12 @@ if [ "$action" = "get" ]; then
       exit 0;
       ;;
 
+    "wpa-passphrase")
+      get_wpa_passphrase
+      exit 0;
+      ;;
+
+
     *)
       usage
       ;;
@@ -699,6 +732,11 @@ elif [ "$action" = "set" ]; then
 
     "ui-config")
       set_ui_config
+      exit 0;
+      ;;
+
+    "wpa-passphrase")
+      set_wpa_passphrase
       exit 0;
       ;;
 
