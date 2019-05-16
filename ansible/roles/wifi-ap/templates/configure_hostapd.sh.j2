@@ -52,4 +52,7 @@ function configure_country_code {
 
 configure_country_code
 # Set ht_capab and 802.11ac settings, and sync
-/usr/local/connectbox/wifi_configurator_venv/bin/wifi_configurator
+# Need to set locale because our standard locale settings cause problems with
+#  click, and I don't want to fix that right now. See:
+# https://click.palletsprojects.com/en/7.x/python3/
+LC_ALL=C.UTF-8 LANG=C.UTF-8 /usr/local/connectbox/wifi_configurator_venv/bin/wifi_configurator
