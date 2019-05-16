@@ -13,6 +13,18 @@
     mode: 0644
   register: etc_hostapd_hostapd_conf
 
+# wifi-configurator is used on configure_hostapd.sh
+- name: Make wifi-configurator virtualenv directory
+  file:
+    path: "{{ wifi_configurator_virtualenv_dir }}"
+    state: directory
+
+- name: Setup wifi-configurator virtualenv (python3)
+  pip:
+    virtualenv: "{{ wifi_configurator_virtualenv_dir }}"
+    virtualenv_python: python3
+    name: git+https://github.com/ConnectBox/wifi-configurator.git
+
 - name: Copy script to set regulatory domain
   template:
     src: configure_hostapd.sh.j2

@@ -50,69 +50,9 @@ function configure_country_code {
 }
 
 
-function configure_80211ac {
-  UEVENT_FILE="/sys/class/net/${WIFI_INTERFACE}/device/uevent"
-
-  if [ $(grep -E 'PRODUCT=bda/(8812|881a)/0' ${UEVENT_FILE}) ]; then
-    # None of the vht_capab advertised by the hardware (iw list) are
-    #  supported (seemingly, by the driver)
-    vht_capab=""
-    ac_active=1;
-  else
-    # We don't recognise this device, so let's be conservative
-    vht_capab="";
-    ac_active=0;
-  fi
-  logger -t ${SYSLOG_TAG} "Setting hostapd ieee80211ac to ${ac_active}";
-  sed -i 's/^ieee80211ac=.*/ieee80211ac='${ac_active}'/' $HOSTAPD_CONF;
-  logger -t ${SYSLOG_TAG} "Setting hostapd vht_capab to ${vht_capab}";
-  sed -i 's/^vht_capab=.*/vht_capab='${vht_capab}'/' $HOSTAPD_CONF;
-}
-
-function configure_ht_capab {
-  UEVENT_FILE="/sys/class/net/${WIFI_INTERFACE}/device/uevent"
-
-  if [ $(grep 'SDIO_ID=02D0:A9A6' ${UEVENT_FILE}) ]; then
-    # AP6212 (onboard) in OPi0+2
-    # BCM2835 in RPi0W
-    # BCM2837 in RPi3
-    # BCM???? in RPi3bplus (confusingly... despite being 802.11ac capable)
-    # iw list reports "Static SM Power Save" in capabilities for
-    #  this device, but hostapd is unable to start if SMPS-STATIC
-    #  is set. It's unclear why and thus we exclude it.
-    ht_capab="[HT20][SHORT-GI-20][DDDS_CCK-40]";
-  elif [ $(grep 'PRODUCT=148f/5372/101' ${UEVENT_FILE}) ]; then
-    # Realtek 5372 (external USB shipped with Neo Connectbox)
-    # Deliberately do not advertise 40Mhz channels even though they're
-    #  supported because we never want to use them given rapid
-    #  performance degradation under non-ideal conditions and the
-    #  difficulty of configuration across regulatory domains
-    ht_capab="[HT20][GF][SHORT-GI-20][TX-STBC][RX-STBC12]";
-  elif [ $(grep -E 'PRODUCT=bda/(8812|881a)/0' ${UEVENT_FILE}) ]; then
-    # rtl 8812au 802.11ac device. ht_capab is only used for
-    #  802.11n. 802.11ac required vht_capab, which we're not
-    #  doing yet.
-    # iw list reports "Static SM Power Save" in capabilities for
-    #  this device, but hostapd is unable to start if SMPS-STATIC
-    #  is set. It's unclear why and thus we exclude it.
-    # Deliberately do not advertise 40Mhz channels even though they're
-    #  supported because we never want to use them given rapid
-    #  performance degradation under non-ideal conditions and the
-    #  difficulty of configuration across regulatory domains
-    # Note that RX-STBC1 is not available for 5GHz on this device
-    #  so we may need to remove it if we enable that band.
-    ht_capab="[HT20][GF][SHORT-GI-20][RX-STBC1][MAX-AMSDU-7935]"
-  else
-    # We don't recognise this device, so let's be conservative
-    ht_capab="";
-  fi
-  logger -t ${SYSLOG_TAG} "Setting hostapd ht_capab to ${ht_capab}";
-  sed -i 's/^ht_capab=.*/ht_capab='${ht_capab}'/' $HOSTAPD_CONF;
-}
-
 configure_country_code
-configure_ht_capab
-configure_80211ac
-# We may be seeing filesystem corruption due to unclean shutdowns
-# Be conservative and flush to storage
-sync
+# Set ht_capab and 802.11ac settings, and sync
+# Need to set locale because our standard locale settings cause problems with
+#  click, and I don't want to fix that right now. See:
+# https://click.palletsprojects.com/en/7.x/python3/
+LC_ALL=C.UTF-8 LANG=C.UTF-8 /usr/local/connectbox/wifi_configurator_venv/bin/wifi_configurator

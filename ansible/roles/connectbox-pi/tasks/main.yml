@@ -76,17 +76,6 @@
     group: _connectbox
     mode: 0755
 
-- name: Make wifi-configurator virtualenv directory
-  file:
-    path: "{{ wifi_configurator_virtualenv_dir }}"
-    state: directory
-
-- name: Setup wifi-configurator virtualenv (python3)
-  pip:
-    virtualenv: "{{ wifi_configurator_virtualenv_dir }}"
-    virtualenv_python: python3
-    name: git+https://github.com/ConnectBox/wifi-configurator.git
-
 - name: Make connectbox config overrides
   template:
     src: connectbox.conf.j2
