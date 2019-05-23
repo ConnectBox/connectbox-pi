@@ -32,8 +32,8 @@ Pre-made release images are distributed on GitHub (https://github.com/ConnectBox
 
 ## Connecting to the ConnectBox
 
-1. You can access the ConnectBox site by connecting to a WiFi point named "ConnectBox - Free Media". Once connected to the WiFi point, go somewhere (anywhere) in your browser and you should be redirected to the ConnectBox site.
-1. You can also access the ConnectBox Site over ethernet. To do so add an entry in `/etc/hosts` on the machine where you ran Ansible, add the line `<ip-of-your-device> connectbox` . Then browse to http://connectbox
+1. You can access the ConnectBox site by connecting to a WiFi point named "ConnectBox - Free Media". Once connected to the WiFi point, follow the instructions in the splash page to get to the connectbox site.
+1. You can also access the ConnectBox Site over ethernet. The Connectbox is discoverable via mDNS/Bonjour so it should be sufficient to browse to http://<hostname>.local e.g. http://connectbox.local 
 
 # Tests
 
