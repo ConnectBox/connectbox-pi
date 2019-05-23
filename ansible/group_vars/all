@@ -88,5 +88,7 @@ firewall_v4_group_rules:
   350 allow dns:
     - -A INPUT -p udp --dport domain -j ACCEPT
     - -A INPUT -p tcp --dport domain -j ACCEPT
+  375 allow mdns broadcasts:
+    - -A INPUT -p udp --dport mdns -j ACCEPT
   400 allow web traffic:
     - -A INPUT -p tcp --dport http -j ACCEPT

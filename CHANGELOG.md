@@ -8,6 +8,8 @@ This project indentifies releases by release date.
 # Unreleased
 
 * Added: API support for password-protected wifi networks
+* Added: Avahi for mDNS responses, allowing connections to <hostname>.local
+* Changed: Centralised more logic related to management of hostapd configuration
 
 # 20190420
 

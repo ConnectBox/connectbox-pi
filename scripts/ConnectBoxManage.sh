@@ -556,6 +556,7 @@ function set_hostname () {
       if [ ${PIPESTATUS[0]} -eq 0 ]
       then
         reload_nginx
+        systemctl restart avahi-daemon
         success
       else
         failure

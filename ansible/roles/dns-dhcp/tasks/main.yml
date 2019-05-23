@@ -58,3 +58,17 @@
     name: dnsmasq
     enabled: no
     state: stopped
+
+# No need for a followup service task, as it's automatically enabled and
+#  started.
+- name: Install avahi-daemon
+  apt:
+    name: avahi-daemon
+    state: present
+
+# Default is to start and enable, but let's be sure
+- name: Enable and start avahi-daemon
+  service:
+    name: avahi-daemon
+    enabled: yes
+    state: started

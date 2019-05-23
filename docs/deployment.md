@@ -99,9 +99,7 @@ The key's randomart image is:
 
 # Find the IP address of your device
 
-We need to know the IP address of your device so we can deploy to it. The Raspberry Pi project has some [simple documentation](https://www.raspberrypi.org/documentation/remote-access/ip-address.md) on how to do this.
-
-Make a note of your IP address for subsequent steps.
+The Connectbox supports mDNS/Bonjour so you can find it on your network as <hostname>.local i.e. you can ping connectbox.local and note the IP address (which will be needed in subsequent steps)
 
 ### Deploying SSH keys
 
