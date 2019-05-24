@@ -31,6 +31,7 @@ captiveportal_listen_port: 5001
 # In situations where there are multiple wired ethernet interfaces, this is
 #  not necessarily the same interface as the one used for SSH.
 lan_dns_if: eth0
+wifi_configurator_virtualenv_dir: /usr/local/connectbox/wifi_configurator_venv
 
 connectbox_web_root: /var/www/connectbox
 connectbox_default_content_root: "{{ connectbox_web_root }}/connectbox_default"
