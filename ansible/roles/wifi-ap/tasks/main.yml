@@ -4,6 +4,11 @@
     name: hostapd
     state: present
 
+- name: Install crda so regulatory db is present
+  apt:
+    name: crda
+    state: present
+
 - name: Copy hostapd config
   template:
     src: hostapd.conf.j2
