@@ -73,6 +73,13 @@ def set_property_value_wrapped(prop):
     prop_string = prop
     if prop_string not in valid_properties:
         _abort_bad_request() # bad request
+    # we don't offer channel setting but the UI still exposes it. Stub it out
+    #  until the UI is updated
+    if prop_string == "channel":
+        res = jsonify(code=0, result="Setting channel no longer supported")
+        res.headers['X-Connectbox-Version'] = connectbox_version
+        return res
+
     possible_json = request.get_json(force=True, silent=True)
     if (not possible_json) or ("value" not in possible_json):
         _abort_bad_request() # bad request
