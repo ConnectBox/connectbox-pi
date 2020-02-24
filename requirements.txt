@@ -5,7 +5,7 @@
 #    pip-compile --upgrade requirements.in
 #
 ansible-lint==3.4.23
-ansible==2.6.16
+ansible==2.6.18
 asn1crypto==0.24.0        # via cryptography
 bcrypt==3.1.6             # via paramiko
 certifi==2019.3.9         # via requests
@@ -33,4 +33,4 @@ requests==2.21.0
 ruamel.yaml==0.15.94      # via ansible-lint
 six==1.12.0               # via ansible-lint, bcrypt, cryptography, pynacl
 urllib3==1.24.2           # via requests
-werkzeug==0.15.2          # via flask
+werkzeug==0.15.3          # via flask
