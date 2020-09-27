@@ -5,7 +5,7 @@
 #    pip-compile --upgrade requirements.in
 #
 ansible-lint==3.4.23
-ansible==2.6.18
+ansible==2.7
 asn1crypto==0.24.0        # via cryptography
 bcrypt==3.1.6             # via paramiko
 certifi==2019.3.9         # via requests
