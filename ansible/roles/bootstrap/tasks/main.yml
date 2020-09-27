@@ -50,16 +50,11 @@
     state: absent
   when: connectbox_os == "armbian"
 
-- name: Reboot device for changes to take effect
-  shell: sleep 2 && /sbin/shutdown -r now
-  async: 1
-  poll: 0
-  when: reboot_required
-
 # The system takes 5-10 seconds to disappear from the network
 #  so let's wait 15 seconds before doing our first check
-- name: Wait for server to restart (max wait 5 minutes)
-  wait_for_connection:
+#  Use newer ansible 2.7 function reboot
+- name: Reboot device for changes to take effect
+ reboot:
     delay=15
     timeout=300
   when: reboot_required
