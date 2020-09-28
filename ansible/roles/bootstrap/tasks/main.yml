@@ -52,9 +52,9 @@
 
 # The system takes 5-10 seconds to disappear from the network
 #  so let's wait 15 seconds before doing our first check
-#  Use newer ansible 2.7 function reboot
+#  Use newer ansible 2.7 function reboot.. use FQCN
 - name: Reboot device for changes to take effect
- reboot:
+ ansible.builtin.reboot:
     delay=15
     timeout=300
   when: reboot_required
