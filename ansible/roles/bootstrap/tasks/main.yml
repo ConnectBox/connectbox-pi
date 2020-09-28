@@ -55,8 +55,9 @@
 #  Use newer ansible 2.7 function reboot
 - name: Reboot device for changes to take effect
   reboot:
-    delay=15
-    timeout=300
+    post_reboot_delay=15
+    pre_reboot_delay=2
+    reboot_timeout=300
   when: reboot_required
 
 - name: Set default locale
