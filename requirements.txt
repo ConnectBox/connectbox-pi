@@ -4,19 +4,18 @@
 #
 #    pip-compile --upgrade requirements.in
 #
-ansible-lint==3.4.23
-ansible==2.7.18
-asn1crypto==0.24.0        # via cryptography
+ansible-lint==3.4.23      # via -r requirements.in
+ansible==2.6.20           # via -r requirements.in, ansible-lint
 bcrypt==3.1.6             # via paramiko
 certifi==2019.3.9         # via requests
 cffi==1.12.3              # via bcrypt, cryptography, pynacl
 chardet==3.0.4            # via requests
 click==7.0                # via flask
-cryptography==2.6.1       # via ansible, paramiko
-dnspython==1.16.0
+cryptography==3.2         # via ansible, paramiko
+dnspython==1.16.0         # via -r requirements.in
 entrypoints==0.3          # via flake8
-flake8==3.7.7
-flask==1.0.2
+flake8==3.7.7             # via -r requirements.in
+flask==1.0.2              # via -r requirements.in
 idna==2.8                 # via requests
 itsdangerous==1.1.0       # via flask
 jinja2==2.10.1            # via ansible, flask
@@ -29,8 +28,7 @@ pycparser==2.19           # via cffi
 pyflakes==2.1.1           # via flake8
 pynacl==1.3.0             # via paramiko
 pyyaml==5.1               # via ansible, ansible-lint
-requests==2.21.0
-ruamel.yaml==0.15.94      # via ansible-lint
+requests==2.21.0          # via -r requirements.in
 six==1.12.0               # via ansible-lint, bcrypt, cryptography, pynacl
 urllib3==1.24.2           # via requests
 werkzeug==0.15.3          # via flask
