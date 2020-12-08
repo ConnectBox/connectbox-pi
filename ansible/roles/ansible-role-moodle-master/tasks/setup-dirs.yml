@@ -1,0 +1,48 @@
+---
+# Creates the relevant directories to install moodle:
+# - a source directory
+# - a data directory where we will have all site data
+
+- name: Create installation directory if it does not exist
+  file:
+    path: "{{ moodle_src_path }}"
+    state: directory
+    owner: "{{ moodle_webserver_user }}"
+    group: "{{ moodle_webserver_group }}"
+  become: true
+
+- name: Create data root directory
+  file:
+    path: "{{ moodle_dataroot }}"
+    state: directory
+    owner: "{{ moodle_webserver_user }}"
+    group: "{{ moodle_webserver_group }}"
+    mode: "u=rwx,g=rwx,o=r"
+    recurse: true
+  changed_when: false
+  become: true
+
+- name: Create all standard data Directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ moodle_webserver_user }}"
+    group: "{{ moodle_webserver_group }}"
+    mode: "u=rwx,g=rwx,o=r"
+  loop:
+    - "{{ moodle_sitedata.shared_data_folder }}"
+    - "{{ moodle_sitedata.local_data_folder }}"
+    - "{{ moodle_dataroot }}"
+
+- name: Create all shared data Directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ moodle_webserver_user }}"
+    group: "{{ moodle_webserver_group }}"
+    mode: "u=rwx,g=rwx,o=r"
+  loop:
+    - "{{ moodle_localcachedir }}"
+    - "{{ moodle_tempdir }}"
+    - "{{ moodle_sharedcachedir }}"
+  when: shared_drive_subfolder_create|bool

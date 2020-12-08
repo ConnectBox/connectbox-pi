@@ -1,0 +1,16 @@
+---
+# Database details
+mysql_enablerepo: "remi"
+
+mysql_databases:
+  - name: "moodle"
+    encoding: UTF8
+    collation: utf8_general_ci
+
+mysql_users:
+  - name: "username"
+    host: "%"
+    password: "password"
+    priv: "moodle.*:ALL"
+
+dbengine: mysql

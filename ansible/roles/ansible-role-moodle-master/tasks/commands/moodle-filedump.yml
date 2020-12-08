@@ -1,0 +1,25 @@
+---
+
+- name: Set default dump folder if not set
+  set_fact:
+    local_dump_folder: "dumps"
+  when: not local_dump_folder is defined
+
+- name: Create local installation directory if it does not exist
+  file:
+    path: "{{ local_dump_folder }}"
+    state: directory
+  delegate_to: localhost
+
+- name: Sync data folder locally
+  synchronize:
+    mode: pull
+    src: "{{ moodle_sitedata }}"
+    dest: "{{ local_dump_folder }}/moodledata-{{ inventory_hostname }}.{{ ansible_date_time.epoch }}"
+
+- name: Archive data folder
+  archive:
+    path: "{{ local_dump_folder }}/moodledata-{{ inventory_hostname }}.{{ ansible_date_time.epoch }}/"
+    dest: "{{ local_dump_folder }}/moodledata-{{ inventory_hostname }}.{{ ansible_date_time.epoch }}.tar.bz2"
+    format: bz2
+  delegate_to: localhost

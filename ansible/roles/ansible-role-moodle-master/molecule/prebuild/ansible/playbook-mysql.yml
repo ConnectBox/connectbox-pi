@@ -1,0 +1,29 @@
+---
+
+- name: Prebuild Image - Mysql
+  hosts: all
+  become: true
+
+  vars_files:
+    - ../../../defaults/main.yml
+    - vars.yml
+    - vars-mysql.yml
+
+  pre_tasks:
+    - name: Import Moodle PHP Setup role to set the web server config
+      include_tasks: ../../../tasks/phpsql-setup.yml
+      tags: install
+  roles:
+    - role: geerlingguy.repo-remi
+      when: ansible_os_family == 'RedHat'
+    # Database install
+    - name: geerlingguy.mysql
+    # Then apache
+    - geerlingguy.apache
+    - geerlingguy.php-versions
+    - geerlingguy.php
+    # Then PHP Database libraries
+    - name: geerlingguy.php-mysql
+    # Other dependencies such as composer
+    - name: geerlingguy.composer
+    - name: geerlingguy.git

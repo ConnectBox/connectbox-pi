@@ -1,0 +1,6 @@
+{
+  "docker_image_type": "centos",
+  "docker_image_version": "8",
+  "changes_volumes": "\"/sys/fs/cgroup\"",
+  "changes_cmd": "/usr/lib/systemd/systemd"
+}

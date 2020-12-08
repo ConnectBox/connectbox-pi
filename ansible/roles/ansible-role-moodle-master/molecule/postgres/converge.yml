@@ -1,0 +1,11 @@
+---
+
+- name: Converge
+  hosts: all
+  become: true
+
+  vars_files:
+    - ../default/vars.yml
+    - vars-db.yml
+  roles:
+    - name: ansible-role-moodle

@@ -1,0 +1,27 @@
+---
+# Moodle database details
+moodle_database:
+  dbtype: "pgsql"
+  dbhost: "localhost"
+  dbname: "moodle"
+  dbuser: "username"
+  dbpass: "password"
+  dbprefix: "mdl_"
+
+# Moodle Version
+moodle_version: "v3.8.2"
+moodle_domain_name: "moodlepg.test"
+
+# As the playbook create the user first, we need to do that in this order
+postgresql_users:
+  - name: "{{ moodle_database.dbuser }}"
+    password: "{{ moodle_database.dbpass }}"
+
+postgresql_databases:
+  - name: "{{ moodle_database.dbname }}"
+    owner: "{{ moodle_database.dbuser }}"
+# Here we drop the collation info as it is an issue with CentOS/Redhat images for testing.
+# TODO: find a way to install them in CENTOS 8
+# https://github.com/geerlingguy/ansible-role-postgresql/blob/master/molecule/default/converge.yml
+
+dbengine: "postgres"

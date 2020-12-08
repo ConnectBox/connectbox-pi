@@ -1,0 +1,6 @@
+{
+    "ANSIBLE_MODULE_ARGS": {
+      "install_dir": "INSTALLDIR",
+      "moodle_tool_path": "library/moodletool.php"
+    }
+}

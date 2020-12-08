@@ -1,0 +1,20 @@
+---
+- hosts: all
+
+  vars_files:
+    - vars.yml
+    - vars-db.yml
+
+  roles:
+    - role_under_test
+
+  tasks:
+    - name: Trigger installation
+      command: /bin/true
+      notify: install moodle
+      changed_when: false
+
+    - name: Trigger installation
+      command: /bin/true
+      notify: update moodle
+      changed_when: false

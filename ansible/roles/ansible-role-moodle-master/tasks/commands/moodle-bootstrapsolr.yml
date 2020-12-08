@@ -1,0 +1,11 @@
+---
+
+- name: Bootstrap Solr
+  command: chdir="{{ moodle_src_path }}" {{ item }}
+  # The commands here are availble since MOODLE 3.2
+  loop:
+    - php search/cli/indexer.php --force
+    - php admin/tool/task/cli/schedule_task.php --execute=\\core\\task\\search_index_task
+  become: true
+  become_user: "{{ moodle_webserver_user }}"
+  changed_when: false

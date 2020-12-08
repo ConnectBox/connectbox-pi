@@ -1,0 +1,12 @@
+---
+
+- name: Setup Solr
+  command: chdir="{{ moodle_src_path }}" {{ item }}
+  # CFG command here Since Moodle 3.3
+  loop:
+    - php admin/cli/purge_caches.php
+    - php admin/cli/cfg.php --component=search_solr --name=indexname --set="{{ moodle_solr_collection_name }}"
+    - php admin/cli/cfg.php --component=search_solr --name=server_hostname --set="{{ solr_server_host }}"
+  become: true
+  become_user: "{{ moodle_webserver_user }}"
+  changed_when: false

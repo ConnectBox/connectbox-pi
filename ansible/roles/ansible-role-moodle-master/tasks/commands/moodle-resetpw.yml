@@ -1,0 +1,12 @@
+---
+
+- name: Reset password
+  command: chdir="{{ moodle_src_path }}" {{ item }}
+  loop:
+    - php admin/cli/purge_caches.php
+    - php admin/cli/reset_password.php
+      --username="{{ moodle_site_admin.username }}" --password="{{ moodle_site_admin.password }}"
+  become: true
+  become_user: "{{ moodle_webserver_user }}"
+  changed_when: false
+  no_log: true

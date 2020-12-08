@@ -1,0 +1,20 @@
+diff --git a/lib/dml/mysqli_native_moodle_database.php b/lib/dml/mysqli_native_moodle_database.php
+index 05c6c43..2b9351a 100644
+--- a/lib/dml/mysqli_native_moodle_database.php
++++ b/lib/dml/mysqli_native_moodle_database.php
+@@ -347,6 +347,15 @@ class mysqli_native_moodle_database extends moodle_database {
+      * @return bool true if table can be created or changed to compressed row format.
+      */
+     public function is_compressed_row_format_supported($cached = true) {
++        // START: Patch for Aurora Mysql to avoid issue at install
++        // See https://tracker.moodle.org/browse/MDL-58931
++        if ( isset($this->dboptions['disablecompressedrowformat'])
++            && $this->dboptions['disablecompressedrowformat'] ) {
++            $this->compressedrowformatsupported =  false;
++            return false;
++        }
++        // END: Patch for Aurora Mysql to avoid issue at install
++        
+         if ($cached and isset($this->compressedrowformatsupported)) {
+             return($this->compressedrowformatsupported);
+         }

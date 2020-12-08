@@ -1,0 +1,8 @@
+---
+
+- name: Check {{ item }}
+  stat: path="{{ item }}"
+  register: stats_result
+
+- name: Asserting "{{ item }}" exists
+  assert: {that: "'exists' in stats_result.stat"}

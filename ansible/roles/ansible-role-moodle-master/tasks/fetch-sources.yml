@@ -1,0 +1,34 @@
+---
+
+- name: Make sure that Patch package is installed on CentOS
+  yum:
+    name: patch
+    state: present
+  when: ansible_os_family == 'RedHat'
+
+# Fetch moodle source from a git repository
+- name: Install or update Moodle source code in the destination folder
+  git:
+    repo: "{{ moodle_git_url }}"
+    dest: "{{ moodle_src_path }}"
+    version: "{{ moodle_version }}"
+    depth: 1  # Only shallow cloning. Can be fixed if needed later to have the full history (git pull --unshallow)
+    key_file: "{{ moodle_git_key_file }}"
+    accept_hostkey: yes
+  become: true
+  become_user: "{{ moodle_webserver_user }}"  # Check out as www-data
+
+# Apply patch depending on the patch_to_apply variable
+- name: Apply all patches
+  patch:
+    src: "patches/{{ item }}.patch"
+    basedir: "{{ moodle_src_path }}"
+    strip: 1
+  loop: "{{ patch_to_apply }}"
+
+- name: Make sure all source file belongs to the webserver user
+  file:
+    path: "{{ moodle_src_path }}"
+    owner: "{{ moodle_webserver_user }}"
+    group: "{{ moodle_webserver_group }}"
+    recurse: true

@@ -1,0 +1,8 @@
+---
+
+- name: Set Moodle Data facts
+  set_fact:
+    moodle_dataroot: "{{ moodle_sitedata.shared_data_folder }}/{{ moodle_sitedata.data_dir_name }}"
+    moodle_tempdir: "{{ moodle_sitedata.shared_data_folder }}/{{ moodle_sitedata.temp_dir_name }}"
+    moodle_sharedcachedir: "{{ moodle_sitedata.shared_data_folder }}/{{ moodle_sitedata.cache_dir_name }}"
+    moodle_localcachedir: "{{ moodle_sitedata.local_data_folder }}/{{ moodle_sitedata.cache_dir_name }}"

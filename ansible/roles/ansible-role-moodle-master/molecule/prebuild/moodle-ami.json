@@ -1,0 +1,49 @@
+{
+  "variables": {
+    "full_image_version": "{{  user `docker_image_type` }}{{  user `docker_image_version` }}",
+    "ansible_host": "default",
+    "ansible_connection": "docker"
+  },
+  "builders": [
+    {
+      "type": "docker",
+      "image": "geerlingguy/docker-{{ user `full_image_version` }}-ansible:latest",
+      "run_command": [
+        "-d",
+        "-i",
+        "-t",
+        "-v",
+        "/sys/fs/cgroup:/sys/fs/cgroup:ro",
+        "--privileged",
+        "--name",
+        "{{user `ansible_host`}}",
+        "{{.Image}}"
+      ],
+      "commit": true,
+      "changes": [
+        "VOLUME  [{{ user `changes_volumes` }}]",
+        "CMD [\"{{ user `changes_cmd` }}\"]"
+      ]
+
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "ansible",
+      "playbook_file": "ansible/playbook-{{  user `docker_image_dbflavor` }}.yml",
+      "user": "root",
+      "extra_arguments": [
+        "--extra-vars",
+        "ansible_host={{user `ansible_host`}} ansible_connection={{user `ansible_connection`}}"
+      ],
+      "galaxy_file": "./requirements.yml"
+    }
+  ],
+  "post-processors": [
+    {
+      "type": "docker-tag",
+      "repository": "calllearning/{{  user `docker_image_type` }}-{{  user `docker_image_dbflavor` }}-moodle-ansible",
+      "tags": "{{  user `docker_image_version` }}"
+    }
+  ]
+}

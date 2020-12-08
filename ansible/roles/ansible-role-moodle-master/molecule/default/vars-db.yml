@@ -1,0 +1,26 @@
+---
+# Moodle database details
+moodle_database:
+  dbtype: "mariadb"
+  dbhost: "localhost"
+  dbname: "moodle"
+  dbuser: "username"
+  dbpass: "password"
+  dbprefix: "mdl_"
+
+# Database details
+mysql_enablerepo: "remi"
+
+mysql_databases:
+  - name: "{{ moodle_database.dbname }}"
+    encoding: UTF8
+    collation: utf8_general_ci
+
+mysql_users:
+  - name: "{{ moodle_database.dbuser }}"
+    host: "%"
+    password: "{{ moodle_database.dbpass }}"
+    priv: "{{ moodle_database.dbname }}.*:ALL"
+
+dbengine: "mysql"
+# mysql_root_password_update: true

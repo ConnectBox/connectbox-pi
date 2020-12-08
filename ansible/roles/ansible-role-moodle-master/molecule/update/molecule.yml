@@ -1,0 +1,33 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: docker
+platforms:
+  - name: instanceupdate
+    image: "calllearning/${MOLECULE_DISTRO:-ubuntu}-mysql-moodle-ansible:${MOLECULE_DISTRO_VERSION:-1804}"
+    command: ${MOLECULE_DOCKER_COMMAND:-""}
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    privileged: true
+    pre_build_image: true
+    etc_hosts: "{'moodleupdate.test':  '127.0.0.1'}"
+provisioner:
+  name: ansible
+  log: true
+  playbooks:
+    converge: ${MOLECULE_PLAYBOOK:-converge.yml}
+scenario:
+  name: update
+  test_sequence:  # Remove idempotence and side effect tests to make build a bit faster
+    - dependency
+    - cleanup
+    - destroy
+    - create
+    - prepare
+    - converge
+    - verify
+    - cleanup
+    - destroy
+verifier:
+  name: ansible

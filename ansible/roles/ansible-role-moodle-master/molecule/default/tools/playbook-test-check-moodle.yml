@@ -1,0 +1,13 @@
+---
+
+# You can run this script by providing this playbook and the value of a real moodle install
+
+- hosts: localhost
+  gather_facts: true
+  connection: local
+
+  tasks:
+    - name: Check the state of current moodle
+      check_moodle:
+        install_dir: "/srv/moodle/src"
+      register: moodle_state
