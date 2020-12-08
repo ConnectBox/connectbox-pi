@@ -11,3 +11,4 @@ dependencies:
   - webserver-content
   - usb-content
   - sample-content
+  - ansible-postgresql
