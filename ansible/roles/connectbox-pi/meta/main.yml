@@ -12,3 +12,4 @@ dependencies:
   - usb-content
   - sample-content
   - ansible-postgresql
+  - ansible-role-moodle-master

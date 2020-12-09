@@ -13,15 +13,16 @@ moodle_git_key_file: ""
 # The path where Moodle will be downloaded and installed and site data directory
 # We changed the traditional used /var/www/ to a folder in /srv by default as it seems more in line with the FHS
 # http://www.pathname.com/fhs/pub/fhs-2.3.html#SRVDATAFORSERVICESPROVIDEDBYSYSTEM
-moodle_src_path: "/srv/moodle/src"
+moodle_src_path: "/var/www/moodle/src"
+
 
 # Here we have the data that is either clustered or not
 # (https://docs.moodle.org/26/en/Server_cluster#Related_config.php_settings)
 # We will split the folders into local/and shared data (the folder being shared or not)
 
 moodle_sitedata:
-  shared_data_folder: "/srv/moodle/shareddata"
-  local_data_folder: "/srv/moodle/localdata"
+  shared_data_folder: "/var/www/moodle/shareddata"
+  local_data_folder: "/var/www/moodle/localdata"
   data_dir_name: 'sitedata'
   temp_dir_name: 'temp'
   cache_dir_name: 'cache'
@@ -41,7 +42,7 @@ moodle_database:
   dbtype: "pgsql"
   dbhost: "localhost"
   dbname: "moodle"
-  dbuser: "username"
+  dbuser: "postgres"
   dbpass: "password"
   dbprefix: "mdl_"
 
