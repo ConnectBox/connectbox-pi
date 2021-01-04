@@ -10,16 +10,16 @@
 # maintenance (custom daily cronjobs, replication, and similar tasks).
 #
 # Database administrative login by Unix domain socket
-local   all             postgres                                trust
+local   all             postgres                                peer
 {% endif %}
 
 {% if postgresql_pg_hba_local_socket is not defined or postgresql_pg_hba_local_socket %}
 # "local" is for Unix domain socket connections only
-local   all             all                                     peer
+local   all             all                                     md5
 {% endif %}
 {% if postgresql_pg_hba_local_ipv4 is not defined or postgresql_pg_hba_local_ipv4 %}
 # IPv4 local connections:
-host    all             all             127.0.0.1/32            trust
+host    all             all             127.0.0.1/32            md5
 {% endif %}
 {% if postgresql_pg_hba_local_ipv6 is not defined or postgresql_pg_hba_local_ipv6 %}
 # IPv6 local connections:
@@ -32,3 +32,4 @@ host    all             all             ::1/128                 md5
 {{ line }}
 {% endfor %}
 {% endif %}
+

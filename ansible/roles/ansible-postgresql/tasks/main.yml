@@ -90,6 +90,11 @@
 - include_tasks: backup.yml
   when: postgresql_backup_dir is defined
 
+- name: Set Password
+  command: psql -c "ALTER USER postgres WITH PASSWORD '{{postgresql_user_password}}';"
+  become: true
+  become_user: postgres
+
 - name: Ensure PostgreSQL is running
   service:
     name: "{{ postgresql_service_name }}"
