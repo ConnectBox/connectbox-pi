@@ -1,0 +1,52 @@
+---
+- name: Make moodle base directory
+  file:
+    path: "{{ moodle_base_directory }}"
+    state: directory
+
+- name: Add apt certificates
+  command: apt install -y curl wget gnupg2 ca-certificates lsb-release apt-transport-https
+  become: true
+
+- name: Download GPG key
+  get_url:
+    url: https://packages.sury.org/php/apt.gpg
+    dest: /tmp/apt.gpg
+    mode: '0440'
+  
+- name: Add apt GPG key
+  command: apt-key add /tmp/apt.gpg
+  become: true
+  
+- name: Update repository that contains PHP 7.4
+  template:
+    src: etc_apt_sources_list_d_php_list.j2
+    dest: /etc/apt/sources.list.d/php.list
+
+- name: Update Apt for Repos
+  apt:
+    update_cache: yes
+
+- name: Install PHP & Libraries
+  apt:
+    pkg:
+    - php7.4
+    - php7.4-cli 
+    - php7.4-common 
+    - php7.4-curl 
+    - php7.4-mbstring
+    - php7.4-pgsql 
+    - php7.4-xml
+    - php7.4-zip
+    - php7.4-intl
+    - php7.4-xmlrpc
+    - php7.4-soap
+    - php7.4-fpm
+    - php7.4-gd
+
+- name: Copy PHP info.php
+  template:
+    src: var_www_moodle_info_php.j2
+    dest: /var/www/moodle/info.php
+
+# TODO: Test info.php

@@ -95,6 +95,14 @@
   become: true
   become_user: postgres
 
+# TODO: Make this not fail on already exists
+#- name: Create empty moodle database
+#  command: psql -c "create database moodle;"
+#  become: true
+#  become_user: postgres
+#  failed_when:
+#    - '"No such" not in result.stdout'
+    
 - name: Ensure PostgreSQL is running
   service:
     name: "{{ postgresql_service_name }}"
