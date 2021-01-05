@@ -1,0 +1,33 @@
+---
+
+
+- name: Install Moodle 3.9 to /var/www/
+  unarchive:
+    src: https://download.moodle.org/download.php/direct/stable39/moodle-latest-39.zip
+    dest: /var/www/
+    remote_src: yes
+    
+
+- name: Make moodledata directory
+  file:
+    state: directory
+    path: /var/www/moodledata/
+    owner: www-data
+    group: www-data
+    mode: 0664
+    
+
+- name: Copy config.php to working directory
+  template:
+    src: var_www_moodle_config_php.j2
+    dest: /var/www/moodle/config.php
+
+- name: Recursively change ownership /var/www/moodle
+  become: true
+  file:
+    path: /var/www/moodle
+    state: directory
+    recurse: yes
+    owner: www-data
+    group: www-data
+    mode: 0775
