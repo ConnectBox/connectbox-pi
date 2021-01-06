@@ -1,4 +1,8 @@
 ---
+
+# PHP is required for Moodle software to run.  Using 7.4 because that is most currently recommended version for Moodle 3.9.3
+
+
 - name: Make moodle base directory
   file:
     path: "{{ moodle_base_directory }}"
@@ -27,6 +31,8 @@
   apt:
     update_cache: yes
 
+
+# These are all required by Moodle
 - name: Install PHP & Libraries
   apt:
     pkg:

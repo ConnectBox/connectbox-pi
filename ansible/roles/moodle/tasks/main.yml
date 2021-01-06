@@ -1,4 +1,6 @@
 ---
+######################################################
+# Moodle installation presumes previously installed PHP and PostgreSQL as per the playbooks
 
 
 - name: Recursively remove existing Moodle directory
@@ -14,7 +16,7 @@
     group: admin
     mode: 0775
     
-
+# This is from Relay Trust's Repo
 - name: Install Moodle 3.9 repo to /var/www/moodle
   git:
     repo: 'https://github.com/RT-coding-team/the-well-moodle.git'
@@ -22,7 +24,7 @@
     clone: yes
     update: yes
 
-- name: Make moodledata directory
+- name: Make moodledata directory that Moodle requires for all its functions
   file:
     state: directory
     path: /var/www/moodledata/
@@ -36,6 +38,7 @@
     src: var_www_moodle_config_php.j2
     dest: /var/www/moodle/config.php
 
+#  Everything in Moodle runs as web server user
 - name: Recursively change ownership /var/www/moodle
   become: true
   file:
@@ -45,7 +48,6 @@
     owner: www-data
     group: www-data
     mode: 0775
-
 
 # Install generic PHP test script into the moodle directory so we can know that this is ok.    
 - name: Copy PHP info.php
