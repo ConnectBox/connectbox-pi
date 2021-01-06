@@ -14,7 +14,7 @@
     path: /var/www/moodledata/
     owner: www-data
     group: www-data
-    mode: 0664
+    mode: 0775
     
 
 - name: Copy config.php to working directory
