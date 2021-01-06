@@ -1,12 +1,25 @@
 ---
 
+- name: Recursively remove existing Moodle directory
+  file:
+    path: /var/www/moodle/
+    state: absent
 
-- name: Install Moodle 3.9 to /var/www/
-  unarchive:
-    src: https://download.moodle.org/download.php/direct/stable39/moodle-latest-39.zip
-    dest: /var/www/
-    remote_src: yes
+- name: Make Moodle directory
+  file:
+    state: directory
+    path: /var/www/moodle/
+    owner: admin
+    group: admin
+    mode: 0775
     
+
+- name: Install Moodle 3.9 repo to /var/www/moodle
+  git:
+    repo: 'https://github.com/RT-coding-team/the-well-moodle.git'
+    dest: /var/www/moodle/
+    clone: yes
+    update: yes
 
 - name: Make moodledata directory
   file:
