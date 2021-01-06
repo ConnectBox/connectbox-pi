@@ -44,9 +44,3 @@
     - php7.4-fpm
     - php7.4-gd
 
-- name: Copy PHP info.php
-  template:
-    src: var_www_moodle_info_php.j2
-    dest: /var/www/moodle/info.php
-
-# TODO: Test info.php

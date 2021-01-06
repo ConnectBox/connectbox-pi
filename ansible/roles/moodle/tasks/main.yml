@@ -1,5 +1,6 @@
 ---
 
+
 - name: Recursively remove existing Moodle directory
   file:
     path: /var/www/moodle/
@@ -44,3 +45,11 @@
     owner: www-data
     group: www-data
     mode: 0775
+
+
+# Install generic PHP test script into the moodle directory so we can know that this is ok.    
+- name: Copy PHP info.php
+  template:
+    src: var_www_moodle_info_php.j2
+    dest: /var/www/moodle/info.php
+
