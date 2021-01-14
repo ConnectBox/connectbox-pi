@@ -12,8 +12,8 @@
   file:
     state: directory
     path: /var/www/moodle/
-    owner: admin
-    group: admin
+    owner: www-data
+    group: www-data
     mode: 0775
     
 # This is from Relay Trust's Repo
