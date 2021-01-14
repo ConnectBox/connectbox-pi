@@ -12,41 +12,47 @@
   command: apt install -y curl wget gnupg2 ca-certificates lsb-release apt-transport-https
   become: true
 
-- name: Download GPG key
-  get_url:
-    url: https://packages.sury.org/php/apt.gpg
-    dest: /tmp/apt.gpg
-    mode: '0440'
+#- name: Download GPG key
+#  get_url:
+#    url: https://packages.sury.org/php/apt.gpg
+#    dest: /tmp/apt.gpg
+#    mode: '0440'
+#
   
-- name: Add apt GPG key
-  command: apt-key add /tmp/apt.gpg
-  become: true
-  
-- name: Update repository that contains PHP 7.4
-  template:
-    src: etc_apt_sources_list_d_php_list.j2
-    dest: /etc/apt/sources.list.d/php.list
-
-- name: Update Apt for Repos
-  apt:
-    update_cache: yes
-
+#- name: Copy GPG key to /tmp
+#  template:
+#    src: tmp_apt_gpg.j2
+#    dest: /tmp/apt.gpg
+#  
+#- name: Add apt GPG key
+#  command: apt-key add /tmp/apt.gpg
+#  become: true
+#  
+#- name: Update repository that contains PHP 7.4
+#  template:
+#    src: etc_apt_sources_list_d_php_list.j2
+#    dest: /etc/apt/sources.list.d/php.list
+#
+#- name: Update Apt for Repos
+#  apt:
+#    update_cache: yes
+#
 
 # These are all required by Moodle
 - name: Install PHP & Libraries
   apt:
     pkg:
-    - php7.4
-    - php7.4-cli 
-    - php7.4-common 
-    - php7.4-curl 
-    - php7.4-mbstring
-    - php7.4-pgsql 
-    - php7.4-xml
-    - php7.4-zip
-    - php7.4-intl
-    - php7.4-xmlrpc
-    - php7.4-soap
-    - php7.4-fpm
-    - php7.4-gd
+    - php7.3
+    - php7.3-cli 
+    - php7.3-common 
+    - php7.3-curl 
+    - php7.3-mbstring
+    - php7.3-pgsql 
+    - php7.3-xml
+    - php7.3-zip
+    - php7.3-intl
+    - php7.3-xmlrpc
+    - php7.3-soap
+    - php7.3-fpm
+    - php7.3-gd
 
