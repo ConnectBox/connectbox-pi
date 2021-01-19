@@ -12,31 +12,18 @@
   command: apt install -y curl wget gnupg2 ca-certificates lsb-release apt-transport-https
   become: true
 
-#- name: Download GPG key
-#  get_url:
-#    url: https://packages.sury.org/php/apt.gpg
-#    dest: /tmp/apt.gpg
-#    mode: '0440'
-#
-  
-#- name: Copy GPG key to /tmp
-#  template:
-#    src: tmp_apt_gpg.j2
-#    dest: /tmp/apt.gpg
-#  
-#- name: Add apt GPG key
-#  command: apt-key add /tmp/apt.gpg
-#  become: true
-#  
-#- name: Update repository that contains PHP 7.4
-#  template:
-#    src: etc_apt_sources_list_d_php_list.j2
-#    dest: /etc/apt/sources.list.d/php.list
-#
-#- name: Update Apt for Repos
-#  apt:
-#    update_cache: yes
-#
+# Pi does not require this -- but other OS do so we are ignoring the error.  The install will fail if PHP 7.3 is not found
+- name: Add sury apt key  -- This may fail on Pi but error ignored is ok as long as PHP install completes below
+  ansible.builtin.apt_key:
+    url: https://packages.sury.org/php/apt.gpg
+    state: present
+  ignore_errors: yes
+
+- name: Add sury repo into sources list -- This may fail on Pi but error ignored is ok as long as PHP install completes below
+  ansible.builtin.apt_repository:
+    repo: deb https://packages.sury.org/php/ stretch main
+    state: present
+  ignore_errors: yes
 
 # These are all required by Moodle
 - name: Install PHP & Libraries
