@@ -68,13 +68,13 @@
     force: yes
   notify: restart nginx
 
-- name: Create nginx active vhost symlink for selected interface
-  file:
-    src: "{{ nginx_available_vhosts_path }}/{{ interface_type_files[interface_type] }}"
-    dest: "{{ nginx_enabled_vhosts_path }}/connectbox_interface.conf"
-    state: link
-    force: yes
-  notify: restart nginx
+#- name: Create nginx active vhost symlink for selected interface
+#  file:
+#    src: "{{ nginx_available_vhosts_path }}/{{ interface_type_files[interface_type] }}"
+#    dest: "{{ nginx_enabled_vhosts_path }}/connectbox_interface.conf"
+#    state: link
+#    force: yes
+#  notify: restart nginx
 
 - name: Ensure nginx is started and enabled to start at boot
   service:

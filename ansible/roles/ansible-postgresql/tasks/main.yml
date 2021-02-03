@@ -96,36 +96,20 @@
 # The following items are all added for The Well / Moodle
 # We delete any existing Moodle Database and Create a new One From the Template
 
-- name: Set Default PSQL Password
-  command: psql -c "ALTER USER postgres WITH PASSWORD '{{postgresql_user_password}}';"
+- name: Check For Existing 
+  command: psql moodle -c "select * from mdl_course;"
   become: true
   become_user: postgres
+  register: buildDatabase
+  ignore_errors: yes
 
-- name: Delete Existing Moodle Database
-  command: psql -c "DROP DATABASE IF EXISTS moodle;"
-  become: true
-  become_user: postgres  
-    
-- name: Create empty Moodle Database
-  command: psql -c "create database moodle;"
-  become: true
-  become_user: postgres
-    
-- name: Copy Default Postgres Database Dump To /tmp
-  template:
-    src: "{{ item.src }}"
-    dest: "/tmp/{{ item.dest }}"
-    mode: 0666
-    owner: postgres
-    group: postgres
-  with_items:
-    - { src: "moodle_database_template.dump", dest: "moodle_database_template.dump" }
+- debug: msg="Build Database? {{buildDatabase.rc}}"
 
-- name: Install Default Postgres Database for Moodle
-  command: psql -f /tmp/moodle_database_template.dump moodle
-  become: true
-  become_user: postgres
-    
+- include_tasks: overwrite.yml
+  when: buildDatabase.rc > 0
+
+
+
 - name: Ensure PostgreSQL is running
   service:
     name: "{{ postgresql_service_name }}"
