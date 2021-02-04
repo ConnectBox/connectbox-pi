@@ -106,9 +106,7 @@
 - debug: msg="Build Database? {{buildDatabase.rc}}"
 
 - include_tasks: overwrite.yml
-  when: buildDatabase.rc > 0
-
-
+  when: buildDatabase.rc > 0 or overwrite_database
 
 - name: Ensure PostgreSQL is running
   service:
