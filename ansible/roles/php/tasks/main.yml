@@ -43,3 +43,33 @@
     - php7.3-fpm
     - php7.3-gd
 
+# Set larger uploads configs for PHP
+
+- name: Update php.ini post_max_size
+  replace:
+    dest: /etc/php/7.3/fpm/php.ini
+    regexp: '^post_max_size.*$'
+    replace: 'post_max_size = 201M'
+    backup: yes 
+  become: true
+  
+- name: Update php.ini upload_max_filesize
+  replace:
+    dest: /etc/php/7.3/fpm/php.ini
+    regexp: '^upload_max_filesize.*$'
+    replace: 'upload_max_filesize = 201M'
+    backup: yes 
+  become: true  
+
+  
+- name: Update php.ini max_execution_time
+  replace:
+    dest: /etc/php/7.3/fpm/php.ini
+    regexp: '^max_execution_time.*$'
+    replace: 'max_execution_time = 601'
+    backup: yes 
+  become: true  
+
+- name: Restart PHP FPM
+  command: /etc/init.d/php7.3-fpm restart
+  become: true
