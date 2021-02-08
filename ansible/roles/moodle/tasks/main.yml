@@ -17,9 +17,9 @@
     mode: 0775
     
 # This is from Relay Trust's Repo
-- name: Install Moodle 3.9 repo to /var/www/moodle
+- name: Install Moodle 3.10 repo to /var/www/moodle
   git:
-    repo: 'https://github.com/RT-coding-team/the-well-moodle.git'
+    repo: 'https://github.com/RT-coding-team/the-well-moodle310.git'
     dest: /var/www/moodle/
     clone: yes
     update: yes
@@ -31,6 +31,20 @@
     owner: www-data
     group: www-data
     mode: 0775
+
+- name: configure temporary storage for Moodle cache
+  mount:
+    path: '{{ item.name }}'
+    src: 'tmpfs'
+    fstype: 'tmpfs'
+    opts: 'size={{ item.size }},mode=775,uid=www-data,gid=www-data'
+    dump: '0'
+    passno: '0'
+    state: 'mounted'
+  with_items:
+    - { name: '/var/cache/moodle', size: '128M' }
+    - { name: '/var/www/moodledata/temp', size: '999M' }
+    - { name: '/var/www/moodledata/sessions', size: '256M' }
     
 
 - name: Copy config.php to working directory
@@ -55,3 +69,11 @@
     src: var_www_moodle_info_php.j2
     dest: /var/www/moodle/info.php
 
+# Setup Moodle's Cron 
+- name: Setup Moodle's Cron To Run Every Minute as Per Moodle
+  ansible.builtin.cron:
+    name: "moodle cron"
+    minute: "*"
+    hour: "*"
+    user: www-data
+    job: "/usr/bin/php /var/www/moodle/admin/cli/cron.php >/dev/null"
