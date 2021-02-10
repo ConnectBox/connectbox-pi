@@ -42,9 +42,9 @@
     passno: '0'
     state: 'mounted'
   with_items:
-    - { name: '/var/cache/moodle', size: '128M' }
-    - { name: '/var/www/moodledata/temp', size: '999M' }
-    - { name: '/var/www/moodledata/sessions', size: '256M' }
+    - { name: '/var/cache/moodle', size: '4M' }
+    - { name: '/var/www/moodledata/temp', size: '499M' }
+    - { name: '/var/www/moodledata/sessions', size: '4M' }
     
 
 - name: Copy config.php to working directory
