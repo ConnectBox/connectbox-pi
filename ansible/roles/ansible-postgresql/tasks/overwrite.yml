@@ -15,6 +15,11 @@
   command: psql -c "create database moodle;"
   become: true
   become_user: postgres
+
+- name: Remove Moodle Dump From /tmp
+  file:
+    path: /tmp/moodle_database_template.dump
+    state: absent
     
 - name: Copy Default Postgres Database Dump To /tmp
   template:
@@ -30,3 +35,10 @@
   command: psql -f /tmp/moodle_database_template.dump moodle
   become: true
   become_user: postgres
+
+- name: Recursively remove existing moodledata directory
+  file:
+    path: /var/www/moodledata/
+    state: absent
+  become: true
+  ignore_errors: yes
