@@ -5,7 +5,7 @@ server {
     root /var/www/moodle/;
     index index.php index.html index.htm;
 
-    server_name your_domain;
+    server_name {{connectbox_default_hostname}};
 
     location / {
         try_files $uri $uri/ =404;

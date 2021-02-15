@@ -47,18 +47,17 @@
   notify: restart nginx
   with_items:
     - { src: "{{ nginx_vhost_file_moodle }}.j2", dest: "{{ nginx_vhost_file_moodle }}" }
-#    - { src: "{{ nginx_vhost_file_captive_portal }}.j2", dest: "{{ nginx_vhost_file_captive_portal }}" }
-#    - { src: "{{ nginx_vhost_file_icon_only }}.j2", dest: "{{ nginx_vhost_file_icon_only }}" }
-#    - { src: "{{ nginx_vhost_file_static_site }}.j2", dest: "{{ nginx_vhost_file_static_site }}" }
-# TODO: Need to reactivate the captive portal and content serving
+    - { src: "{{ nginx_vhost_file_captive_portal }}.j2", dest: "{{ nginx_vhost_file_captive_portal }}" }
+    - { src: "{{ nginx_vhost_file_icon_only }}.j2", dest: "{{ nginx_vhost_file_icon_only }}" }
+    - { src: "{{ nginx_vhost_file_static_site }}.j2", dest: "{{ nginx_vhost_file_static_site }}" }
 
-#- name: Create nginx active vhost symlink for captive portal vhost
-#  file:
-#    src: "{{ nginx_available_vhosts_path }}/{{ nginx_vhost_file_captive_portal }}"
-#    dest: "{{ nginx_enabled_vhosts_path }}/{{ nginx_vhost_file_captive_portal }}"
-#    state: link
-#    force: yes
-#  notify: restart nginx
+- name: Create nginx active vhost symlink for captive portal vhost
+  file:
+    src: "{{ nginx_available_vhosts_path }}/{{ nginx_vhost_file_captive_portal }}"
+    dest: "{{ nginx_enabled_vhosts_path }}/{{ nginx_vhost_file_captive_portal }}"
+    state: link
+    force: yes
+  notify: restart nginx
 
 - name: Create nginx active vhost symlink for Moodle vhost
   file:
@@ -68,13 +67,13 @@
     force: yes
   notify: restart nginx
 
-#- name: Create nginx active vhost symlink for selected interface
-#  file:
-#    src: "{{ nginx_available_vhosts_path }}/{{ interface_type_files[interface_type] }}"
-#    dest: "{{ nginx_enabled_vhosts_path }}/connectbox_interface.conf"
-#    state: link
-#    force: yes
-#  notify: restart nginx
+- name: Create nginx active vhost symlink for selected interface
+  file:
+    src: "{{ nginx_available_vhosts_path }}/{{ interface_type_files[interface_type] }}"
+    dest: "{{ nginx_enabled_vhosts_path }}/connectbox_interface.conf"
+    state: link
+    force: yes
+  notify: restart nginx
 
 - name: Ensure nginx is started and enabled to start at boot
   service:
