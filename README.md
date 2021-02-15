@@ -8,6 +8,7 @@ Summary Of Changes:
 * ConnectBox Ansible roles are updated to build ConnectBox with Moodle, PHP and PostgreSQL
 * Refer to Relay Trust Moodle Repo for Documentation Of Changes
 * Default Moodle PostgreSQL database is located in this repo under ansible/roles/ansible-postgresql/templates/
+* Legacy Connectbox File Serving is now at {{{hostname}}}.cb such that Moodle is http://connectbox and Admin is http://connectbox.cb/admin
 * (There will be more as this gets built out)
 
 # ConnectBox
