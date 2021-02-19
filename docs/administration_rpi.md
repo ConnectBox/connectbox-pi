@@ -19,8 +19,8 @@ This document describes how to administer a ConnectBox created in an RPi environ
 
 # Content
 
-- This assumes you are placing your content in the /media/usb0 folder on your RPi.
-- The ConnectBox will display an appropriate icon for each folder in your //media/usb0 directory. A folder icon can be set in one of these ways:
+- When administering an RPi based ConnectBox, your content must be manually placed in the /media/usb0 folder.
+- The ConnectBox will display an appropriate icon for each folder in your /media/usb0 directory. A folder icon can be set in one of these ways:
   1. Choose an icon from the [icon list](http://fontawesome.io/icons/) and give your folder the same name as the icon. For example, if you want to use the [address book icon](http://fontawesome.io/icon/address-book), your folder should be named `address-book`
   2. Name your folder what you like e.g. `people`. Choose an icon from the [icon list](http://fontawesome.io/icons/) e.g. `address-book` and create a file next to the folder called `_icon_<folder-name>_<icon-name>` e.g. `_icon_people_address-book`
   3. Name your folder what you like e.g. `people`. Put your own image on the USB stick, next to the folder and name it `_icon_<folder-name>.<extension>` where `extension` is the image type (gif, jpg, png) e.g. `_icon_people.jpg`
