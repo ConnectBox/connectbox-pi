@@ -29,18 +29,20 @@
     recurse: yes
 
 # The chat and admin backend
+# (looping deprecated in 2.11)
 - name: Install packages for connectbox server process
   pip:
     virtualenv: "{{ connectbox_web_root }}/connectbox_virtualenv"  # XXX Could do better?
     virtualenv_python: python3
-    name: "{{ item }}"
-  with_items:
-    - flask
-    - ua-parser
-    - gunicorn
-    - requests
-    - six
-    - sqlalchemy
+#    name: "{{ item }}"
+    name: ['flask', 'ua-parser', 'gunicorn', 'requests', 'six', 'sqlalchemy']
+#  with_items:
+#    - flask
+#    - ua-parser
+#    - gunicorn
+#    - requests
+#    - six
+#    - sqlalchemy
   tags:
     - captive_portal
 
