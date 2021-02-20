@@ -1,4 +1,31 @@
 ---
+- name: Get rt8812au wifi driver
+  get_url:
+    url: https://github.com/ConnectBox/connectbox-pi/blob/master/ansible/8812au.ko
+    dest: /tmp/8812au.ko
+  when: connectbox_os == "raspbian" 
+
+- name: Create /lib/modules/5.10.11... directory
+  file:
+    dest: /lib/modules/5.10.11-v7l+/kernel/drivers/net/wireless/
+    mode: 644
+    state: directory
+  when: connectbox_os == "raspbian" 
+
+- name: Install rt8812au wifi driver
+  command: >
+    install -p -m 644 
+    /tmp/8812au.ko 
+    /lib/modules/5.10.11-v7l+/kernel/drivers/net/wireless/
+  become: yes
+  when: connectbox_os == "raspbian" 
+
+- name: Create rt8812au dependency file
+  command: /sbin/depmod -a 5.10.11-v7l+
+  become: yes
+  when: connectbox_os == "raspbian" 
+
+  
 - name: Install hostapd
   apt:
     name: hostapd
@@ -45,7 +72,7 @@
 # before the handler would be executed. This ensures that wlan0 will be up and
 # hostapd properly running before exiting this role.
 - name: Reload hostapd
-  shell: "ifdown wlan0; sleep 1; ifup wlan0"
+  shell: "ifdown {{ client_facing_if }}; sleep 1; ifup {{ client_facing_if }}"
   when: etc_hostapd_hostapd_conf.changed
   tags:
     # This task on change is intentionally not a handler; don't trigger ANSIBLE0016
