@@ -17,13 +17,24 @@
     pkg: network-manager
     state: absent
 
-- name: Configure network interfaces
+- name: Configure network interfaces NEO
   template:
     src: etc_network_interfaces.j2
     dest: /etc/network/interfaces
     owner: root
     group: root
     mode: 0644
+  when: connectbox_os != "raspbian"
+  register: etc_network_interfaces
+
+- name: Configure network interfaces RPi
+  template:
+    src: etc_network_interfaces-RPi.j2
+    dest: /etc/network/interfaces
+    owner: root
+    group: root
+    mode: 0644
+  when: connectbox_os == "raspbian"
   register: etc_network_interfaces
 
 # Note: this is not a handler because we need the network configuration in
