@@ -50,7 +50,7 @@ some_command represents what the user needs to type.
 
 When we have used the terminal to log into the target machine (ie, RPi or NEO) and are, in essence, typing in the target machine (ie, logged into the target machine and the typed commands are executed on the target machine) we will show those as:
 \~#*some_command*
-(note the difference between the "~$" and "~#".)
+(note the difference between the "\~$" and "\~#".)
 
 ## Section 2: Creating a Mac Based Build Environment
 
