@@ -1,9 +1,9 @@
-#Connect Box - Preparing a release
+#Connect Box - Preparing a release#
 Jim Adams - April 25, 2020 - This summary document created with input from material originally published by Edwin Steele, Nov 7, 2012 and my build experiences during January 2020.
 Updated - May 8, 2020 - Fresh environment setup on 2015 MacBook Pro running Catalina - Note that this uses latest versions of Virtual Box (6.1.6) and Vagrant (2.2.8). Updated - May 26, 2020 - addition to step 12; also added additional info on a couple of useful tools at the end of the document.
 Updated - February 26, 2021 - Major rewrite... Added instructions to include how to make an RPi based build environment. Reformat document to split build instructions for MacBook and RPi based build environments. Include NEO and RPi image build instructions within the two build environments.
 
-##CONTENTS:
+##CONTENTS:##
 
 ###Section 1:	- Background###
 
