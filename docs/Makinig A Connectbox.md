@@ -43,13 +43,16 @@ This document will describe two versions of the build environment.
 ## Typographical notes
 
 Generally, we will be working in a Linux terminal window during the build. (This is true in both the Mac and RPi environments.) When we are typing terminal commands where we are interacting with the Linux environment, we will show this as:
+
 ~$ *some_command*
 
 where the "~$" represents the prompt from the Linux environment, and the italicized
 some_command represents what the user needs to type.
 
 When we have used the terminal to log into the target machine (ie, RPi or NEO) and are, in essence, typing in the target machine (ie, logged into the target machine and the typed commands are executed on the target machine) we will show those as:
+
 \~#*some_command*
+
 (note the difference between the "\~$" and "\~#".)
 
 ## Section 2: Creating a Mac Based Build Environment
@@ -58,8 +61,11 @@ In the following instructions for the Mac build environment, we will open a term
 
 
 **Step 2.1:** First, create a home directory for your build activities. In the following, we will use <YHD> to represent the path to Your Home Directory. (I used Users/Jim/ConnectBox/ImageBuild/). Open a regular terminal window (we are not in vagrant yet) and type:
+	
 ~$ *cd <YHD>*
+	
 ~$ *git clone https://github.com/ConnectBox/connectbox-tools*
+
 ~$ *chmod 777 <YHD>/connectbox-tools-master/deployment/make_cb.py*
 
 This will create directory below *<YHD>* named *connectbox-tools-master* and make the python tool, *make_cb.py*, executable.
@@ -73,9 +79,13 @@ This will create directory below *<YHD>* named *connectbox-tools-master* and mak
 **Step 2.3:** Start VirtualBox and Vagrant:
 - Start Virtual Box (if it isn't already running)
 - Open a terminal window and type
+
 \~$ *cd <YHD>/connectbox-tools-master/deployment*
+	
 \~$ *vagrant up*
+
 \~$ *vagrant ssh*
+
 
 **NOTE:** We are now in the terminal window that we will use for the remainder of our interactions in building our image. When we reference the "terminal window", it is this window to which we are referring.
 
@@ -103,12 +113,16 @@ This will create directory below *<YHD>* named *connectbox-tools-master* and mak
 	- Remove the stick.
 
 **Step 2.5:** Note: make sure that we have the vagrant window open (see step 2.3), then type the following to set up the vagrant environment:
+
 \~$ python3 -m pip install click
+
 \~$ python3 -m pip install pygithub
 
 
 **Step 2.6:** This step will set up a public / private SSH key pair which will be used in doing password-less logins to your target device (NEO or RPi). In the terminal window type:
+
 \~$ *ssh-keygen -t rsa*
+
 and take defaults for storage location (/home/vagrant/.ssh/id_rsa) and empty passphrase. (Note that the referenced path is not accessible from the Mac desktop... it is only available in the Linux environment through our terminal window.)
 
 **Step 2.7:** Install balenaEtcher (https://www.balena.io/etcher/). We will use this to burn the starting image on our uSD card (later)
@@ -135,9 +149,13 @@ Notes:
 
 **Step R3.3:** This step only required if we are making an RPi image.
 Open a new Mac terminal (not our vagrant terminal window) and type:
+
 \~$ *cd /Volumes/boot*
+
 \~$ *touch ssh*
+
 \~$ *cd*
+
 Close this new Mac terminal window and then use the Mac desktop tools to eject the uSD card. (It will have the name "boot".)
 
 ### Enable Password-less SSH login to Target Machine
@@ -151,19 +169,27 @@ In the following instructions, substitute the IP you found for the target in pla
 (Note: In the following step, you may need to edit the file "/home/vagrant/.ssh/known_hosts" to remove the credentials from a device earlier assigned the IP now used by your target machine. If you get an error announcing a problem related to that, simply edit the file "known_hosts" (the error message will give you the path) to remove the line beginning with the IP address that the target machine is now using. If there is just one line, remove it.)
 
 **Step N3.6:** Using the terminal window, connect to the NEO by typing:
+
 \~$ *ssh root@10.0.0.118*
+
      (use password **1234** and follow prompts to create new pw "connectbox"). After entering the new password twice, type Ctrl-c which will close the dialog and exit the NEO.
 
 Step R3.6): Using the terminal window, connect to the RPi by typing:
+
 \~$ *ssh pi@10.0.0.118*
 
 (answer "yes" to the dialog re: logging into a new machine and then use password "raspberry")
 
 Once we are logged in as user "pi", we need to enable the "root" account on the RPi machine. So type the following commands:"  
+
 \~# *sudo passwd root*
+
 (follow prompts to give root the password "connectbox")
+
 \~# *sudo echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config*
+
 \~# *sudo service ssh restart*	// Don't forget this!
+
 \~# *exit*
 
 **Step 3.7:** Display and copy the public key set up in Step 2.6:
@@ -171,19 +197,31 @@ Once we are logged in as user "pi", we need to enable the "root" account on the 
 COPY the contents of this file by highlighting the text and doing Cmd-C (this text is the public key we need to put in the authorized_keys file on the target machine).
 
 **Step 3.8:** Now we will log into the target machine, create the authorized_keys file and paste the public key into that file:
+
 \~$ "*ssh root@10.0.0.118*
+
 (password is still connectbox")
+
 \~# *mkdir .ssh*
+
 \~# *cd .ssh*
+
 \~# *touch authorized_keys*
+
 \~# *chmod 600 authorized_keys*
+
 \~# *echo "<copied_text>" >> authorized_keys*
+
       to paste your ssh public key into the file "authorized_keys". Note: Paste the required text into the command line in place of **<copied_text>** for the above command. And DON'T forget the single quote characters just before and after the pasted text.
+      
 \~# *exit*	(exit out of the target machine)
 
 **Step 3.9:** Make sure you can do a PW-less login to to the target machine as user "root":
+
   \~$ *ssh root@10.0.0.118*
+  
 This login should happen WITHOUT the target machine asking for a password
+
   \~# *exit*	(exit out of the target machine)
 
 **Step 3.10:** Connect a wifi hub antenna to a USB connector on the target machine. (The build will fail if it doesn't find a USB wifi dongle.) Lots of offerings on Amazon. Here is one possibility:
@@ -194,10 +232,15 @@ https://www.amazon.com/Adapter-600Mbps-802-11ac-Wireless-Compatible/dp/B086WDF6V
 which, once started, will require only minimal intervention and result in a published build on the GitHub repository. **Note that the fully automated build process requires write permissions to the GitHub ConnectBox repository**. If you do not have write privileges to that repository, or if you just want to build a ConnectBox image for local use, continue to Step 3.12. If you want to do a fully automated build with writes to the GitHub ConnectBox repository, go to Step 3.13.
 
 **Step 3.12:** Starting the "step by step" build. From the terminal window run:
+
 \~$ cd /home/vagrant
+
 \~$ /vagrant/make_cb.py
+
 Typical script queries and your responses: Update ansible [y/N]: <CR>
+	
 Tag for release [v20200508]: <CR>
+	
 IP of build device: 10.0.0.118	(or whatever IP you found)
 
 After about 50 minutes of activity the script prints something like:
@@ -213,12 +256,16 @@ The automated build process for a published github image uses the github v3 API 
 NOTE: You will only need to do this the very first time you do a fully automated build. You can use this same key on all future fully automated builds.
 
 **Step 3.14:** Starting the fully automated build. From within the terminal window run:
+
  \~$ *cd /home/vagrant*
+ 
  \~$ *CONNECTBOX_GITHUB_TOKEN=<your-GitHub-rep-token> python3 /vagrant/prepare_release.py*
+	
 
 (Copy the text of the token you created in Step 3.13 and paste it in in place of <your-GitHub-rep-token> in the command line above.)
 
 Typical script queries and your responses:
+
 	GitHub token [..]: <CR>
 	Tag for release [v20200508]: <CR>
 	IP of build device: 10.0.0.118	(or whatever IP you found) Press any key: <CR>	(this takes a few minutes...)
@@ -227,6 +274,7 @@ Typical script queries and your responses:
 After about 50 minutes of activity the script prints something like:
 
 PLAY RECAP
+
 *10.0.0.118 : ok=134 changed=106 unreachable=0 failed=0 Insert SD card from device (you may need to attach it to this VM)
 If the build to the uSD has succeeded, the PLAY RECAP (above) will show "failed=0". Continue to Step 3.15.*
 
@@ -268,18 +316,31 @@ The following steps detail setting up the Build Environment on a Raspberry Pi. S
 			|- Images/
 
 **Step 4.4:** Open up a Terminal window and type the following:
+
 \~$ pip3 install --user ansible
+
 \~$ cd /home/pi/.local/bin
+
 \~$ sudo chmod 775 ansible*
+
 \~$ cd /home/pi
+
 \~$ echo 'export PATH=$PATH:/home/pi/.local/bin/' >> .bashrc
+
 \~$ cd /home/pi/connectbox
+
 \~$ ssh-keygen -t rsa	(creates public/private key pair... take defaults)
+
 \~$ python3 -m pip install pygithub
+
 \~$ git clone https://github.com/ConnectBox/connectbox-tools
+
 \~$ chmod 777 connectbox-tools/deployment/make_cb.py
+
 - Reboot the Rpi and open the terminal again
+- 
 \~$ cd /home/pi/connectbox/
+
 \~$ ansible --version	(verifies ansible installed)
 
 **Step 4.5: Optional:** You may want to install the program Etcher to your RPi build machine. If so, follow this link for instructions:
@@ -312,60 +373,91 @@ This step will boot up the target machine (NEO or RPi) with the uSD inserted. We
 **Step 5.3:** Put microSD into the target machine (NEO or RPi), and use an IP cable to connect the target machine into your network then power up the target machine.
 
 **Step 5.4:** Open a terminal window on the RPi and type:
+
 ~$ *cd /home/pi/connectbox/*
 
 **Step 5.5:** Find the IP of the target machine... I used the iPhone app Scany... you are looking for a used IP that comes and goes as you power the target machine up and down... use whatever tool you are familiar with.
 In the following instructions, substitute the IP you found for the target in place of 10.0.0.118.
 
 **Step N5.6:** Using the terminal window, connect to the NEO by typing:
+
 \~$ *ssh root@10.0.0.118*
+
      (use password **1234** and follow prompts to create new pw **"connectbox"**). After entering the new password twice, type **Ctrl-c** which will close the dialog and exit the NEO.
 
 **Step R5.6:** Using the terminal window, connect to the RPi by typing:
+
 \~$ *ssh pi@10.0.0.118*
+
      (answer "yes" to the dialog re: logging into a new machine and then use password **"raspberry"**)
 
 Once we are logged in as user "pi", we need to enable the "root" account on the RPi machine. So type the following commands:
+
 \~# *sudo passwd root*
+
 (follow prompts to give root the password "connectbox"	then)
+
 \~# *sudo echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config*
+
 \~# *sudo service ssh restart*	// Don't forget this!
+
 \~# *exit*
 
 **Step 5.7:** Display and copy the public key set up in Step 4.4:
+
 \~$ *cat /home/pi/.ssh/id_rsa.pub*
+
 COPY the contents of this file by highlighting the text and doing Cmd-C (this text is the public key we need to put in the authorized_keys file on the target machine.
 
 **Step 5.8:** Log into the target machine and paste the public key into the file authorized_keys:
+
 \~$ *ssh root@10.0.0.118*	(password is still "connectbox")
+
 \~# *mkdir .ssh*
+
 \~# *cd .ssh*
+
 \~# *touch authorized_keys*
+
 \~# *chmod 600 authorized_keys*
+
 \~# *echo '<copied_text>' >> authorized_keys*
+
       to paste your ssh public key into the file "authorized_keys". Note: Paste the required text into the command line in place of *<copied_text>* for the above command.
 
 And DON'T forget the single quote characters just before and after the pasted text.
+
 \~# exit	(exit out of the target machine)
 
 **Step 5.9:** Make sure you can do a PW-less login to to the target machine as user "root":
+
 \~$ ssh root@10.0.0.118
+
 This login should happen WITHOUT the target machine asking for a password
+
 \~# exit
+
 exit out of the target machine
 
 **Step 5.10:** Connect a wifi hub antenna to a USB connector on the target machine. (The build will fail if it doesn't find a USB wifi dongle.) Lots of offerings on Amazon. Here is one possibility:
 https://www.amazon.com/Adapter-600Mbps-802-11ac-Wireless-Compatible/dp/B086WDF6VF/ref=sr_1_15?dchild=1&keywords=usb+wifi+dongle&qid=1589402526&sr=8-15
 
 **Step 5.11:** Starting the "step by step" build. From the terminal window run:
+
 \~$ cd /home/pi/connectbox
+
 \~$ connectbox-tools/deployment/make_cb.py Typical script queries and your responses:
+
 Update ansible [y/N]:	<CR>
+	
 Tag for release [v20200508]: <CR>
+	
 IP of build device: 10.0.0.118	(or whatever IP you found)
 
 After about 50 minutes of activity the script prints something like:
+
 PLAY RECAP
+
 10.0.0.118 : ok=134 changed=106 unreachable=0 failed=0
 If the build to the uSD has succeeded, the PLAY RECAP (above) will show "failed=0".
 
@@ -382,18 +474,27 @@ The following are instructions for shrinking the image on a uSD card. The proces
 **Step 6.1:** After powering down the target machine and removing the microSD card, put the uSD card into a **microSD to USB** adapter. (IMPORTANT: a microSD to SD card adaptor WILL NOT WORK. **You MUST use a USB type adaptor.**) Plug the USB adaptor into the computer (ie, Mac or RPi build machine).
 
 **Step 6.2:** In the terminal window type:
+
 \~$ lsblk
+
 If the image is for a NEO target, you should see entries for "sdb" and "sdb1". If the image is for an RPi target you should see entries for "sdb", "sdb1" and "sdb2". This will indicate that the uSD has been seen by the system and can be accessed by the next command.
 
 **Step M6.3:** In the terminal window type:
+
       \~$ sudo /vagrant/shrink-image.sh /dev/sdb /vagrant/<nameYourImage>.img where "<nameYourImage>.img" is the name you want to use for the image about to be created.
 
 **Step R6.2:** In the terminal window type:
+
 \~$ umount /dev/sda1
+
 \~$ umount /dev/sda2.	(only if you found an sda2
+
 in response to the lsblk command)
+
 \~$ cd /home/pi/connectbox
+
 \~$ sudo connectbox-tools/deployment/shrink-image.sh /dev/sda Images/
+
 <nameYourImage>.img
 
 where "<nameYourImage>.img" is the name you want to use for the image about to be created.
@@ -403,7 +504,9 @@ where "<nameYourImage>.img" is the name you want to use for the image about to b
 **Step R6.3:** When this step completes (10-20 minutes) you will have an image of the uSD which will be available in your /home/pi/connectbox/Images/ directory.
 
 **Step 6.4:** If you want to compress your .img file using the xz compression tool, you can now type:
+
 \~$ xz -k <path to your image file>
+	
 and after about an hour, you should have a compressed version of your image located in the same folder as your image file and having the same name as your .img file but ending in ".img.xz".
 
 ## APPENDIX - Edwin's original document
