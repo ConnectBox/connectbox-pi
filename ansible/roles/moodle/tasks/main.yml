@@ -73,7 +73,7 @@
 - name: Setup Moodle's Cron To Run Every Minute as Per Moodle
   ansible.builtin.cron:
     name: "moodle cron"
-    minute: "*"
+    minute: "1,16,31,46"
     hour: "*"
     user: www-data
     job: "/usr/bin/php /var/www/moodle/admin/cli/cron.php >/dev/null"
