@@ -13,6 +13,12 @@ For simplicity, let's assume the following terms:
 
 Pre-made release images are distributed on GitHub (https://github.com/ConnectBox/connectbox-pi/releases) . If you don't see an image for your device, feel free to raise an issue or email us.
 
+
+## Building a release from Scratch
+
+To build a release from scratch follow the build guide.  This can be done on Windows with Oracle VM Virtualbox or MacOS machines or on a Raspberry Pi 3+ or 4 by following the link:  (https://github.com/ConnectBox/connectbox-pi/docs/"Making A ConnectBox on Rpi.html")
+
+
 ### Enabling sshd on a pre-made release image
 
 sshd is not running on pre-made release images. To permanently enable it, make a directory called `.connectbox` on your USB storage device and place a file named `enable-ssh` in that folder. Insert your USB storage into the ConnectBox and you will be able to ssh to the ConnectBox as `root/connectbox`. Please change the root password immediately.
