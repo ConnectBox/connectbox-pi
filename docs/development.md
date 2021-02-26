@@ -4,11 +4,11 @@ If you're developing the interface, it's often faster to do development on a vir
 
 ## Get Ansible
 
-Whether you're using Vagrant or developing directly against a device, you'll need Ansible to perform the setup. To develop the Ansible playbooks, or develop the ConnectBox software, you'll need to have Ansible 2.4+ and some extra tools. From the directory containing this README, run:
+Whether you're using Vagrant or developing directly against a device, you'll need Ansible to perform the setup. To develop the Ansible playbooks, or develop the ConnectBox software, you'll need to have Ansible 2.7 and some extra tools. Ansible 2.7 isn't compatible with Python 3.8 - instructions below assume you're using Python 3.6. From the directory containing this README, run:
 
 ```bash
 $ mkdir ~/.virtualenvs
-$ virtualenv ~/.virtualenvs/connectbox-pi
+$ python3.6 -mvenv ~/.virtualenvs/connectbox-pi
 $ . ~/.virtualenvs/connectbox-pi/bin/activate
 $ pip install -r requirements.txt
 ```
@@ -20,6 +20,7 @@ $ pip install -r requirements.txt
 1. Run `vagrant up` in this directory to tell Vagrant to bring up the virtual machines and apply the Ansible playbooks. Two VMs are provisioned - IP addresses are shown at the completion of the `vagrant up`. You can ssh without worrying about ssh key setup using `vagrant ssh`
 1. Add the recommended lines in `/etc/hosts` per the message at th end of the `vagrant up` run. This is required because the webserver redirects to the name of the host and DNS is not being served by the ConnectBox itself.
 1. Run the tests. In the same directory as the `Vagrantfile` run: `TEST_IP=172.28.128.3 python -m unittest discover tests` (assuming your VM IP address is `172.28.128.3`). All the tests should pass.
+1. You can run the playbooks again against the VMs with `vagrant provision`
 1. The WiFi Point is not active when running from a virtual machine, but you can still view the ConnectBox Site by browsing to the address e.g. http://ubuntu-vagrant.connectbox/
 
 ## Developing against a device from a base image

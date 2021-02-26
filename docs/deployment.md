@@ -184,7 +184,7 @@ user@ubuntu:~$
 
 ## Get Ansible
 
-This project uses Ansible v2.4 or above. 
+This project uses Ansible v2.7 or above. 
 
 Package managers generally have an out-dated version of ansible, but the [Ansible documentation](http://docs.ansible.com/ansible/intro_installation.html#installing-the-control-machine) lists methods for obtaining a current version of Ansible for common platforms.
 

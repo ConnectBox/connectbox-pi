@@ -11,3 +11,6 @@ dependencies:
   - webserver-content
   - usb-content
   - sample-content
+  - rpi-permissions
+  - wlan-set
+  - remove-lz4

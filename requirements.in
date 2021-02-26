@@ -1,5 +1,6 @@
 ansible==2.7.*
 ansible-lint
+cryptography>=2.8
 flake8
 Flask
 requests

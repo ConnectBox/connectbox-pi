@@ -50,19 +50,42 @@
     state: absent
   when: connectbox_os == "armbian"
 
-- name: Reboot device for changes to take effect
-  shell: sleep 2 && /sbin/shutdown -r now
-  async: 1
-  poll: 0
-  when: reboot_required
-
 # The system takes 5-10 seconds to disappear from the network
 #  so let's wait 15 seconds before doing our first check
-- name: Wait for server to restart (max wait 5 minutes)
-  wait_for_connection:
-    delay=15
-    timeout=300
+#  Use newer ansible 2.7 function reboot
+- name: Reboot device for changes to take effect
+  reboot:
+    post_reboot_delay=15
+    pre_reboot_delay=2
   when: reboot_required
+
+- name: Get current rfkill state for interface 0 (wireless LAN) on Raspbian
+  command: cat /sys/class/rfkill/rfkill0/soft
+  register: rfkill0_state
+  ignore_errors: yes
+  changed_when: False
+  when: connectbox_os == "raspbian"
+
+# Raspbian-lite buster and onwards rfkill wlan0 by default, which causes
+#  problems when we try to start wlan0 (at hostapd reload)
+# This change persists across reboots, so it's safe to do here.
+- name: Unblock rfkill'ed interface 0 (wireless LAN) on Raspbian
+  command: /usr/sbin/rfkill unblock 0
+  when: "connectbox_os == 'raspbian' and '0' not in rfkill0_state.stdout"
+
+- name: Get current rfkill state for interface 1 (wireless LAN) on Raspbian
+  command: cat /sys/class/rfkill/rfkill1/soft
+  register: rfkill1_state
+  ignore_errors: yes
+  changed_when: False
+  when: connectbox_os == "raspbian"
+
+# Raspbian-lite buster and onwards rfkill wlan1 by default, which causes
+#  problems when we try to start wlan1 (at hostapd reload)
+# This change persists across reboots, so it's safe to do here.
+- name: Unblock rfkill'ed interface 1 (wireless LAN) on Raspbian
+  command: /usr/sbin/rfkill unblock 1
+  when: "connectbox_os == 'raspbian' and '0' not in rfkill1_state.stdout"
 
 - name: Set default locale
   lineinfile:
@@ -129,12 +152,8 @@
 # Needed in several subsequent roles
 - name: Install packages for python virtualenv
   apt:
-    name: "{{ item }}"
+    name: ['python-virtualenv', 'python-pip', 'virtualenv']
     state: present
-  with_items:
-    - python-virtualenv
-    - python-pip
-    - virtualenv
   tags:
     - captive_portal
 
