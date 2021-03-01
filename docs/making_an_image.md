@@ -482,7 +482,7 @@ where `<nameYourImage>.img` is the name you want to use for the image about to b
 
 **Step 6.4:** If you want to compress your *.img* file using the xz compression tool, you can now type:
 
->~$ xz -k <path to your image file>
+>~$ xz -k \<pathToYourImageFile\>/\<nameOfYourImage\>.img
 	
 and after about an hour, you should have a compressed (*.xz*) version of your image located in the same folder as your image file.
 
