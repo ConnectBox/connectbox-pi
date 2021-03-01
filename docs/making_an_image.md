@@ -1,5 +1,6 @@
 # Connect Box - Making an image 
-###Revisions:  
+
+### Revisions:  
 **April 25, 2020** - JRA - This summary document created with input from material originally published by Edwin Steele, Nov 7, 2012 and my build experiences during January 2020.  
 **May 8, 2020** - JRA - Fresh environment setup on 2015 MacBook Pro running Catalina - Note that this uses latest versions of Virtual Box (6.1.6) and Vagrant (2.2.8).  
 **May 26, 2020** - JRA - addition to step 12; also added additional info on a couple of useful tools at the end of the document.  
@@ -21,15 +22,13 @@
 ### Section 7:	- Deploying the image
 ### Appendix:  - Edwin's original document
 
---
 
 # SECTION 1: Background
 
---
-
 This document describes the process for creating a ConnectBox image, suitable for burning by end-users onto microSD. This process can generate images for a NanoPi NEO (NEO), and for a Raspberry Pi (RPi) (tested on Rpi3+ and RPi0w).
 
-###Overview
+### Overview
+
 The general process to create an image is:
 
 1. Prepare the build environment ("One off steps").
@@ -60,11 +59,8 @@ When we have used the terminal to log into the target machine (ie, RPi or NEO) a
 
 (note the difference between the `~$` and `~#`.)
 
---
 
 # Section 2: Creating a Mac Based Build Environment
-
---
 
 In the following instructions for the Mac build environment, we will open a terminal window on the Mac and from within that window, launch vagrant to create a virtual Ubuntu/Linux machine. It is *this* terminal window which will be used in almost all of the steps in interacting with the target (ie, Raspberry or NEO) machine. When a terminal window on the Mac *other than this* window is needed, we will explicitly state that such is the case.
 
@@ -128,16 +124,12 @@ and take defaults for storage location (*/home/vagrant/.ssh/id_rsa*) and empty p
 
 **Step 2.7:** Install balenaEtcher ([https://www.balena.io/etcher/]()). We will use this to burn the starting image on our uSD card (later).
 
+#### This completes the setup of the Mac build environment.
 
-####This completes the setup of the Mac build environment.
-
---
 
 # Section 3: Building a NEO or RPi image in a Mac environment
 
---
-
-###Burning a Base Image on the uSD Card. 
+### Burning a Base Image on the uSD Card. 
 
 **Notes:**  
 >1. The space required for the base image and additional ConnectBox code is less than 8GB so a card of 8GB or greater should be ok in the creation process.  Since the Operating System will be on the uSD Card it is important to use a high speed uSD like an XC I rated card.  
@@ -276,11 +268,11 @@ Put the uSD card into a **microSD to USB** adapter. (**IMPORTANT**: a microSD to
 
 **Step 3.17:** After about 30 more minutes.. The script in the terminal next will print the message,  
 
- >"Compressed image complete and located at:....".
+ >Compressed image complete and located at:.....
 
 An upoad to GitHub follows (about 10 minutes) and then a final message, 
  
- >"Now, update release notes, inserting changelog and base image name".    
+ >Now, update release notes, inserting changelog and base image name.    
  
 You can now remove your uSD from the Mac. The automated image creation process is complete.
 
@@ -293,11 +285,8 @@ At this point your Mac will have a compressed image file (*\*.img.xz*) of your u
 Note that the path to your release is available by opening your release page on GitHub and copying the address in the address box at the top of your browser. For the v20200121 build, that address is:
 [https://github.com/ConnectBox/connectbox-pi/releases/tag/v20200121]()
 
---
 
 # Section 4: Creating a Raspberry Pi Build Environment
-
---
 
 The following steps detail setting up the Build Environment on a Raspberry Pi. Specifically, this procedure was tested on both a RPi4B with 4 GB of ram, and an RPi3B+.
 
@@ -338,15 +327,12 @@ Reboot the Rpi and open the terminal again
 [https://www.hackster.io/Eat_Apples/balena-etcher-on-raspberry-pi-bf4188]()
 
 
-####This completes the setup of the RPi build environment
+#### This completes the setup of the RPi build environment
 
---
 
 # Section 5: Building a NEO or RPi image in an RPi environment
 
---
-
-###Burning a Base Image on the uSD Card. 
+### Burning a Base Image on the uSD Card. 
 
 **Notes:**  
 >1. The space required for the base image and additional ConnectBox code is less than 8GB so a card of 8GB or greater should be ok in the creation process.  Since the Operating System will be on the uSD Card it is important to use a high speed uSD like an *HC I* rated card.  
@@ -457,14 +443,10 @@ If the build to the uSD has succeeded, the PLAY RECAP (above) will show "failed=
 
 This completes the creation of an uSD card containing the ConnectBox software for your target machine. At this point you can now power down the target machine and remove the uSD card. If you want to create a software image (**.img* file) which can be used to create other uSD cards with this same image, proceed to **Section 6: Shrinking The Image**. Otherwise you can just put this uSD chip into your target machine and power up to use you ConnectBox.
 
---
 
 # Section 6: Shrinking the uSD Image
 
---
-
 The following are instructions for shrinking the image contained on a uSD card. The process is very similar for both Mac and RPi development machines. Where differences exist, we will preface the step number with **M** (Mac) or **R** (Rpi). Note that where the word **terminal** is used, we are refering to the **vagrant terminal** on the **Mac** and a normal **desktop terminal** on the **RPi**.
-
 
 **Step 6.1:** After powering down the target machine and removing the microSD card, put the uSD card into a **microSD to USB** adapter. (***IMPORTANT:*** a microSD to SD card adaptor *will not work*. **You *must* use a USB type adaptor.**) Plug the USB adaptor into the computer (ie, Mac or RPi build machine).
 
@@ -504,34 +486,31 @@ where `<nameYourImage>.img` is the name you want to use for the image about to b
 	
 and after about an hour, you should have a compressed (*.xz*) version of your image located in the same folder as your image file.
 
---
 
 # APPENDIX - Edwin's original document
 
---
-
 **Edwin Steele is the author of much of the ConnectBox code and for most of the life of the ConnectBox was the only builder of images for the project. The following are his original instructions on how to create an image from the ConnectBox code residing on GitHub.**
 
-###Once-off steps  
+### Once-off steps  
 
 1. Checkout the **connectbox-tools repo**. It contains the tooling required to create an image.  
 2. The build process uses the github v3 API to tag repositories, so you need to create a **Github API personal access token**. The token only needs the public\_repo scope (and should only be given that scope, to reduce the scope for damage if it is lost).  
 3. The build process tags several repos (see the ConnectBox_REPOS in [https://github.com/ConnectBox/connectbox-tools/blob/master/deployment/prepare\_release.py#L18]() for the up-to-date list). The Github account that created the API access token must have write access to each of these repos. If you don't have access to the repositories, ask a person with the owner role in the Github ConnectBox organisation ([https://github.com/orgs/ConnectBox/people]())
 
-###Release Machine Setup (automated)  
+### Release Machine Setup (automated)  
 
 1. Install VMWare or VirtualBox and also install a current version of Vagrant (the Vagrantfile can supports both VirtualBox and VMWare)  
 2. cd into the deployment directory of the connectbox-tols repository and run *vagrant up*
 
 
-###Release Machine Setup (manual) 
+### Release Machine Setup (manual) 
  
 1. Find a machine running Ubuntu 16.04 and login to it.  
 2. Run the commands listed in the repository. of the connectbox-tools repository  
 3. Checkout the connectbox-tools repo, cd into the deployment directory of the checkout and run *pip3 install -r requirements.txt*
 
 
-###Per-build  
+### Per-build  
 This assumes you're using the automated machine setup above. If you're using the manual method, you can probably replace *vagrant* with the
 *deployment* directory of the connectbox-tools repo that you've checked out on the machine.  
 
