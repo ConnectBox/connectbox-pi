@@ -383,7 +383,9 @@ Once we are logged in as user "pi", we need to enable the "root" account on the 
   
 follow prompts to give root the password `connectbox`,then:
 
+>~# *sudo chmod 777 /etc/ssh/sshd_config*  
 >~# *sudo echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config*  
+>~# *sudo chmod 644 /etc/ssh/sshd_config*  
 >~# *sudo service ssh restart*  
 >~# *exit*  
 
