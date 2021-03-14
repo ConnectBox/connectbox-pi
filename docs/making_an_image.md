@@ -69,7 +69,7 @@ In the following instructions for the Mac build environment, we will open a term
 	
 >~$ *cd \<YHD\>*  
 >~$ *git clone https://github.com/ConnectBox/connectbox-tools*   
->~$ *chmod 777 \<YHD\>/connectbox-tools-master/deployment/make_cb.py*. 
+>~$ *chmod 777 \<YHD\>/connectbox-tools-master/deployment/make_cb.py*  
 
 This will create directory below *`<YHD>`* named *connectbox-tools-master* and make the python tool, *make_cb.py*, executable.
 
@@ -83,7 +83,8 @@ This will create directory below *`<YHD>`* named *connectbox-tools-master* and m
 
 >~$ *\<YHD\>/connectbox-tools-master/deployment*  
 >~$ *vagrant up*  
->~$ *vagrant ssh*
+>~$ *vagrant ssh*  
+>~$ *git clone https://github.com/ConnectBox/connectbox-pi*  
 
 
 **NOTE:** We are now in the terminal window that we will use for the remainder of our interactions in building our image. When we reference the "terminal window", it is this window to which we are referring.
