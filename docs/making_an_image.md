@@ -216,7 +216,7 @@ This login should happen *without* the target machine asking for a password
 **Step 3.11:** Determine if you want to do a "step by step" build (creating a local image that, if desired, can be published to GitHub at a later time) or a fully automated build which, once started, will require only minimal intervention and result in a published build on the GitHub repository. **Note that the fully automated build process requires write permissions to the GitHub ConnectBox repository**. If you do not have write privileges to that repository, or if you just want to build a ConnectBox image for local use, continue to Step 3.12. If you want to do a fully automated build with writes to the GitHub ConnectBox repository, go to Step 3.13.
 
 **Step 3.12:** Starting the "step by step" build. From the terminal window run:  
->~$ *cd /home/vagrant/connectbox-pi/ansible*  
+>~$ *cd /home/vagrant/*  
 >~$ */vagrant/make_cb.py*
     
 Typical script queries and your responses:  
