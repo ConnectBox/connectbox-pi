@@ -33,6 +33,7 @@
     mode: 0775
 
 - name: configure temporary storage for Moodle cache
+  when: not aws_instance
   mount:
     path: '{{ item.name }}'
     src: 'tmpfs'
