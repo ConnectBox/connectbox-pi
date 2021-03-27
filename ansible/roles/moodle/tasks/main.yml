@@ -1,0 +1,80 @@
+---
+######################################################
+# Moodle installation presumes previously installed PHP and PostgreSQL as per the playbooks
+
+
+- name: Recursively remove existing Moodle directory
+  file:
+    path: /var/www/moodle/
+    state: absent
+
+- name: Make Moodle directory
+  file:
+    state: directory
+    path: /var/www/moodle/
+    owner: www-data
+    group: www-data
+    mode: 0775
+    
+# This is from Relay Trust's Repo
+- name: Install Moodle 3.10 repo to /var/www/moodle
+  git:
+    repo: 'https://github.com/RT-coding-team/the-well-moodle310.git'
+    dest: /var/www/moodle/
+    clone: yes
+    update: yes
+
+- name: Make moodledata directory that Moodle requires for all its functions
+  file:
+    state: directory
+    path: /var/www/moodledata/
+    owner: www-data
+    group: www-data
+    mode: 0775
+
+- name: configure temporary storage for Moodle cache
+  when: not aws_instance
+  mount:
+    path: '{{ item.name }}'
+    src: 'tmpfs'
+    fstype: 'tmpfs'
+    opts: 'size={{ item.size }},mode=775,uid=www-data,gid=www-data'
+    dump: '0'
+    passno: '0'
+    state: 'mounted'
+  with_items:
+    - { name: '/var/cache/moodle', size: '4M' }
+    - { name: '/var/www/moodledata/temp', size: '499M' }
+    - { name: '/var/www/moodledata/sessions', size: '4M' }
+    
+
+- name: Copy config.php to working directory
+  template:
+    src: var_www_moodle_config_php.j2
+    dest: /var/www/moodle/config.php
+
+#  Everything in Moodle runs as web server user
+- name: Recursively change ownership /var/www/moodle
+  become: true
+  file:
+    path: /var/www/moodle
+    state: directory
+    recurse: yes
+    owner: www-data
+    group: www-data
+    mode: 0775
+
+# Install generic PHP test script into the moodle directory so we can know that this is ok.    
+- name: Copy PHP info.php
+  template:
+    src: var_www_moodle_info_php.j2
+    dest: /var/www/moodle/info.php
+
+# Setup Moodle's Cron 
+- name: Setup Moodle's Cron To Run Every Minute as Per Moodle
+  ansible.builtin.cron:
+    name: "moodle cron"
+    minute: "1,16,31,46"
+    hour: "*"
+    user: www-data
+    job: "/usr/bin/php /var/www/moodle/admin/cli/cron.php >/dev/null"

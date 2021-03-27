@@ -9,9 +9,15 @@ For simplicity, let's assume the following terms:
  Most importantly, the workstation is different to your _device_.
 * __device__: The ConnectBox hardware. It might be a Raspberry Pi 3, or it might be one of the other supported devices. When describing commands to be run on the device, we'll display the device prompt as `pi@rasberrypi: $` even though it will be different on other devices.
 
-## Get a pre-made release image for the NanoPi NEO
+## Get a pre-made release image for the NanoPi NEO or Raspberry Pi  (zero - RPi4)
 
 Pre-made release images are distributed on GitHub (https://github.com/ConnectBox/connectbox-pi/releases) . If you don't see an image for your device, feel free to raise an issue or email us.
+
+
+## Building a release from Scratch
+
+To build a release from scratch follow the build guide.  This can be done on Windows with Oracle VM Virtualbox or MacOS machines or on a Raspberry Pi 3+ or 4 by following the link:  (https://github.com/ConnectBox/connectbox-pi/docs/Making_A_ConnectBox.html)
+
 
 ### Enabling sshd on a pre-made release image
 

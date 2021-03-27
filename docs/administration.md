@@ -1,6 +1,7 @@
 # Administering a ConnectBox
 
-This document describes how to administer a ConnectBox
+This document describes how to administer a ConnectBox for a purchased unit.
+If you built a Raspberry Pi version you should use (https://github.com/ConnectBox/connectbox-pi/docs/administration_rpi.md)
 
 # Initial Administration
 

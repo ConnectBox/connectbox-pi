@@ -1,0 +1,81 @@
+---
+
+# PHP is required for Moodle software to run.  Using 7.4 because that is most currently recommended version for Moodle 3.9.3
+
+
+- name: Make moodle base directory
+  file:
+    path: "{{ moodle_base_directory }}"
+    state: directory
+
+- name: Add apt certificates
+  command: apt install -y curl wget gnupg2 ca-certificates lsb-release apt-transport-https
+  become: true
+
+# Pi does not require this -- but other OS do so we are ignoring the error.  The install will fail if PHP 7.3 is not found
+- name: Add sury apt key  -- This may fail on Pi but error ignored is ok as long as PHP install completes below
+  ansible.builtin.apt_key:
+    url: https://packages.sury.org/php/apt.gpg
+    state: present
+  ignore_errors: yes
+
+- name: Add Debian Stretch sury repo into sources list -- This may fail on Pi but error ignored is ok as long as PHP install completes below
+  ansible.builtin.apt_repository:
+    repo: deb https://packages.sury.org/php/ stretch main
+    state: present
+  ignore_errors: yes
+
+- name: Add Debian Buster sury repo into sources list -- This may fail on Pi but error ignored is ok as long as PHP install completes below
+  ansible.builtin.apt_repository:
+    repo: deb https://packages.sury.org/php/ buster main
+    state: present
+  ignore_errors: yes
+
+# These are all required by Moodle
+- name: Install PHP & Libraries
+  apt:
+    pkg:
+    - php7.3
+    - php7.3-cli 
+    - php7.3-common 
+    - php7.3-curl 
+    - php7.3-mbstring
+    - php7.3-pgsql 
+    - php7.3-xml
+    - php7.3-zip
+    - php7.3-intl
+    - php7.3-xmlrpc
+    - php7.3-soap
+    - php7.3-fpm
+    - php7.3-gd
+
+# Set larger uploads configs for PHP
+
+- name: Update php.ini post_max_size
+  replace:
+    dest: /etc/php/7.3/fpm/php.ini
+    regexp: '^post_max_size.*$'
+    replace: 'post_max_size = 512M'
+    backup: yes 
+  become: true
+  
+- name: Update php.ini upload_max_filesize
+  replace:
+    dest: /etc/php/7.3/fpm/php.ini
+    regexp: '^upload_max_filesize.*$'
+    replace: 'upload_max_filesize = 512M'
+    backup: yes 
+  become: true  
+
+  
+- name: Update php.ini max_execution_time
+  replace:
+    dest: /etc/php/7.3/fpm/php.ini
+    regexp: '^max_execution_time.*$'
+    replace: 'max_execution_time = 601'
+    backup: yes 
+  become: true  
+
+- name: Restart PHP FPM
+  command: /etc/init.d/php7.3-fpm restart
+  become: true
