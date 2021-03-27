@@ -10825,8 +10825,7 @@ CREATE TABLE public.mdl_message (
     timeusertodeleted bigint DEFAULT 0 NOT NULL,
     component character varying(100),
     eventtype character varying(100),
-    customdata text,
-    from_rocketchat smallint DEFAULT 0
+    customdata text
 );
 
 
@@ -11611,7 +11610,8 @@ CREATE TABLE public.mdl_messages (
     smallmessage text,
     timecreated bigint NOT NULL,
     fullmessagetrust smallint DEFAULT 0 NOT NULL,
-    customdata text
+    customdata text,
+    from_rocketchat smallint DEFAULT 0    
 );
 
 
