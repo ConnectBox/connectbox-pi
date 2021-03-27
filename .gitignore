@@ -9,8 +9,4 @@ ghostdriver.log
 ci/terraform.tfstate*
 ansible/inventory
 makenewimage.sh
-ansible/inventory-cbpi
-ansible/inventory-aws
-ansible/inventory-cb
-ansible/inventory-cbMaster
-ansible/inventory-brianward
+ansible/inventory-*
