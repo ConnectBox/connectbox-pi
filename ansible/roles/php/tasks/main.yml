@@ -19,9 +19,15 @@
     state: present
   ignore_errors: yes
 
-- name: Add sury repo into sources list -- This may fail on Pi but error ignored is ok as long as PHP install completes below
+- name: Add Debian Stretch sury repo into sources list -- This may fail on Pi but error ignored is ok as long as PHP install completes below
   ansible.builtin.apt_repository:
     repo: deb https://packages.sury.org/php/ stretch main
+    state: present
+  ignore_errors: yes
+
+- name: Add Debian Buster sury repo into sources list -- This may fail on Pi but error ignored is ok as long as PHP install completes below
+  ansible.builtin.apt_repository:
+    repo: deb https://packages.sury.org/php/ buster main
     state: present
   ignore_errors: yes
 
