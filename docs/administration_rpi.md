@@ -1,7 +1,6 @@
 # Administering a ConnectBox
 
-This document describes how to administer a ConnectBox for a purchased unit.
-If you built a Raspberry Pi version you should use (https://github.com/ConnectBox/connectbox-pi/docs/administration_rpi.md)
+This document describes how to administer a ConnectBox created in an RPi environment.
 
 # Initial Administration
 
@@ -20,12 +19,11 @@ If you built a Raspberry Pi version you should use (https://github.com/ConnectBo
 
 # Content
 
-- This assumes you are placing your content on a USB stick.
-- The ConnectBox will display an appropriate icon for each folder on your USB stick. A folder icon can be set in one of these ways:
+- When administering an RPi based ConnectBox, your content must be manually placed in the /media/usb0 folder.
+- The ConnectBox will display an appropriate icon for each folder in your /media/usb0 directory. A folder icon can be set in one of these ways:
   1. Choose an icon from the [icon list](http://fontawesome.io/icons/) and give your folder the same name as the icon. For example, if you want to use the [address book icon](http://fontawesome.io/icon/address-book), your folder should be named `address-book`
   2. Name your folder what you like e.g. `people`. Choose an icon from the [icon list](http://fontawesome.io/icons/) e.g. `address-book` and create a file next to the folder called `_icon_<folder-name>_<icon-name>` e.g. `_icon_people_address-book`
   3. Name your folder what you like e.g. `people`. Put your own image on the USB stick, next to the folder and name it `_icon_<folder-name>.<extension>` where `extension` is the image type (gif, jpg, png) e.g. `_icon_people.jpg`
   4. If none of the above are done, your folder will have a [default folder icon](http://fontawesome.io/icon/folder/)
 
-- When you insert your USB stick into the ConnectBox, content will automatically be visible in the ConnectBox web interface (this is http://connectbox unless the system name has been changed during Initial Administration)
-- To update the files on the USB stick, go to the Configure Menu in Administration area, then go to System and press "Unmount USB", then remove the USB stick from the ConnectBox
+- Content from a USB stick can be directly transferred to the /media/usb0 folder using the RPi desktop file management tools.)

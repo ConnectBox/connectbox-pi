@@ -12,15 +12,17 @@
     creates: /usr/bin/devmem2
 
 - name: Install packages to allow building of pillow and psutil and running of OLED
+# (looping deprecated in 2.11)
   apt:
-    name: "{{ item }}"
+#    name: "{{ item }}"
+    name: ['libjpeg62-turbo', 'python3-dev', 'libfreetype6', 'libfreetype6-dev', 'libjpeg-dev']
     state: present
-  with_items:
-    - libjpeg62-turbo
-    - python3-dev
-    - libfreetype6
-    - libfreetype6-dev
-    - libjpeg-dev
+#  with_items:
+#    - libjpeg62-turbo
+#    - python3-dev
+#    - libfreetype6
+#    - libfreetype6-dev
+#    - libjpeg-dev
 
 - name: Make neo battery shutdown virtualenv directory
   file:
