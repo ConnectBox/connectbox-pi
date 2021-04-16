@@ -23,8 +23,9 @@
     dest: /var/www/moodle/
     clone: yes
     update: yes
+    version: origin/connectboxadmin
 
-- name: Make moodledata directory that Moodle requires for all its functions
+- name: Restore moodledata directory that Moodle requires for all its functions
   file:
     state: directory
     path: /var/www/moodledata/

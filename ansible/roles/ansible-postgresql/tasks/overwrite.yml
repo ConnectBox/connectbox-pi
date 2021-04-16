@@ -36,9 +36,7 @@
   become: true
   become_user: postgres
 
-- name: Recursively remove existing moodledata directory
-  file:
-    path: /var/www/moodledata/
-    state: absent
+- name: Recursively empty existing moodledata directory
+  shell: rm -rf /var/www/moodledata/*
   become: true
   ignore_errors: yes
