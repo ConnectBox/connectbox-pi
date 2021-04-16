@@ -28,10 +28,6 @@
       stat:
         path: "/usr/bin/aws"
       register: aws_instance
-    - name: Check for Raspbian
-      stat:
-        path: "/usr/bin/raspi-config"
-      register: raspbian
     - name: Include Armbian specific variables
       include_vars: "group_vars/armbian"
       when: armbian_file.stat.exists == True or armbian_release_file.stat.exists == True
