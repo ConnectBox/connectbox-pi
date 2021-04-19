@@ -175,8 +175,10 @@ When prompted, enter the password **1234** and when prompted, enter that passwor
 
 Once we are logged in as user "pi", we need to enable the "root" account on the RPi machine. So type the following commands:  
 >~# *sudo passwd root*    
-(follow prompts to give root the password "connectbox")  
+(follow prompts to give root the password "connectbox") 
+>~# *sudo chmod 777 /etc/ssh/sshd\_config*
 >~# *sudo echo 'PermitRootLogin yes' >> /etc/ssh/sshd\_config*  
+>~# *sudo chmod 644 /etc/ssh/sshd\_config*
 >~# *sudo service ssh restart*	       
 >~# *exit*
 
@@ -348,7 +350,7 @@ Reboot the Rpi and open the terminal again
 **Step R5.3:** (RPi image only).
 Open a terminal window and type:
 
->~$ *cd /Volumes/boot*   
+>~$ *cd /media/pi/boot*   
 >~$ *touch ssh*  
 >~$ *cd*  
 
@@ -389,6 +391,7 @@ follow prompts to give root the password `connectbox`,then:
 >~# *sudo chmod 644 /etc/ssh/sshd_config*  
 >~# *sudo service ssh restart*  
 >~# *exit*  
+>~# *sudo chmod 777 /etc/ssh/sshd\_config*
 
 **Step 5.8:** Display and copy the public key set up in Step 4.4:
 
