@@ -36,8 +36,8 @@
   become: true
   when: overwrite_database
 
-- name: Create Empty Moodle database
-  command: mysql -e 'GRANT SELECT,INSERT,UPDATE,DELETE,CREATE,CREATE TEMPORARY TABLES,DROP,INDEX,ALTER ON moodle.* TO 'moodleuser'@'%' IDENTIFIED BY '!1TheWell';'
+- name: Create moodleuser
+  command: mysql -e "GRANT SELECT,INSERT,UPDATE,DELETE,CREATE,CREATE TEMPORARY TABLES,DROP,INDEX,ALTER ON moodle.* TO 'moodleuser'@'%' IDENTIFIED BY '!1TheWell';"
   become: true
   when: overwrite_database
     
@@ -46,7 +46,7 @@
   when: overwrite_database
 
 - name: Add mysql remote access
-  command: "iptables -F INPUT -p tcp --dport 3306 -j ACCEPT"
+  command: "iptables -A INPUT -p tcp --dport 3306 -j ACCEPT"
   become: true
   when: developer_mode
 
