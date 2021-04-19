@@ -4,12 +4,12 @@ unset($CFG);
 global $CFG;
 $CFG = new stdClass();
 
-$CFG->dbtype    = 'pgsql';
+$CFG->dbtype    = 'mariadb';
 $CFG->dblibrary = 'native';
 $CFG->dbhost    = 'localhost';
 $CFG->dbname    = 'moodle';
-$CFG->dbuser    = 'postgres';
-$CFG->dbpass    = 'mypassword';
+$CFG->dbuser    = 'moodleuser';
+$CFG->dbpass    = '!1TheWell';
 $CFG->prefix    = 'mdl_';
 $CFG->dboptions = array (
   'dbpersist' => 0,
@@ -17,7 +17,7 @@ $CFG->dboptions = array (
   'dbsocket' => '',
 );
 
-$CFG->wwwroot   = 'http://{{connectbox_default_hostname}}';
+$CFG->wwwroot   = 'http://learn.{{connectbox_default_hostname}}';
 $CFG->dataroot  = '/var/www/moodledata';
 $CFG->admin     = 'admin';
 
