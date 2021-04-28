@@ -35,6 +35,7 @@
   apt:
     name: crda
     state: present
+  when: connectbox_os == "raspbian"
 
 - name: Copy hostapd config
   template:
