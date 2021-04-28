@@ -160,9 +160,9 @@
   when: connectbox_os == "armbian"
 
 # Needed for package upgrades via ansible (aptitude safe-upgrade)
-- name: Install aptitude
+- name: Install apt
   apt:
-    name: aptitude
+    name: apt
     state: present
 
 # mikegleasonjr.firewall assumes iptables but Armbian doesn't ship with it
