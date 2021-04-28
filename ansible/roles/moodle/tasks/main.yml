@@ -13,18 +13,29 @@
   ignore_errors: yes
 
 - name: Add the packages in sources lists
-  shell: sh -c 'echo "deb https://mirror.nodesdirect.com/mariadb/repo/10.3/debian $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list'
+  shell: sh -c 'echo "deb https://mirror.nodesdirect.com/mariadb/repo/10.5/debian $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list'
   when: ansible_os_family == 'Debian'
   
 - name: Install mariadb (mysql) package
   apt:
     update_cache: yes
-    pkg: mariadb-server-10.3
+    pkg: mariadb-server-10.5
     state: present
 
 - name: Start mariadb  service
   command: systemctl restart mysql
   become: true
+
+- name: Check For Existing Moodle Database
+  command: mysql moodle -e "select * from mdl_course;"
+  become: true
+  register: buildDatabase
+  ignore_errors: yes
+
+- name: Overwrite database (overwrite_database=true) when no database
+  ansible.builtin.set_fact:
+    overwrite_database: true
+  when: buildDatabase is not true
 
 - name: Remove Existing Moodle database
   command: mysql -e 'drop database if exists moodle;'
@@ -37,12 +48,20 @@
   when: overwrite_database
 
 - name: Create moodleuser
-  command: mysql -e "GRANT SELECT,INSERT,UPDATE,DELETE,CREATE,CREATE TEMPORARY TABLES,DROP,INDEX,ALTER ON moodle.* TO 'moodleuser'@'%' IDENTIFIED BY '!1TheWell';"
+  command: mysql -e "GRANT SELECT,INSERT,UPDATE,DELETE,CREATE,CREATE TEMPORARY TABLES,DROP,INDEX,ALTER ON moodle.* TO 'moodleuser'@'%' IDENTIFIED BY '\!1TheWell';"
   become: true
+  when: overwrite_database
+
+- name: Copy Default Moodle Database To /tmp   (Create a new template -> sudo mysqldump --databases moodle >/tmp/moodle_database_template.txt)
+  template:
+    src: "moodle_database_template.txt"
+    dest: "/tmp/moodle_database_template.txt"
+    mode: 0666
   when: overwrite_database
     
 - name: Install Default Moodle database
-  command: ls
+  shell: "mysql moodle </tmp/moodle_database_template.txt"
+  become: true
   when: overwrite_database
 
 - name: Add mysql remote access
@@ -75,6 +94,19 @@
     update: yes
     version: origin/connectboxadmin
 
+- name: Copy customcert plugin to /var/www/moodle/mod/
+  ansible.builtin.unarchive:
+    src: ../templates/customcert.tar.gz
+    dest: /var/www/moodle/mod/
+  become: true
+  when: overwrite_database
+
+- name: Recursively empty existing moodledata directory
+  shell: rm -rf /var/www/moodledata/*
+  become: true
+  ignore_errors: yes
+  when: overwrite_database
+  
 - name: Restore moodledata directory that Moodle requires for all its functions
   file:
     state: directory
@@ -82,9 +114,17 @@
     owner: www-data
     group: www-data
     mode: 0775
+  when: overwrite_database
+
+- name: Copy filedir to /var/www/moodledata/filedir
+  ansible.builtin.unarchive:
+    src: ../templates/filedir.tar.gz
+    dest: /var/www/moodledata/
+  become: true
+  when: overwrite_database
 
 - name: configure temporary storage for Moodle cache
-  when: not aws_instance
+  when: connectbox_os == "raspbian" 
   mount:
     path: '{{ item.name }}'
     src: 'tmpfs'
