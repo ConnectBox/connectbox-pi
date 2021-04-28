@@ -23,6 +23,10 @@
   shell: sh -c 'echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list'
   when: ansible_os_family == 'Debian'
 
+# Only repopulate daily so we don't slow runs down unnecessarily
+- name: Populate apt cache
+  apt:
+    update-cache: yes
 
 # These are all required by Moodle
 - name: Install PHP & Libraries
