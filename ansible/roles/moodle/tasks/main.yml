@@ -3,75 +3,6 @@
 # Moodle installation presumes previously installed PHP and PostgreSQL as per the playbooks
 
 
-######################################################
-# mysql Installation
-
-- name: Add mariadb (mysql) apt key  
-  ansible.builtin.apt_key:
-    url: https://mariadb.org/mariadb_release_signing_key.asc
-    state: present
-  ignore_errors: yes
-
-- name: Add the packages in sources lists
-  shell: sh -c 'echo "deb https://mirror.nodesdirect.com/mariadb/repo/10.5/debian $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list'
-  when: ansible_os_family == 'Debian'
-  
-- name: Install mariadb (mysql) package
-  apt:
-    update_cache: yes
-    pkg: mariadb-server-10.5
-    state: present
-
-- name: Start mariadb  service
-  command: systemctl restart mysql
-  become: true
-
-- name: Check For Existing Moodle Database
-  command: mysql moodle -e "select * from mdl_course;"
-  become: true
-  register: buildDatabase
-  ignore_errors: yes
-
-- name: Overwrite database (overwrite_database=true) when no database
-  ansible.builtin.set_fact:
-    overwrite_database: true
-  when: buildDatabase is not true
-
-- name: Remove Existing Moodle database
-  command: mysql -e 'drop database if exists moodle;'
-  become: true
-  when: overwrite_database
-
-- name: Create Empty Moodle database
-  command: mysql -e 'CREATE DATABASE moodle DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;'
-  become: true
-  when: overwrite_database
-
-- name: Create moodleuser
-  command: mysql -e "GRANT SELECT,INSERT,UPDATE,DELETE,CREATE,CREATE TEMPORARY TABLES,DROP,INDEX,ALTER ON moodle.* TO 'moodleuser'@'%' IDENTIFIED BY '\!1TheWell';"
-  become: true
-  when: overwrite_database
-
-- name: Copy Default Moodle Database To /tmp   (Create a new template -> sudo mysqldump --databases moodle >/tmp/moodle_database_template.txt)
-  template:
-    src: "moodle_database_template.txt"
-    dest: "/tmp/moodle_database_template.txt"
-    mode: 0666
-  when: overwrite_database
-    
-- name: Install Default Moodle database
-  shell: "mysql moodle </tmp/moodle_database_template.txt"
-  become: true
-  when: overwrite_database
-
-- name: Add mysql remote access
-  command: "iptables -A INPUT -p tcp --dport 3306 -j ACCEPT"
-  become: true
-  when: developer_mode
-
-######################################################
-# Moodle Software Installation
-
 - name: Recursively remove existing Moodle directory
   file:
     path: /var/www/moodle/
@@ -92,7 +23,6 @@
     dest: /var/www/moodle/
     clone: yes
     update: yes
-    version: origin/connectboxadmin
 
 - name: Copy customcert plugin to /var/www/moodle/mod/
   ansible.builtin.unarchive:

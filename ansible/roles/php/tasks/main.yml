@@ -37,7 +37,7 @@
     - php{{ php_version }}-common 
     - php{{ php_version }}-curl 
     - php{{ php_version }}-mbstring
-    - php{{ php_version }}-mysqli
+    - php{{ php_version }}-pgsql
     - php{{ php_version }}-xml
     - php{{ php_version }}-zip
     - php{{ php_version }}-intl
