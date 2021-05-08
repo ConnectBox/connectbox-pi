@@ -99,3 +99,9 @@
     hour: "*"
     user: www-data
     job: "/usr/bin/php /var/www/moodle/admin/cli/cron.php >/dev/null"
+
+# Install ffmpeg to handle mpeg 
+- name: Install ffmpeg to handle video compression of chat attachments
+  apt:
+    pkg:
+    - ffmpeg
