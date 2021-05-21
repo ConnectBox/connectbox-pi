@@ -3,6 +3,9 @@
 
 Vagrant.configure(2) do |config|
 
+  config.vm.synced_folder '.', '/vagrant', disabled: true
+
+
   # Overridden
   config.vm.box = ""
 
@@ -36,7 +39,7 @@ Vagrant.configure(2) do |config|
   config.vm.define "ubuntu" do |ubuntu|
     # Not using ubuntu/xenial64 because of
     #  https://bugs.launchpad.net/cloud-images/+bug/1569237
-    ubuntu.vm.box = "bento/ubuntu-16.04"
+    ubuntu.vm.box = "ubuntu/xenial64"
     ubuntu.vm.network "private_network", ip: "172.28.128.4"
     ubuntu.vm.post_up_message = "ConnectBox (Ubuntu Xenial) provisioned in developer mode. IP: 172.28.128.4, hostname: ubuntu-vagrant.connectbox. You probably want '172.28.128.4 ubuntu-vagrant.connectbox resettest-ubuntu-vagrant.connectbox' in /etc/hosts"
 

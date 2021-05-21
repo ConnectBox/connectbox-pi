@@ -34,13 +34,14 @@
   when: resize2fs_reboot.stat.exists == True
 
 # Disable automated apt-y things before attempting to install packages
-# unattended-upgrades and apt.systemd.daily only run on Ubuntu
+# unattended-upgrades and apt.systemd.daily only run on Ubuntu and raspian
 - name: Stop automated apty services
   service:
     name: "{{ item }}"
     state: stopped
     enabled: no
   with_items: "{{ apty_services }}"
+  when: connectbox_os != "debian"
 
 # Needs to happen before the initial reboot, given the job triggers actions
 #  on @reboot

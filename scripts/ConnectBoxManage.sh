@@ -2,11 +2,12 @@
 # ------------------------------------------------------------------
 # [Kelly Davis] ConnectBoxManage.sh
 #               Script for configuring the ConnectBox
+# [Kirk Wilson] Modifications for file management
 # ------------------------------------------------------------------
 
-VERSION=0.1.0
+VERSION=0.1.1
 SUBJECT=connectbox_control_ssid_script
-USAGE="Usage: ConnectBoxManage.sh -dhv [get|set|check] [ssid|channel|hostname|staticsite|password|ui-config|wpa-passphrase] <value>"
+USAGE="Usage: ConnectBoxManage.sh -dhv [get|set|check] [ssid|channel|hostname|staticsite|password|ui-config|wpa-passphrase|media|wificlient] <value>"
 HOSTAPD_CONFIG="/etc/hostapd/hostapd.conf"
 HOSTNAME_CONFIG="/etc/hostname"
 HOSTS_CONFIG="/etc/hosts"
@@ -15,6 +16,10 @@ PASSWORD_CONFIG="/usr/local/connectbox/etc/basicauth"
 WIFI_CONFIGURATOR="/usr/local/connectbox/wifi_configurator_venv/bin/wifi_configurator"
 PASSWORD_SALT="CBOX2018"
 UI_CONFIG="/var/www/connectbox/connectbox_default/config/default.json"
+INTERNAL_MEDIA_LOCATION ="/media/usb0"
+EXTERNAL_MEDIA_LOCATION ="/dev/sda1 /dev/sdb1"
+CLNT_NM = $CLIENT_NAME
+CLNT_PSSWD = $CLIENT_PASSWORD
 DEBUG=0
 SUCCESS="SUCCESS"
 FAILURE="Unexpected Error"
@@ -662,6 +667,32 @@ function set_ssid () {
   fi
 }
 
+function set_media () {
+# do media copy and move functions from devices
+#***********
+#Copy media from internal memory to USB stick or delete files
+
+}
+
+function get_media () {
+# get media size and free space from devices
+#***********
+# copy media from USB stick to Internal memory or delect files on USB stick
+
+}
+
+function  set_wificlient () {
+# get the client access point name and password
+#***********
+
+}
+
+function get_wificlient () {
+# get the client access point name and password
+#**********
+
+}
+
 if [[ $# -lt 1 ]]; then
     usage
 fi
@@ -697,7 +728,16 @@ if [ "$action" = "get" ]; then
       get_wpa_passphrase
       exit 0;
       ;;
-
+	  
+	"media")
+	  get_media
+	  exit 0;
+	  ;;
+	  
+	"wificlient")
+	  get_wificlient
+	  exit 0;
+	  ;;
 
     *)
       usage
@@ -741,6 +781,16 @@ elif [ "$action" = "set" ]; then
       exit 0;
       ;;
 
+	"media")
+	  set_media
+	  exit 0;
+	  ;;
+	  
+	"wificlient")
+	  set_wificlient
+	  exit 0;
+	  ;;
+	  
     *)
       usage
       ;;
@@ -752,6 +802,8 @@ elif [ "$action" = "shutdown" ]; then
   doshutdown
 elif [ "$action" = "reboot" ]; then
   doreboot
+elif [ "$action" = "client" ]; then
+  client
 elif [ "$action" = "reset" ]; then
   reset
 elif [ "$action" = "check" ]; then
