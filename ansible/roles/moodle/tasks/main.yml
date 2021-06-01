@@ -92,14 +92,41 @@
     dest: /var/www/moodle/info.php
 
 # Setup Moodle's Cron 
-- name: Setup Moodle's Cron To Run Every Minute as Per Moodle
+- name: Setup Moodle's Cron To Run Every 15 Minutes as Per Moodle
   ansible.builtin.cron:
     name: "moodle cron"
     minute: "1,16,31,46"
     hour: "*"
     user: www-data
-    job: "/usr/bin/php /var/www/moodle/admin/cli/cron.php >/dev/null"
+    job: "/usr/bin/php /var/www/moodle/admin/cli/cron.php >/tmp/cron.log"
 
+# Setup Moodle's Cron 
+- name: Setup chat_attachments/clean_up.php To Run Every Day
+  ansible.builtin.cron:
+    name: "chat_attachments/clean_up.php"
+    minute: "3"
+    hour: "3"
+    user: www-data
+    job: "/usr/bin/php /var/www/moodle/local/chat_attachments/clean_up.php >/tmp/cleanup.log"
+
+# Setup Moodle's Cron 
+- name: Setup chat_attachments/clean_up.php To Run Every 10 Minutes on Pi
+  ansible.builtin.cron:
+    name: "chat_attachments/push_messages.php true"
+    minute: "*/10"
+    user: www-data
+    job: "/usr/bin/php /var/www/moodle/local/chat_attachments/push_messages.php true >/tmp/push_messages.log"
+  when: not developer_mode
+
+# Setup Moodle's Cron 
+- name: Setup chat_attachments/clean_up.php To Run Every Minute in Developer Mode
+  ansible.builtin.cron:
+    name: "chat_attachments/push_messages.php true"
+    minute: "*"
+    user: www-data
+    job: "/usr/bin/php /var/www/moodle/local/chat_attachments/push_messages.php true >/tmp/push_messages.log"
+  when: developer_mode
+  
 # Install ffmpeg to handle mpeg 
 - name: Install ffmpeg to handle video compression of chat attachments
   apt:
