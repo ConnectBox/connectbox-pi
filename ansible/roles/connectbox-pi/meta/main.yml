@@ -8,6 +8,7 @@ dependencies:
   - mikegleasonjr.firewall
   - nginx
   - php
+  - ansible-postgresql
   - moodle
   - captive-portal
   - webserver-content
