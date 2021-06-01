@@ -29698,7 +29698,7 @@ COPY public.mdl_context_temp (id, path, depth, locked) FROM stdin;
 --
 
 COPY public.mdl_course (id, category, sortorder, fullname, shortname, idnumber, summary, summaryformat, format, showgrades, newsitems, startdate, enddate, relativedatesmode, marker, maxbytes, legacyfiles, showreports, visible, visibleold, downloadcontent, groupmode, groupmodeforce, defaultgroupingid, lang, calendartype, theme, timecreated, timemodified, requested, enablecompletion, completionnotify, cacherev, originalcourseid) FROM stdin;
-1	0	0	FROMDUMP:fullsitename	shortsitename			0	site	1	3	0	0	0	0	0	0	0	1	1	\N	0	0	0				1612889052	1612889167	0	0	0	1612889104	\N
+1	0	0	The Well	TheWell			0	site	1	3	0	0	0	0	0	0	0	1	1	\N	0	0	0				1612889052	1612889167	0	0	0	1612889104	\N
 \.
 
 
@@ -31489,6 +31489,7 @@ SELECT pg_catalog.setval('public.mdl_file_conversion_id_seq', 1, false);
 --
 -- Data for Name: mdl_files; Type: TABLE DATA; Schema: public; Owner: postgres
 --
+-- Lines 1-5 are default Moodle,  Lines 6-xx are added for TheWell 20210601
 
 COPY public.mdl_files (id, contenthash, pathnamehash, contextid, component, filearea, itemid, filepath, filename, userid, filesize, mimetype, status, source, author, license, timecreated, timemodified, sortorder, referencefileid) FROM stdin;
 1	5f8e911d0da441e36f47c5c46f4393269211ca56	508e674d49c30d4fde325fe6c7f6fd3d56b247e1	1	assignfeedback_editpdf	stamps	0	/	smile.png	2	1085	image/png	0	\N	\N	\N	1612889097	1612889097	0	\N
@@ -31496,6 +31497,20 @@ COPY public.mdl_files (id, contenthash, pathnamehash, contextid, component, file
 3	75c101cb8cb34ea573cd25ac38f8157b1de901b8	68317eab56c67d32aeaee5acf509a0c4aa828b6b	1	assignfeedback_editpdf	stamps	0	/	sad.png	2	966	image/png	0	\N	\N	\N	1612889097	1612889097	0	\N
 4	0c5190a24c3943966541401c883eacaa20ca20cb	695a55ff780e61c9e59428aa425430b0d6bde53b	1	assignfeedback_editpdf	stamps	0	/	tick.png	2	1039	image/png	0	\N	\N	\N	1612889097	1612889097	0	\N
 5	8c96a486d5801e0f4ab8c411f561f1c687e1f865	373e63af262a9b8466ba8632551520be793c37ff	1	assignfeedback_editpdf	stamps	0	/	cross.png	2	861	image/png	0	\N	\N	\N	1612889097	1612889097	0	\N
+6	a44e5c7aef709981c8de8614ba086bee6248c0a0	bca6a731123a20c5cc03cd87ecf71941b9f05010	5	user	draft	21887174	/	Droplet  Text - Teal - Transparent.png	2	28987	image/png	0	O:8:\"stdClass\":1:{s:6:\"source\";s:39:\"Droplet & Text - Teal - Transparent.png\";}	Admin User	unknown	1619624833	1619624833	0	\N
+7	da39a3ee5e6b4b0d3255bfef95601890afd80709	d185f361631e32efc5c4eeed533842d228efaf7a	5	user	draft	21887174	/	.	2	0	\N	0	\N	\N	\N	1619624833	1619624833	0	\N
+8	fcde58d0c4c14f557291cc9938afc3b75df543b3	523f4999e7a27e465c3d03ad3a74eb405617a6e8	1	core	preview	0	/thumb/	a44e5c7aef709981c8de8614ba086bee6248c0a0	\N	5470	image/png	0	\N	\N	\N	1619624834	1619624834	0	\N
+9	da39a3ee5e6b4b0d3255bfef95601890afd80709	74c104d54c05b5f8c633a36da516d37e6c5279e4	1	core	preview	0	/thumb/	.	\N	0	\N	0	\N	\N	\N	1619624834	1619624834	0	\N
+10	da39a3ee5e6b4b0d3255bfef95601890afd80709	884555719c50529b9df662a38619d04b5b11e25c	1	core	preview	0	/	.	\N	0	\N	0	\N	\N	\N	1619624834	1619624834	0	\N
+11	111633dac88c2c1f8a4a3ce418ec381274e012c6	3b8ed27402e2c1f32f82fb4574a7ab45469b2250	5	user	draft	290325056	/	Droplet - Teal - Transparent.png	2	72391	image/png	0	O:8:\"stdClass\":1:{s:6:\"source\";s:32:\"Droplet - Teal - Transparent.png\";}	Admin User	unknown	1619624847	1619624847	0	\N
+12	da39a3ee5e6b4b0d3255bfef95601890afd80709	d0644588e267f97996301245423800c130c95eeb	5	user	draft	290325056	/	.	2	0	\N	0	\N	\N	\N	1619624847	1619624847	0	\N
+13	55bf80f66bdb64c0ca71b884b2b61eff0b344ee9	b7edd68e6dad925ed7eda3b2e44aa154625122b3	1	core	preview	0	/thumb/	111633dac88c2c1f8a4a3ce418ec381274e012c6	\N	7401	image/png	0	\N	\N	\N	1619624847	1619624847	0	\N
+14	a44e5c7aef709981c8de8614ba086bee6248c0a0	3d411fa3d19cbc1bcd6024df2a96046ffdbcff5b	1	core_admin	logo	0	/	Droplet  Text - Teal - Transparent.png	2	28987	image/png	0	Droplet & Text - Teal - Transparent.png	Admin User	unknown	1619624833	1619624888	0	\N
+15	da39a3ee5e6b4b0d3255bfef95601890afd80709	13329bd7898f033eb0e93c11a609c6adfb8fb295	1	core_admin	logo	0	/	.	2	0	\N	0	\N	\N	\N	1619624833	1619624888	0	\N
+16	111633dac88c2c1f8a4a3ce418ec381274e012c6	0d626e8ba8127b8d1c94d5e1dbebb73a95ae9504	1	core_admin	logocompact	0	/	Droplet - Teal - Transparent.png	2	72391	image/png	0	Droplet - Teal - Transparent.png	Admin User	unknown	1619624847	1619624888	0	\N
+17	da39a3ee5e6b4b0d3255bfef95601890afd80709	ed928c2defdda280bb604ab3df79598e4c3adc00	1	core_admin	logocompact	0	/	.	2	0	\N	0	\N	\N	\N	1619624847	1619624888	0	\N
+18	4a17bda49cdc89d62a28615b7c21e81ec4a44bc0	2f93cd4d54ca9ff4dfb3826e3afd36c251a65ec1	5	user	draft	53672959	/	mod_customcert_moodle310_2020110900.zip	2	293711	application/zip	0	O:8:\"stdClass\":1:{s:6:\"source\";s:39:\"mod_customcert_moodle310_2020110900.zip\";}	Admin User	unknown	1619625636	1619625636	0	\N
+19	da39a3ee5e6b4b0d3255bfef95601890afd80709	aab2d93f3a4f15123b7f44e90e5a9fddb408809f	5	user	draft	53672959	/	.	2	0	\N	0	\N	\N	\N	1619625636	1619625636	0	\N
 \.
 
 
