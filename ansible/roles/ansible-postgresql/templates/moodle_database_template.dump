@@ -38637,7 +38637,6 @@ SELECT pg_catalog.setval('public.mdl_url_id_seq', 1, false);
 
 COPY public.mdl_user (id, auth, confirmed, policyagreed, deleted, suspended, mnethostid, username, password, idnumber, firstname, lastname, email, emailstop, icq, skype, yahoo, aim, msn, phone1, phone2, institution, department, address, city, country, lang, calendartype, theme, timezone, firstaccess, lastaccess, lastlogin, currentlogin, lastip, secret, picture, url, description, descriptionformat, mailformat, maildigest, maildisplay, autosubscribe, trackforums, timecreated, timemodified, trustbitmask, imagealt, lastnamephonetic, firstnamephonetic, middlename, alternatename, moodlenetprofile) FROM stdin;
 1	manual	1	0	0	0	1	guest	$2y$10$kUowCQcP6CK4rthRvesKDO.QVRXnUfgAKl3I/fvAJv.zGltjWnDSq		Guest user	 	guest@email.com	0													en	gregorian		99	0	0	0	0			0		This user is a special user that allows read-only access to some courses.	1	1	0	2	1	0	0	1612889053	0	\N	\N	\N	\N	\N	\N
-3	manual	1	0	0	0	1	user	$2y$10$zo7Pb0Z.ki5s.X63jbgJlOEN6uVvQOUihe4CGrJz0eUhlAM.He6iG		User	User	user@email.com	0													en	gregorian		99	1613080106	1613081315	0	1613080106	67.182.30.218		0			1	1	0	0	1	0	1612889205	1612889205	0						
 2	manual	1	0	0	0	1	admin	$2y$10$75u/DYN/ajTm7NobTnIkE.wFwnZBpN1bnd8L0nSnh9ZJGLyRKFBLu		Admin	User	admin@email.com	0													en	gregorian		99	1612889108	1613084183	1613080121	1613081196	67.182.30.218		0			1	1	0	0	1	0	0	1612889141	0	\N					
 \.
 
