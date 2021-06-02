@@ -44,7 +44,6 @@
     owner: www-data
     group: www-data
     mode: 0775
-  when: overwrite_database
 
 - name: Copy filedir to /var/www/moodledata/filedir
   ansible.builtin.unarchive:
