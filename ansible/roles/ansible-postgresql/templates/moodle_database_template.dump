@@ -24297,12 +24297,12 @@ COPY public.mdl_block_instances (id, blockname, parentcontextid, showinsubcontex
 10	myoverview	1	0	0	my-index	2	content	2		1612889086	1612889086
 11	myoverview	5	0	0	my-index	3	content	2		1612889167	1612889167
 12	recentlyaccessedcourses	5	0	0	my-index	3	content	1		1612889167	1612889167
-13	lp	5	0	0	my-index	3	content	0		1612889167	1612889167
+13	lp	5	0	0	Amy-index	3	content	0		1612889167	1612889167
 14	calendar_upcoming	5	0	0	my-index	3	side-post	5		1612889167	1612889167
 15	calendar_month	5	0	0	my-index	3	side-post	4		1612889167	1612889167
-16	badges	5	0	0	my-index	3	side-post	3		1612889167	1612889167
-17	online_users	5	0	0	my-index	3	side-post	2		1612889167	1612889167
-18	private_files	5	0	0	my-index	3	side-post	1		1612889167	1612889167
+16	badges	5	0	0	Amy-index	3	side-post	3		1612889167	1612889167
+17	online_users	5	0	0	Amy-index	3	side-post	2		1612889167	1612889167
+18	private_files	5	0	0	Amy-index	3	side-post	1		1612889167	1612889167
 19	timeline	5	0	0	my-index	3	side-post	0		1612889167	1612889167
 20	timeline	25	0	0	my-index	4	side-post	0		1613080109	1613080109
 21	private_files	25	0	0	my-index	4	side-post	1		1613080110	1613080110
@@ -24313,14 +24313,15 @@ COPY public.mdl_block_instances (id, blockname, parentcontextid, showinsubcontex
 26	lp	25	0	0	my-index	4	content	0		1613080110	1613080110
 27	recentlyaccessedcourses	25	0	0	my-index	4	content	1		1613080110	1613080110
 28	myoverview	25	0	0	my-index	4	content	2		1613080110	1613080110
+29	html	5	0	0	my-index	\N	content	0	Tzo4OiJzdGRDbGFzcyI6Mzp7czo0OiJ0ZXh0IjtzOjU1OiI8cCBkaXI9Imx0ciIgc3R5bGU9InRleHQtYWxpZ246IGxlZnQ7Ij5ibG9ja2NvbnRlbnQ8L3A+IjtzOjU6InRpdGxlIjtzOjEwOiJibG9ja3RpdGxlIjtzOjY6ImZvcm1hdCI7czoxOiIxIjt9	1622670350	1622670378
 \.
-
+-- TO UPDATE THE Block Text, copy the content into https://www.base64decode.org/, then change the text and re-encode (DM 20210602)
 
 --
 -- Name: mdl_block_instances_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.mdl_block_instances_id_seq', 28, true);
+SELECT pg_catalog.setval('public.mdl_block_instances_id_seq', 29, true);
 
 
 --
@@ -24328,6 +24329,10 @@ SELECT pg_catalog.setval('public.mdl_block_instances_id_seq', 28, true);
 --
 
 COPY public.mdl_block_positions (id, blockinstanceid, contextid, pagetype, subpage, visible, region, weight) FROM stdin;
+1       13      5       my-index        3       0       content 0
+2       18      5       my-index        3       0       side-post       1
+3       17      5       my-index        3       0       side-post       2
+4       16      5       my-index        3       0       side-post       3
 \.
 
 
@@ -24335,7 +24340,7 @@ COPY public.mdl_block_positions (id, blockinstanceid, contextid, pagetype, subpa
 -- Name: mdl_block_positions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.mdl_block_positions_id_seq', 1, false);
+SELECT pg_catalog.setval('public.mdl_block_positions_id_seq', 4, false);
 
 
 --
@@ -26333,7 +26338,7 @@ COPY public.mdl_config_plugins (id, plugin, name, value) FROM stdin;
 194	theme_boost	preset	default.scss
 195	theme_boost	presetfiles	
 196	theme_boost	backgroundimage	
-197	theme_boost	brandcolor	
+197	theme_boost	brandcolor	#A4175B
 198	theme_boost	scsspre	
 199	theme_boost	scss	
 200	theme_classic	navbardark	0
@@ -27871,7 +27876,7 @@ COPY public.mdl_config_plugins (id, plugin, name, value) FROM stdin;
 1811	enrol_self	expirynotifyhour	6
 1812	enrol_self	defaultenrol	1
 1813	enrol_self	status	1
-1814	enrol_self	newenrols	1
+1814	enrol_self	newenrols	0
 1815	enrol_self	groupkey	0
 1816	enrol_self	roleid	5
 1817	enrol_self	enrolperiod	0
@@ -27961,12 +27966,12 @@ COPY public.mdl_config_plugins (id, plugin, name, value) FROM stdin;
 1901	tool_mobile	typeoflogin	1
 1903	tool_mobile	forcedurlscheme	
 1904	tool_mobile	minimumversion	
-1905	tool_mobile	enablesmartappbanners	0
-1906	tool_mobile	iosappid	633359593
+1905	tool_mobile	enablesmartappbanners	1
+1906	tool_mobile	iosappid	
 1907	tool_mobile	androidappid	org.relaytrust.thewell
-1908	tool_mobile	setuplink	https://www.relaytrust.org/thewell/thewellapp.html
+1908	tool_mobile	setuplink	/thewell/
 1909	tool_mobile	forcelogout	0
-1910	tool_mobile	disabledfeatures	
+1910	tool_mobile	disabledfeatures	$mmLoginEmailSignup,NoDelegate_ForgottenPassword,$mmSideMenuDelegate_mmaFrontpage,$mmSideMenuDelegate_mmaGrades,$mmSideMenuDelegate_mmaCompetency,$mmSideMenuDelegate_mmaFiles,CoreMainMenuDelegate_CoreTag,$mmSideMenuDelegate_website,$mmSideMenuDelegate_help,CoreCourseOptionsDelegate_AddonBlog,CoreUserDelegate_AddonBlog:blogs,$mmUserDelegate_mmaMessages:blockContact
 1911	tool_mobile	custommenuitems	Get Resources from The Well|http://thewell|browser||fa-cart-arrow-down\r\nHelp|http://learn.thewell/help|embedded||fa-question-circle\r\nAbout The Well|http://learn.thewell/help/about.html|embedded||fa-tint
 1912	tool_mobile	filetypeexclusionlist	
 1913	tool_mobile	customlangstrings	
