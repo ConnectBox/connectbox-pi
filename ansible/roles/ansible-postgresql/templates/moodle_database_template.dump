@@ -25586,7 +25586,7 @@ SELECT pg_catalog.setval('public.mdl_competency_userevidencecomp_id_seq', 1, fal
 
 COPY public.mdl_config (id, name, value) FROM stdin;
 3	auth	email
-4	enrol_plugins_enabled	manual,guest,self,cohort
+4	enrol_plugins_enabled	manual,flatfile,self
 5	theme	boost
 6	filter_multilang_converted	1
 7	siteidentifier	jRSjQJvZuUXioZNGA7SIWZUwGExyMD9mdev.derekmaxson.com
@@ -26086,7 +26086,7 @@ COPY public.mdl_config (id, name, value) FROM stdin;
 504	loglifetime	0
 505	profileroles	5,4,3
 506	coursecontact	3
-507	frontpage	6
+507	frontpage	
 508	frontpageloggedin	6
 509	maxcategorydepth	2
 510	frontpagecourselimit	200
@@ -26565,7 +26565,7 @@ COPY public.mdl_config_log (id, userid, timemodified, plugin, name, value, oldva
 441	0	1612889063	theme_boost	preset	default.scss	\N
 442	0	1612889063	theme_boost	presetfiles		\N
 443	0	1612889063	theme_boost	backgroundimage		\N
-444	0	1612889063	theme_boost	brandcolor		\N
+444	0	1612889063	theme_boost	brandcolor	#A4175B	\N
 445	0	1612889063	theme_boost	scsspre		\N
 446	0	1612889063	theme_boost	scss		\N
 447	0	1612889063	theme_classic	navbardark	0	\N
@@ -26575,8 +26575,8 @@ COPY public.mdl_config_log (id, userid, timemodified, plugin, name, value, oldva
 451	0	1612889063	theme_classic	brandcolor		\N
 452	0	1612889063	theme_classic	scsspre		\N
 453	0	1612889063	theme_classic	scss		\N
-454	0	1612889063	core_admin	logo		\N
-455	0	1612889063	core_admin	logocompact		\N
+454	0	1612889063	core_admin	logo	/Droplet  Text - Teal - Transparent.png	\N
+455	0	1612889063	core_admin	logocompact	/Droplet - Teal - Transparent.png	\N
 456	0	1612889063	core_admin	coursecolor1	#81ecec	\N
 457	0	1612889063	core_admin	coursecolor2	#74b9ff	\N
 458	0	1612889063	core_admin	coursecolor3	#a29bfe	\N
@@ -27629,7 +27629,7 @@ COPY public.mdl_config_log (id, userid, timemodified, plugin, name, value, oldva
 1505	2	1612889144	enrol_self	expirynotifyhour	6	\N
 1506	2	1612889144	enrol_self	defaultenrol	1	\N
 1507	2	1612889144	enrol_self	status	1	\N
-1508	2	1612889144	enrol_self	newenrols	1	\N
+1508	2	1612889144	enrol_self	newenrols	0	\N
 1509	2	1612889144	enrol_self	groupkey	0	\N
 1510	2	1612889144	enrol_self	roleid	5	\N
 1511	2	1612889144	enrol_self	enrolperiod	0	\N
@@ -27741,12 +27741,12 @@ COPY public.mdl_config_log (id, userid, timemodified, plugin, name, value, oldva
 1617	2	1612889145	tool_mobile	forcedurlscheme	moodlemobile	\N
 1618	2	1612889145	tool_mobile	minimumversion		\N
 1619	2	1612889145	\N	mobilecssurl		\N
-1620	2	1612889145	tool_mobile	enablesmartappbanners	0	\N
+1620	2	1612889145	tool_mobile	enablesmartappbanners	1	\N
 1621	2	1612889145	tool_mobile	iosappid	633359593	\N
 1622	2	1612889145	tool_mobile	androidappid	com.moodle.moodlemobile	\N
 1623	2	1612889145	tool_mobile	setuplink	https://download.moodle.org/mobile	\N
 1624	2	1612889145	tool_mobile	forcelogout	0	\N
-1625	2	1612889145	tool_mobile	disabledfeatures		\N
+1625	2	1612889145	tool_mobile	disabledfeatures	$mmLoginEmailSignup,NoDelegate_ForgottenPassword,$mmSideMenuDelegate_mmaFrontpage,$mmSideMenuDelegate_mmaGrades,$mmSideMenuDelegate_mmaCompetency,$mmSideMenuDelegate_mmaFiles,CoreMainMenuDelegate_CoreTag,$mmSideMenuDelegate_website,$mmSideMenuDelegate_help,CoreCourseOptionsDelegate_AddonBlog,CoreUserDelegate_AddonBlog:blogs,$mmUserDelegate_mmaMessages:blockContact,	\N
 1626	2	1612889145	tool_mobile	custommenuitems		\N
 1627	2	1612889145	tool_mobile	filetypeexclusionlist		\N
 1628	2	1612889145	tool_mobile	customlangstrings		\N
@@ -27978,8 +27978,8 @@ COPY public.mdl_config_plugins (id, plugin, name, value) FROM stdin;
 204	theme_classic	brandcolor	
 205	theme_classic	scsspre	
 206	theme_classic	scss	
-207	core_admin	logo	
-208	core_admin	logocompact	
+207	core_admin	logo	/Droplet  Text - Teal - Transparent.png
+208	core_admin	logocompact	/Droplet - Teal - Transparent.png
 209	core_admin	coursecolor1	#81ecec
 210	core_admin	coursecolor2	#74b9ff
 211	core_admin	coursecolor3	#a29bfe
@@ -29592,17 +29592,17 @@ COPY public.mdl_config_plugins (id, plugin, name, value) FROM stdin;
 1897	tinymce_moodleemoticon	requireemoticon	1
 1898	tinymce_spellchecker	spellengine	
 1899	tinymce_spellchecker	spelllanguagelist	+English=en,Danish=da,Dutch=nl,Finnish=fi,French=fr,German=de,Italian=it,Polish=pl,Portuguese=pt,Spanish=es,Swedish=sv
-1900	tool_mobile	apppolicy	
+1900	tool_mobile	apppolicy	https://www.relaytrust.org/thewell/privacypolicy.html
 1901	tool_mobile	typeoflogin	1
-1903	tool_mobile	forcedurlscheme	moodlemobile
+1903	tool_mobile	forcedurlscheme	
 1904	tool_mobile	minimumversion	
 1905	tool_mobile	enablesmartappbanners	0
 1906	tool_mobile	iosappid	633359593
-1907	tool_mobile	androidappid	com.moodle.moodlemobile
-1908	tool_mobile	setuplink	https://download.moodle.org/mobile
+1907	tool_mobile	androidappid	org.relaytrust.thewell
+1908	tool_mobile	setuplink	https://www.relaytrust.org/thewell/thewellapp.html
 1909	tool_mobile	forcelogout	0
 1910	tool_mobile	disabledfeatures	
-1911	tool_mobile	custommenuitems	
+1911	tool_mobile	custommenuitems	Get Resources from The Well|http://thewell|browser||fa-cart-arrow-down\r\nHelp|http://learn.thewell/help|embedded||fa-question-circle\r\nAbout The Well|http://learn.thewell/help/about.html|embedded||fa-tint
 1912	tool_mobile	filetypeexclusionlist	
 1913	tool_mobile	customlangstrings	
 1914	tool_moodlenet	enablemoodlenet	0
@@ -29881,6 +29881,7 @@ SELECT pg_catalog.setval('public.mdl_course_request_id_seq', 1, false);
 --
 
 COPY public.mdl_course_sections (id, course, section, name, summary, summaryformat, sequence, visible, availability, timemodified) FROM stdin;
+1       1       1               <p dir="ltr" style="text-align: left;">realsitesummary</p>      1               1       {"op":"&","c":[],"showc":[]}    1622589234
 \.
 
 
