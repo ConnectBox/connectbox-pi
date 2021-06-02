@@ -6,6 +6,11 @@
   become: true
   become_user: postgres
 
+- name: Force all existing user sessions out
+  command: psql -c "SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = 'moodle' AND pid <> pg_backend_pid();"
+  become: true
+  become_user: postgres
+
 - name: Delete Existing Moodle Database
   command: psql -c "DROP DATABASE IF EXISTS moodle;"
   become: true
