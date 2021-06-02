@@ -31,8 +31,8 @@
 
 - name: Customize App Download Page
   template:
-    src: var_www_moodle_config_php.j2
-    dest: /var/www/moodle/config.php
+    src: thewell_index_php.j2
+    dest: /var/www/moodle/thewell/index.php
 
 - name: Copy customcert plugin to /var/www/moodle/mod/
   ansible.builtin.unarchive:
