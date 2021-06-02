@@ -24,6 +24,16 @@
     clone: yes
     update: yes
 
+- name: Download The Well App (Moodle Android App) from URL 
+  get_url:
+    url: 'https://thewell-images.s3-us-west-2.amazonaws.com/{{app_download_local_filename}}'
+    dest: /var/www/moodle/thewell
+
+- name: Customize App Download Page
+  template:
+    src: var_www_moodle_config_php.j2
+    dest: /var/www/moodle/config.php
+
 - name: Copy customcert plugin to /var/www/moodle/mod/
   ansible.builtin.unarchive:
     src: ../templates/customcert.tar.gz
