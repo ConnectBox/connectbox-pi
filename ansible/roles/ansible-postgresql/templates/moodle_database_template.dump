@@ -27972,7 +27972,7 @@ COPY public.mdl_config_plugins (id, plugin, name, value) FROM stdin;
 1908	tool_mobile	setuplink	/thewell/
 1909	tool_mobile	forcelogout	0
 1910	tool_mobile	disabledfeatures	$mmLoginEmailSignup,NoDelegate_ForgottenPassword,$mmSideMenuDelegate_mmaFrontpage,$mmSideMenuDelegate_mmaGrades,$mmSideMenuDelegate_mmaCompetency,$mmSideMenuDelegate_mmaFiles,CoreMainMenuDelegate_CoreTag,$mmSideMenuDelegate_website,$mmSideMenuDelegate_help,CoreCourseOptionsDelegate_AddonBlog,CoreUserDelegate_AddonBlog:blogs,$mmUserDelegate_mmaMessages:blockContact
-1911	tool_mobile	custommenuitems	Get Resources from The Well|http://thewell|browser||fa-cart-arrow-down\r\nHelp|http://learn.thewell/help|embedded||fa-question-circle\r\nAbout The Well|http://learn.thewell/help/about.html|embedded||fa-tint
+1911	tool_mobile	custommenuitems	Get Resources from The Well|http://{{connectbox_default_hostname}}|browser||fa-cart-arrow-down\r\nHelp|http://learn.{{connectbox_default_hostname}}/help|embedded||fa-question-circle\r\nAbout The Well|http://learn.{{connectbox_default_hostname}}/help/about.html|embedded||fa-tint
 1912	tool_mobile	filetypeexclusionlist	
 1913	tool_mobile	customlangstrings	
 1914	tool_moodlenet	enablemoodlenet	0

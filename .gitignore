@@ -10,3 +10,4 @@ ci/terraform.tfstate*
 ansible/inventory
 makenewimage.sh
 ansible/inventory-*
+makenewimage.pl

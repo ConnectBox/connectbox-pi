@@ -128,7 +128,7 @@
   when: not developer_mode
 
 # Setup Moodle's Cron 
-- name: Setup chat_attachments/clean_up.php To Run Every Minute in Developer Mode
+- name: Setup chat_attachments/clean_up.php To Run Every Day in Developer Mode
   ansible.builtin.cron:
     name: "chat_attachments/push_messages.php true"
     minute: "*"
