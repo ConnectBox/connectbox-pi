@@ -39,13 +39,13 @@
     src: ../templates/customcert.tar.gz
     dest: /var/www/moodle/mod/
   become: true
-  when: overwrite_database
+  when: buildDatabase.rc > 0 or overwrite_database
 
 - name: Recursively empty existing moodledata directory
   shell: rm -rf /var/www/moodledata/*
   become: true
   ignore_errors: yes
-  when: overwrite_database
+  when: buildDatabase.rc > 0 or overwrite_database
   
 - name: Restore moodledata directory that Moodle requires for all its functions
   file:
@@ -60,7 +60,7 @@
     src: ../templates/filedir.tar.gz
     dest: /var/www/moodledata/
   become: true
-  when: overwrite_database
+  when: buildDatabase.rc > 0 or overwrite_database
 
 - name: configure temporary storage for Moodle cache
   when: connectbox_os == "raspbian" 
