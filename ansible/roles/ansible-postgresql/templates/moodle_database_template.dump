@@ -24287,33 +24287,21 @@ SELECT pg_catalog.setval('public.mdl_block_id_seq', 43, true);
 COPY public.mdl_block_instances (id, blockname, parentcontextid, showinsubcontexts, requiredbytheme, pagetypepattern, subpagepattern, defaultregion, defaultweight, configdata, timecreated, timemodified) FROM stdin;
 1	admin_bookmarks	1	0	0	admin-*	\N	side-pre	2		1612889086	1612889086
 2	timeline	1	0	0	my-index	2	side-post	0		1612889086	1612889086
-3	private_files	1	0	0	my-index	2	side-post	1		1612889086	1612889086
-4	online_users	1	0	0	my-index	2	side-post	2		1612889086	1612889086
-5	badges	1	0	0	my-index	2	side-post	3		1612889086	1612889086
 6	calendar_month	1	0	0	my-index	2	side-post	4		1612889086	1612889086
 7	calendar_upcoming	1	0	0	my-index	2	side-post	5		1612889086	1612889086
-8	lp	1	0	0	my-index	2	content	0		1612889086	1612889086
 9	recentlyaccessedcourses	1	0	0	my-index	2	content	1		1612889086	1612889086
 10	myoverview	1	0	0	my-index	2	content	2		1612889086	1612889086
 11	myoverview	5	0	0	my-index	3	content	2		1612889167	1612889167
 12	recentlyaccessedcourses	5	0	0	my-index	3	content	1		1612889167	1612889167
-13	lp	5	0	0	Amy-index	3	content	0		1612889167	1612889167
 14	calendar_upcoming	5	0	0	my-index	3	side-post	5		1612889167	1612889167
 15	calendar_month	5	0	0	my-index	3	side-post	4		1612889167	1612889167
-16	badges	5	0	0	Amy-index	3	side-post	3		1612889167	1612889167
-17	online_users	5	0	0	Amy-index	3	side-post	2		1612889167	1612889167
-18	private_files	5	0	0	Amy-index	3	side-post	1		1612889167	1612889167
 19	timeline	5	0	0	my-index	3	side-post	0		1612889167	1612889167
 20	timeline	25	0	0	my-index	4	side-post	0		1613080109	1613080109
-21	private_files	25	0	0	my-index	4	side-post	1		1613080110	1613080110
-22	online_users	25	0	0	my-index	4	side-post	2		1613080110	1613080110
-23	badges	25	0	0	my-index	4	side-post	3		1613080110	1613080110
 24	calendar_month	25	0	0	my-index	4	side-post	4		1613080110	1613080110
 25	calendar_upcoming	25	0	0	my-index	4	side-post	5		1613080110	1613080110
-26	lp	25	0	0	my-index	4	content	0		1613080110	1613080110
 27	recentlyaccessedcourses	25	0	0	my-index	4	content	1		1613080110	1613080110
 28	myoverview	25	0	0	my-index	4	content	2		1613080110	1613080110
-29	html	5	0	0	my-index	\N	content	0	Tzo4OiJzdGRDbGFzcyI6Mzp7czo0OiJ0ZXh0IjtzOjU1OiI8cCBkaXI9Imx0ciIgc3R5bGU9InRleHQtYWxpZ246IGxlZnQ7Ij5ibG9ja2NvbnRlbnQ8L3A+IjtzOjU6InRpdGxlIjtzOjEwOiJibG9ja3RpdGxlIjtzOjY6ImZvcm1hdCI7czoxOiIxIjt9	1622670350	1622670378
+29	html	1	1	0	my-index	\N	content	0	Tzo4OiJzdGRDbGFzcyI6Mzp7czo0OiJ0ZXh0IjtzOjU1OiI8cCBkaXI9Imx0ciIgc3R5bGU9InRleHQtYWxpZ246IGxlZnQ7Ij5ibG9ja2NvbnRlbnQ8L3A+IjtzOjU6InRpdGxlIjtzOjEwOiJibG9ja3RpdGxlIjtzOjY6ImZvcm1hdCI7czoxOiIxIjt9	1622670350	1622670378
 \.
 -- TO UPDATE THE Block Text, copy the content into https://www.base64decode.org/, then change the text and re-encode (DM 20210602)
 
@@ -27972,7 +27960,7 @@ COPY public.mdl_config_plugins (id, plugin, name, value) FROM stdin;
 1908	tool_mobile	setuplink	/thewell/
 1909	tool_mobile	forcelogout	0
 1910	tool_mobile	disabledfeatures	$mmLoginEmailSignup,NoDelegate_ForgottenPassword,$mmSideMenuDelegate_mmaFrontpage,$mmSideMenuDelegate_mmaGrades,$mmSideMenuDelegate_mmaCompetency,$mmSideMenuDelegate_mmaFiles,CoreMainMenuDelegate_CoreTag,$mmSideMenuDelegate_website,$mmSideMenuDelegate_help,CoreCourseOptionsDelegate_AddonBlog,CoreUserDelegate_AddonBlog:blogs,$mmUserDelegate_mmaMessages:blockContact
-1911	tool_mobile	custommenuitems	Get Resources from The Well|http://{{connectbox_default_hostname}}|browser||fa-cart-arrow-down\r\nHelp|http://learn.{{connectbox_default_hostname}}/help|embedded||fa-question-circle\r\nAbout The Well|http://learn.{{connectbox_default_hostname}}/help/about.html|embedded||fa-tint
+1911	tool_mobile	custommenuitems	Get Resources from The Well|http://{{connectbox_default_hostname}}|browser||fa-cart-arrow-down\r\nHelp|http://learn.{{connectbox_default_hostname}}/help|embedded||fa-question-circle\r\nAbout The Well|http://learn.{{connectbox_default_hostname}}/help/about.php|embedded||fa-tint
 1912	tool_mobile	filetypeexclusionlist	
 1913	tool_mobile	customlangstrings	
 1914	tool_moodlenet	enablemoodlenet	0
@@ -28045,6 +28033,7 @@ COPY public.mdl_context (id, contextlevel, instanceid, path, depth, locked) FROM
 32	80	26	/1/25/32	3	0
 33	80	27	/1/25/33	3	0
 34	80	28	/1/25/34	3	0
+36	80	29	/1/36	2	0
 \.
 
 
@@ -28052,7 +28041,7 @@ COPY public.mdl_context (id, contextlevel, instanceid, path, depth, locked) FROM
 -- Name: mdl_context_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.mdl_context_id_seq', 34, true);
+SELECT pg_catalog.setval('public.mdl_context_id_seq', 36, true);
 
 
 --
@@ -38638,6 +38627,7 @@ SELECT pg_catalog.setval('public.mdl_url_id_seq', 1, false);
 COPY public.mdl_user (id, auth, confirmed, policyagreed, deleted, suspended, mnethostid, username, password, idnumber, firstname, lastname, email, emailstop, icq, skype, yahoo, aim, msn, phone1, phone2, institution, department, address, city, country, lang, calendartype, theme, timezone, firstaccess, lastaccess, lastlogin, currentlogin, lastip, secret, picture, url, description, descriptionformat, mailformat, maildigest, maildisplay, autosubscribe, trackforums, timecreated, timemodified, trustbitmask, imagealt, lastnamephonetic, firstnamephonetic, middlename, alternatename, moodlenetprofile) FROM stdin;
 1	manual	1	0	0	0	1	guest	$2y$10$kUowCQcP6CK4rthRvesKDO.QVRXnUfgAKl3I/fvAJv.zGltjWnDSq		Guest user	 	guest@email.com	0													en	gregorian		99	0	0	0	0			0		This user is a special user that allows read-only access to some courses.	1	1	0	2	1	0	0	1612889053	0	\N	\N	\N	\N	\N	\N
 2	manual	1	0	0	0	1	admin	$2y$10$75u/DYN/ajTm7NobTnIkE.wFwnZBpN1bnd8L0nSnh9ZJGLyRKFBLu		Admin	User	admin@email.com	0													en	gregorian		99	1612889108	1613084183	1613080121	1613081196	67.182.30.218		0			1	1	0	0	1	0	0	1612889141	0	\N					
+3	manual	1	0	0	0	1	user	$2y$10$75u/DYN/ajTm7NobTnIkE.wFwnZBpN1bnd8L0nSnh9ZJGLyRKFBLu		User	User	user@email.com	0													en	gregorian		99	1612889108	1613084183	1613080121	1613081196	67.182.30.218		0			1	1	0	0	1	0	0	1612889141	0	\N					
 \.
 
 
