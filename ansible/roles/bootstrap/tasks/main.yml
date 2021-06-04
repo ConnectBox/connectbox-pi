@@ -143,6 +143,7 @@
   register: rfkill1_state
   ignore_errors: yes
   changed_when: False
+  ignore_errors: yes
   when: connectbox_os == "raspbian"
 
 # Raspbian-lite buster and onwards rfkill wlan1 by default, which causes
@@ -150,6 +151,7 @@
 # This change persists across reboots, so it's safe to do here.
 - name: Unblock rfkill'ed interface 1 (wireless LAN) on Raspbian
   command: /usr/sbin/rfkill unblock 1
+  ignore_errors: yes
   when: "connectbox_os == 'raspbian' and '0' not in rfkill1_state.stdout"
 
 - name: Set default locale
