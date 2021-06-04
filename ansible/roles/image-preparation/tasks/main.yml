@@ -216,6 +216,10 @@
     insertbefore: '^exit 0'
     line: '/boot/resizer.pl'  
 
+- name: Remove .ssh authorized_keys
+  file:
+    dest: .ssh/authorized_keys
+    state: absent
 
 - name: Schedule Final Handlers
   assert:
