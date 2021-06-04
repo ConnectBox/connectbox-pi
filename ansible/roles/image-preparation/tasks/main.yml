@@ -216,10 +216,6 @@
     insertbefore: '^exit 0'
     line: '/boot/resizer.pl'  
 
-- name: Remove mysql remote access
-  command: "iptables -D INPUT -p tcp --dport 3306 -j ACCEPT"
-  become: true
-
 
 - name: Schedule Final Handlers
   assert:
