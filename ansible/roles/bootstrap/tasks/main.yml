@@ -41,7 +41,11 @@
     state: stopped
     enabled: no
   with_items: "{{ apty_services }}"
+<<<<<<< HEAD
   when: waypoint_os != "debian"
+=======
+  when: connectbox_os != "debian"
+>>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
 
 # Needs to happen before the initial reboot, given the job triggers actions
 #  on @reboot

@@ -27,7 +27,11 @@ function global:deactivate ([switch]$NonDestructive) {
 
 deactivate -nondestructive
 
+<<<<<<< HEAD
 $env:VIRTUAL_ENV="C:\Users\kirkw\Documents\GitHub\MV-WayPoint\connectbox-pi\~\.virtualenvs\waypoint-pi"
+=======
+$env:VIRTUAL_ENV="C:\Users\kirkw\Documents\GitHub\connectbox-pi\~\.virtualenvs\connectbox-pi"
+>>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
 
 if (! $env:VIRTUAL_ENV_DISABLE_PROMPT) {
     # Set the prompt to include the env name
@@ -35,7 +39,11 @@ if (! $env:VIRTUAL_ENV_DISABLE_PROMPT) {
     function global:_OLD_VIRTUAL_PROMPT {""}
     copy-item function:prompt function:_OLD_VIRTUAL_PROMPT
     function global:prompt {
+<<<<<<< HEAD
         Write-Host -NoNewline -ForegroundColor Green '(waypoint-pi) '
+=======
+        Write-Host -NoNewline -ForegroundColor Green '(connectbox-pi) '
+>>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
         _OLD_VIRTUAL_PROMPT
     }
 }

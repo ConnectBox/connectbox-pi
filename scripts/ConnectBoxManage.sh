@@ -1,13 +1,23 @@
 #!/bin/bash
 # ------------------------------------------------------------------
+<<<<<<< HEAD
 # [Kelly Davis] waypointManage.sh
 #               Script for configuring the waypoint
+=======
+# [Kelly Davis] ConnectBoxManage.sh
+#               Script for configuring the ConnectBox
+>>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
 # [Kirk Wilson] Modifications for file management
 # ------------------------------------------------------------------
 
 VERSION=0.1.1
+<<<<<<< HEAD
 SUBJECT=waypoint_control_ssid_script
 USAGE="Usage: WaypointManage.sh -dhv [get|set|check] [ssid|channel|hostname|staticsite|password|ui-config|wpa-passphrase|media|wificlient] <value>"
+=======
+SUBJECT=connectbox_control_ssid_script
+USAGE="Usage: ConnectBoxManage.sh -dhv [get|set|check] [ssid|channel|hostname|staticsite|password|ui-config|wpa-passphrase|media|wificlient] <value>"
+>>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
 HOSTAPD_CONFIG="/etc/hostapd/hostapd.conf"
 HOSTNAME_CONFIG="/etc/hostname"
 HOSTS_CONFIG="/etc/hosts"
@@ -15,7 +25,11 @@ NGINX_CONFIG="/etc/nginx/sites-enabled/vhosts.conf"
 PASSWORD_CONFIG="/usr/local/waypoint/etc/basicauth"
 WIFI_CONFIGURATOR="/usr/local/waypoint/wifi_configurator_venv/bin/wifi_configurator"
 PASSWORD_SALT="CBOX2018"
+<<<<<<< HEAD
 UI_CONFIG="/var/www/waypoint/waypoint_default/config/default.json"
+=======
+UI_CONFIG="/var/www/connectbox/connectbox_default/config/default.json"
+>>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
 INTERNAL_MEDIA_LOCATION ="/media/usb0"
 EXTERNAL_MEDIA_LOCATION ="/dev/sda1 /dev/sdb1"
 CLNT_NM = $CLIENT_NAME

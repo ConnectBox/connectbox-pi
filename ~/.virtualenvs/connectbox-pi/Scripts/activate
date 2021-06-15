@@ -37,7 +37,11 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
+<<<<<<< HEAD
 VIRTUAL_ENV="C:\Users\kirkw\Documents\GitHub\MV-WayPoint\connectbox-pi\~\.virtualenvs\waypoint-pi"
+=======
+VIRTUAL_ENV="C:\Users\kirkw\Documents\GitHub\connectbox-pi\~\.virtualenvs\connectbox-pi"
+>>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"
@@ -54,8 +58,13 @@ fi
 
 if [ -z "${VIRTUAL_ENV_DISABLE_PROMPT:-}" ] ; then
     _OLD_VIRTUAL_PS1="${PS1:-}"
+<<<<<<< HEAD
     if [ "x(waypoint-pi) " != x ] ; then
 	PS1="(waypoint-pi) ${PS1:-}"
+=======
+    if [ "x(connectbox-pi) " != x ] ; then
+	PS1="(connectbox-pi) ${PS1:-}"
+>>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
     else
     if [ "`basename \"$VIRTUAL_ENV\"`" = "__" ] ; then
         # special case for Aspen magic directories
