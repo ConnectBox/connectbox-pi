@@ -1,5 +1,5 @@
 ---
-connectbox_os: raspbian
+waypoint_os: raspbian
 ansible_user: root
 
 client_facing_if: "wlan1"

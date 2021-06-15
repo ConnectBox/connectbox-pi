@@ -8,8 +8,8 @@
     msg: Queing up wlan changes.
   changed_when: True
   notify:
-    - update ConnectBoxManage.sh
+    - update WayPointBoxManage.sh
     - update cli.py
-  when: connectbox_os == "raspbian"
+  when: waypoint_os == "raspbian"
 
 

@@ -1,16 +1,16 @@
 ---
 - name: Get rt8812au wifi driver
   get_url:
-    url: https://github.com/ConnectBox/connectbox-pi/blob/master/ansible/8812au.ko
+    url: https://github.com/kirkdwilson/MV-WayPoint/connectbox-pi/blob/master/ansible/8812au.ko
     dest: /tmp/8812au.ko
-  when: connectbox_os == "raspbian" 
+  when: waypoint_os == "raspbian" 
 
 - name: Create /lib/modules/5.10.11... directory
   file:
     dest: /lib/modules/5.10.11-v7l+/kernel/drivers/net/wireless/
     mode: 644
     state: directory
-  when: connectbox_os == "raspbian" 
+  when: waypoint_os == "raspbian" 
 
 - name: Install rt8812au wifi driver
   command: >
@@ -18,12 +18,12 @@
     /tmp/8812au.ko 
     /lib/modules/5.10.11-v7l+/kernel/drivers/net/wireless/
   become: yes
-  when: connectbox_os == "raspbian" 
+  when: waypoint_os == "raspbian" 
 
 - name: Create rt8812au dependency file
   command: /sbin/depmod -a 5.10.11-v7l+
   become: yes
-  when: connectbox_os == "raspbian" 
+  when: waypoint_os == "raspbian" 
 
   
 - name: Install hostapd
@@ -55,7 +55,7 @@
   pip:
     virtualenv: "{{ wifi_configurator_virtualenv_dir }}"
     virtualenv_python: python3
-    name: git+https://github.com/ConnectBox/wifi-configurator.git
+    name: git+https://github.com/kirkdwilson/MV-WayPoint/wifi-configurator.git
 
 - name: Populate /etc/default/crda with regulatory domain override
   template:

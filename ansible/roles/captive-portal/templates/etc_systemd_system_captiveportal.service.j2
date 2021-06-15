@@ -7,7 +7,7 @@ PIDFile={{ captiveportal_pid_file }}
 User={{ captiveportal_user }}
 Group={{ captiveportal_group }}
 RuntimeDirectory=captiveportal
-WorkingDirectory={{ connectbox_log_dir }}
+WorkingDirectory={{ waypoint_log_dir }}
 Environment='GUNICORN_CMD_ARGS="--capture-output True"'
 ExecStart={{ captiveportal_virtualenv_dir }}/bin/gunicorn \
           --log-file - \

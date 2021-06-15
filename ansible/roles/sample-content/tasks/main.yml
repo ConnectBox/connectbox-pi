@@ -3,27 +3,27 @@
   - name: Checkout sample content
     git:
       repo: https://github.com/ConnectBox/connectbox-sample-content.git
-      dest: /tmp/connectbox-sample-content
+      dest: /tmp/waypoint-sample-content
       depth: 1
       update: no
 
   - name: Place sample content at USB drive location
-    command: rsync -a /tmp/connectbox-sample-content/content/ {{ connectbox_usb_files_root }}
+    command: rsync -a /tmp/waypoint-sample-content/content/ {{ waypoint_usb_files_root }}
 
   - name: Create throughput-test directory
     file:
-      dest: "{{ connectbox_usb_files_root }}/throughput-test"
+      dest: "{{ waypoint_usb_files_root }}/throughput-test"
       state: directory
 
   - name: Create 10MB throughput-test file
-    command: "dd if=/dev/urandom of={{ connectbox_usb_files_root }}/throughput-test/10MB.bin bs=1M count=10"
+    command: "dd if=/dev/urandom of={{ waypoint_usb_files_root }}/throughput-test/10MB.bin bs=1M count=10"
     args:
-      creates: "{{ connectbox_usb_files_root }}/throughput-test/10MB.bin"
+      creates: "{{ waypoint_usb_files_root }}/throughput-test/10MB.bin"
 
   - name: Create 100MB throughput-test file
-    command: "dd if=/dev/urandom of={{ connectbox_usb_files_root }}/throughput-test/100MB.bin bs=1M count=100"
+    command: "dd if=/dev/urandom of={{ waypoint_usb_files_root }}/throughput-test/100MB.bin bs=1M count=100"
     args:
-      creates: "{{ connectbox_usb_files_root }}/throughput-test/100MB.bin"
+      creates: "{{ waypoint_usb_files_root }}/throughput-test/100MB.bin"
 
   when: deploy_sample_content == True
 
@@ -31,33 +31,33 @@
   - name: Create instructions in web root if USB stick not mounted
     copy:
       src: ../../../../docs/administration.md
-      dest: "{{ connectbox_usb_files_root }}/README.txt"
+      dest: "{{ waypoint_usb_files_root }}/README.txt"
 
   - name: Insert context into instructions
     blockinfile:
-      name: "{{ connectbox_usb_files_root }}/README.txt"
+      name: "{{ waypoint_usb_files_root }}/README.txt"
       insertbefore: BOF
       marker: "---"
       block: |
         This file will be hidden when a USB stick is inserted.
-        The original of this file can be found at https://github.com/ConnectBox/connectbox-pi/blob/master/docs/administration.md
+        The original of this file can be found at https://github.com/kirkdwilson/MV-WayPoint/Doc/administration.md
 
-  when: ("'/media/usb0' not in ansible_mounts|map(attribute='mount')") and (connectbox_os != "raspbian")
+  when: ("'/media/usb0' not in ansible_mounts|map(attribute='mount')") and (waypoint_os != "raspbian")
 
 
 - block:
   - name: Create instructions in web root for RPi based CB
     copy:
       src: ../../../../docs/administration_rpi.md
-      dest: "{{ connectbox_usb_files_root }}/README.txt"
+      dest: "{{ waypoint_usb_files_root }}/README.txt"
 
   - name: Insert context into rpi instructions
     blockinfile:
-      name: "{{ connectbox_usb_files_root }}/README.txt"
+      name: "{{ waypoint_usb_files_root }}/README.txt"
       insertbefore: BOF
       marker: "---"
       block: |
-        The original of this file can be found at https://github.com/ConnectBox/connectbox-pi/blob/master/docs/administration_rpi.md
+        The original of this file can be found at https://github.com/kirkdwilson/MV-WayPoint/docs/administration_rpi.md
 
-  when: connectbox_os == "raspbian"
+  when: waypoint_os == "raspbian"
 

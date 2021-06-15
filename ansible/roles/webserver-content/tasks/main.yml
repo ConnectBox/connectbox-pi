@@ -7,22 +7,22 @@
     group: www-data
     mode: 0775
   with_items:
-    - "{{ connectbox_default_content_root }}"
-    - "{{ connectbox_app_root }}"
+    - "{{ waypoint_default_content_root }}"
+    - "{{ waypoint_app_root }}"
 
-- name: retrieve connectbox-client-repo
+- name: retrieve waypoint-client-repo
   git:
-    repo: "{{ connectbox_client_repo }}"
-    dest: /tmp/connectbox_client
+    repo: "{{ waypoint_client_repo }}"
+    dest: /tmp/waypoint_client
 
-- name: Copy external connectbox client interface
-  command: cp -r . "{{ connectbox_default_content_root }}"
+- name: Copy external waypoint client interface
+  command: cp -r . "{{ waypoint_default_content_root }}"
   args:
-    chdir: /tmp/connectbox_client/{{ connectbox_client_path }}
+    chdir: /tmp/waypoint_client/{{ waypoint_client_path }}
 
-- name: fix ownership of connectbox_web_root
+- name: fix ownership of waypoint_web_root
   file:
-    path: "{{ connectbox_web_root }}"
+    path: "{{ waypoint_web_root }}"
     state: directory
     owner: www-data
     group: www-data
@@ -30,27 +30,20 @@
 
 # The chat and admin backend
 # (looping deprecated in 2.11)
-- name: Install packages for connectbox server process
+- name: Install packages for waypoint server process
   pip:
-    virtualenv: "{{ connectbox_web_root }}/connectbox_virtualenv"  # XXX Could do better?
+    virtualenv: "{{ waypoint_web_root }}/waypoint_virtualenv"  # XXX Could do better?
     virtualenv_python: python3
-#    name: "{{ item }}"
-    name: ['flask', 'ua-parser', 'gunicorn', 'requests', 'six', 'sqlalchemy']
-#  with_items:
-#    - flask
-#    - ua-parser
-#    - gunicorn
-#    - requests
-#    - six
-#    - sqlalchemy
+    name: ['flask>=1.0.0', 'ua-parser==0.10.0', 'gunicorn==20.1.0', 'requests==2.25.1', 'six==1.11.0', 'sqlalchemy==1.3.0']
+    state: latest   
   tags:
     - captive_portal
 
 # Copy client interface files
-- name: Copy connectbox client interface
+- name: Copy waypoint client interface
   synchronize:
     src: ../python/
-    dest: "{{ connectbox_app_root }}"
+    dest: "{{ waypoint_app_root }}"
   tags:
     - captive_portal
   notify:

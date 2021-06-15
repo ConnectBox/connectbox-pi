@@ -34,13 +34,14 @@
   when: resize2fs_reboot.stat.exists == True
 
 # Disable automated apt-y things before attempting to install packages
-# unattended-upgrades and apt.systemd.daily only run on Ubuntu
+# unattended-upgrades and apt.systemd.daily only run on Ubuntu and raspian
 - name: Stop automated apty services
   service:
     name: "{{ item }}"
     state: stopped
     enabled: no
   with_items: "{{ apty_services }}"
+  when: waypoint_os != "debian"
 
 # Needs to happen before the initial reboot, given the job triggers actions
 #  on @reboot
@@ -48,7 +49,7 @@
   file:
     path: /etc/cron.d/armbian-updates
     state: absent
-  when: connectbox_os == "armbian"
+  when: waypoint_os == "armbian"
 
 # The system takes 5-10 seconds to disappear from the network
 #  so let's wait 15 seconds before doing our first check
@@ -64,35 +65,35 @@
   register: rfkill0_state
   ignore_errors: yes
   changed_when: False
-  when: connectbox_os == "raspbian"
+  when: waypoint_os == "raspbian"
 
 # Raspbian-lite buster and onwards rfkill wlan0 by default, which causes
 #  problems when we try to start wlan0 (at hostapd reload)
 # This change persists across reboots, so it's safe to do here.
 - name: Unblock rfkill'ed interface 0 (wireless LAN) on Raspbian
   command: /usr/sbin/rfkill unblock 0
-  when: "connectbox_os == 'raspbian' and '0' not in rfkill0_state.stdout"
+  when: "waypoint_os == 'raspbian' and '0' not in rfkill0_state.stdout"
 
 - name: Get current rfkill state for interface 1 (wireless LAN) on Raspbian
   command: cat /sys/class/rfkill/rfkill1/soft
   register: rfkill1_state
   ignore_errors: yes
   changed_when: False
-  when: connectbox_os == "raspbian"
+  when: waypoint_os == "raspbian"
 
 # Raspbian-lite buster and onwards rfkill wlan1 by default, which causes
 #  problems when we try to start wlan1 (at hostapd reload)
 # This change persists across reboots, so it's safe to do here.
 - name: Unblock rfkill'ed interface 1 (wireless LAN) on Raspbian
   command: /usr/sbin/rfkill unblock 1
-  when: "connectbox_os == 'raspbian' and '0' not in rfkill1_state.stdout"
+  when: "waypoint_os == 'raspbian' and '0' not in rfkill1_state.stdout"
 
 - name: Set default locale
   lineinfile:
     path=/etc/default/locale
     state=present
     line="LC_ALL=en_US.UTF-8"
-  when: connectbox_os == "armbian"
+  when: waypoint_os == "armbian"
 
 # Needed for package upgrades via ansible (aptitude safe-upgrade)
 - name: Install aptitude
@@ -105,7 +106,7 @@
   apt:
     name: iptables
     state: present
-  when: connectbox_os == "armbian"
+  when: waypoint_os == "armbian"
 
 # Only repopulate daily so we don't slow runs down unnecessarily
 - name: Populate apt cache
@@ -127,7 +128,7 @@
 #  whether this task would do anything i.e. using aptitude search ~ahold
 - name: Pin kernel and dtb packages
   command: "aptitude -q hold linux-dtb-next-sunxi linux-image-next-sunxi linux-u-boot-nanopineo-next linux-stretch-root-next-nanopineo"
-  when: connectbox_os == "armbian" and "sunxi" in ansible_kernel
+  when: waypoint_os == "armbian" and "sunxi" in ansible_kernel
 
 # If we ever allow updates of the linux-...-root device package, this will
 #  need to move into a service or some other method (noting the package
@@ -140,7 +141,7 @@
     path: /etc/default/cpufrequtils
     regexp: '^GOVERNOR='
     line: 'GOVERNOR=conservative'
-  when: connectbox_os == "armbian"
+  when: waypoint_os == "armbian"
 
 # Needed by Debian Stretch
 - name: Install openresolv

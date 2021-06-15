@@ -1,7 +1,7 @@
 ---
 - name: Create mount point for first USB drive
   file:
-    path: "{{ connectbox_usb_files_root }}"
+    path: "{{ waypoint_usb_files_root }}"
     state: directory
     owner: root
     group: root

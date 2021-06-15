@@ -18,7 +18,7 @@
 #    - vim-tiny
 #    - console-setup-mini
 
-# Purge everything we don't actually need to run the ConnectBox
+# Purge everything we don't actually need to run the WayPoint
 # This includes some of the packages that we needed for the
 #  ansible run, but won't need later (ex: git). This saves
 #  a significant amount of space in the actual images.
@@ -112,7 +112,7 @@
 #    - vim-runtime
 #    - wget
 
-# Don't run on raspbian until https://github.com/ConnectBox/connectbox-pi/issues/276 is fixed
+# Don't run on raspbian until https://github.com/kirkdwilson/MV-WayPoint/connectbox-pi/issues/276 is fixed
 - name: Purge other packages
   apt:
 # (looping deprecated in 2.11)
@@ -188,7 +188,7 @@
 #    - toilet
 #    - toilet-fonts
 #    - xkb-data
-  when: connectbox_os != "raspbian"
+  when: waypoint_os != "raspbian"
 
 - name: Purge aptitude
   apt:
@@ -212,11 +212,11 @@
   service:
     name: armbian-resize-filesystem
     enabled: yes
-  when: connectbox_os == "armbian"
+  when: waypoint_os == "armbian"
 
 - name: Schedule a resize of the root partition after the next boot (Raspbian)
   command: /usr/bin/raspi-config --expand-rootfs
-  when: connectbox_os == "raspbian"
+  when: waypoint_os == "raspbian"
 
 - name: Schedule Final Handlers
   assert:

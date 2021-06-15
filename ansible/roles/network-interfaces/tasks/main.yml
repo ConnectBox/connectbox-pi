@@ -24,7 +24,7 @@
     owner: root
     group: root
     mode: 0644
-  when: connectbox_os != "raspbian"
+  when: waypoint_os != "raspbian"
   register: etc_network_interfaces
 
 - name: Configure network interfaces RPi
@@ -34,7 +34,7 @@
     owner: root
     group: root
     mode: 0644
-  when: connectbox_os == "raspbian"
+  when: waypoint_os == "raspbian"
   register: etc_network_interfaces
 
 # Note: this is not a handler because we need the network configuration in

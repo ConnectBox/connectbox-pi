@@ -10,7 +10,7 @@
     state: absent
 
 # Remove old geerlingguy.nginx vhosts configuration
-# This task can be removed once we have transitioned all our connectbox
+# This task can be removed once we have transitioned all our waypoint
 # instances to this multi-vhost definition arrangement
 - name: Remove old-style nginx vhost definition
   file:
@@ -51,7 +51,7 @@
 - name: Create nginx active vhost symlink for selected interface
   file:
     src: "{{ nginx_available_vhosts_path }}/{{ interface_type_files[interface_type] }}"
-    dest: "{{ nginx_enabled_vhosts_path }}/connectbox_interface.conf"
+    dest: "{{ nginx_enabled_vhosts_path }}/waypoint_interface.conf"
     state: link
     force: yes
   notify: restart nginx

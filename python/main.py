@@ -17,7 +17,7 @@ if locale.getlocale()[1] != "UTF-8":
 
 config_parser = configparser.ConfigParser()
 config_parser.readfp(open('%s/defaults.cfg' % os.path.dirname(os.path.abspath(__file__))))
-config_parser.read(['/usr/local/connectbox/etc/connectbox.conf'])
+config_parser.read(['/usr/local/waypoint/etc/waypoint.conf'])
 
 DATABASE_DIRECTORY = config_parser.get('main', 'DATABASE_DIRECTORY')
 

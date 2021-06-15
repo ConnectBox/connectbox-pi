@@ -35,7 +35,7 @@
   pip:
     virtualenv: "{{ hat_service_virtualenv_dir }}"
     virtualenv_python: python3
-    name: git+https://github.com/ConnectBox/NEO_BatteryLevelShutdown.git
+    name: git+https://github.com/kirkdwilson/MV-WayPoint/NEO_BatteryLevelShutdown.git
   environment:
     MAX_CONCURRENCY: 1
 

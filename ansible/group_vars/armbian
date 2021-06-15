@@ -1,5 +1,5 @@
 ---
-connectbox_os: armbian
+waypoint_os: armbian
 ansible_user: root
 apty_services:
   - unattended-upgrades

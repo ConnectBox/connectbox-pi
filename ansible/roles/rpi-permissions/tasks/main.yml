@@ -2,17 +2,17 @@
 # This sets up permissions on certain folders in RPi so that any required
 #  wifi edits can be done at the Home Screen rather than via terminal
 
-# The usb0 directory is where content will be stored for ConnectBox
+# The usb0 directory is where content will be stored for waypoint
 #  so this allows drag / drop of content to that folder
 - name: Changing permissions of "/media/usb0", adding a+w
   file: dest=/media/usb0 mode=a+w
-  when: connectbox_os == "raspbian"
+  when: waypoint_os == "raspbian"
 
 # The interfaces folder is where we make changes to enable wlan0 (internal) to be
 #  used for internet access and wlan1 (external) to be used for CB traffic
 - name: Changing permissions of "/etc/network/interfaces", adding a+w
   file: dest=/etc/network/interfaces mode=a+w
-  when: connectbox_os == "raspbian"
+  when: waypoint_os == "raspbian"
 
 
 

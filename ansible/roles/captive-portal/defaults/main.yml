@@ -1,7 +1,7 @@
 ---
-captiveportal_virtualenv_dir: "/usr/local/connectbox/captive_portal_venv"
+captiveportal_virtualenv_dir: "/usr/local/waypoint/captive_portal_venv"
 captiveportal_run_directory: "/run/captiveportal"
 captiveportal_pid_file: "{{ captiveportal_run_directory }}/pid"
-captiveportal_user: _connectbox
-captiveportal_group: _connectbox
+captiveportal_user: _waypoint
+captiveportal_group: _waypoint
 captiveportal_log_level: "error"

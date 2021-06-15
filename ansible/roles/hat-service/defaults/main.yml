@@ -1,2 +1,2 @@
 ---
-hat_service_virtualenv_dir: /usr/local/connectbox/battery_tool_venv
+hat_service_virtualenv_dir: /usr/local/waypoint/battery_tool_venv

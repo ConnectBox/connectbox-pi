@@ -11,9 +11,9 @@ TEST_IP_ENV_VAR = "TEST_IP"
 
 # Default creds. Will need a way to override these when it changes
 ADMIN_USER = "admin"
-ADMIN_PASSWORD = "connectbox"
+ADMIN_PASSWORD = "waypoint"
 # Text in the welcome template
-WELCOME_TEMPLATE_TEXT_SAMPLE = "<TITLE>Connected to ConnectBox Wifi</TITLE>"
+WELCOME_TEMPLATE_TEXT_SAMPLE = "<TITLE>Connected to WayPoint Wifi</TITLE>"
 
 
 def getTestTarget():
@@ -26,20 +26,20 @@ def getTestTarget():
 
 
 def getTestBaseURL():
-    """Gets the ConnectBox base URL, solely from the IP address """
+    """Gets the waypoint base URL, solely from the IP address """
 
-    # bounce through the 302, and retrieve the base connectbox page
+    # bounce through the 302, and retrieve the base waypoint page
     # We use the special "go" vhost as a host header, because this
     #  means we don't have to control DNS on the machine running
     #  these tests, and we don't need to expose a route in the CP
-    #  flask App that gets us the base connectbox page
+    #  flask App that gets us the base waypoint page
     r = requests.get(
         "http://%s/" % (getTestTarget(),),
         headers = {"Host": "wi.fi"},
         allow_redirects=False
     )
     r.raise_for_status()
-    # and this is the ConnectBox base URL that we want
+    # and this is the waypoint base URL that we want
     return r.headers["Location"]
 
 
@@ -51,13 +51,13 @@ def getAdminAuth():
     return requests.auth.HTTPBasicAuth(ADMIN_USER, ADMIN_PASSWORD)
 
 
-class ConnectBoxDNSTestCase(unittest.TestCase):
+class waypointDNSTestCase(unittest.TestCase):
     """Behavioural tests for the dnsmasq server"""
 
     def setUp(self):
         """Simulate first connection
 
-        Make sure the ConnectBox doesn't think the client has connected
+        Make sure the waypoint doesn't think the client has connected
         before, so we can test captive portal behaviour
         """
         self.resolver = dns.resolver.Resolver()
@@ -90,19 +90,19 @@ class ConnectBoxDNSTestCase(unittest.TestCase):
         self.assertEqual(str(reply.rrset.items[0]), '172.217.3.174')
 
 
-class ConnectBoxCaptivePortalIntegration(unittest.TestCase):
+class waypointCaptivePortalIntegration(unittest.TestCase):
     """
-    Tests to demonstrate basic captive portal and connectbox integration
+    Tests to demonstrate basic captive portal and waypoint integration
     """
 
     # Something that we will find in the CP welcome page
     CAPTIVE_PORTAL_SEARCH_TEXT = \
-        "<TITLE>Connected to ConnectBox Wifi</TITLE>"
+        "<TITLE>Connected to waypoint Wifi</TITLE>"
 
     def setUp(self):
         """Simulate first connection
 
-        Make sure the ConnectBox doesn't think the client has connected
+        Make sure the waypoint doesn't think the client has connected
         before, so we can test captive portal behaviour
         """
         r = requests.delete("http://%s/_authorised_clients" %
@@ -112,7 +112,7 @@ class ConnectBoxCaptivePortalIntegration(unittest.TestCase):
     def tearDown(self):
         """Leave system in a clean state
 
-        Make sure the ConnectBox won't think this client has connected
+        Make sure the waypoint won't think this client has connected
         before, regardless of whether the next connection is from a
         test, or from a normal browser or captive portal connection
         """
@@ -135,7 +135,7 @@ class ConnectBoxCaptivePortalIntegration(unittest.TestCase):
         self.assertIn(self.CAPTIVE_PORTAL_SEARCH_TEXT, r.text)
 
 
-class ConnectBoxBasicTestCase(unittest.TestCase):
+class waypointBasicTestCase(unittest.TestCase):
     def testContentResponseType(self):
         # URLs under content should return json
         r = requests.get("%s/content/" % (getTestBaseURL(),))
@@ -145,10 +145,10 @@ class ConnectBoxBasicTestCase(unittest.TestCase):
     def testTextInDocumentTitle(self):
         r = requests.get("%s/" % (getTestBaseURL(),))
         r.raise_for_status()
-        self.assertIn("<title>ConnectBox</title>", r.text)
+        self.assertIn("<title>WayPoint</title>", r.text)
 
 
-class ConnectBoxAPITestCase(unittest.TestCase):
+class waypointAPITestCase(unittest.TestCase):
 
     API_BASE_URL = "%s/api" % (getAdminBaseURL(),)
     ADMIN_SSID_URL = "%s/ssid" % API_BASE_URL
@@ -405,7 +405,7 @@ class ConnectBoxAPITestCase(unittest.TestCase):
             self.assertEqual(r.json()["code"], 0)
             self.assertEqual(r.json()["result"], self.SUCCESS_RESPONSE)
 
-class ConnectBoxChatTestCase(unittest.TestCase):
+class waypointChatTestCase(unittest.TestCase):
     CHAT_MESSAGES_URL = "%s/chat/messages" % (getTestBaseURL())
     CHAT_TEXT_DIRECTION_URL = "%s/chat/messages/textDirection" % (getTestBaseURL())
 

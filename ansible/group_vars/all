@@ -3,7 +3,7 @@
 #  put in as host_vars, the IP address of the device will be different
 #  for each deployment, so it's easier to put it here.
 
-connectbox_version: "{{ 'dev-%y%m%d' | strftime }}"
+waypoint_version: "{{ 'dev-%y%m%d' | strftime }}"
 
 # Parameterised to allow overriding during CI builds, where we want to
 #  test some client-facing capabilities but do not have a wifi interface
@@ -32,24 +32,24 @@ captiveportal_listen_port: 5001
 # In situations where there are multiple wired ethernet interfaces, this is
 #  not necessarily the same interface as the one used for SSH.
 lan_dns_if: eth0
-wifi_configurator_virtualenv_dir: /usr/local/connectbox/wifi_configurator_venv
+wifi_configurator_virtualenv_dir: /usr/local/waypoint/wifi_configurator_venv
 
-connectbox_web_root: /var/www/connectbox
-connectbox_default_content_root: "{{ connectbox_web_root }}/connectbox_default"
-connectbox_admin_root: "{{ connectbox_web_root }}/admin"
-connectbox_app_root: "{{ connectbox_web_root }}/app"
-connectbox_virtualenv: "{{ connectbox_web_root }}/connectbox_virtualenv"
-connectbox_config_root: /etc/connectbox
-connectbox_usb_files_root: /media/usb0
-connectbox_admin_credentials: admin:$apr1$CBOX2018$RlXBoHRRoiG3vMC7PS07q.
-connectbox_default_hostname: connectbox
-connectbox_log_dir: /var/log/connectbox
-connectbox_access_log: "{{ connectbox_log_dir }}/connectbox-access.log"
-connectbox_error_log:  "{{ connectbox_log_dir }}/connectbox-error.log"
+waypoint_web_root: /var/www/waypoint
+waypoint_default_content_root: "{{ waypoint_web_root }}/waypoint_default"
+waypoint_admin_root: "{{ waypoint_web_root }}/admin"
+waypoint_app_root: "{{ waypoint_web_root }}/app"
+waypoint_virtualenv: "{{ waypoint_web_root }}/waypoint_virtualenv"
+waypoint_config_root: /etc/waypoint
+waypoint_usb_files_root: /media/usb0
+waypoint_admin_credentials: admin:$apr1$CBOX2018$RlXBoHRRoiG3vMC7PS07q.
+waypoint_default_hostname: waypoint
+waypoint_log_dir: /var/log/waypoint
+waypoint_access_log: "{{ waypoint_log_dir }}/waypoint-access.log"
+waypoint_error_log:  "{{ waypoint_log_dir }}/waypoint-error.log"
 
-access_log_analyzer_repo: https://github.com/ConnectBox/access-log-analyzer.git
-connectbox_client_repo: https://github.com/ConnectBox/connectbox-react-icon-client.git
-connectbox_client_path: published/
+access_log_analyzer_repo: https://github.com/waypoint/access-log-analyzer.git
+waypoint_client_repo: https://github.com/waypoint/waypoint-react-icon-client.git
+waypoint_client_path: published/
 
 nginx_admin_block: |
       location /admin/api {
@@ -61,8 +61,8 @@ nginx_admin_block: |
         expires -1;
       }
 
-      location /__connectbox_assets__ {
-        alias {{ connectbox_default_content_root }};
+      location /__waypoint_assets__ {
+        alias {{ waypoint_default_content_root }};
         location ~ \.json$ {
           expires -1;
         }
