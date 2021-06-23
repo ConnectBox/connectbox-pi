@@ -1,39 +1,47 @@
 #!/bin/bash
 # ------------------------------------------------------------------
 <<<<<<< HEAD
+<<<<<<< HEAD
 # [Kelly Davis] waypointManage.sh
-#               Script for configuring the waypoint
+#               Script for configuring the connectbox
 =======
 # [Kelly Davis] ConnectBoxManage.sh
 #               Script for configuring the ConnectBox
 >>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
-# [Kirk Wilson] Modifications for file management
+
 # ------------------------------------------------------------------
 
 VERSION=0.1.1
 <<<<<<< HEAD
-SUBJECT=waypoint_control_ssid_script
-USAGE="Usage: WaypointManage.sh -dhv [get|set|check] [ssid|channel|hostname|staticsite|password|ui-config|wpa-passphrase|media|wificlient] <value>"
+SUBJECT=connetbox_control_ssid_script
+USAGE="Usage: ConnectBoxManage.sh -dhv [get|set|check] [ssid|channel|hostname|staticsite|password|ui-config|wpa-passphrase] <value>"
 =======
 SUBJECT=connectbox_control_ssid_script
 USAGE="Usage: ConnectBoxManage.sh -dhv [get|set|check] [ssid|channel|hostname|staticsite|password|ui-config|wpa-passphrase|media|wificlient] <value>"
 >>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
+=======
+# [Kelly Davis] ConnectBoxManage.sh
+#               Script for configuring the ConnectBox
+# ------------------------------------------------------------------
+
+VERSION=0.1.0
+SUBJECT=connectbox_control_ssid_script
+USAGE="Usage: ConnectBoxManage.sh -dhv [get|set|check] [ssid|channel|hostname|staticsite|password|ui-config|wpa-passphrase] <value>"
+>>>>>>> parent of ef37285 (MV-Waypoint)
 HOSTAPD_CONFIG="/etc/hostapd/hostapd.conf"
 HOSTNAME_CONFIG="/etc/hostname"
 HOSTS_CONFIG="/etc/hosts"
 NGINX_CONFIG="/etc/nginx/sites-enabled/vhosts.conf"
-PASSWORD_CONFIG="/usr/local/waypoint/etc/basicauth"
-WIFI_CONFIGURATOR="/usr/local/waypoint/wifi_configurator_venv/bin/wifi_configurator"
+PASSWORD_CONFIG="/usr/local/connectbox/etc/basicauth"
+WIFI_CONFIGURATOR="/usr/local/connectbox/wifi_configurator_venv/bin/wifi_configurator"
 PASSWORD_SALT="CBOX2018"
 <<<<<<< HEAD
-UI_CONFIG="/var/www/waypoint/waypoint_default/config/default.json"
+<<<<<<< HEAD
+UI_CONFIG="/var/www/connectbox/connectbox_default/config/default.json"
 =======
 UI_CONFIG="/var/www/connectbox/connectbox_default/config/default.json"
 >>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
-INTERNAL_MEDIA_LOCATION ="/media/usb0"
-EXTERNAL_MEDIA_LOCATION ="/dev/sda1 /dev/sdb1"
-CLNT_NM = $CLIENT_NAME
-CLNT_PSSWD = $CLIENT_PASSWORD
+
 DEBUG=0
 SUCCESS="SUCCESS"
 FAILURE="Unexpected Error"
@@ -287,7 +295,7 @@ function backup_password_config () {
       failure
     fi
 
-    chown _waypoint:_waypoint $PASSWORD_CONFIG.original 2>&1 | logger -t $(basename $0)
+    chown _connectbox:_connectbox $PASSWORD_CONFIG.original 2>&1 | logger -t $(basename $0)
 
     if [ ${PIPESTATUS[0]} -ne 0 ]
     then
@@ -459,8 +467,8 @@ function set_password () {
 }
 
 function get_staticsite () {
-  symlink=`readlink /etc/nginx/sites-enabled/waypoint_interface.conf`
-  if [[ "$symlink" == *waypoint_static-site.conf ]]; then
+  symlink=`readlink /etc/nginx/sites-enabled/connectbox_interface.conf`
+  if [[ "$symlink" == *connectbox_static-site.conf ]]; then
     echo "true"
   else
     echo "false"
@@ -473,13 +481,13 @@ function set_staticsite () {
     exit 1;
   fi
 
-  symlink="/etc/nginx/sites-enabled/waypoint_interface.conf"
-  rm /etc/nginx/sites-enabled/waypoint_interface.conf 2>&1 | logger -t $(basename $0)
+  symlink="/etc/nginx/sites-enabled/connectbox_interface.conf"
+  rm /etc/nginx/sites-enabled/connectbox_interface.conf 2>&1 | logger -t $(basename $0)
   if [ ${PIPESTATUS[0]} -eq 0 ]
   then
-    conf="waypoint_icon-only.conf"
+    conf="connectbox_icon-only.conf"
     if [[ "$val" == "true" ]]; then
-      conf="waypoint_static-site.conf"
+      conf="connectbox_static-site.conf"
       if [ ! -f /media/usb0/index.html ]; then
         indexfile='<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
         <html lang="en">
@@ -488,8 +496,8 @@ function set_staticsite () {
           <title>Created Index.html File</title>
         </head>
         <body>
-            <h1>Welcome to your WayPoint!</h1>
-            <p>Your WayPoint is configured for running static webpages but you do not have an index.html page 
+            <h1>Welcome to your ConnectBox!</h1>
+            <p>Your ConnectBox is configured for running static webpages but you do not have an index.html page 
             on your storage device so we created this one for you. You can edit this page to make one.</p>
         </body>
         </html>'
@@ -681,32 +689,6 @@ function set_ssid () {
   fi
 }
 
-function set_media () {
-# do media copy and move functions from devices
-#***********
-#Copy media from internal memory to USB stick or delete files
-
-}
-
-function get_media () {
-# get media size and free space from devices
-#***********
-# copy media from USB stick to Internal memory or delect files on USB stick
-
-}
-
-function  set_wificlient () {
-# get the client access point name and password
-#***********
-
-}
-
-function get_wificlient () {
-# get the client access point name and password
-#**********
-
-}
-
 if [[ $# -lt 1 ]]; then
     usage
 fi
@@ -742,16 +724,7 @@ if [ "$action" = "get" ]; then
       get_wpa_passphrase
       exit 0;
       ;;
-	  
-	"media")
-	  get_media
-	  exit 0;
-	  ;;
-	  
-	"wificlient")
-	  get_wificlient
-	  exit 0;
-	  ;;
+
 
     *)
       usage
@@ -795,16 +768,6 @@ elif [ "$action" = "set" ]; then
       exit 0;
       ;;
 
-	"media")
-	  set_media
-	  exit 0;
-	  ;;
-	  
-	"wificlient")
-	  set_wificlient
-	  exit 0;
-	  ;;
-	  
     *)
       usage
       ;;
@@ -816,8 +779,6 @@ elif [ "$action" = "shutdown" ]; then
   doshutdown
 elif [ "$action" = "reboot" ]; then
   doreboot
-elif [ "$action" = "client" ]; then
-  client
 elif [ "$action" = "reset" ]; then
   reset
 elif [ "$action" = "check" ]; then
