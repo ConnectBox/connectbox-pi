@@ -9,7 +9,7 @@ if defined _OLD_CODEPAGE (
 )
 
 <<<<<<< HEAD
-set VIRTUAL_ENV=C:\Users\kirkw\Documents\GitHub\MV-WayPoint\connectbox-pi\~\.virtualenvs\waypoint-pi
+set VIRTUAL_ENV=C:\Users\kirkw\Documents\GitHub\connectbox\connectbox-pi\~\.virtualenvs\connectbox-pi
 =======
 set VIRTUAL_ENV=C:\Users\kirkw\Documents\GitHub\connectbox-pi\~\.virtualenvs\connectbox-pi
 >>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
@@ -21,7 +21,7 @@ if defined _OLD_VIRTUAL_PYTHONHOME set PYTHONHOME=%_OLD_VIRTUAL_PYTHONHOME%
 
 set _OLD_VIRTUAL_PROMPT=%PROMPT%
 <<<<<<< HEAD
-set PROMPT=(waypoint-pi) %PROMPT%
+set PROMPT=(connectbox-pi) %PROMPT%
 =======
 set PROMPT=(connectbox-pi) %PROMPT%
 >>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
