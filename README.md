@@ -1,20 +1,20 @@
 [![Build Status](https://travis-ci.org/ConnectBox/connectbox-pi.svg?branch=master)](https://travis-ci.org/ConnectBox/connectbox-pi)
 
-# MV-WayPoint
+# ConnectBox
 
-MV-WayPoint is a media sharing device based on small form factor computers including the Raspberry Pi 3, Raspberry Pi Zero W, NanoPi NEO, Orange Pi Zero and Pine64.
+ConnectBox is a media sharing device based on small form factor computers including the Raspberry Pi 3, Raspberry Pi Zero W, NanoPi NEO, Orange Pi Zero and Pine64.
 
-# Making a MV-WayPoint
+# Making a ConnectBox
 
 See [docs/deployment.md](docs/deployment.md)
 
-# WayPoint setup and administration
+# Connectbox setup and administration
 
 See [docs/administration.md](docs/administration.md)
 
-# Developing the MV-WayPoint Software
+# Developing the ConnectBox Software
 
 See [docs/development.md](docs/development.md)
 
 # MicroSD Card Images/Releases
-See [https://github.com/kirkdwilsonn/MV-WayPoint//connectbox-pi/releases/](https://github.com/kirkdwilsonn/MV-WayPoint//connectbox-pi/releases/)
+See [https://github.com/ConnectBox/connectbox-pi/releases/](https://github.com/ConnectBox/connectbox-pi/releases/)

@@ -1,7 +1,7 @@
-Host stretch.ci.waypoint.org
+Host stretch.ci.connectbox.org
         User admin
-        IdentityFile travis-ci-waypoint.pem
+        IdentityFile travis-ci-connectbox.pem
 
-Host ubuntu.ci.waypoint.org
+Host ubuntu.ci.connectbox.org
         User ubuntu
-        IdentityFile travis-ci-waypoint.pem
+        IdentityFile travis-ci-connectbox.pem

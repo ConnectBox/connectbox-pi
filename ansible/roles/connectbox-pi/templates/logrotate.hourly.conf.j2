@@ -1,4 +1,4 @@
-{{ waypoint_log_dir }}/*.log {
+{{ connectbox_log_dir }}/*.log {
         rotate 12
         missingok
         compress
@@ -14,6 +14,6 @@
         endscript
         postrotate
                 invoke-rc.d nginx rotate >/dev/null 2>&1
-                /usr/local/access-log-analyzer/bin/access-log-analyzer.sh --config /usr/local/access-log-analyzer/etc/access-log-analyzer.conf {{ waypoint_access_log }}.1
+                /usr/local/access-log-analyzer/bin/access-log-analyzer.sh --config /usr/local/access-log-analyzer/etc/access-log-analyzer.conf {{ connectbox_access_log }}.1
         endscript
 }

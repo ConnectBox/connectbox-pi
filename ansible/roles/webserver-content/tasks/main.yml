@@ -7,22 +7,22 @@
     group: www-data
     mode: 0775
   with_items:
-    - "{{ waypoint_default_content_root }}"
-    - "{{ waypoint_app_root }}"
+    - "{{ connectbox_default_content_root }}"
+    - "{{ connectbox_app_root }}"
 
-- name: retrieve waypoint-client-repo
+- name: retrieve connectbox-client-repo
   git:
-    repo: "{{ waypoint_client_repo }}"
-    dest: /tmp/waypoint_client
+    repo: "{{ connectbox_client_repo }}"
+    dest: /tmp/connectbox_client
 
-- name: Copy external waypoint client interface
-  command: cp -r . "{{ waypoint_default_content_root }}"
+- name: Copy external connectbox client interface
+  command: cp -r . "{{ connectbox_default_content_root }}"
   args:
-    chdir: /tmp/waypoint_client/{{ waypoint_client_path }}
+    chdir: /tmp/connectbox_client/{{ connectbox_client_path }}
 
-- name: fix ownership of waypoint_web_root
+- name: fix ownership of connectbox_web_root
   file:
-    path: "{{ waypoint_web_root }}"
+    path: "{{ connectbox_web_root }}"
     state: directory
     owner: www-data
     group: www-data
@@ -30,9 +30,9 @@
 
 # The chat and admin backend
 # (looping deprecated in 2.11)
-- name: Install packages for waypoint server process
+- name: Install packages for connectbox server process
   pip:
-    virtualenv: "{{ waypoint_web_root }}/waypoint_virtualenv"  # XXX Could do better?
+    virtualenv: "{{ connectbox_web_root }}/connectbox_virtualenv"  # XXX Could do better?
     virtualenv_python: python3
 #    name: "{{ item }}"
     name: ['flask', 'ua-parser', 'gunicorn', 'requests', 'six', 'sqlalchemy']
@@ -47,10 +47,10 @@
     - captive_portal
 
 # Copy client interface files
-- name: Copy waypoint client interface
+- name: Copy connectbox client interface
   synchronize:
     src: ../python/
-    dest: "{{ waypoint_app_root }}"
+    dest: "{{ connectbox_app_root }}"
   tags:
     - captive_portal
   notify:

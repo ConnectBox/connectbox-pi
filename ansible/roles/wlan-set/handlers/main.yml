@@ -5,15 +5,15 @@
 
 - name: update cli.py
   replace:
-    path: /usr/local/waypoint/wifi_configurator_venv/lib/python3.7/site-packages/wifi_configurator/cli.py
+    path: /usr/local/connectbox/wifi_configurator_venv/lib/python3.7/site-packages/wifi_configurator/cli.py
     regexp: 'wlan0'
     replace: '{{ client_facing_if }}'
-  when: waypoint_os == "raspbian"
+  when: connectbox_os == "raspbian"
 
-- name: update WayPointBoxManage.sh
+- name: update ConnectBoxManage.sh
   replace:
-    path: /usr/local/waypoint/bin/WayPointBoxManage.sh
+    path: /usr/local/connectbox/bin/ConnectBoxManage.sh
     regexp: 'wlan0'
     replace: '{{ client_facing_if }}'
-  when: waypoint_os == "raspbian"
+  when: connectbox_os == "raspbian"
 

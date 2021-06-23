@@ -12,8 +12,8 @@ server {
     listen *:80 default_server;
     server_name _;
     index index.html index.htm;
-    access_log {{ waypoint_log_dir }}/captive_portal-access.log;
-    error_log {{ waypoint_log_dir }}/captive_portal-error.log error;
+    access_log {{ connectbox_log_dir }}/captive_portal-access.log;
+    error_log {{ connectbox_log_dir }}/captive_portal-error.log error;
     rewrite_log on;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header Host $http_host;

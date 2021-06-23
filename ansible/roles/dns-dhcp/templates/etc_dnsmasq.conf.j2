@@ -24,7 +24,7 @@ no-resolv
 address=/{{ host }}/{{ non_private_captive_portal_ip }}
 {% endfor %}
 
-# Return the waypoint-pi address for all queries, unless they match dhcp
+# Return the connectbox-pi address for all queries, unless they match dhcp
 #  leases or are answered from /etc/hosts
 address=/#/{{ client_facing_if_ip_address }}
 

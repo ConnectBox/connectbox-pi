@@ -7,9 +7,9 @@ PIDFile=/run/gunicorn/pid
 User={{ gunicorn_user }}
 Group={{ gunicorn_group }}
 RuntimeDirectory=gunicorn
-WorkingDirectory={{ waypoint_app_root }}
+WorkingDirectory={{ connectbox_app_root }}
 Environment='GUNICORN_CMD_ARGS="--capture-output True"'
-ExecStart={{ waypoint_virtualenv }}/bin/gunicorn \
+ExecStart={{ connectbox_virtualenv }}/bin/gunicorn \
           --log-file - \
           --log-level {{ gunicorn_log_level }} \
           --pid {{ gunicorn_pid_file }}  \

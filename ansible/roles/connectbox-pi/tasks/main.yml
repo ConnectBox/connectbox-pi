@@ -1,104 +1,104 @@
 ---
 - name: Configure hostname
   hostname:
-    name: "{{ waypoint_default_hostname }}"
+    name: "{{ connectbox_default_hostname }}"
 
 - name: Add hosts entry
   blockinfile:
     dest: /etc/hosts
     block: |
-      127.0.0.1 {{ waypoint_default_hostname }}
+      127.0.0.1 {{ connectbox_default_hostname }}
 
-- name: Create waypoint version file
+- name: Create connectbox version file
   copy:
-    content: "{{ waypoint_version }}\n"
-    dest: /etc/waypoint-release
+    content: "{{ connectbox_version }}\n"
+    dest: /etc/connectbox-release
 
-- name: Create waypoint group
+- name: Create connectbox group
   group:
-    name: _waypoint
+    name: _connectbox
     system: yes
 
 # Not strictly necessary but can be used for testing
-- name: Create _waypoint user and to _waypoint group
+- name: Create _connectbox user and to _connectbox group
   user:
-    name: _waypoint
-    group: _waypoint
+    name: _connectbox
+    group: _connectbox
     system: yes
     createhome: no
 
 # TODO confirm this works as expected
-- name: Add www-data to _waypoint group
+- name: Add www-data to _connectbox group
   user:
     name: www-data
-    groups: _waypoint
+    groups: _connectbox
     append: yes
 
 - name: Make scripts directory
   file:
     state: directory
-    path: /usr/local/waypoint/bin
-    owner: _waypoint
-    group: _waypoint
+    path: /usr/local/connectbox/bin
+    owner: _connectbox
+    group: _connectbox
     recurse: yes
     mode: 0755
 
 - name: Make etc directory
   file:
     state: directory
-    path: /usr/local/waypoint/etc
-    owner: _waypoint
-    group: _waypoint
+    path: /usr/local/connectbox/etc
+    owner: _connectbox
+    group: _connectbox
     mode: 0755
 
 - name: Make logs directory
   file:
     state: directory
-    path: "{{ waypoint_log_dir }}"
-    owner: _waypoint
-    group: _waypoint
+    path: "{{ connectbox_log_dir }}"
+    owner: _connectbox
+    group: _connectbox
     recurse: yes
     mode: 0755
 
 - name: Make var directory
   file:
     state: directory
-    path: /usr/local/waypoint/var
-    owner: _waypoint
-    group: _waypoint
+    path: /usr/local/connectbox/var
+    owner: _connectbox
+    group: _connectbox
     mode: 0775
 
-- name: Copy waypoint scripts
+- name: Copy connectbox scripts
   copy:
     src: ../scripts/
-    dest: /usr/local/waypoint/bin/
-    owner: _waypoint
-    group: _waypoint
+    dest: /usr/local/connectbox/bin/
+    owner: _connectbox
+    group: _connectbox
     mode: 0755
 
-- name: Make waypoint config overrides
+- name: Make connectbox config overrides
   template:
-    src: waypoint.conf.j2
-    dest: /usr/local/waypoint/etc/waypoint.conf
+    src: connectbox.conf.j2
+    dest: /usr/local/connectbox/etc/connectbox.conf
     backup: yes
-    owner: _waypoint
-    group: _waypoint
+    owner: _connectbox
+    group: _connectbox
     mode: 0644
 
-- name: Copy waypoint basic auth credentials
+- name: Copy connectbox basic auth credentials
   copy:
-    content: "{{ waypoint_admin_credentials }}"
-    dest: /usr/local/waypoint/etc/basicauth
-    owner: _waypoint
-    group: _waypoint
+    content: "{{ connectbox_admin_credentials }}"
+    dest: /usr/local/connectbox/etc/basicauth
+    owner: _connectbox
+    group: _connectbox
     mode: 0660
 
-- name: allow waypoint group to execute waypoint scripts
+- name: allow connectbox group to execute connectbox scripts
   blockinfile:
     dest: /etc/sudoers
     validate: /usr/sbin/visudo --check --file="%s"
     block: |
-      %_waypoint ALL=(ALL) NOPASSWD: /usr/local/waypoint/bin/
+      %_connectbox ALL=(ALL) NOPASSWD: /usr/local/connectbox/bin/
 
 - name: expire chat messages
   cron:
@@ -114,16 +114,16 @@
   file:
     state: directory
     path: /usr/local/access-log-analyzer/etc
-    owner: _waypoint
-    group: _waypoint
+    owner: _connectbox
+    group: _connectbox
     mode: 0755
 
 - name: Make access-log-analyzer var directory
   file:
     state: directory
     path: /usr/local/access-log-analyzer/var
-    owner: _waypoint
-    group: _waypoint
+    owner: _connectbox
+    group: _connectbox
     mode: 0755
 
 - name: Make access-log-analyzer config overrides
@@ -131,8 +131,8 @@
     src: access-log-analyzer.conf.j2
     dest: /usr/local/access-log-analyzer/etc/access-log-analyzer.conf
     backup: yes
-    owner: _waypoint
-    group: _waypoint
+    owner: _connectbox
+    group: _connectbox
     mode: 0644
 
 - name: Make hourly logrotate config
@@ -144,7 +144,7 @@
     group: root
     mode: 0644
 
-- name: Configure hourly logrotate for waypoint access logrotate
+- name: Configure hourly logrotate for connectbox access logrotate
   copy:
     content: "#!/bin/sh\n/usr/sbin/logrotate /etc/logrotate.hourly.conf"
     dest: "/etc/cron.hourly/logrotate-hourly"

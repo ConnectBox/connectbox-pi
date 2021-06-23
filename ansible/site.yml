@@ -6,7 +6,7 @@
 #        ├─Raspbian
 #        └─Armbian
 #
-# (See also https://github.com/kirkdwilson/MV-WayPoint/connectbox-pi/wiki/Differentiating-platform-by-ansible-variables)
+# (See also https://github.com/ConnectBox/connectbox-pi/wiki/Differentiating-platform-by-ansible-variables)
 
 - hosts: all
   pre_tasks:

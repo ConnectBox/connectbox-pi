@@ -36,11 +36,11 @@ setup_and_verify_infra( ) {
 
 # Extract Encrypted ssh key
 cd $TRAVIS_BUILD_DIR;
-PEM_OUT=$TRAVIS_BUILD_DIR/ci/travis-ci-waypoint.pem;
+PEM_OUT=$TRAVIS_BUILD_DIR/ci/travis-ci-connectbox.pem;
 touch $PEM_OUT;
 chmod 600 $PEM_OUT;
 
-openssl aes-256-cbc -K $encrypted_6b05639713bb_key -iv $encrypted_6b05639713bb_iv -in ci/travis-ci-waypoint.pem.enc -d >> $PEM_OUT;
+openssl aes-256-cbc -K $encrypted_6b05639713bb_key -iv $encrypted_6b05639713bb_iv -in ci/travis-ci-connectbox.pem.enc -d >> $PEM_OUT;
 
 # Run CI build on AWS. This uses protected variables
 cd $TRAVIS_BUILD_DIR/ci;

@@ -8,7 +8,7 @@
   pip:
     virtualenv: "{{ captiveportal_virtualenv_dir }}"
     virtualenv_python: python3
-    name: git+https://github.com/kirkdwilson/MV-WayPoint/simple-offline-captive-portal.git
+    name: git+https://github.com/ConnectBox/simple-offline-captive-portal.git
   notify:
     - Restart captiveportal
 

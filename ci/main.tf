@@ -14,13 +14,13 @@ provider "aws" {
 #  is left here to make it easier to do the first run in a new region, or
 #  the first run after a complete cleanup or in a new account.
 #
-resource "aws_key_pair" "travis-ci-waypoint-20170126" {
-	key_name = "travis-ci-waypoint-20170126"
+resource "aws_key_pair" "travis-ci-connectbox-20170126" {
+	key_name = "travis-ci-connectbox-20170126"
 	public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCpGLG32t7stqIIU1MiRWMSpb4Cm3iOSJCX+G6BtOLu5RwpVR8/fE/w0ZlVpu3CWTtYRohqVUNGew8g9uSdt6aR/i1G3vmp2eyrfkV/R/ITt2rM4zzl8yGc5N5rlLzvem36Q1Z77UEZqXBqDnbZIH4tZw3IzKpk0RB2anGSzQ2NYn2gzW63KU4RcQY9Fg6A45qC5CFa6beF9l5epHB2AsO2N7x8aoPnmdRC/5Qej5kIxIgscZd4JHq8q3gpBYVVAucCp7Xmp3jiFLAvYAdVbTeIymDaWCvhAGTpweWod7Nu/sMUJ2l0IP9hVkd/ToapPOm3I1W+4rRjItbHK4BZsKYX"
 }
 
 data "aws_route53_zone" "selected" {
-  name         = "waypoint.org."
+  name         = "connectbox.org."
 }
 
 # resettest records are used in testFactoryReset method
@@ -29,7 +29,7 @@ resource "aws_route53_record" "stretch" {
   name    = "stretch.${var.ci-dns-prefix}.${data.aws_route53_zone.selected.name}"
   type    = "A"
   ttl     = "1"
-  records = ["${aws_instance.waypoint-stretch-server.public_ip}"]
+  records = ["${aws_instance.connectbox-stretch-server.public_ip}"]
 }
 
 resource "aws_route53_record" "resettest-stretch" {
@@ -37,7 +37,7 @@ resource "aws_route53_record" "resettest-stretch" {
   name    = "resettest-stretch.${var.ci-dns-prefix}.${data.aws_route53_zone.selected.name}"
   type    = "A"
   ttl     = "1"
-  records = ["${aws_instance.waypoint-stretch-server.public_ip}"]
+  records = ["${aws_instance.connectbox-stretch-server.public_ip}"]
 }
 
 resource "aws_route53_record" "ubuntu" {
@@ -45,14 +45,14 @@ resource "aws_route53_record" "ubuntu" {
   name    = "ubuntu.${var.ci-dns-prefix}.${data.aws_route53_zone.selected.name}"
   type    = "A"
   ttl     = "1"
-  records = ["${aws_instance.waypoint-ubuntu-server.public_ip}"]
+  records = ["${aws_instance.connectbox-ubuntu-server.public_ip}"]
 }
 resource "aws_route53_record" "resettest-ubuntu" {
   zone_id = "${data.aws_route53_zone.selected.zone_id}"
   name    = "resettest-ubuntu.${var.ci-dns-prefix}.${data.aws_route53_zone.selected.name}"
   type    = "A"
   ttl     = "1"
-  records = ["${aws_instance.waypoint-ubuntu-server.public_ip}"]
+  records = ["${aws_instance.connectbox-ubuntu-server.public_ip}"]
 }
 
 # Shared by all travis-ci jobs
@@ -60,7 +60,7 @@ resource "aws_vpc" "default" {
 	cidr_block = "${var.default_vpc_cidr}"
 	tags {
 		Name = "default-travis-ci-vpc"
-		project = "waypoint"
+		project = "connectbox"
 		lifecycle = "ci"
 		creator = "terraform"
 	}
@@ -71,7 +71,7 @@ resource "aws_internet_gateway" "default" {
 	vpc_id = "${aws_vpc.default.id}"
 	tags {
 		Name = "default-travis-ci-vpc-internet-gateway"
-		project = "waypoint"
+		project = "connectbox"
 		lifecycle = "ci"
 		creator = "terraform"
 	}
@@ -92,7 +92,7 @@ resource "aws_subnet" "default" {
 	map_public_ip_on_launch = true
 	tags {
 		Name = "default-travis-ci-vpc-subnet"
-		project = "waypoint"
+		project = "connectbox"
 		lifecycle = "ci"
 		creator = "terraform"
 	}
@@ -158,7 +158,7 @@ resource "aws_security_group" "default" {
 
 	tags {
 		Name = "travis-ci-default-sg"
-		project = "waypoint"
+		project = "connectbox"
 		lifecycle = "ci"
 		creator = "terraform"
 	}
@@ -171,7 +171,7 @@ resource "aws_subnet" "client-facing-subnet" {
 	availability_zone = "${lookup(var.preferred_az, var.region)}"
 	tags {
 		Name = "client-facing-subnet"
-		project = "waypoint"
+		project = "connectbox"
 		lifecycle = "ci"
 		creator = "terraform"
 	}
@@ -183,12 +183,12 @@ resource "aws_network_interface" "client-facing-stretch-server" {
 	#  so this is the lowest available
 	private_ips = ["${var.stretch_server_client_facing_ip}"]
 	attachment {
-		instance = "${aws_instance.waypoint-stretch-server.id}"
+		instance = "${aws_instance.connectbox-stretch-server.id}"
 		device_index = 1
 	}
 	tags {
-		Name = "client-facing interface for waypoint stretch server"
-		project = "waypoint"
+		Name = "client-facing interface for connectbox stretch server"
+		project = "connectbox"
 		lifecycle = "ci"
 		creator = "terraform"
 	}
@@ -200,40 +200,40 @@ resource "aws_network_interface" "client-facing-ubuntu-server" {
 	#  so this is the lowest available
 	private_ips = ["${var.ubuntu_server_client_facing_ip}"]
 	attachment {
-		instance = "${aws_instance.waypoint-ubuntu-server.id}"
+		instance = "${aws_instance.connectbox-ubuntu-server.id}"
 		device_index = 1
 	}
 	tags {
-		Name = "client-facing interface for waypoint ubuntu server"
-		project = "waypoint"
+		Name = "client-facing interface for connectbox ubuntu server"
+		project = "connectbox"
 		lifecycle = "ci"
 		creator = "terraform"
 	}
 }
 
-resource "aws_instance" "waypoint-stretch-server" {
+resource "aws_instance" "connectbox-stretch-server" {
 	ami = "${lookup(var.stretch_amis, var.region)}"
 	instance_type = "${var.instance_type}"
-	key_name = "travis-ci-waypoint-20170126"
+	key_name = "travis-ci-connectbox-20170126"
 	subnet_id = "${aws_subnet.default.id}"
 	vpc_security_group_ids = ["${aws_security_group.default.id}"]
 	tags {
-		Name = "waypoint-stretch-server"
-		project = "waypoint"
+		Name = "connectbox-stretch-server"
+		project = "connectbox"
 		lifecycle = "ci"
 		creator = "terraform"
 	}
 }
 
-resource "aws_instance" "waypoint-ubuntu-server" {
+resource "aws_instance" "connectbox-ubuntu-server" {
 	ami = "${lookup(var.ubuntu_amis, var.region)}"
 	instance_type = "${var.instance_type}"
-	key_name = "travis-ci-waypoint-20170126"
+	key_name = "travis-ci-connectbox-20170126"
 	subnet_id = "${aws_subnet.default.id}"
 	vpc_security_group_ids = ["${aws_security_group.default.id}"]
 	tags {
-		Name = "waypoint-ubuntu-server"
-		project = "waypoint"
+		Name = "connectbox-ubuntu-server"
+		project = "connectbox"
 		lifecycle = "ci"
 		creator = "terraform"
 	}

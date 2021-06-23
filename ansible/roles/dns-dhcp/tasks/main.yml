@@ -39,7 +39,7 @@
 - name: Add /etc/hosts entry for wifi interface
   lineinfile:
     dest: /etc/hosts
-    line: "{{ client_facing_if_ip_address }} {{ waypoint_default_hostname }}"
+    line: "{{ client_facing_if_ip_address }} {{ connectbox_default_hostname }}"
 
 # Install dnsmasq after the config files are in place.
 # Installation of dnsmasq starts the service, and if the config files aren't

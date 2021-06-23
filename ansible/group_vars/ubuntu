@@ -1,5 +1,5 @@
 ---
-waypoint_os: ubuntu
+connectbox_os: ubuntu
 apty_services:
   - unattended-upgrades
   - apt-daily

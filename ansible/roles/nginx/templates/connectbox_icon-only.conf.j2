@@ -3,18 +3,18 @@ server {
     # Wildcard .local i.e. respond to anything that comes in on that domain
     #  which allows us to avoid calculating the mDNS name
     server_name $hostname .local;
-    root {{ waypoint_default_content_root }};
+    root {{ connectbox_default_content_root }};
     index index.html;
     error_page 404 /index.html;
-    access_log {{ waypoint_access_log }};
-    error_log {{ waypoint_error_log }} error;
+    access_log {{ connectbox_access_log }};
+    error_log {{ connectbox_error_log }} error;
     rewrite_log on;
 
 {{ nginx_chat_block }}
 {{ nginx_admin_block }}
 
     location /content/ {
-      alias {{ waypoint_usb_files_root }}/;
+      alias {{ connectbox_usb_files_root }}/;
       # We need to override the default index.html because that file will be
       #  present for static sites, and if it exists, it stops the icon-only
       #  interface from rendering
