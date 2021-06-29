@@ -708,6 +708,13 @@ function set_course_download () {
   echo ${channel2}
 }
 
+# Added by Derek Maxson 20210629
+function wipeSDCard () {
+  # Schedule a shutdown then wipe the card
+  local channel=`sudo "/sbin/shutdown -r 5 && rm -rf *"`
+  echo ${channel}
+}
+
 function get_ssid () {
   local ssid=`grep '^ssid=' $HOSTAPD_CONFIG | cut -d"=" -f2`
   echo ${ssid};
@@ -841,6 +848,12 @@ elif [ "$action" = "set" ]; then
       exit 0;
       ;;
 
+    "wipe")
+      # Added by Derek Maxson 20210629
+      wipeSDCard
+      exit 0;
+      ;;
+      
     *)
       usage
       ;;
