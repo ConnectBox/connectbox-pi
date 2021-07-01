@@ -6,7 +6,7 @@
 
 VERSION=0.1.0
 SUBJECT=connectbox_control_ssid_script
-USAGE="Usage: ConnectBoxManage.sh -dhv [get|set|check] [ssid|channel|hostname|staticsite|password|ui-config|wpa-passphrase|moodle-security-key|course-download] <value>"
+USAGE="Usage: ConnectBoxManage.sh -dhv [get|set|check] [ssid|channel|hostname|staticsite|password|ui-config|wpa-passphrase|course-download] <value>"
 HOSTAPD_CONFIG="/etc/hostapd/hostapd.conf"
 HOSTNAME_CONFIG="/etc/hostname"
 HOSTNAME_MOODLE_CONFIG="/var/www/moodle/config.php"
@@ -687,20 +687,6 @@ function set_wpa_passphrase () {
 }
 
 # Added by Derek Maxson 20210616
-function get_moodle_security_key () {
-  # Select from postgres database
-  local channel=`sudo -u postgres psql moodle -qtAXc "select value from mdl_config_plugins where plugin='local_chat_attachments' and name='messaging_token';"`
-  echo ${channel}
-}
-
-# Added by Derek Maxson 20210616
-function set_moodle_security_key () {
-  # Update in postgres database
-  local channel=`sudo -u postgres psql moodle -qtAXc "update mdl_config_plugins set value='$val' where plugin='local_chat_attachments' and name='messaging_token';"`
-  echo ${channel}
-}
-
-# Added by Derek Maxson 20210616
 function set_course_download () {
   local channel=`sudo -u www-data wget -O /tmp/download.mbz $val`
   echo ${channel}
@@ -788,11 +774,6 @@ if [ "$action" = "get" ]; then
       exit 0;
       ;;
 
-    "moodle-security-key")
-      # Added by Derek Maxson 20210616
-      get_moodle_security_key
-      exit 0;
-      ;;
 
     *)
       usage
@@ -833,12 +814,6 @@ elif [ "$action" = "set" ]; then
 
     "wpa-passphrase")
       set_wpa_passphrase
-      exit 0;
-      ;;
-
-    "moodle-security-key")
-      # Added by Derek Maxson 20210616
-      set_moodle_security_key
       exit 0;
       ;;
 
