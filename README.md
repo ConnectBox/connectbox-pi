@@ -20,6 +20,10 @@ ConnectBox is a media sharing device based on small form factor computers includ
 
 See [docs/deployment.md](docs/deployment.md)
 
+# Making a Connectbox on AWS
+
+See [/docs/awsinstall.md](docs /docs/awsinstall.md)
+
 # Connectbox setup and administration
 
 See [docs/administration.md](docs/administration.md)
