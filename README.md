@@ -22,7 +22,7 @@ See [docs/deployment.md](docs/deployment.md)
 
 # Making a Connectbox on AWS
 
-See [/docs/awsinstall.md](docs /docs/awsinstall.md)
+See [docs/awsinstall.md](docs /docs/awsinstall.md)
 
 # Connectbox setup and administration
 
@@ -33,4 +33,4 @@ See [docs/administration.md](docs/administration.md)
 See [docs/development.md](docs/development.md)
 
 # MicroSD Card Images/Releases
-See [https://github.com/ConnectBox/connectbox-pi/releases/](https://github.com/ConnectBox/connectbox-pi/releases/)
+TBD
