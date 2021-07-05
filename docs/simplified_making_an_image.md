@@ -35,3 +35,5 @@ ansible-playbook -i INVENTORYFILEPATH site.yml
   ```
   * Now your finished and compressed image is called something like thewell-20210624-0621.img.xz
   * You can test the image by taking a new SD Card and using Etcher to burn the new image to the card.  Boot the card in a Pi and wait a few minutes for the initial configuration and look for the SSID of TheWell to become visible.
+
+For Relay Trust base images, these are stored in AWS S3 at https://s3.console.aws.amazon.com/s3/buckets/thewellimages?region=us-west-2&tab=objects and are available to download at https://chat.thewellcloud.cloud/chathost/images.html
