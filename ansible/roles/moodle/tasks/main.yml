@@ -119,7 +119,7 @@
     job: "/usr/bin/php /var/www/moodle/local/chat_attachments/clean_up.php >/tmp/cleanup.log"
 
 # Setup Moodle's Cron 
-- name: Setup chat_attachments/clean_up.php To Run Every 10 Minutes on Pi
+- name: Setup chat_attachments/push_messages.php To Run Every 10 Minutes on Pi in Production
   ansible.builtin.cron:
     name: "chat_attachments/push_messages.php true"
     minute: "*/10"
@@ -128,7 +128,7 @@
   when: not developer_mode
 
 # Setup Moodle's Cron 
-- name: Setup chat_attachments/clean_up.php To Run Every Day in Developer Mode
+- name: Setup chat_attachments/push_messages.php To Run Every Minute in Developer Mode
   ansible.builtin.cron:
     name: "chat_attachments/push_messages.php true"
     minute: "*"
