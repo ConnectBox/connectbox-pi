@@ -26,7 +26,7 @@
 # SECTION 1: Background
 
 <<<<<<< HEAD
-This document describes the process for creating a waypoint image, suitable for burning by end-users onto microSD. This process can generate images for a NanoPi NEO (NEO), and for a Raspberry Pi (RPi) (tested on Rpi3+ and RPi0w).
+This document describes the process for creating a connectboximage, suitable for burning by end-users onto microSD. This process can generate images for a NanoPi NEO (NEO), and for a Raspberry Pi (RPi) (tested on Rpi3+ and RPi0w).
 =======
 This document describes the process for creating a ConnectBox image, suitable for burning by end-users onto microSD. This process can generate images for a NanoPi NEO (NEO), and for a Raspberry Pi (RPi) (tested on Rpi3+ and RPi0w).
 >>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
@@ -46,7 +46,7 @@ This document will describe two versions of the build environment.
 5. Put the uSD card in the target machine, boot the machine, login and enable SSH password-less login as user "root".
 
 <<<<<<< HEAD
-6. Use the build environment to install the waypoint code onto the uSD card in the target machine.
+6. Use the build environment to install the connectbox code onto the uSD card in the target machine.
 =======
 6. Use the build environment to install the ConnectBox code onto the uSD card in the target machine.
 >>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
@@ -77,7 +77,7 @@ In the following instructions for the Mac build environment, we will open a term
 	
 >~$ *cd \<YHD\>*  
 <<<<<<< HEAD
->~$ *git clone https://github.com/kirkdwilson/MV-WayPoint/connectbox-tools*   
+>~$ *git clone https://github.com/connectbox/connectbox-tools*   
 =======
 >~$ *git clone https://github.com/ConnectBox/connectbox-tools*   
 >>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
@@ -97,7 +97,7 @@ This will create directory below *`<YHD>`* named *connectbox-tools-master* and m
 >~$ *vagrant up*  
 >~$ *vagrant ssh*  
 <<<<<<< HEAD
->~$ *git clone https://github.com/kirkdwilson/MV-WayPoint/connectbox-pi*  
+>~$ *git clone https://github.com/connectbox/connectbox-pi*  
 =======
 >~$ *git clone https://github.com/ConnectBox/connectbox-pi*  
 >>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
@@ -150,10 +150,10 @@ and take defaults for storage location (*/home/vagrant/.ssh/id_rsa*) and empty p
 
 **Notes:**  
 <<<<<<< HEAD
->1. The space required for the base image and additional waypoint code is less than 8GB so a card of 8GB or greater should be ok in the creation process.  Since the Operating System will be on the uSD Card it is important to use a high speed uSD like an XC I rated card.  
+>1. The space required for the base image and additional connectob code is less than 8GB so a card of 8GB or greater should be ok in the creation process.  Since the Operating System will be on the uSD Card it is important to use a high speed uSD like an XC I rated card.  
 >2. Where there are differences between building a NEO image and an RPi image, we will preface the step number with "**N**" (NEO) or "**R**" (RPi). Where there is no difference, the step number will be shown without a prefaced letter.
 
-**Step N3.1:** Use an internet browser to go to [https://github.com/kirkdwilson/MV-WayPoint/armbian-build ]()(the armbian build repo). Near the top you will see (on the line just above "Clone or download") something like, "6220 commits 9 branches 0 packages 15 release...?.. click on "releases" to see a list of the armbian-build releases available. The most recent is "**base-image-190417**". Click on the base-image-190417 text to go to the page for that image. Then find the image itself about halfway down the page under "Assets". (At the time of this writing, the image is "*Armbian\_5.78\_Nanopineo\_Debian-stretch_next\_4.19.34.img.xz*".) Click on that to download; then save in an appropriate directory of your choice.
+**Step N3.1:** Use an internet browser to go to [https://github.com/connectbox/armbian-build ]()(the armbian build repo). Near the top you will see (on the line just above "Clone or download") something like, "6220 commits 9 branches 0 packages 15 release...?.. click on "releases" to see a list of the armbian-build releases available. The most recent is "**base-image-190417**". Click on the base-image-190417 text to go to the page for that image. Then find the image itself about halfway down the page under "Assets". (At the time of this writing, the image is "*Armbian\_5.78\_Nanopineo\_Debian-stretch_next\_4.19.34.img.xz*".) Click on that to download; then save in an appropriate directory of your choice.
 =======
 >1. The space required for the base image and additional ConnectBox code is less than 8GB so a card of 8GB or greater should be ok in the creation process.  Since the Operating System will be on the uSD Card it is important to use a high speed uSD like an XC I rated card.  
 >2. Where there are differences between building a NEO image and an RPi image, we will preface the step number with "**N**" (NEO) or "**R**" (RPi). Where there is no difference, the step number will be shown without a prefaced letter.
@@ -189,7 +189,7 @@ In the following instructions, substitute the IP you found for the target in pla
 >~$ *ssh root@10.0.0.118*  
 
 <<<<<<< HEAD
-When prompted, enter the password **1234** and when prompted, enter that password again. Then follow the prompts to create the new password (**waypoint**) by entering it twice. Finally, type Ctrl-c which will close the dialog and exit the NEO.
+When prompted, enter the password **1234** and when prompted, enter that password again. Then follow the prompts to create the new password (**connectbox**) by entering it twice. Finally, type Ctrl-c which will close the dialog and exit the NEO.
 =======
 When prompted, enter the password **1234** and when prompted, enter that password again. Then follow the prompts to create the new password (**connectbox**) by entering it twice. Finally, type Ctrl-c which will close the dialog and exit the NEO.
 >>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
@@ -203,7 +203,7 @@ When prompted, enter the password **1234** and when prompted, enter that passwor
 Once we are logged in as user "pi", we need to enable the "root" account on the RPi machine. So type the following commands:  
 >~# *sudo passwd root*    
 <<<<<<< HEAD
-(follow prompts to give root the password "waypoint")  
+(follow prompts to give root the password "connectbox")  
 =======
 (follow prompts to give root the password "connectbox")  
 >>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
@@ -222,7 +222,7 @@ Highlight and COPY the contents of this file. We will paste this text into a com
 
 >~$ *ssh root@10.0.0.118*    
 <<<<<<< HEAD
-  (password is still **waypoint**)  
+  (password is still **connectobx**)  
 =======
   (password is still **connectbox**)  
 >>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
@@ -251,7 +251,7 @@ This login should happen *without* the target machine asking for a password
 [https://www.amazon.com/Adapter-600Mbps-802-11ac-Wireless-Compatible/dp/B086WDF6VF/ref=sr_1_15?dchild=1&keywords=usb+wifi+dongle&qid=1589402526&sr=8-15]()
 
 <<<<<<< HEAD
-**Step 3.11:** Determine if you want to do a "step by step" build (creating a local image that, if desired, can be published to GitHub at a later time) or a fully automated build which, once started, will require only minimal intervention and result in a published build on the GitHub repository. **Note that the fully automated build process requires write permissions to the GitHub waypoint repository**. If you do not have write privileges to that repository, or if you just want to build a waypoint image for local use, continue to Step 3.12. If you want to do a fully automated build with writes to the GitHub waypoint repository, go to Step 3.13.
+**Step 3.11:** Determine if you want to do a "step by step" build (creating a local image that, if desired, can be published to GitHub at a later time) or a fully automated build which, once started, will require only minimal intervention and result in a published build on the GitHub repository. **Note that the fully automated build process requires write permissions to the GitHub ConnectBox repository**. If you do not have write privileges to that repository, or if you just want to build a ConnectBox image for local use, continue to Step 3.12. If you want to do a fully automated build with writes to the GitHub ConnectBox repository, go to Step 3.13.
 =======
 **Step 3.11:** Determine if you want to do a "step by step" build (creating a local image that, if desired, can be published to GitHub at a later time) or a fully automated build which, once started, will require only minimal intervention and result in a published build on the GitHub repository. **Note that the fully automated build process requires write permissions to the GitHub ConnectBox repository**. If you do not have write privileges to that repository, or if you just want to build a ConnectBox image for local use, continue to Step 3.12. If you want to do a fully automated build with writes to the GitHub ConnectBox repository, go to Step 3.13.
 >>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
@@ -273,7 +273,7 @@ After about 50 minutes of activity the script prints something like:
 If the build to the uSD has succeeded, the PLAY RECAP (above) will show "failed=0".
 
 <<<<<<< HEAD
-This completes the creation of an uSD card containing the waypoint software for your target machine. At this point you can now power down the target machine and remove the uSD card. If you want to create a software image (*.img file) which can be used to create other uSD cards with this same image, proceed to **Section 6: Shrinking The Image**. Otherwise you can just put this uSD chip into your target machine and power up to use you waypoint.
+This completes the creation of an uSD card containing the ConnectBox software for your target machine. At this point you can now power down the target machine and remove the uSD card. If you want to create a software image (*.img file) which can be used to create other uSD cards with this same image, proceed to **Section 6: Shrinking The Image**. Otherwise you can just put this uSD chip into your target machine and power up to use you ConnectBox.
 =======
 This completes the creation of an uSD card containing the ConnectBox software for your target machine. At this point you can now power down the target machine and remove the uSD card. If you want to create a software image (*.img file) which can be used to create other uSD cards with this same image, proceed to **Section 6: Shrinking The Image**. Otherwise you can just put this uSD chip into your target machine and power up to use you ConnectBox.
 >>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
@@ -286,7 +286,7 @@ NOTE: You will only need to do this the very first time you do a fully automated
 **Step 3.14:** Starting the fully automated build. From within the terminal window run:  
 >~$ *cd /home/vagrant*    
 <<<<<<< HEAD
->~$ *waypoint\_GITHUB\_TOKEN=\<your-GitHub-rep-token\> python3 /vagrant/prepare\_release.py* 
+>~$ *ConnectBox\_GITHUB\_TOKEN=\<your-GitHub-rep-token\> python3 /vagrant/prepare\_release.py* 
 =======
 >~$ *CONNECTBOX\_GITHUB\_TOKEN=\<your-GitHub-rep-token\> python3 /vagrant/prepare\_release.py* 
 >>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
@@ -311,7 +311,7 @@ After about 50 minutes of activity the script prints something like:
 If the build to the uSD has succeeded, the PLAY RECAP (above) will show `failed=0`. Continue to Step 3.15.
 
 <<<<<<< HEAD
-**Step 3.15:** Power down the target machine and remove the microSD card. This uSD card now contains a waypoint image suitable for running in your target machine. In the next section of the automated build, the Mac will shrink the image which is on the uSD card and from that, create and store an image file (*.img*) suitable for creating other uSD cards with that same image.
+**Step 3.15:** Power down the target machine and remove the microSD card. This uSD card now contains a ConnectBox image suitable for running in your target machine. In the next section of the automated build, the Mac will shrink the image which is on the uSD card and from that, create and store an image file (*.img*) suitable for creating other uSD cards with that same image.
 =======
 **Step 3.15:** Power down the target machine and remove the microSD card. This uSD card now contains a ConnectBox image suitable for running in your target machine. In the next section of the automated build, the Mac will shrink the image which is on the uSD card and from that, create and store an image file (*.img*) suitable for creating other uSD cards with that same image.
 >>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
@@ -331,9 +331,9 @@ An upoad to GitHub follows (about 10 minutes) and then a final message,
 You can now remove your uSD from the Mac. The automated image creation process is complete.
 
 <<<<<<< HEAD
-At this point your Mac will have a compressed image file (*\*.img.xz*) of your uSD suitable for use by Etcher (or other image burning tools) for creating duplicates of your uSD card. This image file is available both locally and on GitHub. The local file will be in your *\<YHD\>/waypoint-tools-master/deployment* directory and will end in *.img.xz*. The ending messages in the terminal will tell you the exact name of the image.
+At this point your Mac will have a compressed image file (*\*.img.xz*) of your uSD suitable for use by Etcher (or other image burning tools) for creating duplicates of your uSD card. This image file is available both locally and on GitHub. The local file will be in your *\<YHD\>/ConnectBox-tools-master/deployment* directory and will end in *.img.xz*. The ending messages in the terminal will tell you the exact name of the image.
 
-**Step 3.18:** Update release notes in GitHub by opening [https://github.com/kirkdwilson/MV-WayPoint/connectbox-pi](), the click on the "releases" tab, click the "Edit" button next to the release you just made, add notes as to what was changed or added (see earlier releases for examples), and click "Save draft" at the bottom to save the release notes.
+**Step 3.18:** Update release notes in GitHub by opening [https://github.com/ConnectBox/connectbox-pi](), the click on the "releases" tab, click the "Edit" button next to the release you just made, add notes as to what was changed or added (see earlier releases for examples), and click "Save draft" at the bottom to save the release notes.
 =======
 At this point your Mac will have a compressed image file (*\*.img.xz*) of your uSD suitable for use by Etcher (or other image burning tools) for creating duplicates of your uSD card. This image file is available both locally and on GitHub. The local file will be in your *\<YHD\>/connectbox-tools-master/deployment* directory and will end in *.img.xz*. The ending messages in the terminal will tell you the exact name of the image.
 
@@ -344,7 +344,7 @@ At this point your Mac will have a compressed image file (*\*.img.xz*) of your u
 
 Note that the path to your release is available by opening your release page on GitHub and copying the address in the address box at the top of your browser. For the v20200121 build, that address is:
 <<<<<<< HEAD
-[https://github.com/kirkdwilson/MV-WayPoint/connectbox-pi/releases/tag/v20200121]()
+[https://github.com/ConnectBox/connectbox-pi/releases/tag/v20200121]()
 =======
 [https://github.com/ConnectBox/connectbox-pi/releases/tag/v20200121]()
 >>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
@@ -364,7 +364,7 @@ The following steps detail setting up the Build Environment on a Raspberry Pi. S
 /home/pi/  
 		|  
 <<<<<<< HEAD
-		|- waypoint/  
+		|- ConnectBox/  
 =======
 		|- connectbox/  
 >>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
@@ -380,11 +380,11 @@ The following steps detail setting up the Build Environment on a Raspberry Pi. S
 >~$ cd /home/pi  
 >~$ echo 'export PATH=$PATH:/home/pi/.local/bin/' >> .bashrc  
 <<<<<<< HEAD
->~$ cd /home/pi/waypoint  
+>~$ cd /home/pi/ConnectBox  
 >~$ ssh-keygen -t rsa   
 >(creates public/private key pair... take defaults)  
 >~$ python3 -m pip install pygithub  
->~$ git clone https://github.com/kirkdwilson/MV-WayPoint/connectbox-tools  
+>~$ git clone https://github.com/ConnectBox/connectbox-tools  
 =======
 >~$ cd /home/pi/connectbox  
 >~$ ssh-keygen -t rsa   
@@ -397,7 +397,7 @@ The following steps detail setting up the Build Environment on a Raspberry Pi. S
 Reboot the Rpi and open the terminal again
 
 <<<<<<< HEAD
->~$ cd /home/pi/waypoint/  
+>~$ cd /home/pi/ConnectBox/  
 =======
 >~$ cd /home/pi/connectbox/  
 >>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
@@ -419,7 +419,7 @@ Reboot the Rpi and open the terminal again
 >2. Where there are differences between building a NEO image and an RPi image, we will preface the step number with **N** (NEO) or **R** (RPi). Where there is no difference, the step number will be shown without a prefaced letter.
 
 <<<<<<< HEAD
-**Step N5.1:** Use an internet browser to go to [https://github.com/kirkdwilson/MV-WayPoint/armbian-build ]()(the armbian build repo). Near the top you will see (on the line just above "Clone or download") something like, "6220 commits 9 branches 0 packages 15 release...?.. click on "releases" to see a list of the armbian-build releases available. The most recent is "**base-image-190417**". Click on the base-image-190417 text to go to the page for that image. Then find the image itself about halfway down the page under "Assets". (At the time of this writing, the image is "Armbian\_5.78\_Nanopineo\_Debian-stretch_next\_4.19.34.img.xz".) Click on that to download; then save in an appropriate directory of your choice.
+**Step N5.1:** Use an internet browser to go to [https://github.com/ConnectBox/armbian-build ]()(the armbian build repo). Near the top you will see (on the line just above "Clone or download") something like, "6220 commits 9 branches 0 packages 15 release...?.. click on "releases" to see a list of the armbian-build releases available. The most recent is "**base-image-190417**". Click on the base-image-190417 text to go to the page for that image. Then find the image itself about halfway down the page under "Assets". (At the time of this writing, the image is "Armbian\_5.78\_Nanopineo\_Debian-stretch_next\_4.19.34.img.xz".) Click on that to download; then save in an appropriate directory of your choice.
 =======
 **Step N5.1:** Use an internet browser to go to [https://github.com/ConnectBox/armbian-build ]()(the armbian build repo). Near the top you will see (on the line just above "Clone or download") something like, "6220 commits 9 branches 0 packages 15 release...?.. click on "releases" to see a list of the armbian-build releases available. The most recent is "**base-image-190417**". Click on the base-image-190417 text to go to the page for that image. Then find the image itself about halfway down the page under "Assets". (At the time of this writing, the image is "Armbian\_5.78\_Nanopineo\_Debian-stretch_next\_4.19.34.img.xz".) Click on that to download; then save in an appropriate directory of your choice.
 >>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
@@ -446,7 +446,7 @@ The next steps will boot up the target machine (NEO or RPi) with the uSD inserte
 **Step 5.5:** In the terminal window on the RPi, type:
 
 <<<<<<< HEAD
->~$ *cd /home/pi/waypoint/*
+>~$ *cd /home/pi/ConnectBox/*
 =======
 >~$ *cd /home/pi/connectbox/*
 >>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
@@ -458,7 +458,7 @@ The next steps will boot up the target machine (NEO or RPi) with the uSD inserte
 >~$ *ssh root@10.0.0.118*
 
 <<<<<<< HEAD
-When prompted, enter the password **1234** and when prompted, enter that password again. Then follow the prompts to create the new password (**waypoint**) by entering it twice. Finally, type Ctrl-c which will close the dialog and exit the NEO.
+When prompted, enter the password **1234** and when prompted, enter that password again. Then follow the prompts to create the new password (**ConnectBox**) by entering it twice. Finally, type Ctrl-c which will close the dialog and exit the NEO.
 =======
 When prompted, enter the password **1234** and when prompted, enter that password again. Then follow the prompts to create the new password (**connectbox**) by entering it twice. Finally, type Ctrl-c which will close the dialog and exit the NEO.
 >>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
@@ -474,7 +474,7 @@ Once we are logged in as user "pi", we need to enable the "root" account on the 
 >~# *sudo passwd root*  
   
 <<<<<<< HEAD
-follow prompts to give root the password `waypoint`,then:
+follow prompts to give root the password `ConnectBox`,then:
 =======
 follow prompts to give root the password `connectbox`,then:
 >>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
@@ -496,7 +496,7 @@ Highlight and COPY the contents of this file. We will paste this text into a com
 
 >~$ *ssh root@10.0.0.118*    
 <<<<<<< HEAD
-  (password is still **waypoint**)  
+  (password is still **ConnectBox**)  
 =======
   (password is still **connectbox**)  
 >>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
@@ -529,7 +529,7 @@ This login should happen *without* the target machine asking for a password
 **Step 5.12:** Starting the "step by step" build. From the terminal window run:
 
 <<<<<<< HEAD
->~$ *cd /home/pi/waypoint*  
+>~$ *cd /home/pi/ConnectBox*  
 =======
 >~$ *cd /home/pi/connectbox*  
 >>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
@@ -549,7 +549,7 @@ After about 50 minutes of activity the script prints something like:
 If the build to the uSD has succeeded, the PLAY RECAP (above) will show "failed=0".
 
 <<<<<<< HEAD
-This completes the creation of an uSD card containing the waypoint software for your target machine. At this point you can now power down the target machine and remove the uSD card. If you want to create a software image (**.img* file) which can be used to create other uSD cards with this same image, proceed to **Section 6: Shrinking The Image**. Otherwise you can just put this uSD chip into your target machine and power up to use you waypoint.
+This completes the creation of an uSD card containing the ConnectBox software for your target machine. At this point you can now power down the target machine and remove the uSD card. If you want to create a software image (**.img* file) which can be used to create other uSD cards with this same image, proceed to **Section 6: Shrinking The Image**. Otherwise you can just put this uSD chip into your target machine and power up to use you ConnectBox.
 =======
 This completes the creation of an uSD card containing the ConnectBox software for your target machine. At this point you can now power down the target machine and remove the uSD card. If you want to create a software image (**.img* file) which can be used to create other uSD cards with this same image, proceed to **Section 6: Shrinking The Image**. Otherwise you can just put this uSD chip into your target machine and power up to use you ConnectBox.
 >>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
@@ -583,7 +583,7 @@ If the image is for a **NEO** target, you should see entries for `sda` and `sda1
 (use the `umount /dev/sda2` only if you found an sda2 partition). 
 
 <<<<<<< HEAD
->~$ cd /home/pi/waypoint  
+>~$ cd /home/pi/ConnectBox  
 =======
 >~$ cd /home/pi/connectbox  
 >>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
@@ -594,7 +594,7 @@ where `<nameYourImage>.img` is the name you want to use for the image about to b
 **Step M6.3:** When this step completes (10-20 minutes) you will have an image of the uSD which will be available in your **/vagrant** directory (from within the terminal window). (Note that this directory is the same as your **../connectbox-tools-master/deployment** directory of your Mac.)
 
 <<<<<<< HEAD
-**Step R6.3:** When this step completes (10-20 minutes) you will have an image of the uSD which will be available in your **/home/pi/waypoint/Images/** directory.
+**Step R6.3:** When this step completes (10-20 minutes) you will have an image of the uSD which will be available in your **/home/pi/ConnectBox/Images/** directory.
 =======
 **Step R6.3:** When this step completes (10-20 minutes) you will have an image of the uSD which will be available in your **/home/pi/connectbox/Images/** directory.
 >>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
@@ -609,7 +609,7 @@ and after about an hour, you should have a compressed (*.xz*) version of your im
 # APPENDIX - Edwin's original document
 
 <<<<<<< HEAD
-**Edwin Steele is the author of much of the waypoint code and for most of the life of the waypoint was the only builder of images for the project. The following are his original instructions on how to create an image from the waypoint code residing on GitHub.**
+**Edwin Steele is the author of much of the ConnectBox code and for most of the life of the ConnectBox was the only builder of images for the project. The following are his original instructions on how to create an image from the ConnectBox code residing on GitHub.**
 =======
 **Edwin Steele is the author of much of the ConnectBox code and for most of the life of the ConnectBox was the only builder of images for the project. The following are his original instructions on how to create an image from the ConnectBox code residing on GitHub.**
 >>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
@@ -619,7 +619,7 @@ and after about an hour, you should have a compressed (*.xz*) version of your im
 1. Checkout the **connectbox-tools repo**. It contains the tooling required to create an image.  
 2. The build process uses the github v3 API to tag repositories, so you need to create a **Github API personal access token**. The token only needs the public\_repo scope (and should only be given that scope, to reduce the scope for damage if it is lost).  
 <<<<<<< HEAD
-3. The build process tags several repos (see the waypoint_REPOS in [https://github.com/kirkdwilson/MV-WayPoint/connectbox-tools/blob/master/deployment/prepare\_release.py#L18]() for the up-to-date list). The Github account that created the API access token must have write access to each of these repos. If you don't have access to the repositories, ask a person with the owner role in the Github waypoint organisation ([https://github.com/orgs/ConnectBox/people]())
+3. The build process tags several repos (see the ConnectBox_REPOS in [https://github.com/ConnectBox/connectbox-tools/blob/master/deployment/prepare\_release.py#L18]() for the up-to-date list). The Github account that created the API access token must have write access to each of these repos. If you don't have access to the repositories, ask a person with the owner role in the Github ConnectBox organisation ([https://github.com/orgs/ConnectBox/people]())
 =======
 3. The build process tags several repos (see the ConnectBox_REPOS in [https://github.com/ConnectBox/connectbox-tools/blob/master/deployment/prepare\_release.py#L18]() for the up-to-date list). The Github account that created the API access token must have write access to each of these repos. If you don't have access to the repositories, ask a person with the owner role in the Github ConnectBox organisation ([https://github.com/orgs/ConnectBox/people]())
 >>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
@@ -643,7 +643,7 @@ This assumes you're using the automated machine setup above. If you're using the
 
 1. Update the CHANGELOG.md file in the connectbox-pi repository to list any changes since the last build  
 <<<<<<< HEAD
-2. Prepare a your target device with a base operating system image.  On a NEO, use the most recent release from the [https://github.om/kirkdwilson/MV-WayPoint/armbian-build]() repository. For an RPi, try the most recent release of Raspbian lite, but know that ymmv because their image changes.
+2. Prepare a your target device with a base operating system image.  On a NEO, use the most recent release from the [https://github.om/ConnectBox/armbian-build]() repository. For an RPi, try the most recent release of Raspbian lite, but know that ymmv because their image changes.
 =======
 2. Prepare a your target device with a base operating system image.  On a NEO, use the most recent release from the [https://github.om/ConnectBox/armbian-build]() repository. For an RPi, try the most recent release of Raspbian lite, but know that ymmv because their image changes.
 >>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
@@ -656,7 +656,7 @@ directory makes it easy if you have keys already available, and automates the 4 
 
 	1. 	*sh root@<neoip> (pwd:1234)*
 <<<<<<< HEAD
-	1.	Set root password to *waypoint* per the prompts
+	1.	Set root password to *ConnectBox* per the prompts
 =======
 	1.	Set root password to *connectbox* per the prompts
 >>>>>>> bb354580ce2e5b02258e4dcf5cb6a845d755a1ff
