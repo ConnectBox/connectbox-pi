@@ -8,6 +8,7 @@
     dest: /etc/hosts
     block: |
       127.0.0.1 {{ connectbox_default_hostname }}
+      127.0.0.1 learn.{{ connectbox_default_hostname }}
 
 - name: Create connectbox version file
   copy:
