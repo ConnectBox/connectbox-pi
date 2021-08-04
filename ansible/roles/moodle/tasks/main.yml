@@ -53,7 +53,7 @@
     path: /var/www/moodledata/
     owner: www-data
     group: www-data
-    mode: 0775
+    mode: 0777
 
 - name: Copy filedir to /var/www/moodledata/filedir
   ansible.builtin.unarchive:
@@ -68,12 +68,13 @@
     path: '{{ item.name }}'
     src: 'tmpfs'
     fstype: 'tmpfs'
-    opts: 'size={{ item.size }},mode=775,uid=www-data,gid=www-data'
+    opts: 'size={{ item.size }},mode=777,uid=www-data,gid=www-data'
     dump: '0'
     passno: '0'
     state: 'mounted'
   with_items:
     - { name: '/var/cache/moodle', size: '4M' }
+    - { name: '/var/www/moodledata/cache', size: '4M' }
     - { name: '/var/www/moodledata/temp', size: '499M' }
     - { name: '/var/www/moodledata/sessions', size: '4M' }
     
