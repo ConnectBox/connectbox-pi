@@ -30,6 +30,7 @@
     resize: true
     state: present
   when: connectbox_os == "raspbian" and sdcard_info.partitions | length < 3
+  ignore_errors: yes
 
 - name: Complete the resize filesystem of OS partition 
   command: resize2fs /dev/{{ sdcard_name.stdout }}p2
@@ -41,26 +42,6 @@
   register: sdcard_info
   when: connectbox_os == "raspbian"
 
-
-##########################################
-# These next 3 tasks handle the partitioning of the extra space on Pi SD Card.  Only run if not building an image
-- name: Copy resizer.pl to /boot
-  template:
-    src: home_pi_resizer_pl.j2
-    dest: /boot/resizer.pl
-    owner: root
-    group: root
-    mode: 0700
-  
-- name: Run resizer.pl
-  command: /boot/resizer.pl
-  become: true
-  when: connectbox_os == "raspbian" and sdcard_info.partitions | length < 3 and not do_image_preparation
-
-- name: Mount All Partitions
-  command: mount -a
-  become: true
-  when: connectbox_os == "raspbian" and sdcard_info.partitions | length < 3 and not do_image_preparation
 
 ##########################################
 # Set default passwords

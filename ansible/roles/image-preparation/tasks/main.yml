@@ -208,13 +208,15 @@
 #  not rebooted after the playbook is run)
 # This is deliberately placed after the forced-reboot operations
 
+- name: Schedule a resize of the root partition after the next boot (Armbian)
+  service:
+    name: armbian-resize-filesystem
+    enabled: yes
+  when: connectbox_os == "armbian"
 
-# In The Well, we run this at boot from rc.local
-- name: Add resizer.pl to rc.local (startup)
-  lineinfile:
-    path: /etc/rc.local
-    insertbefore: '^exit 0'
-    line: '/boot/resizer.pl'  
+- name: Schedule a resize of the root partition after the next boot (Raspbian)
+  command: /usr/bin/raspi-config --expand-rootfs
+  when: connectbox_os == "raspbian"
 
 - name: Remove .ssh authorized_keys
   file:
