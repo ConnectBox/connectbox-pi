@@ -112,13 +112,8 @@
   apt:
     update-cache: yes
     cache_valid_time: 86400 # 1 day
-
-# We build our own armbian images, so we need to prevent upstream
-#  kernel, dtb and uboot packages from being installed (lest they
-#  overwrite our changes)
-# This task will bomb if we're running on a sunxi device and using
-#  something other than the "next" branch or using something other
-#  than stretch
+    
+# Were using Focal now instead of stretch.  Were using stock os
 # We use aptitude instead of apt-hold because aptitude's first run clears
 #  the package holds which causes us to upgrade these packages.
 # aptitude doesn't give any indication about whether the package was
