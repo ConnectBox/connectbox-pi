@@ -17,6 +17,13 @@
     pkg: network-manager
     state: absent
 
+- name: Make sure systemd-resolved is not running
+  service:
+    name: systemd-resolved
+    state: stopped
+    enabled: no
+  when: connectbox_os == "focal"
+
 - name: Configure network interfaces NEO
   template:
     src: etc_network_interfaces.j2

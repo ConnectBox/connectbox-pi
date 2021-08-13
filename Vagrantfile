@@ -1,7 +1,7 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-Vagrant.configure(2) do |config|
+Vagrant.configure(3) do |config|
 
   # Overridden
   config.vm.box = ""
@@ -24,6 +24,25 @@ Vagrant.configure(2) do |config|
       ansible.host_vars = {
         "stretch" => {
           "connectbox_default_hostname": "stretch-vagrant.connectbox",
+          "developer_mode": true,
+          "lan_dns_if": "eth1",
+        }
+      }
+      ansible.skip_tags = "full-build-only"
+    end
+  end
+
+  # Debian Focal
+  config.vm.define "focal" do |focal|
+    focal.vm.box = "generic/debian9"
+    focal.vm.network "private_network", ip: "172.28.128.5"
+    focal.vm.post_up_message = "ConnectBox (Debian focal) provisioned in developer mode. IP: 172.28.128.5, hostname: focal-vagrant.connectbox. You probably want '172.28.128.5 stretch-vagrant.connectbox resettest-focal-vagrant.connectbox' in /etc/hosts"
+
+    stretch.vm.provision "ansible" do |ansible|
+      ansible.playbook = "ansible/site.yml"
+      ansible.host_vars = {
+        "focal" => {
+          "connectbox_default_hostname": "focal-vagrant.connectbox",
           "developer_mode": true,
           "lan_dns_if": "eth1",
         }

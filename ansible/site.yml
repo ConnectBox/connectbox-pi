@@ -4,7 +4,8 @@
 #
 # Debian─┬─Ubuntu───Armbian
 #        ├─Raspbian
-#        └─Armbian
+#        └─Armbian─┬─stretch
+#                  └─focal
 #
 # (See also https://github.com/ConnectBox/connectbox-pi/wiki/Differentiating-platform-by-ansible-variables)
 
