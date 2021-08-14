@@ -100,9 +100,7 @@
   
 # mikegleasonjr.firewall assumes iptables but Armbian doesn't ship with it
 - name: Install iptables
-  apt:
-    name: iptables
-    state: present
+  command: apt-get install iptables
   when: connectbox_os == "armbian"
 
 # Only repopulate daily so we don't slow runs down unnecessarily
@@ -118,9 +116,9 @@
 #  already on hold, so it's not possible to show whether this task
 #  changed anything (and it's not worth lead-up tasks to work out
 #  whether this task would do anything i.e. using aptitude search ~ahold
-- name: Pin kernel and dtb packages
-  command: "aptitude -q hold linux-dtb-next-sunxi linux-image-next-sunxi linux-u-boot-nanopineo-next linux-focal-root-next-nanopineo"
-  when: connectbox_os == "armbian" and "sunxi" in ansible_kernel
+#- name: Pin kernel and dtb packages
+#  command: "aptitude -q hold linux-dtb-next-sunxi linux-image-next-sunxi linux-u-boot-nanopineo-next linux-focal-root-next-nanopineo"
+#  when: connectbox_os == "armbian" and "sunxi" in ansible_kernel
 
 # If we ever allow updates of the linux-...-root device package, this will
 #  need to move into a service or some other method (noting the package
