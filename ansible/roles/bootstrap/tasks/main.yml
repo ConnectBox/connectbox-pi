@@ -135,24 +135,19 @@
 
 # Needed by Debian Stretch
 - name: Install openresolv
-  apt:
-    name: openresolv
-    state: present
+  command: apt-get install openresolv
   when: ansible_lsb["id"] == "Debian"
 
 # Needed in several subsequent roles
 - name: Install packages for python virtualenv
-  apt:
-    name: ['python-virtualenv', 'python-pip', 'virtualenv']
-    state: present
+  command: 'apt-get install python-virtualenv, python-pip, virtualenv'
   tags:
     - captive_portal
 
 # Needed in several subsequent roles
 - name: install git
-  apt:
-    name: git
-    state: present
+  command: apt-get install git
+
 
 # See if we need to create a wlan0 interface when we're running in a sim
 #  environment i.e. running virtualised
