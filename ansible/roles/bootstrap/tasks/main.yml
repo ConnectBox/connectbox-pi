@@ -106,7 +106,7 @@
 # Only repopulate daily so we don't slow runs down unnecessarily
 - name: Populate apt cache
   command:  apt update
-    cache_valid_time: 86400 # 1 day
+#    cache_valid_time: 86400 # 1 day
     
 # Were using Focal now instead of stretch.  Were using stock os
 # We use aptitude instead of apt-hold because aptitude's first run clears
