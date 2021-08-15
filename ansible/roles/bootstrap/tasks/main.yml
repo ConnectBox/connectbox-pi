@@ -50,6 +50,9 @@
     state: absent
   when: connectbox_os == "armbian"
 
+- name: Disable systemd-resolve to remove port conflicts
+  command: systemctl disable systemd-resolved
+
 # The system takes 5-10 seconds to disappear from the network
 #  so let's wait 15 seconds before doing our first check
 #  Use newer ansible 2.7 function reboot
@@ -96,28 +99,38 @@
 
 # Needed for package upgrades via ansible (aptitude safe-upgrade)
 - name: Install aptitude
-  command: apt-get install aptitude
-  
+  apt:
+    name: aptitude
+    state: present
+
 # mikegleasonjr.firewall assumes iptables but Armbian doesn't ship with it
 - name: Install iptables
-  command: apt-get install iptables
+  apt:
+    name: iptables
+    state: present
   when: connectbox_os == "armbian"
 
 # Only repopulate daily so we don't slow runs down unnecessarily
 - name: Populate apt cache
-  command:  apt update
-#    cache_valid_time: 86400 # 1 day
-    
-# Were using Focal now instead of stretch.  Were using stock os
+  apt:
+    update-cache: yes
+    cache_valid_time: 86400 # 1 day
+
+# We build our own armbian images, so we need to prevent upstream
+#  kernel, dtb and uboot packages from being installed (lest they
+#  overwrite our changes)
+# This task will bomb if we're running on a sunxi device and using
+#  something other than the "next" branch or using something other
+#  than stretch
 # We use aptitude instead of apt-hold because aptitude's first run clears
 #  the package holds which causes us to upgrade these packages.
 # aptitude doesn't give any indication about whether the package was
 #  already on hold, so it's not possible to show whether this task
 #  changed anything (and it's not worth lead-up tasks to work out
 #  whether this task would do anything i.e. using aptitude search ~ahold
-#- name: Pin kernel and dtb packages
-#  command: "aptitude -q hold linux-dtb-next-sunxi linux-image-next-sunxi linux-u-boot-nanopineo-next linux-focal-root-next-nanopineo"
-#  when: connectbox_os == "armbian" and "sunxi" in ansible_kernel
+- name: Pin kernel and dtb packages
+  command: "aptitude -q hold linux-dtb-current-sunxi linux-image-current-sunxi linux-u-boot-nanopineo-current linux-focal-root-current-nanopineo"
+  when: connectbox_os == "armbian" and "sunxi" in ansible_kernel
 
 # If we ever allow updates of the linux-...-root device package, this will
 #  need to move into a service or some other method (noting the package
@@ -134,19 +147,24 @@
 
 # Needed by Debian Stretch
 - name: Install openresolv
-  command: apt-get install openresolv
+  apt:
+    name: openresolv
+    state: present
   when: ansible_lsb["id"] == "Debian"
 
 # Needed in several subsequent roles
 - name: Install packages for python virtualenv
-  command: apt-get install python-virtualenv, python-pip, virtualenv
+  apt:
+    name: ['python3-virtualenv', 'python3-pip', 'virtualenv']
+    state: present
   tags:
     - captive_portal
 
 # Needed in several subsequent roles
 - name: install git
-  command: apt-get install git
-
+  apt:
+    name: git
+    state: present
 
 # See if we need to create a wlan0 interface when we're running in a sim
 #  environment i.e. running virtualised
