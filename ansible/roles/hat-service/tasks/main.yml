@@ -15,7 +15,7 @@
 # (looping deprecated in 2.11)
   apt:
 #    name: "{{ item }}"
-    name: ['libjpeg62-turbo', 'python3-dev', 'libfreetype6', 'libfreetype6-dev', 'libjpeg-dev']
+    name: ['libjpeg-turbo8', 'python3-dev', 'libfreetype6', 'libfreetype6-dev', 'libjpeg-dev']
     state: present
 #  with_items:
 #    - libjpeg62-turbo
