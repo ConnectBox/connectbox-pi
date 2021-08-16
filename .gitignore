@@ -11,3 +11,4 @@ ansible/inventory
 makenewimage.sh
 ansible/inventory-*
 makenewimage.pl
+copyimagetosd.pl
