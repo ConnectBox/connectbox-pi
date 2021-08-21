@@ -38,6 +38,33 @@
     name: git+https://github.com/ConnectBox/NEO_BatteryLevelShutdown.git
   environment:
     MAX_CONCURRENCY: 1
+    
+# Install GPIO
+- name: Set path to RPi.GPIO_NP_CB
+  set_fact:
+    RPi_GPIO_path: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/RPi.GPIO_NP_CB"
+
+- name: Clone the RPi.GPIO_NP_CB repo to battery venv
+  git: 
+    repo: https://github.com/ConnectBox/Rpi.GPIO_NP_CB
+    dest: "{{ RPi_GPIO_path }}"
+    clone: yes
+    update: yes
+
+# The command must include the path to the virtual environment version of python3 or the resulting
+#  library will be installed in usr/local/lib/python3.8/dist-packages rather than the desired
+#  location of /usr/local/connectbox/battery_tool_venv/lib/python3.8/site-packages 
+- name: Run setup.py to build RPi.GPIO
+  command: "{{ hat_service_virtualenv_dir }}/bin/python3 setup.py install"
+  args:
+    chdir: "{{ RPi_GPIO_path }}"
+
+#  KDW - were running as root so adding sudo dosn't do anything      
+#- name: Run sudo setup.py to build RPi.GPIO
+#  command: "sudo {{ hat_service_virtualenv_dir }}/bin/python3 setup.py install"
+#  args:
+#    chdir: "{{ RPi_GPIO_path }}"
+#      	
 
 - name: Copy PA pulldown resistor systemd service definition
   template:
