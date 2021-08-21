@@ -38,8 +38,7 @@
     name: git+https://github.com/ConnectBox/NEO_BatteryLevelShutdown.git
   environment:
     MAX_CONCURRENCY: 1
-	
-	
+    
 # Install GPIO
 - name: Set path to RPi.GPIO_NP_CB
   set_fact:
@@ -59,12 +58,13 @@
   command: "{{ hat_service_virtualenv_dir }}/bin/python3 setup.py install"
   args:
     chdir: "{{ RPi_GPIO_path }}"
-      
-- name: Run sudo setup.py to build RPi.GPIO
-  command: "sudo {{ hat_service_virtualenv_dir }}/bin/python3 setup.py install"
-  args:
-    chdir: "{{ RPi_GPIO_path }}"
-      	
+
+#  KDW - were running as root so adding sudo dosn't do anything      
+#- name: Run sudo setup.py to build RPi.GPIO
+#  command: "sudo {{ hat_service_virtualenv_dir }}/bin/python3 setup.py install"
+#  args:
+#    chdir: "{{ RPi_GPIO_path }}"
+#      	
 
 - name: Copy PA pulldown resistor systemd service definition
   template:
