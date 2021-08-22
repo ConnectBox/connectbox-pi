@@ -50,7 +50,8 @@
     dest: "{{ RPi_GPIO_path }}"
     clone: yes
     update: yes
-
+    force: yes
+    
 # The command must include the path to the virtual environment version of python3 or the resulting
 #  library will be installed in usr/local/lib/python3.8/dist-packages rather than the desired
 #  location of /usr/local/connectbox/battery_tool_venv/lib/python3.8/site-packages 
@@ -59,12 +60,12 @@
   args:
     chdir: "{{ RPi_GPIO_path }}"
 
-#  KDW - were running as root so adding sudo dosn't do anything      
-#- name: Run sudo setup.py to build RPi.GPIO
-#  command: "sudo {{ hat_service_virtualenv_dir }}/bin/python3 setup.py install"
-#  args:
-#    chdir: "{{ RPi_GPIO_path }}"
-#      	
+    
+- name: Run sudo setup.py to build RPi.GPIO
+  command: 'sudo "{{ hat_service_virtualenv_dir }}"/bin/python3 setup.py install'
+  args:
+    chdir: "{{ RPi_GPIO_path }}"
+      	
 
 - name: Copy PA pulldown resistor systemd service definition
   template:
@@ -95,3 +96,4 @@
   with_items:
     - "{{ pa_pulldown_enabler_service_name }}"
     - "{{ hat_service_name }}"
+    
