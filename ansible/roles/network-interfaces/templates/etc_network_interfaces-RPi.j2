@@ -33,6 +33,7 @@ iface {{ client_facing_if }} inet static
     pre-down systemctl stop dnsmasq
     down ip addr del {{ non_private_captive_portal_ip }}/24 dev $IFACE label $IFACE:0
 
+
 # To add local wifi connectivity, substitue your wifi ssid and password (below)
 #  (Leave these lines uncommented even if you don't want internet connectivity 
 #    as it seems that without these lines, the internet connection will take over wlan1)

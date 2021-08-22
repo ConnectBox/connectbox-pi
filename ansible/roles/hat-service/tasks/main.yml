@@ -65,7 +65,7 @@
   command: 'sudo "{{ hat_service_virtualenv_dir }}"/bin/python3 setup.py install'
   args:
     chdir: "{{ RPi_GPIO_path }}"
-      	
+
 
 - name: Copy PA pulldown resistor systemd service definition
   template:
