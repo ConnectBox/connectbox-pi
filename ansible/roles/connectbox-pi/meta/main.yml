@@ -7,6 +7,9 @@ dependencies:
   - wifi-ap
   - mikegleasonjr.firewall
   - nginx
+  - php
+  - ansible-postgresql
+  - moodle
   - captive-portal
   - webserver-content
   - usb-content

@@ -1,4 +1,63 @@
 ---
+
+
+# Needs to happen prior to partitioning
+- name: Create moodledata directory that Moodle requires for all its functions
+  file:
+    state: directory
+    path: /var/www/moodledata/
+    owner: www-data
+    group: www-data
+    mode: 0775
+
+###########################################
+# Raspberry Pi partitioning
+- name: Get Name of SD card
+  shell: lsblk -d | grep disk | awk '{print $1;}'
+  register: sdcard_name
+  when: connectbox_os == "raspbian"
+
+- name: Read SD card information 
+  community.general.parted: device=/dev/{{ sdcard_name.stdout }} unit=MiB
+  register: sdcard_info
+  when: connectbox_os == "raspbian"
+
+- name: Extend the existing OS partition to 4 GB so we have enough space to load all The Well software
+  community.general.parted:
+    device: /dev/{{ sdcard_name.stdout }}
+    number: "{{ sdcard_info.partitions | length }}"
+    part_end: "4GB"
+    resize: true
+    state: present
+  when: connectbox_os == "raspbian" and sdcard_info.partitions | length < 3
+  ignore_errors: yes
+
+- name: Complete the resize filesystem of OS partition 
+  command: resize2fs /dev/{{ sdcard_name.stdout }}p2
+  become: true
+  when: connectbox_os == "raspbian" and sdcard_info.partitions | length < 3
+
+- name: Re-Read SD card information 
+  community.general.parted: device=/dev/{{ sdcard_name.stdout }} unit=MiB
+  register: sdcard_info
+  when: connectbox_os == "raspbian"
+
+
+##########################################
+# Set default passwords
+- name: Change user password
+  user:
+    name: pi
+    update_password: always
+    password: "{{ connectbox_system_password|password_hash('sha512') }}"
+
+- name: Change user password
+  user:
+    name: root
+    update_password: always
+    password: "{{ connectbox_system_password|password_hash('sha512') }}"
+  become: true
+  
 # Check early on to see if the style of interface names need to be changed
 #  (only applicable to Ubuntu, and not when we're running virtualised)
 # We do this before the check for the Armbian reboot oracle. If we need
@@ -81,6 +140,7 @@
   register: rfkill1_state
   ignore_errors: yes
   changed_when: False
+  ignore_errors: yes
   when: connectbox_os == "raspbian"
 
 # Raspbian-lite buster and onwards rfkill wlan1 by default, which causes
@@ -88,6 +148,7 @@
 # This change persists across reboots, so it's safe to do here.
 - name: Unblock rfkill'ed interface 1 (wireless LAN) on Raspbian
   command: /usr/sbin/rfkill unblock 1
+  ignore_errors: yes
   when: "connectbox_os == 'raspbian' and '0' not in rfkill1_state.stdout"
 
 - name: Set default locale
@@ -98,9 +159,9 @@
   when: connectbox_os == "armbian"
 
 # Needed for package upgrades via ansible (aptitude safe-upgrade)
-- name: Install aptitude
+- name: Install apt
   apt:
-    name: aptitude
+    name: apt
     state: present
 
 # mikegleasonjr.firewall assumes iptables but Armbian doesn't ship with it

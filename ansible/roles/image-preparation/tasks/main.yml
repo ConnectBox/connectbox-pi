@@ -214,9 +214,12 @@
     enabled: yes
   when: connectbox_os == "armbian"
 
-- name: Schedule a resize of the root partition after the next boot (Raspbian)
-  command: /usr/bin/raspi-config --expand-rootfs
-  when: connectbox_os == "raspbian"
+# Raspian resize is handled differently
+
+- name: Remove .ssh authorized_keys
+  file:
+    dest: .ssh/authorized_keys
+    state: absent
 
 - name: Schedule Final Handlers
   assert:
