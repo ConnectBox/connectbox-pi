@@ -69,7 +69,7 @@
 #  args:
 #    chdir: "{{ RPi_GPIO_path }}"
 
--name: Install RPi.GPIO for Raspbian build
+- name: Install RPi.GPIO for Raspbian build
   command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.0"
   args:
     chdir: "{{ RPi_GPIO_path }}"
