@@ -40,31 +40,40 @@
     MAX_CONCURRENCY: 1
     
 # Install GPIO
-- name: Set path to RPi.GPIO_NP_CB
+- name: Set path to RPi.GPIO_NP_CB (NEO)
   set_fact:
     RPi_GPIO_path: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/RPi.GPIO_NP_CB"
+  when: connectbox_os != "raspbian"  
 
-- name: Clone the RPi.GPIO_NP_CB repo to battery venv
+- name: Clone the RPi.GPIO_NP_CB repo to battery venv (NEO)
   git: 
     repo: https://github.com/ConnectBox/Rpi.GPIO_NP_CB
     dest: "{{ RPi_GPIO_path }}"
     clone: yes
     update: yes
     force: yes
+  when: connectbox_os != "raspbian"  
     
 # The command must include the path to the virtual environment version of python3 or the resulting
 #  library will be installed in usr/local/lib/python3.8/dist-packages rather than the desired
 #  location of /usr/local/connectbox/battery_tool_venv/lib/python3.8/site-packages 
-- name: Run setup.py to build RPi.GPIO
+- name: Run setup.py to build RPi.GPIO (NEO)
   command: "{{ hat_service_virtualenv_dir }}/bin/python3 setup.py install"
   args:
     chdir: "{{ RPi_GPIO_path }}"
+  when: connectbox_os != "raspbian"  
 
     
-- name: Run sudo setup.py to build RPi.GPIO
-  command: 'sudo "{{ hat_service_virtualenv_dir }}"/bin/python3 setup.py install'
+#- name: Run sudo setup.py to build RPi.GPIO
+#  command: 'sudo "{{ hat_service_virtualenv_dir }}"/bin/python3 setup.py install'
+#  args:
+#    chdir: "{{ RPi_GPIO_path }}"
+
+-name: Install RPi.GPIO for Raspbian build
+  command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.0"
   args:
     chdir: "{{ RPi_GPIO_path }}"
+  when: connectbox_os == "raspbian"  
 
 
 - name: Copy PA pulldown resistor systemd service definition
