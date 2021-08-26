@@ -12,17 +12,9 @@
     creates: /usr/bin/devmem2
 
 - name: Install packages to allow building of pillow and psutil and running of OLED
-# (looping deprecated in 2.11)
   apt:
-#    name: "{{ item }}"
     name: ['libjpeg-turbo8', 'python3-dev', 'libfreetype6', 'libfreetype6-dev', 'libjpeg-dev']
     state: present
-#  with_items:
-#    - libjpeg62-turbo
-#    - python3-dev
-#    - libfreetype6
-#    - libfreetype6-dev
-#    - libjpeg-dev
 
 - name: Make neo battery shutdown virtualenv directory
   file:
@@ -38,6 +30,16 @@
     name: git+https://github.com/ConnectBox/NEO_BatteryLevelShutdown.git
   environment:
     MAX_CONCURRENCY: 1
+
+- name: Remove errant install of directory RPi.GPIO-0.7.0
+  file:
+    path: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/RPi.GPIO-0.7.0.dist-info"
+    state: absent
+
+- name: Remove errant install of directory RPi
+  file:
+    path: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/RPi"
+    state: absent
     
 # Install GPIO
 - name: Set path to RPi.GPIO_NP_CB (NEO)
@@ -63,11 +65,13 @@
     chdir: "{{ RPi_GPIO_path }}"
   when: connectbox_os != "raspbian"  
 
-    
-#- name: Run sudo setup.py to build RPi.GPIO
-#  command: 'sudo "{{ hat_service_virtualenv_dir }}"/bin/python3 setup.py install'
-#  args:
-#    chdir: "{{ RPi_GPIO_path }}"
+- name: Add i2c0 to /boot/armbianEnv.txt
+  replace:
+    path: /boot/armbianEnv.txt
+    regexp: '(overlays=)'
+    replace: '\1i2c0 usbhost0 '
+  when: connectbox_os != "raspbian"  
+
 
 - name: Install RPi.GPIO for Raspbian build
   command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.0"
