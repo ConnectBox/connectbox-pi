@@ -89,7 +89,7 @@
   apt:
 # (looping deprecated in 2.11)
 #    name: "{{ item }}"
-    name: ['bash-completion', 'command-not-found', 'dnsutils', 'dosfstools', 'html2text', 'file', 'fping', 'htop', 'iotop', 'man-db', 'screen', 'stress', 'sysbench', 'usbutils', 'vim', 'vim-runtime', 'wget']
+    name: ['bash-completion', 'command-not-found', 'dnsutils', 'dosfstools', 'html2text', 'f3', 'file', 'fping', 'htop', 'iotop', 'man-db', 'screen', 'stress', 'sysbench', 'usbutils', 'vim', 'vim-runtime', 'wget']
     state: absent
     purge: yes
 #  with_items:
@@ -207,12 +207,14 @@
 #  boot for our images (as long as the device is shutdown and
 #  not rebooted after the playbook is run)
 # This is deliberately placed after the forced-reboot operations
+# Note that this step will fail when using focal... need to discover
+#  a correct way to accomplish resize...
 
 - name: Schedule a resize of the root partition after the next boot (Armbian)
   service:
     name: /usr/lib/armbian/armbian-resize-filesystem
     enabled: yes
-  when: connectbox_os == "armbian" | connectbox_os =="focal"
+  when: connectbox_os == "armbian"
 
 - name: Schedule a resize of the root partition after the next boot (Raspbian)
   command: /usr/bin/raspi-config --expand-rootfs
