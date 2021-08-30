@@ -76,7 +76,7 @@
 
 - name: If rebooted Do we need to re-enter IP address?
   pause:
-    prompt:"^c if you need to change IP addresses and restart with correct address"
+    prompt: "^c if you need to change IP addresses and restart with correct address"
     seconds: 5
 
 - name : Increase size of /tmp to handle upcoming installs
