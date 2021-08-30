@@ -70,13 +70,6 @@
   command: "{{ hat_service_virtualenv_dir }}/bin/pip install luma.oled==2.4.1"
   when: connectbox_os != "raspbian"
 
-- name: Add i2c0 to /boot/armbianEnv.txt
-  replace:
-    path: /boot/armbianEnv.txt
-    regexp: '(overlays=)'
-    replace: '\1i2c0 usbhost0 '
-  when: connectbox_os != "raspbian"  
-
 
 - name: Install RPi.GPIO for Raspbian build
   command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.0"
