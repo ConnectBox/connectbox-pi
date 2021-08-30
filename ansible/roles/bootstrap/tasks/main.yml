@@ -60,7 +60,7 @@
  
 - name: 'debug the armenv variable'
   debug:
-    msg:"Debug of armenv variable = {{ armenv }}" 
+    msg: "Debug of armenv variable = {{ armenv }}" 
 
 - name: Add i2c0 to /boot/armbianEnv.txt
   replace:
