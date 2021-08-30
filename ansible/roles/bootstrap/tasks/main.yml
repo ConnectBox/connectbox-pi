@@ -53,7 +53,7 @@
 - name: Disable systemd-resolve to remove port conflicts
   command: systemctl disable systemd-resolved
 
-- name: Register /boot/armbianEnv.txt
+- name: 'Register boot armbianEnv.txt'
   ansible.builtin.shell: /bin/cat /boot/armbianEnv.txt
   register: armenv
   ignore errors: true
