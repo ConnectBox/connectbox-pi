@@ -53,20 +53,19 @@
 - name: Disable systemd-resolve to remove port conflicts
   command: systemctl disable systemd-resolved
 
-
-- name: Check i2c0 to /boot/armbianEnv.txt
+- name: Remove i2c0 in /boot/armbianEnv.txt
   replace:
     path: /boot/armbianEnv.txt
     regexp: 'overlays=i2c0 usbhost0'
     replace: 'overlays='
   when: connectbox_os != "raspbian"
 
-    
 - name: Add i2c0 to /boot/armbianEnv.txt
   replace:
     path: /boot/armbianEnv.txt
     regexp: '(overlays=)'
-    replace: '\1i2c0 usbhost0 ' and armenv_contents.stdout.find('li2c0') == -1  
+    replace: '\1i2c0 usbhost0 '
+  when: connectbox_os != "raspbian" and armenv_contents.stdout.find('i2c0') == -1  
 
 # The system takes 5-10 seconds to disappear from the network
 #  so let's wait 15 seconds before doing our first check
