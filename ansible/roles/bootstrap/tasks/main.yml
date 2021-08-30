@@ -53,13 +53,16 @@
 - name: Disable systemd-resolve to remove port conflicts
   command: systemctl disable systemd-resolved
 
+- name: Register /boot/armbianEnv.txt
+    ansible.builtin.shell: cat /boot/armbianEnv.txt
+    register: ArmbianEnv_contents
+
 - name: Add i2c0 to /boot/armbianEnv.txt
   replace:
     path: /boot/armbianEnv.txt
     regexp: '(overlays=)'
     replace: '\1i2c0 usbhost0 '
-  when: connectbox_os != "raspbian"  
-
+  when: connectbox_os != "raspbian" & ArmbianEnv_contents.stdout.find('li2c0') == -1  
 
 # The system takes 5-10 seconds to disappear from the network
 #  so let's wait 15 seconds before doing our first check
@@ -69,6 +72,11 @@
     post_reboot_delay=15
     pre_reboot_delay=2
   when: reboot_required
+
+- name: If rebooted Do we need to re-enter IP address?
+  pause:
+    prompt:"^c if you need to change IP addresses and restart with correct address"
+    seconds: 5
 
 - name : Increase size of /tmp to handle upcoming installs
   command: mount -o remount, size=400M /tmp/
