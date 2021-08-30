@@ -54,9 +54,9 @@
   command: systemctl disable systemd-resolved
 
 - name: Register /boot/armbianEnv.txt
-    ansible.builtin.shell: /bin/cat /boot/armbianEnv.txt
-    register: armenv
-    ignore errors: true
+  ansible.builtin.shell: /bin/cat /boot/armbianEnv.txt
+  register: armenv
+  ignore errors: true
     
 - name: Add i2c0 to /boot/armbianEnv.txt
   replace:
