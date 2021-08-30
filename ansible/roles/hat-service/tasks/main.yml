@@ -32,7 +32,7 @@
     MAX_CONCURRENCY: 1
 
 - name: Install Pillow in hat service virtualenv
-  command: "{{ hat_service_virtualenv_dir }}/bin/pip install Pillow=6.2.1"
+  command: "{{ hat_service_virtualenv_dir }}/bin/pip install Pillow==6.2.1"
   when: connectbox_os != "raspbian"
 
 
