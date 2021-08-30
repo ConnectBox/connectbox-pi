@@ -23,13 +23,13 @@
 #  ansible run, but won't need later (ex: git). This saves
 #  a significant amount of space in the actual images.
 
-- name: Purge misc armbian utils
-  apt:
+#- name: Purge misc armbian utils
+#  apt:
 # (looping deprecated in 2.11)
 #    name: "{{ item }}"
-    name: ['armbian-config']
-    state: absent
-    purge: yes
+#    name: ['armbian-config']
+#    state: absent
+#    purge: yes
 #  with_items:
 #    - armbian-config
 
