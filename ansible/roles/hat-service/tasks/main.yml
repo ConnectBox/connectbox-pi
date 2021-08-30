@@ -31,17 +31,7 @@
   environment:
     MAX_CONCURRENCY: 1
 
-- name: Remove errant install of directory RPi.GPIO-0.7.0
-  file:
-    path: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/RPi.GPIO-0.7.0.dist-info"
-    state: absent
-
-- name: Remove errant install of directory RPi
-  file:
-    path: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/RPi"
-    state: absent
-    
-# Install GPIO
+# Install RPi.GPIO_NP_CB as RPi.GPIO
 - name: Set path to RPi.GPIO_NP_CB (NEO)
   set_fact:
     RPi_GPIO_path: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/RPi.GPIO_NP_CB"
@@ -64,6 +54,16 @@
   args:
     chdir: "{{ RPi_GPIO_path }}"
   when: connectbox_os != "raspbian"  
+
+# With RPi.GPIO installed, we can now install the luma.core and luma.oled modules
+#  which will use the installed RPi.GPIO rather than trying to install RPi.GPIO 0.7.0
+- name: Install luma.core in hat service virtualenv
+  command: "{{ hat_service_virtualenv_dir }}/bin/pip install luma.core==1.7.2"
+  when: connectbox_os != "raspbian"
+
+- name: Install luma.oled in hat service virtualenv
+  command: "{{ hat_service_virtualenv_dir }}/bin/pip install luma.oled==2.4.1"
+  when: connectbox_os != "raspbian"
 
 - name: Add i2c0 to /boot/armbianEnv.txt
   replace:
