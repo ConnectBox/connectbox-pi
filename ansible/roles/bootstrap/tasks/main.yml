@@ -57,8 +57,10 @@
   ansible.builtin.shell: /bin/cat /boot/armbianEnv.txt
   register: armenv
 #  ignore errors: true
-  
-  debug: "{{ armenv }}" 
+ 
+- name: 'debug the armenv variable'
+  debug:
+    msg:"Debug of armenv variable = {{ armenv }}" 
 
 - name: Add i2c0 to /boot/armbianEnv.txt
   replace:
