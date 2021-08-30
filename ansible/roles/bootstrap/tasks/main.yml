@@ -57,13 +57,15 @@
   ansible.builtin.shell: /bin/cat /boot/armbianEnv.txt
   register: armenv
 #  ignore errors: true
-    
+  
+  debug: "{{ armenv }}" 
+
 - name: Add i2c0 to /boot/armbianEnv.txt
   replace:
     path: /boot/armbianEnv.txt
     regexp: '(overlays=)'
     replace: '\1i2c0 usbhost0 '
-  when: connectbox_os != "raspbian" and armenv_contents.stdout.find('li2c0') == -1  
+  when: connectbox_os != "raspbian" and armenv_contents.stdout.find('i2c0') == -1  
 
 # The system takes 5-10 seconds to disappear from the network
 #  so let's wait 15 seconds before doing our first check
