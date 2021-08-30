@@ -74,6 +74,11 @@
   command: "{{ hat_service_virtualenv_dir }}/bin/pip install luma.oled==2.4.1"
   when: connectbox_os != "raspbian"
 
+- name: Re-install libjpeg-dev 
+  command: "apt-get install libjpeg-dev"
+  when: connectbox_os != "raspbian"
+
+
 
 - name: Install RPi.GPIO for Raspbian build
   command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.0"
