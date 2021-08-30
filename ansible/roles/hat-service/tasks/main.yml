@@ -12,7 +12,8 @@
     creates: /usr/bin/devmem2
     
 - name: Expand Temp directory otherwise we will run out of space
-  command: mount -o remount, size=400M /tmp/
+  command: mount -o remount,size=400M /tmp/
+  when: connectbox_os != "raspbian"
 
 - name: Install packages to allow building of pillow and psutil and running of OLED
   apt:
