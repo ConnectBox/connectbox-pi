@@ -44,7 +44,7 @@
   when: connectbox_os != "raspbian"
 
 - name: Enable fstab change
-  linefile:
+  lineinfile:
     path: /etc/fstab
     line: '/swapfile swap sw rw, nodev, nosuid, size=400M 0 0\n'
     state: present
