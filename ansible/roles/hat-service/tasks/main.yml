@@ -51,10 +51,6 @@
   environment:
     MAX_CONCURRENCY: 1
 
-- name: Remove temp files
-  command: rm -rf /tmp/*
-  warn: false
-
 - name: Install Pillow in virtual environment (python3)
   pip:
     virtualenv: "{{ hat_service_virtualenv_dir }}"
