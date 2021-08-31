@@ -15,9 +15,6 @@
     msg: "Ansible Group Variables Target Specific {{ ansible_lsb['id']|lower }}"
 
 - debug:
-    msg: "Armbian Release {{ armbian_file }}"
-
-- debug:
     msg: "Armbian rlease file {{ armbian_release_file }}"
 
 - debug:
