@@ -35,13 +35,13 @@
   environment:
     MAX_CONCURRENCY: 1
 
-- name: Install/activate hat service virtualenv
-  command: "source {{ hat_service_virtualenv_dir }}/bin/activate"
-  when: connectbox_os != "raspbian"
-
-- name: Install Pillow into hat service virtualenv
-  command: "pip3 install Pillow==6.2.1"
-  when: connectbox_os != "raspbian"
+= name: Install Pillow in virtual environment (python3)
+  pip:
+    virtualenv: "{{ hat_service_virtualenv_dir }}"
+    virualenv_python: python3
+    name: pip+Pillow==6.2.1
+  environment:
+    MAX_CONCURRENCY: 1
 
 # Install RPi.GPIO_NP_CB as RPi.GPIO
 - name: Set path to RPi.GPIO_NP_CB (NEO)
