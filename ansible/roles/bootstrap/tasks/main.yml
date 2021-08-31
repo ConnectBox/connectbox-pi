@@ -6,13 +6,13 @@
 #  reboot oracle too, but if the reboot oracle check is before this check
 #  we'll need to reboot a second time (after creating the symlink)
 - debug:
-    msg: "Ansible Group Variables Family {{ group_vars/{{ ansible_os_family|lower }} }}"
+    msg: "Ansible Group Variables Family {{ ansible_os_family|lower }}"
 
 - debug:
-    msg: "Ansible Group Variables Distribution {{ group_vars/{{ ansible_distribution|lower }}"
+    msg: "Ansible Group Variables Distribution {{ ansible_distribution|lower }}"
 
 - debug:
-    msg: "Ansible Group Variables Target Specific {{ group_vars/{{ ansible_lsb['id']|lower }}"
+    msg: "Ansible Group Variables Target Specific {{ ansible_lsb['id']|lower }}"
 
 - debug:
     msg: "Armbian Release {{ armbian_file }}"
