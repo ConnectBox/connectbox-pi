@@ -15,6 +15,22 @@
   command: mount -o remount,size=400M /tmp/
   when: connectbox_os != "raspbian"
 
+- name: Expand swapfile
+  command: fallocate -l 400M /swapfile
+  when: connectbox_os != "raspbian"
+
+- name: fill swapfile
+  command: dd if=/dev/zero of=/swapfile bs=1024 count=409600
+  when: connectbox_os != "raspbian"
+
+- name: change swap mode
+  command: chmod 600 /swapfile
+  when: connectbox_os != "raspbian"
+
+- name: turn swapfile on
+  command: swapon /swapfile
+  when: connectbox_os != "raspbian"
+
 - name: Install packages to allow building of pillow and psutil and running of OLED
   apt:
     name: ['libjpeg-turbo8', 'python3-dev', 'libfreetype6', 'libfreetype6-dev', 'libjpeg-dev', 'zlib1g-dev', 'libpng-dev']
@@ -37,16 +53,15 @@
 
 - name: Remvoe temp files
   command: "rm -rf /tmp/*"
+  warn: false
 
 - name: Install Pillow in virtual environment (python3)
   pip:
     virtualenv: "{{ hat_service_virtualenv_dir }}"
     virtualenv_python: python3
-    name: "{{item}}"
+    name: "Pillow==6.2.1"
   environment:
     MAX_CONCURRENCY: 1
-  with_items:
-    - Pillow==6.2.1
     
 # Install RPi.GPIO_NP_CB as RPi.GPIO
 - name: Set path to RPi.GPIO_NP_CB (NEO)
