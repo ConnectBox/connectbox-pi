@@ -106,9 +106,8 @@
     group: root
     
 - name: Load final elements
-    command: "apt -y install libjpeg-dev"
-    owner: root
-    group: root
+  command: "apt-get -y install libjpeg-dev"
+  when: connectbox_os != "raspbian"
   notify:
     - restart neo battery shutdown service
 
