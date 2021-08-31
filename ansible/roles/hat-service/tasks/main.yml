@@ -104,6 +104,11 @@
     mode: 0644
     owner: root
     group: root
+    
+- name: Load final elements
+    command: "apt -y install libjpeg-dev"
+    owner: root
+    group: root
   notify:
     - restart neo battery shutdown service
 

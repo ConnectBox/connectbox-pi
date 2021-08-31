@@ -13,8 +13,10 @@
   pre_tasks:
     - name: Include OS family variables
       include_vars: "group_vars/{{ ansible_os_family|lower }}"
+      msg: '{{ group_vars/{{ ansible_os_family|lower }} }}'
     - name: Include Distribution variables
       include_vars: "group_vars/{{ ansible_distribution|lower }}"
+      msg: '{{ group_vars/{{ ansible_distribution|lower }} }}'
     - name: Include Target specific variables
       include_vars: "group_vars/{{ ansible_lsb['id']|lower }}"
     - name: Check for Armbian info
