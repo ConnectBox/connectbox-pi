@@ -17,12 +17,14 @@
 
 - name: Expand swapfile
   command: fallocate -l 400M /swapfile
+  register: command_result
   ignore_errors: yes
   when: connectbox_os != "raspbian"
 
 
 - name: fill swapfile
   command: dd if=/dev/zero of=/swapfile bs=1024 count=409600
+  register: command_result
   ignore_erros: yes
   when: connectbox_os != "raspbian"
 
@@ -32,10 +34,12 @@
 
 - name: make it a swapfile
   command: mkswap /swapfile
+  register: command_result
   ignore_errors: yes
 
 - name: turn swapfile on
   command: swapon /swapfile
+  register: command_result
   ignore_erros: yes 
   when: connectbox_os != "raspbian"
 
@@ -44,6 +48,7 @@
     path: /etc/fstab
     regex: '/swapfile swap swap rw, nodev, nosuid, size=400M 0 0\n'
     replace: ''
+    warn: false
   when: connectbox_os != "raspbian"
 
 
