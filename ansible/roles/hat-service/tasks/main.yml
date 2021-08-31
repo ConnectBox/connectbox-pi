@@ -35,14 +35,8 @@
   environment:
     MAX_CONCURRENCY: 1
 
-- hosts: localhost
-  tags: working
-  tasks:
-  - name: cleanup
-    file:
-       path: /tmp/venv
-       state: absent
-       force: yes
+- name: Remvoe temp files
+  command: "rm -rf /tmp/*"
 
 - name: Install Pillow in virtual environment (python3)
   pip:
