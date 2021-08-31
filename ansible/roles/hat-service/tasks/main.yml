@@ -53,7 +53,7 @@
 
 - name: Install packages to allow building of pillow and psutil and running of OLED
   apt:
-    name: ['libjpeg-turbo8', 'python3-dev', 'libfreetype6', 'libfreetype6-dev', 'libjpeg-dev', 'zlib1g-dev', 'libpng-dev']
+    name: ['libjpeg-turbo8', 'python3-dev', 'libfreetype6', 'libfreetype6-dev','zlib1g-dev', 'libpng-dev']
     state: present
 
 - name: Make neo battery shutdown virtualenv directory
@@ -113,12 +113,6 @@
   command: "{{ hat_service_virtualenv_dir }}/bin/pip install luma.oled==2.4.1"
   when: connectbox_os != "raspbian"
 
-- name: Re-install libjpeg-dev 
-  command: "apt-get install libjpeg-dev"
-  when: connectbox_os != "raspbian"
-
-
-
 - name: Install RPi.GPIO for Raspbian build
   command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.0"
   args:
@@ -144,11 +138,10 @@
     owner: root
     group: root
     
-- name: Load final elements
+- name: Load final elements libjpeg-dev
   command: "apt-get -y install libjpeg-dev"
   when: connectbox_os != "raspbian"
-  notify:
-    - restart neo battery shutdown service
+  notify: "restart neo battery shutdown service"
 
 # Startup has either already happened, or will happen in the handler
 - name: Enable services
