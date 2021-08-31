@@ -27,8 +27,27 @@
   command: chmod 600 /swapfile
   when: connectbox_os != "raspbian"
 
+- name: make it a swapfile
+  command: mkswap /swapfile
+
 - name: turn swapfile on
   command: swapon /swapfile
+  when: connectbox_os != "raspbian"
+
+- name: Remove fstab entry for swapfile if it exsists.
+  replace:
+    path: /etc/fstab
+    regexp: 'tmpfs /tmp tmpfs rw, nodev, nosuid, size=400M 0 0\n'
+    replace: ''
+  when: connectbox_os != "raspbian"
+
+
+- name: Enable fstab change
+  replace:
+    path: /etc/fstab
+    regexp: '0 0\n'
+    replace: '\1tmpfs /tmp tmpfs rw, nodev, nosuid, size=400M 0 0\n'
+    warn: false
   when: connectbox_os != "raspbian"
 
 - name: Install packages to allow building of pillow and psutil and running of OLED
