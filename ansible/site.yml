@@ -40,14 +40,8 @@
       changed_when: False
       
     - debug:
-      msg: "Ansible family lower {{ group_vars/{{ ansible_os_family|lower }} }}"
-      
-    - debug:
-      msg: "Ansible Distribution lower {{ group_vars/{{ ansible_distribution|lower }} }}"
-      
-    - debug:
-      msg: "Ansible LSB lower {{ group_vars/{{ ansible_lsb['id']]|lower }} }}"
-      
+      msg: "Ansible Group Variables {{ group_vars/armbian }}"
+         
     - debug:
       msg: "Armbian Release {{ armbian_file }}"
       
