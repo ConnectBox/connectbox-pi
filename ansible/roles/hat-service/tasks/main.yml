@@ -39,7 +39,7 @@
   pip:
     virtualenv: "{{ hat_service_virtualenv_dir }}"
     virualenv_python: python3
-    name: pip+Pillow==6.2.1
+    name: Pillow==6.2.1
   environment:
     MAX_CONCURRENCY: 1
 
