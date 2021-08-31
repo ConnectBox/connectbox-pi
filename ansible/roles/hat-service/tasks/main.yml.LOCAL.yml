@@ -43,21 +43,12 @@
   ignore_errors: yes 
   when: connectbox_os != "raspbian"
 
-- name: Remove fstab entry for swapfile if it exsists.
-  replace:
-    path: /etc/fstab
-    regex: '/swapfile swap swap rw, nodev, nosuid, size=400M 0 0\n'
-    replace: ''
-    warn: false
-  when: connectbox_os != "raspbian"
-
-
 - name: Enable fstab change
-  replace:
+  lineinfile:
     path: /etc/fstab
-    regexp: '(0 0\n)'
-    replace: '/swapfile swap sw rw, nodev, nosuid, size=400M 0 0\n'
-    warn: false
+    line: '/swapfile swap sw rw, nodev, nosuid, size=400M 0 0\n'
+    state: present
+    create: yes
   when: connectbox_os != "raspbian"
 
 - name: Install packages to allow building of pillow and psutil and running of OLED
