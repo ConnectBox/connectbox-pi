@@ -80,7 +80,6 @@
     path: /boot/armbianEnv.txt
     regexp: '(overlays=)'
     replace: '\1i2c0 usbhost0 '
-    warn: false
   when: connectbox_os != "raspbian"
 
 # The system takes 5-10 seconds to disappear from the network
