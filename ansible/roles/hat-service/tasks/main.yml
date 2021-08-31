@@ -17,10 +17,13 @@
 
 - name: Expand swapfile
   command: fallocate -l 400M /swapfile
+  ignore_errors: yes
   when: connectbox_os != "raspbian"
+
 
 - name: fill swapfile
   command: dd if=/dev/zero of=/swapfile bs=1024 count=409600
+  ignore_erros: yes
   when: connectbox_os != "raspbian"
 
 - name: change swap mode
@@ -29,15 +32,17 @@
 
 - name: make it a swapfile
   command: mkswap /swapfile
+  ignore_errors: yes
 
 - name: turn swapfile on
   command: swapon /swapfile
+  ignore_erros: yes 
   when: connectbox_os != "raspbian"
 
 - name: Remove fstab entry for swapfile if it exsists.
   replace:
     path: /etc/fstab
-    regexp: 'tmpfs /tmp tmpfs rw, nodev, nosuid, size=400M 0 0\n'
+    regex: '/swapfile swap swap rw, nodev, nosuid, size=400M 0 0\n'
     replace: ''
   when: connectbox_os != "raspbian"
 
@@ -45,8 +50,8 @@
 - name: Enable fstab change
   replace:
     path: /etc/fstab
-    regexp: '0 0\n'
-    replace: '0 0\ntmpfs /tmp tmpfs rw, nodev, nosuid, size=400M 0 0\n'
+    regexp: '(0 0\n)'
+    replace: '/swapfile swap sw rw, nodev, nosuid, size=400M 0 0\n'
     warn: false
   when: connectbox_os != "raspbian"
 
