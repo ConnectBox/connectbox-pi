@@ -13,32 +13,18 @@
   pre_tasks:
     - name: Include OS family variables
       include_vars: "group_vars/{{ ansible_os_family|lower }}"
-    
-    - debug:
-      msg: "{{ group_vars/{{ ansible_os_family|lower }} }}"
-    
     - name: Include Distribution variables
       include_vars: "group_vars/{{ ansible_distribution|lower }}"
-    
-    - debug:
-      msg: "{{ group_vars/{{ ansible_distribution|lower }} }}"
-    
     - name: Include Target specific variables
       include_vars: "group_vars/{{ ansible_lsb['id']|lower }}"
-    
-    - debug:
-      msg: "{{ group_vars/{{ ansible_lsb['id']]|lower }}"
-    
     - name: Check for Armbian info
       stat:
         path: "/etc/armbian.txt"
       register: armbian_file
-    
     - name: Check for Armbian Release
       stat:
         path: "/etc/armbian-release"
       register: armbian_release_file
-    
     - name: Include Armbian specific variables
       include_vars: "group_vars/armbian"
       when: armbian_file.stat.exists == True or armbian_release_file.stat.exists == True
@@ -52,6 +38,14 @@
       register: machine_type
       ignore_errors: yes
       changed_when: False
+      
+    - debug:
+      msg: "Ansible family lower {{ group_vars/{{ ansible_os_family|lower }} }}"
+      msg: "Ansible Distribution lower {{ group_vars/{{ ansible_distribution|lower }} }}"
+      msg: "Ansible LSB lower {{ group_vars/{{ ansible_lsb['id']]|lower }} }}"
+      msg: "Armbian Release {{ armbian_file }}"
+      msg: "Armbian rlease file {{ armbian_release_file }}"
+      msg: "Machine Type file {{ machine_type }}"
   become: yes
   roles:
     - connectbox-pi
