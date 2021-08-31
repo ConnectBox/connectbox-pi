@@ -41,11 +41,22 @@
       
     - debug:
       msg: "Ansible family lower {{ group_vars/{{ ansible_os_family|lower }} }}"
+      
+    - debug:
       msg: "Ansible Distribution lower {{ group_vars/{{ ansible_distribution|lower }} }}"
+      
+    - debug:
       msg: "Ansible LSB lower {{ group_vars/{{ ansible_lsb['id']]|lower }} }}"
+      
+    - debug:
       msg: "Armbian Release {{ armbian_file }}"
+      
+    - debug:
       msg: "Armbian rlease file {{ armbian_release_file }}"
+      
+    - debug:
       msg: "Machine Type file {{ machine_type }}"
+      
   become: yes
   roles:
     - connectbox-pi
