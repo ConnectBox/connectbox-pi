@@ -71,7 +71,7 @@
 - name: Remove i2c0 in /boot/armbianEnv.txt
   replace:
     path: /boot/armbianEnv.txt
-    regexp: 'overlays=i2c0 usbhost0'
+    regexp: 'overlays=i2c0 usbhost0 '
     replace: 'overlays='
   when: connectbox_os != "raspbian"
 
