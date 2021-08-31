@@ -25,7 +25,7 @@
 - name: fill swapfile
   command: dd if=/dev/zero of=/swapfile bs=1024 count=409600
   register: command_result
-  ignore_erros: yes
+  ignore_errors: yes
   when: connectbox_os != "raspbian"
 
 - name: change swap mode
@@ -40,7 +40,7 @@
 - name: turn swapfile on
   command: swapon /swapfile
   register: command_result
-  ignore_erros: yes 
+  ignore_errors: yes 
   when: connectbox_os != "raspbian"
 
 - name: Remove fstab entry for swapfile if it exsists.
