@@ -35,7 +35,7 @@
   environment:
     MAX_CONCURRENCY: 1
 
-= name: Install Pillow in virtual environment (python3)
+- name: Install Pillow in virtual environment (python3)
   pip:
     virtualenv: "{{ hat_service_virtualenv_dir }}"
     virualenv_python: python3
