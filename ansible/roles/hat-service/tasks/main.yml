@@ -35,14 +35,25 @@
   environment:
     MAX_CONCURRENCY: 1
 
+- hosts: localhost
+  tags: working
+  tasks:
+  - name: cleanup
+    file:
+       path: /tmp/venv
+       state: absent
+       force: yes
+
 - name: Install Pillow in virtual environment (python3)
   pip:
     virtualenv: "{{ hat_service_virtualenv_dir }}"
-    virualenv_python: python3
-    name: Pillow==6.2.1
+    virtualenv_python: python3
+    name: "{{item}}"
   environment:
     MAX_CONCURRENCY: 1
-
+  with_items:
+    - Pillow==6.2.1
+    
 # Install RPi.GPIO_NP_CB as RPi.GPIO
 - name: Set path to RPi.GPIO_NP_CB (NEO)
   set_fact:
