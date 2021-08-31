@@ -46,7 +46,7 @@
   replace:
     path: /etc/fstab
     regexp: '0 0\n'
-    replace: '\1tmpfs /tmp tmpfs rw, nodev, nosuid, size=400M 0 0\n'
+    replace: '0 0\ntmpfs /tmp tmpfs rw, nodev, nosuid, size=400M 0 0\n'
     warn: false
   when: connectbox_os != "raspbian"
 

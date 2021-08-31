@@ -78,8 +78,8 @@
 - name: Add i2c0 to /boot/armbianEnv.txt
   replace:
     path: /boot/armbianEnv.txt
-    regexp: '(overlays=)'
-    replace: '\1i2c0 usbhost0 '
+    regexp: 'overlays='
+    replace: 'overlays=i2c0 usbhost0 '
     warn: false
   when: connectbox_os != "raspbian"
 
