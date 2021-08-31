@@ -1,16 +1,4 @@
 ---
-- debug:
-    msg: "Ansible Group Variables {{ group_vars/armbian }}"
-
-- debug:
-    msg: "Armbian Release {{ armbian_file }}"
-
-- debug:
-    msg: "Armbian rlease file {{ armbian_release_file }}"
-
-- debug:
-    msg: "Machine Type file {{ machine_type }}"
-
 - name: Configure hostname
   hostname:
     name: "{{ connectbox_default_hostname }}"

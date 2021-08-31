@@ -5,6 +5,18 @@
 #  to reboot to activate the old-style interface names, we'll sort out the
 #  reboot oracle too, but if the reboot oracle check is before this check
 #  we'll need to reboot a second time (after creating the symlink)
+- debug:
+    msg: "Ansible Group Variables {{ group_vars/armbian }}"
+
+- debug:
+    msg: "Armbian Release {{ armbian_file }}"
+
+- debug:
+    msg: "Armbian rlease file {{ armbian_release_file }}"
+
+- debug:
+    msg: "Machine Type file {{ machine_type }}"
+
 - name: setup use of old-style interface names for predictability across devices
   file:
     dest: /etc/udev/rules.d/80-net-setup-link.rules
