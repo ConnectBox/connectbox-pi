@@ -43,7 +43,6 @@
   ignore_errors: yes 
   when: connectbox_os != "raspbian"
 
-
 - name: Enable fstab change
   lineinfile:
     path: /etc/fstab
