@@ -111,7 +111,7 @@
 
 - name: Enable virtual envrionment
   command: "source {{ hat_service_virtualenv_dir }}/bin/activate"
-when: connectbox_os != "raspian"
+  when: connectbox_os != "raspian"
 
 - name: compile Pillow in virtual environment (python3)
   command: "{{ hat_service_virtualenv_dir }}/bin/python3 setup.py install"
@@ -138,7 +138,7 @@ when: connectbox_os != "raspian"
 
 - name: Enable virtual envrionment
   command: "source {{ RPi_GPIO_path }}/bin/activate"
-when: connectbox_os != "raspian"
+  when: connectbox_os != "raspian"
 
 # The command must include the path to the virtual environment version of python3 or the resulting
 #  library will be installed in usr/local/lib/python3.8/dist-packages rather than the desired
