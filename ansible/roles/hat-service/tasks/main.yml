@@ -88,22 +88,22 @@
   when: connectbox_os != "raspian"
 
 - name: unzip Pillow in virtual environment (python3)
-  command: gzip -d Pillow-6.2.1.tar.gz
-    virtualenv: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages"
-    virtualenv_python: python3
-when: connectbox_os != "raspian"
+  ansible.builtin.unarchive:
+    src:  "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/Pillow-6.2.1.tar.gz"
+    dest: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/"
+  when: connectbox_os != "raspian"
 
-- name: un tar Pillow in virtual environment (python3)
-  command: tar -xf Pillow-6.2.1.tar
+#- name: un tar Pillow in virtual environment (python3)
+#  command: tar -xf Pillow-6.2.1.tar
+#    virtualenv: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages"
+#    virtualenv_python: python3
+#when: connectbox_os != "raspian"
+#
+#- name: Delete extraneous tar file of Pillow in virtual environment (python3)
+#  command: rm Pillow-6.2.1.tar
     virtualenv: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages"
     virtualenv_python: python3
-when: connectbox_os != "raspian"
-
-- name: Delete extraneous tar file of Pillow in virtual environment (python3)
-  command: rm Pillow-6.2.1.tar
-    virtualenv: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages"
-    virtualenv_python: python3
-when: connectbox_os != "raspian"
+#when: connectbox_os != "raspian"
 
 - name: compile Pillow in virtual environment (python3)
   command: python3 setup.py install
