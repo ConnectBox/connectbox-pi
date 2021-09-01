@@ -101,8 +101,8 @@
 #
 #- name: Delete extraneous tar file of Pillow in virtual environment (python3)
 #  command: rm Pillow-6.2.1.tar
-    virtualenv: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages"
-    virtualenv_python: python3
+#    virtualenv: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages"
+#    virtualenv_python: python3
 #when: connectbox_os != "raspian"
 
 - name: compile Pillow in virtual environment (python3)
