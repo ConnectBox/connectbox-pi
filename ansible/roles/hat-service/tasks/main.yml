@@ -68,9 +68,9 @@
     virtualenv: "{{ hat_service_virtualenv_dir }}"
     virtualenv_python: python3
 
-- name: Enable virtual envrionment
-  command: "source /usr/local/connectbox/battery_tool_venv/bin/activate"
-  when: connectbox_os != "raspian"
+#- name: Enable virtual envrionment
+#  command: "source /usr/local/connectbox/battery_tool_venv/bin/activate"
+#  when: connectbox_os != "raspian"
   
 - name: Install prerequesitst for Pillow build
   apt:
@@ -78,7 +78,7 @@
     state: present 
   when: ansible_lsb["id"] == "Debian"
 
-- name: Make sure there is no Pilllow code already there
+- name: Make sure there is no Pillow code already there
   ansible.builtin.file:
     path: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/Pillow-6.2.1.tar.gz"
     state: absent
@@ -100,7 +100,7 @@
 - name: compile Pillow in virtual environment (python3)
   command: "{{ hat_service_virtualenv_dir }}/bin/python3 setup.py install"
   args:
-    chdir: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/Pillow/"
+    chdir: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/Pillow-6.2.1/"
   environment:
     MAX_CONCURRENCY: 1
   when: connectbox_os != "raspian"
@@ -145,9 +145,9 @@
     chdir: "{{ RPi_GPIO_path }}"
   when: connectbox_os == "raspbian"  
 
-- name: Disable virtual environment
-  command: deactivate
-  when: connectbox_os != "raspian"
+#- name: Disable virtual environment
+#  command: deactivate
+#  when: connectbox_os != "raspian"
 
 - name: Copy PA pulldown resistor systemd service definition
   template:
