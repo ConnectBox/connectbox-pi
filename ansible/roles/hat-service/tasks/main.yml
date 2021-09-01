@@ -82,7 +82,7 @@
   when: ansible_lsb["id"] == "Debian"
 
 - name: Git the code from the repository
-  get_url: url={{ https://files.pythonhosted.org/packages/5b/bb/cdc8086db1f15d0664dd22a62c69613cdc00f1dd430b5b19df1bea83f2a3/Pillow-6.2.1.tar.gz }} dest={{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/Pillow.6.2.1 }}
+  get_url: url= https://files.pythonhosted.org/packages/5b/bb/cdc8086db1f15d0664dd22a62c69613cdc00f1dd430b5b19df1bea83f2a3/Pillow-6.2.1.tar.gz  dest={{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/Pillow.6.2.1 }}
 when: connectbox_os != "raspian"
 
 - name: unzip Pillow in virtual environment (python3)
