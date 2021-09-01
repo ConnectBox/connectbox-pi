@@ -104,7 +104,7 @@
     virtualenv: "{{ hat_service_virtualenv_dir }}"
 
 - name: compile Pillow in virtual environment (python3)
-  command: "{{ hat_service_virtualenv_dir }}/bin/python3 {{ hat_service_virtualenv_dir }}/lib/python3.8/site_packages/Pillow-6.2.1/setup.py install"
+  command: "{{ hat_service_virtualenv_dir }}/bin/python3 {{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/Pillow-6.2.1/setup.py install"
   args:
     chdir: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/Pillow-6.2.1/"
   environment:
@@ -150,7 +150,6 @@
   args:
     chdir: "{{ RPi_GPIO_path }}"
   when: connectbox_os == "raspbian"  
-
 
 - name: Copy PA pulldown resistor systemd service definition
   template:
