@@ -5,10 +5,6 @@
     regexp: '^country_code=.*'
     line: country_code=00
 
-- name: Copy the /usr/lib/armbian/armbian-image-resize to another location
-  command: cp /usr/lib/armbian/armbian-resize* /usr/bin/
-  when: connectbox_os != "raspbian"
-
   
 # In preparation for purging packages in the next step...
 # Some packages have lite versions that can be subbed in
@@ -210,7 +206,7 @@
 
 - name: Schedule a resize of the root partition after the next boot (Armbian)
   service:
-    name: /usr/bin/armbian-resize-filesystem
+    name: /usr/lib/armbian/armbian-resize-filesystem
     enabled: yes
   when: connectbox_os == "armbian"
 
