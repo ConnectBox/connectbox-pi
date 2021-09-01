@@ -67,7 +67,6 @@
     name: git+https://github.com/ConnectBox/NEO_BatteryLevelShutdown.git
     virtualenv: "{{ hat_service_virtualenv_dir }}"
     virtualenv_python: python3
-    executable: pip3
 
 
 - name: Install prerequesitst for Pillow build
