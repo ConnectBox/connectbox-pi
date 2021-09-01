@@ -104,11 +104,12 @@
 #    virtualenv: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages"
 #    virtualenv_python: python3
 #when: connectbox_os != "raspian"
+- name: Enable virtual envrionment
+  command: source "{{ hat_service_virtualenv_dir }}/bin/activate"
+when: connectbox_os != "raspian"
 
 - name: compile Pillow in virtual environment (python3)
-  command: python3 setup.py install
-    virtualenv: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/Pillow.6.2.1 }}"
-    virtualenv_python: python3
+  command: "{{ hat_service_virtualenv_dir }}/bin/python3 {{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/Pillow.6.2.1 }}/setup.py install"
   environment:
     MAX_CONCURRENCY: 1
 when: connectbox_os != "raspian"
@@ -153,6 +154,9 @@ when: connectbox_os != "raspian"
     chdir: "{{ RPi_GPIO_path }}"
   when: connectbox_os == "raspbian"  
 
+- name: Disable virtual environment
+  command: disable
+  when: connectbox_os != "raspian"
 
 - name: Copy PA pulldown resistor systemd service definition
   template:
@@ -175,7 +179,7 @@ when: connectbox_os != "raspian"
 - name: Load final elements libjpeg-dev
   command: "apt-get -y install libjpeg-dev"
   when: connectbox_os != "raspbian"
-  notify: "restart neo battery shutdown service"
+  notify: "restart neo-battery-shutdown.service"
 
 # Startup has either already happened, or will happen in the handler
 - name: Enable services
