@@ -68,10 +68,7 @@
     virtualenv: "{{ hat_service_virtualenv_dir }}"
     virtualenv_python: python3
 
-#- name: Enable virtual envrionment
-#  command: "source /usr/local/connectbox/battery_tool_venv/bin/activate"
-#  when: connectbox_os != "raspian"
-  
+
 - name: Install prerequesitst for Pillow build
   apt:
     name: [python3-dev, python3-setuptools, libtiff5-dev, libjpeg8-dev, libopenjp2-7-dev, zlib1g-dev, libfreetype6-dev, liblcms2-dev, libwebp-dev, tcl8.6-dev, tk8.6-dev, python3-tk, libharfbuzz-dev, libfribidi-dev, libxcb1-dev]
@@ -154,9 +151,6 @@
     chdir: "{{ RPi_GPIO_path }}"
   when: connectbox_os == "raspbian"  
 
-#- name: Disable virtual environment
-#  command: deactivate
-#  when: connectbox_os != "raspian"
 
 - name: Copy PA pulldown resistor systemd service definition
   template:
