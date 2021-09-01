@@ -171,7 +171,7 @@
     
 - name: Load final elements libjpeg-dev
   command: "apt-get -y install libjpeg-dev"
-  notify: "restart neo-battery-shutdown.service"
+  notify: "restart neo battery shutdown"
   when: connectbox_os != "raspbian"
 
 # Startup has either already happened, or will happen in the handler
