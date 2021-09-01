@@ -69,7 +69,7 @@
     virtualenv_python: python3
 
 - name: Enable virtual envrionment
-  command: "source {{ hat_service_virtualenv_dir }}/bin/activate"
+  command: "source /usr/local/connectbox/battery_tool_venv/bin/activate"
   when: connectbox_os != "raspian"
   
 - name: Install prerequesitst for Pillow build
@@ -171,7 +171,7 @@
   command: "apt-get -y install libjpeg-dev"
   notify: "restart neo-battery-shutdown.service"
   when: connectbox_os != "raspbian"
-  
+
 # Startup has either already happened, or will happen in the handler
 - name: Enable services
   systemd:
