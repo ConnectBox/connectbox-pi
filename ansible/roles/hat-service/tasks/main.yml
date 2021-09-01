@@ -65,11 +65,11 @@
 #  CPUs, which can cause out-of-memory errors on 256MB Neos
 - name: Setup neo battery shutdown virtualenv (python3)
   pip:
-    virtualenv: "{{ hat_service_virtualenv_dir }}"
-    virtualenv_python: python3
     name: git+https://github.com/ConnectBox/NEO_BatteryLevelShutdown.git
-  environment:
-    MAX_CONCURRENCY: 1
+    virtualenv: "{{ hat_service_virtualenv_dir }}"
+    virtualenv_site_packages: yes
+    executable: pip3
+
 
 - name: Install prerequesitst for Pillow build
   apt:
