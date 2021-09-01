@@ -119,7 +119,7 @@
     chdir: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/Pillow/"
   environment:
     MAX_CONCURRENCY: 1
-when: connectbox_os != "raspian"
+  when: connectbox_os != "raspian"
 
 # Install RPi.GPIO_NP_CB as RPi.GPIO
 - name: Set path to RPi.GPIO_NP_CB (NEO)
