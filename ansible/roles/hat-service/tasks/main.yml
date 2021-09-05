@@ -51,9 +51,9 @@
     create: yes
   when: connectbox_os != "raspbian"
 
-- name: Install packages to allow building of pillow and psutil and running of OLED
+- name: Install packages to allow building of pillow and psutil, running of OLED and direct mem writes
   apt:
-    name: ['libjpeg-turbo8', 'python3-dev', 'libfreetype6', 'libfreetype6-dev','zlib1g-dev', 'libpng-dev']
+    name: ['libjpeg-turbo8', 'python3-dev', 'libfreetype6', 'libfreetype6-dev','zlib1g-dev', 'libpng-dev', 'devmem2']
     state: present
 
 - name: Make neo battery shutdown virtualenv directory
