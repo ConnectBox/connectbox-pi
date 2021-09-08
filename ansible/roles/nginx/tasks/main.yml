@@ -66,6 +66,7 @@
     state: link
     force: yes
   notify: restart nginx
+  when: build_moodle
 
 - name: Create nginx active vhost symlink for selected interface
   file:

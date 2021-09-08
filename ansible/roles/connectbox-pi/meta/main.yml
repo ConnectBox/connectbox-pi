@@ -6,10 +6,10 @@ dependencies:
   - network-interfaces
   - wifi-ap
   - mikegleasonjr.firewall
+  - { role: php, when: build_moodle}
+  - { role: ansible-postgresql, when: build_moodle}
+  - { role: moodle, when: build_moodle}
   - nginx
-  - php
-  - ansible-postgresql
-  - moodle
   - captive-portal
   - webserver-content
   - usb-content
