@@ -1,7 +1,7 @@
 ---
 - name: Get rt8812au wifi driver
   get_url:
-    url: https://github.com/ConnectBox/connectbox-pi/blob/master/ansible/8812au.ko
+    url: https://github.com/RT-coding-team/connectbox-pi/blob/master/ansible/8812au.ko
     dest: /tmp/8812au.ko
   when: connectbox_os == "raspbian" 
 
