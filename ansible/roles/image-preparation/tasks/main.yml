@@ -206,7 +206,7 @@
 
 - name: Schedule a resize of the root partition after the next boot (Armbian)
   service:
-    name: /usr/lib/armbian/armbian-resize-filesystem
+    name: /usr/lib/armbian-resize-filesystem
     enabled: yes
   when: connectbox_os == "armbian"
 
