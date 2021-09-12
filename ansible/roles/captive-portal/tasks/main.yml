@@ -5,7 +5,7 @@
     state: directory
 
 - name: Create the Connectbox directory
-  directory:
+  file:
     path: "/var/log/connectbox"
     state: directory
         
