@@ -3,6 +3,11 @@
   file:
     path: "{{ captiveportal_virtualenv_dir }}"
     state: directory
+    
+- name: Make log file location
+  file:
+    path: "/var/log/connectbox/
+    state: touch captive_portal-access.log
 
 - name: Setup captive portal virtualenv
   pip:

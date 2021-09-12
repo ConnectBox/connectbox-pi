@@ -9,6 +9,11 @@
     path: "{{ nginx_enabled_vhosts_path }}/default"
     state: absent
 
+- name: Create nginx log file
+  file:
+    path: "/var/log/nginx"
+    state: touch error.log
+    
 # Remove old geerlingguy.nginx vhosts configuration
 # This task can be removed once we have transitioned all our connectbox
 # instances to this multi-vhost definition arrangement
