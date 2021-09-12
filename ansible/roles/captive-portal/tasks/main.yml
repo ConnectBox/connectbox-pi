@@ -13,7 +13,7 @@
   file:
     path: "/var/log/connectbox/captive_portal-access.log"
     state: touch
-    mode: "u=rw, g=rw, o=rw"
+    mode: "u=rw, o=rw"
 
 - name: Setup captive portal virtualenv
   pip:
