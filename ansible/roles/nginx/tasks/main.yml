@@ -11,8 +11,9 @@
 
 - name: Create nginx log file
   file:
-    path: "/var/log/nginx"
-    state: touch error.log
+    path: "/var/log/nginx/error.log"
+    state: touch 
+    mode: "u=rw,g=rw,o=rw"
     
 # Remove old geerlingguy.nginx vhosts configuration
 # This task can be removed once we have transitioned all our connectbox

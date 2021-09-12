@@ -6,8 +6,9 @@
     
 - name: Make log file location
   file:
-    path: "/var/log/connectbox/"
-    state: touch "captive_portal-access.log"
+    path: "/var/log/connectbox/captive_portal-access.log"
+    state: touch
+    mode: "u=rw, g=rw, o=rw"
 
 - name: Setup captive portal virtualenv
   pip:
