@@ -208,6 +208,7 @@
   service:
     name: /usr/lib/armbian-resize-filesystem
     enabled: yes
+    state: reloaded
   when: connectbox_os == "armbian"
 
 - name: Schedule a resize of the root partition after the next boot (Raspbian)
