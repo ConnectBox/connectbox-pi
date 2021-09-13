@@ -200,7 +200,9 @@
     state: present
 
 - name: Move armbian-resize filesystem
-  command: /user/bin/cp /usr/lib/armbian/armbian-resize-filesystem /usr/lib/
+  ansible.builtin.copy:
+    src: /usr/lib/armbian/armbian-resize-filesystem
+    dest: /usr/lib/armbian-resize-filesystem
   when: connectbox_os == "armbian"
 
 # See if we need to create a wlan0 interface when we're running in a sim
