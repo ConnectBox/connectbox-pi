@@ -91,11 +91,6 @@
     pre_reboot_delay=2
   when: reboot_required
 
-- name: If rebooted Do we need to re-enter IP address?
-  pause:
-    prompt: "^c if you need to change IP addresses and restart with correct address"
-    seconds: 5
-
 - name : Increase size of /tmp to handle upcoming installs
   command: mount -o remount, size=400M /tmp/
   
@@ -203,6 +198,10 @@
   apt:
     name: git
     state: present
+
+- name: Move armbian-resize filesystem
+  command: /user/bin/cp /usr/lib/armbian/armbian-resize-filesystem /usr/lib/
+  when: connectbox_os == "armbian"
 
 # See if we need to create a wlan0 interface when we're running in a sim
 #  environment i.e. running virtualised
