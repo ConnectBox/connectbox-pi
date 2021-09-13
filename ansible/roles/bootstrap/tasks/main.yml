@@ -203,6 +203,8 @@
   ansible.builtin.copy:
     src: /usr/lib/armbian/armbian-resize-filesystem
     dest: /usr/lib/armbian-resize-filesystem
+    remote_src=yes
+    mode=preserve
   when: connectbox_os == "armbian"
 
 # See if we need to create a wlan0 interface when we're running in a sim
