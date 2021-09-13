@@ -1,4 +1,18 @@
 ---
+- name: Copy armbian-resize-filesystem.service source
+  copy:
+    src: armbian-resize-filesystem.service
+    dest: /etc/systemd/system/armbian-resize-filesystem.service
+  when: connectbox_os == "armbian"
+
+- name: Reload systemd
+  command: systemctl daemon-reload
+  when: connectbox_os == "armbian"
+
+- name: Enable the file resize
+  command: systemctl enable armbian-resize-filesystem.service
+  when: connectbox_os == "armbian"
+  
 - name: Reset Regulatory Domain
   lineinfile:
     path: /etc/hostapd/hostapd.conf
@@ -205,10 +219,7 @@
 #  a correct way to accomplish resize...
 
 - name: Schedule a resize of the root partition after the next boot (Armbian)
-  service:
-    name: /usr/lib/armbian-resize-filesystem
-    enabled: yes
-    state: reloaded
+  command: /usr/lib/armbian-resize-filesystem
   when: connectbox_os == "armbian"
 
 - name: Schedule a resize of the root partition after the next boot (Raspbian)
