@@ -208,15 +208,15 @@
   copy:
     src: armbian-resize-filesystem.service
     dest: /etc/systemd/system/armbian-resize-filesystem.service
-  when: connectbox_os == "armbian"
+  when: connectbox_os != "raspbian"
 
 - name: Reload systemd
   command: systemctl daemon-reload
-  when: connectbox_os == "armbian"
+  when: connectbox_os != "raspbian"
 
 - name: Enable the file resize on next reboot
   command: systemctl enable armbian-resize-filesystem.service
-  when: connectbox_os == "armbian"
+  when: connectbox_os != "raspbian"
 
 - name: Schedule a resize of the root partition after the next boot (Raspbian)
   command: /usr/bin/raspi-config --expand-rootfs
