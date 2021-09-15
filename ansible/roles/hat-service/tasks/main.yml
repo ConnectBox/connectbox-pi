@@ -116,10 +116,10 @@
   pip:
     name: Pillow==6.2.1
     virtualenv: "{{ hat_service_virtualenv_dir }}"
-  when connectbox_os == "raspian"
-
+  when: connectbox_os == "raspian"
   
 # Install RPi.GPIO_NP_CB as RPi.GPIO
+
 - name: Set path to RPi.GPIO_NP_CB (NEO)
   set_fact:
     RPi_GPIO_path: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/RPi.GPIO_NP_CB"
