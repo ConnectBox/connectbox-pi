@@ -9,9 +9,27 @@
     path: "{{ nginx_enabled_vhosts_path }}/default"
     state: absent
 
+- name: Make connectbox logs directory under /var/log
+  file:
+    state: directory
+    path: "{{ connectbox_log_dir }}"
+    owner: _connectbox
+    group: _connectbox
+    recurse: yes
+    mode: 0755
+
+- name: Create nginx directory under /var/log
+    file:
+    state: directory
+    path: "{{ nginx_log_dir }}"
+    owner: _connectbox
+    group: _connectbox
+    recurse: yes
+    mode: 0755
+
 - name: Create nginx log file
   file:
-    path: "/var/log/nginx/error.log"
+    path: "{{ nginx_log_dir }}/error.log"
     state: touch 
     mode: "u=rw,g=rw,o=rw"
     

@@ -1,5 +1,5 @@
 ---
-ssid: "ConnectBox - Free Media"
+ssid: {{ SSID_Box }}
 wireless_channel: 1
 # Only used as an override. Country code is automatically set when the
 #  wifi device comes up, and defaults to the world regulatory domain 00.

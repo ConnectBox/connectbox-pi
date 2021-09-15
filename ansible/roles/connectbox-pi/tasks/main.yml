@@ -51,15 +51,6 @@
     group: _connectbox
     mode: 0755
 
-- name: Make logs directory
-  file:
-    state: directory
-    path: "{{ connectbox_log_dir }}"
-    owner: _connectbox
-    group: _connectbox
-    recurse: yes
-    mode: 0755
-
 - name: Make var directory
   file:
     state: directory
@@ -92,6 +83,22 @@
     owner: _connectbox
     group: _connectbox
     mode: 0660
+
+- name: Copy connectbox Pretty Host Name to file
+  copy:
+    content: "{{ connectbox_pretty_hostname }}"
+    dest: /usr/lobal/connectbox/brand_name.txt
+    owner: _connectbox
+    group: _connectbox
+    mode: 0644
+
+- name: Copy image file for display to file
+  copy:
+    content: "{{ connectbox_image_display }}"
+    dest: /usr/local/connectbox/logo_image.txt
+    owner: _connectbox
+    group: _connectbox
+    mode: 0644
 
 - name: allow connectbox group to execute connectbox scripts
   blockinfile:
@@ -134,6 +141,12 @@
     owner: _connectbox
     group: _connectbox
     mode: 0644
+
+- name: Clean up the Reports Device hostname
+  command: sed -i 's/ConnectBox/{{ connectbox_pretty_hostname }}/g' /usr/local/access-log-analyzer/published/index.html
+
+- name: Clean up the Reports Device hostname 2
+  command:  sed -i 's/ConnectBox/{{ connectbox_pretty_hostname }}/g' /usr/local/access-log-analyzer/public/index.html
 
 - name: Make hourly logrotate config
   template:

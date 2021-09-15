@@ -102,7 +102,8 @@
   pip:
     requirements: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/Pillow-6.2.1/requirements.txt"
     virtualenv: "{{ hat_service_virtualenv_dir }}"
-
+  when: connectbox_os != "raspian"
+  
 - name: compile Pillow in virtual environment (python3)
   command: "{{ hat_service_virtualenv_dir }}/bin/python3 {{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/Pillow-6.2.1/setup.py install"
   args:
@@ -111,6 +112,13 @@
     MAX_CONCURRENCY: 1
   when: connectbox_os != "raspian"
 
+- name: Install Pillow in virtual environment
+  pip:
+    name: Pillow==6.2.1
+    virtualenv: "{{ hat_service_virtualenv_dir }}"
+  when connectbox_os == "raspian"
+
+  
 # Install RPi.GPIO_NP_CB as RPi.GPIO
 - name: Set path to RPi.GPIO_NP_CB (NEO)
   set_fact:

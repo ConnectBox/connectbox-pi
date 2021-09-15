@@ -4,14 +4,15 @@
     path: "{{ captiveportal_virtualenv_dir }}"
     state: directory
 
-- name: Create the Connectbox directory
-  file:
-    path: "/var/log/connectbox"
-    state: directory
         
-- name: Make log file location
+- name: Make log file location under connectbox log directory for captive-portal
   file:
-    path: "/var/log/connectbox/captive_portal-access.log"
+    path: "{{connectbox_log_dir}}/captive_portal-access.log"
+    state: touch
+
+- name: Make log file location under connectbox log directory for connectbox
+  file:
+    path: "{{connectbox_log_dir}}/connectbox-error.log"
     state: touch
 
 - name: Setup captive portal virtualenv
