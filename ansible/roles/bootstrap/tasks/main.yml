@@ -212,3 +212,21 @@
 - name: Create a wlan0 interface
   command: /sbin/ip link add wlan0 type dummy
   when: "'wlan0' not in ansible_interfaces and ansible_virtualization_type != 'NA'"
+
+# The log files in /var/log/connectbox and /var/log/nginx are required for the
+#  nginx service to run. Unfortunately, some un-identified start up code is deleting
+#  those directories and causing the nginx service to fail. The following two steps
+#  install a shell script to re-establish the required directories and log files and then 
+#  run that shell script at every startup.
+- name: Install CreateLogFiles.sh  
+  copy: 
+    src: usr_local_connectbox_bin_CreateLogFiles.sh
+    dest: /usr/local/connectbox/bin/CreateLogFiles.sh
+  when: connectbox_os == "armbian" 
+
+- name: Install rc.local 
+  copy:
+    src: etc_rc.local 
+    dest: /etc/rc.local 
+  when: connectbox_os == "armbian" 
+
