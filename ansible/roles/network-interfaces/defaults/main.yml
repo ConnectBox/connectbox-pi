@@ -1,3 +1,2 @@
 ---
 hostname: "{{ connectbox_default_hostname }}.local"
-
