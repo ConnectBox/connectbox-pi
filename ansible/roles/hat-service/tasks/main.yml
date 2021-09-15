@@ -29,7 +29,9 @@
   when: connectbox_os != "raspbian"
 
 - name: change swap mode
-  command: chmod 600 /swapfile
+  file: 
+    path: /swapfile
+    mode: '600'
   when: connectbox_os != "raspbian"
 
 - name: make it a swapfile
@@ -67,7 +69,6 @@
     name: git+https://github.com/ConnectBox/NEO_BatteryLevelShutdown.git
     virtualenv: "{{ hat_service_virtualenv_dir }}"
     virtualenv_python: python3
-
 
 - name: Install prerequesitst for Pillow build
   apt:
@@ -178,7 +179,9 @@
     group: root
     
 - name: Load final elements libjpeg-dev
-  command: "apt-get -y install libjpeg-dev"
+  apt:
+    name: "libjpeg-dev"
+    state: present
   notify:
      - "restart neo battery shutdown service"
   when: connectbox_os != "raspbian"

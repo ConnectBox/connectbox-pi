@@ -9,7 +9,7 @@ connectbox_version: "{{ 'dev-%y%m%d' | strftime }}"
 #  test some client-facing capabilities but do not have a wifi interface
 client_facing_if: "wlan0"
 eth_facing_if: "wlan1"
-SSID_Box: "ConnectBox Free WiFi!"
+SSID_Box: "ConnectBox - Free WiFi!"
 
 # Client facing if stuff is defined here because we have a circular dependency
 # in that dns-dhcp depends
