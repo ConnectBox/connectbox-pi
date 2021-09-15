@@ -36,7 +36,7 @@ captiveportal_listen_port: 5001
 lan_dns_if: eth0
 wifi_configurator_virtualenv_dir: /usr/local/connectbox/wifi_configurator_venv
 
-wifi_data_check_turnoff = www.gowifi.com
+wifi_data_check_turnoff: www.gowifi.com
 
 connectbox_web_root: /var/www/connectbox
 connectbox_default_content_root: "{{ connectbox_web_root }}/connectbox_default"
