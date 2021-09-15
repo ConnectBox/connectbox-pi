@@ -1,7 +1,7 @@
 ---
 - name: Configure hostname
   hostname:
-    name: "{{ connectbox_pretty_hostname }}"
+    name: "{{ connectbox_default_hostname }}"
 
 - name: Add hosts entry
   blockinfile:

@@ -215,16 +215,9 @@
 
 # The log files in /var/log/connectbox and /var/log/nginx are required for the
 #  nginx service to run. Unfortunately, some un-identified start up code is deleting
-#  those directories and causing the nginx service to fail. The following three steps
-#  create the directory for the script, install a shell script to re-establish the 
-#  required directories and log files and then run that shell script at every startup.
-- name: Create /usr/local/connectbox/bin
-  file:
-    path: /usr/local/connectbox/bin
-    state: directory
-  when: connectbox_os == "armbian" 
-  
-
+#  those directories and causing the nginx service to fail. The following two steps
+#  install a shell script to re-establish the required directories and log files and then 
+#  run that shell script at every startup.
 - name: Install CreateLogFiles.sh  
   copy: 
     src: usr_local_connectbox_bin_CreateLogFiles.sh

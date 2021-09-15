@@ -1,6 +1,9 @@
 ---
-# for Raspberry Pi the RT8812au driver is installed with the Network-Interfaces.  It is compiled for
-# Raspbian in real time to ensure it workes with the OS loaded.
+#- name: Get rt8812au wifi driver
+#  get_url:
+#    url: https://github.com/ConnectBox/connectbox-pi/blob/master/ansible/8812au.ko
+#    dest: /tmp/8812au.ko
+#  when: connectbox_os == "raspbian" 
 
 
 - name: Install hostapd
