@@ -19,6 +19,7 @@
     mode: 0755
 
 - name: Create nginx directory under /var/log
+  file:
     state: directory
     path: "{{ nginx_log_dir }}"
     owner: _connectbox
