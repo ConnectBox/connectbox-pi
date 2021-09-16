@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-
 """
 ===========================================
   branding.py
@@ -16,18 +15,18 @@ import neo_batterylevelshutdown.globals as globals
 
 # Maximum 10 characters
 global  brand_name
-# png file of logo 
+# ttf file of logo 
 global  logo_image
 
 
 class Brand:
 
     def __init__(self):
-        with open('/usr/local/connectbox/brand_name.txt', encoding='utf-8') as f:
-        self.brand_name = f.read()
+        with open('/etc/hostnamet', encoding='utf-8') as f:
+        global self.brand_name = f.read()
         f.close()
         with open('/usr/local/connectbox/logo_image.txt') as f:
-        self.logo_image = f.read()
+        global self.logo_image = f.read()
         f.close()
 
     def name(self):    
