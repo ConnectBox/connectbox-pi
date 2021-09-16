@@ -47,13 +47,6 @@ connectbox_config_root: /etc/connectbox
 connectbox_usb_files_root: /media/usb0
 connectbox_admin_credentials: admin:$apr1$CBOX2018$RlXBoHRRoiG3vMC7PS07q.
 
-connectbox_default_hostname: connectbox
-connectbox_pretty_hostname: ConnectBox
-connectbox_image_display: connectbox.ttf
-connectbox_image_font: 26
-connectbox_image_x: 7
-connectbox_image_y: 0
-
 connectbox_log_dir: /var/log/connectbox
 connectbox_access_log: "{{ connectbox_log_dir }}/connectbox-access.log"
 connectbox_error_log:  "{{ connectbox_log_dir }}/connectbox-error.log"
