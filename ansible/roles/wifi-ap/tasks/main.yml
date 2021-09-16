@@ -3,10 +3,11 @@
 
 class Brand:
 
-global brand_name
-global logo_image
 
     def __init__(self):
+
+        global brand_name
+        global logo_image
         with open('/etc/hostname', encoding='utf-8') as f:
         brand_name = f.read()
         f.close()
