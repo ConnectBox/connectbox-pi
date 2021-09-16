@@ -1,32 +1,55 @@
-#!/usr/bin/python
+  
+- name: Install hostapd
+  apt:
+    name: hostapd
+    state: present
 
+- name: Install crda so regulatory db is present
+  apt:
+    name: crda
+    state: present
 
-class Brand:
+- name: Copy hostapd config
+  template:
+    src: hostapd.conf.j2
+    dest: /etc/hostapd/hostapd.conf
+    owner: root
+    group: root
+    mode: 0644
+  register: etc_hostapd_hostapd_conf
 
+# wifi-configurator is used on configure_hostapd.sh
+- name: Make wifi-configurator virtualenv directory
+  file:
+    path: "{{ wifi_configurator_virtualenv_dir }}"
+    state: directory
 
-    def __init__(self):
+- name: Setup wifi-configurator virtualenv (python3)
+  pip:
+    virtualenv: "{{ wifi_configurator_virtualenv_dir }}"
+    virtualenv_python: python3
+    name: git+https://github.com/ConnectBox/wifi-configurator.git
 
-        global brand_name
-        global logo_image
-        with open('/etc/hostname', encoding='utf-8') as f:
-        brand_name = f.read()
-        f.close()
-        with open('/usr/local/connectbox/logo_image.txt') as f:
-        logo_image = f.read()
-        f.close()
+- name: Populate /etc/default/crda with regulatory domain override
+  template:
+    src: etc_default_crda.j2
+    dest: /etc/default/crda
+    owner: root
+    group: root
+    mode: 0644
 
+# We're using the ifupdown method instead of the initscript method
+#  so this is just an ifdown and ifup operation rather than a
+#  service reload hostapd
+# Note: this is not a handler because wlan0/hostapd might be broken in later steps
+# before the handler would be executed. This ensures that wlan0 will be up and
+# hostapd properly running before exiting this role.
+- name: Reload hostapd
+  shell: "ifdown {{ client_facing_if }}; sleep 1; ifup {{ client_facing_if }}"
+  when: etc_hostapd_hostapd_conf.changed
+  tags:
+    # This task on change is intentionally not a handler; don't trigger ANSIBLE0016
+    - skip_ansible_lint
 
-    def name(self):    
-        return "%s" % brand_name
-
-    def splash(self):                    #For screen display
-        a = Brand.name(self)
-        position_x = 7
-        position_y = 0
-        font = 26
-        return (a, font, position_x, position_y)
-    
-    def image(self):                     #Boot up Logo on screen
-        return "%s" % logo_image
 
 
