@@ -6,22 +6,21 @@ server {
     #  (e.g. duckduckgo on Android), but go is kept because it's what we used
     #  to have and it's simple to keep backward compatibility
 
-    server_name www.gowifi.org gowifi.org wi.fi www.wi.fi;
+    server_name www.gowifi.org gowifi.org gowifi.com wi.fi www.wi.fi go;
+    location /{
+	  return 302 http://$hostname;
+	  }
     location /api/v2/no-cache/device-is-still-connected {
       return 200  http://$hostname;
       }
-    location / {
-      return 302 http://$hostname;
-      }
- 
 }
 
 server {
     listen *:80 default_server;
-    server_name _;
 
-    location / {
-        index index.html index.htm; }
+    index index.html index.htm; 
+
+    server_name _;
 
     access_log {{ connectbox_log_dir }}/captive_portal-access.log;
     error_log {{ connectbox_log_dir }}/captive_portal-error.log error;
