@@ -1,204 +1,60 @@
 ---
-# devmem2 isn't available on debian, and is trivial, so we just build it
-
-- name: Copy devmem2 source
-  copy:
-    src: devmem2.c
-    dest: /tmp/devmem2.c
-
-- name: build devmem2 binary in expected location
-  command: gcc -o /usr/bin/devmem2 /tmp/devmem2.c
-  args:
-    creates: /usr/bin/devmem2
-    
-- name: Expand Temp directory otherwise we will run out of space
-  command: mount -o remount,size=400M /tmp/
-  when: connectbox_os != "raspbian"
-
-- name: Expand swapfile
-  command: fallocate -l 400M /swapfile
-  register: command_result
-  ignore_errors: yes
-  when: connectbox_os != "raspbian"
+#- name: Get rt8812au wifi driver
+#  get_url:
+#    url: https://github.com/ConnectBox/connectbox-pi/blob/master/ansible/8812au.ko
+#    dest: /tmp/8812au.ko
+#  when: connectbox_os == "raspbian" 
 
 
-- name: fill swapfile
-  command: dd if=/dev/zero of=/swapfile bs=1024 count=409600
-  register: command_result
-  ignore_errors: yes
-  when: connectbox_os != "raspbian"
-
-- name: change swap mode
-  command: chmod 600 /swapfile
-  when: connectbox_os != "raspbian"
-
-- name: make it a swapfile
-  command: mkswap /swapfile
-  register: command_result
-  ignore_errors: yes
-
-- name: turn swapfile on
-  command: swapon /swapfile
-  register: command_result
-  ignore_errors: yes 
-  when: connectbox_os != "raspbian"
-
-- name: Enable fstab change
-  lineinfile:
-    path: /etc/fstab
-    line: '/swapfile swap sw rw, nodev, nosuid, size=400M 0 0\n'
-    state: present
-    create: yes
-  when: connectbox_os != "raspbian"
-
-- name: Install packages to allow building of pillow and psutil, running of OLED and direct mem writes
+- name: Install hostapd
   apt:
-    name: ['libjpeg-turbo8', 'python3-dev', 'libfreetype6', 'libfreetype6-dev','zlib1g-dev', 'libpng-dev', 'devmem2']
+    name: hostapd
     state: present
 
-- name: Make neo battery shutdown virtualenv directory
+- name: Install crda so regulatory db is present
+  apt:
+    name: crda
+    state: present
+
+- name: Copy hostapd config
+  template:
+    src: hostapd.conf.j2
+    dest: /etc/hostapd/hostapd.conf
+    owner: root
+    group: root
+    mode: 0644
+  register: etc_hostapd_hostapd_conf
+
+# wifi-configurator is used on configure_hostapd.sh
+- name: Make wifi-configurator virtualenv directory
   file:
-    path: "{{ hat_service_virtualenv_dir }}"
+    path: "{{ wifi_configurator_virtualenv_dir }}"
     state: directory
 
-
-- name: Setup neo battery shutdown virtualenv (python3)
+- name: Setup wifi-configurator virtualenv (python3)
   pip:
-    name: git+https://github.com/ConnectBox/NEO_BatteryLevelShutdown.git
-    virtualenv: "{{ hat_service_virtualenv_dir }}"
+    virtualenv: "{{ wifi_configurator_virtualenv_dir }}"
     virtualenv_python: python3
+    name: git+https://github.com/ConnectBox/wifi-configurator.git
 
-- name: Install prerequesitst for Pillow build
-  apt:
-    name: [python3-dev, python3-setuptools, libtiff5-dev, libjpeg8-dev, libopenjp2-7-dev, zlib1g-dev, libfreetype6-dev, liblcms2-dev, libwebp-dev, tcl8.6-dev, tk8.6-dev, python3-tk, libharfbuzz-dev, libfribidi-dev, libxcb1-dev, libtiff5]
-    state: present 
-  when: connectbox_os != "raspian"
-
-- name: Make sure there is no Pillow code already there
-  ansible.builtin.file:
-    path: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/Pillow-6.2.1.tar.gz"
-    state: absent
-
-- name: Get the code from the repository
-  get_url:
-    url: "https://files.pythonhosted.org/packages/5b/bb/cdc8086db1f15d0664dd22a62c69613cdc00f1dd430b5b19df1bea83f2a3/Pillow-6.2.1.tar.gz" 
-    dest: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/"
-  when: connectbox_os != "raspian"
-
-- name: unzip Pillow in virtual environment (python3)
-  ansible.builtin.unarchive:
-    src:  "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/Pillow-6.2.1.tar.gz"
-    dest: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/"
-    remote_src: yes
-  when: connectbox_os != "raspian"
-
-- name: Install lower level of docutils == 0.16 for now
-  pip:
-    name: docutils==0.16
-    virtualenv: "{{ hat_service_virtualenv_dir }}"
-
-- name: Install Pillow library requriements in virtual environment
-  pip:
-    requirements: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/Pillow-6.2.1/requirements.txt"
-    virtualenv: "{{ hat_service_virtualenv_dir }}"
-  when: connectbox_os != "raspian"
-  
-- name: compile Pillow in virtual environment (python3)
-  command: "{{ hat_service_virtualenv_dir }}/bin/python3 {{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/Pillow-6.2.1/setup.py install"
-  args:
-    chdir: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/Pillow-6.2.1/"
-  environment:
-    MAX_CONCURRENCY: 1
-  when: connectbox_os != "raspian"
-
-- name: Install Pillow in virtual environment
-  pip:
-    name: Pillow==6.2.1
-    virtualenv: "{{ hat_service_virtualenv_dir }}"
-  when: connectbox_os == "raspian"
-  
-- name: Install the branding image into the directory for display
-  copy:
-    content: "{{ connectbox_imange_dislay }}"
-    dest: /usr/local/connectbox/logo_image.txt
-    group: root
-    owner: root
-    mode: "644"
-
-# Install RPi.GPIO_NP_CB as RPi.GPIO
-
-- name: Set path to RPi.GPIO_NP_CB (NEO)
-  set_fact:
-    RPi_GPIO_path: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/RPi.GPIO_NP_CB"
-  when: connectbox_os != "raspbian"  
-
-- name: Clone the RPi.GPIO_NP_CB repo to battery venv (NEO)
-  git: 
-    repo: https://github.com/ConnectBox/Rpi.GPIO_NP_CB
-    dest: "{{ RPi_GPIO_path }}"
-    clone: yes
-    update: yes
-    force: yes
-  when: connectbox_os != "raspbian"  
-
-# The command must include the path to the virtual environment version of python3 or the resulting
-#  library will be installed in usr/local/lib/python3.8/dist-packages rather than the desired
-#  location of /usr/local/connectbox/battery_tool_venv/lib/python3.8/site-packages 
-- name: Run setup.py to build RPi.GPIO (NEO)
-  command: "{{ hat_service_virtualenv_dir }}/bin/python3 setup.py install"
-  args:
-    chdir: "{{ RPi_GPIO_path }}"
-  when: connectbox_os != "raspbian"  
-
-# With RPi.GPIO installed, we can now install the luma.core and luma.oled modules
-#  which will use the installed RPi.GPIO rather than trying to install RPi.GPIO 0.7.0
-- name: Install luma.core in hat service virtualenv
-  command: "{{ hat_service_virtualenv_dir }}/bin/pip install luma.core==1.7.2"
-  when: connectbox_os != "raspbian"
-
-- name: Install luma.oled in hat service virtualenv
-  command: "{{ hat_service_virtualenv_dir }}/bin/pip install luma.oled==2.4.1"
-  when: connectbox_os != "raspbian"
-
-- name: Install RPi.GPIO for Raspbian build
-  command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.0"
-  args:
-    chdir: "{{ RPi_GPIO_path }}"
-  when: connectbox_os == "raspbian"  
-
-- name: Copy PA pulldown resistor systemd service definition
+- name: Populate /etc/default/crda with regulatory domain override
   template:
-    src: "{{ pa_pulldown_enabler_service_name }}.j2"
-    dest: "/etc/systemd/system/{{ pa_pulldown_enabler_service_name }}"
-    mode: 0644
+    src: etc_default_crda.j2
+    dest: /etc/default/crda
     owner: root
     group: root
-  notify:
-    - restart pa pulldown service
-
-- name: Copy neo battery shutdown systemd service definition
-  template:
-    src: "{{ hat_service_name }}.j2"
-    dest: "/etc/systemd/system/{{ hat_service_name }}"
     mode: 0644
-    owner: root
-    group: root
-    
-- name: Load final elements libjpeg-dev
-  apt:
-    name: "libjpeg-dev"
-    state: present
-  notify:
-     - "restart neo battery shutdown service"
-  when: connectbox_os != "raspbian"
 
-# Startup has either already happened, or will happen in the handler
-- name: Enable services
-  systemd:
-    name: "{{ item }}"
-    daemon_reload: yes
-    enabled: yes
-  with_items:
-    - "{{ pa_pulldown_enabler_service_name }}"
-    - "{{ hat_service_name }}"
-    
+# We're using the ifupdown method instead of the initscript method
+#  so this is just an ifdown and ifup operation rather than a
+#  service reload hostapd
+# Note: this is not a handler because wlan0/hostapd might be broken in later steps
+# before the handler would be executed. This ensures that wlan0 will be up and
+# hostapd properly running before exiting this role.
+- name: Reload hostapd
+  shell: "ifdown {{ client_facing_if }}; sleep 1; ifup {{ client_facing_if }}"
+  when: etc_hostapd_hostapd_conf.changed
+  tags:
+    # This task on change is intentionally not a handler; don't trigger ANSIBLE0016
+    - skip_ansible_lint
+
