@@ -94,8 +94,9 @@
 
 - name: Copy image file for display to file
   copy:
-    content: "{{ connectbox_image_display }}"
-    dest: /usr/local/connectbox/logo_image.txt
+    content: ["{{ connectbox_pretty_hostname}}", "{{ connectbox_image_display }}", "{{connectbox_image_font}}" \
+         "{{connectbox_image_x}}","{{connectbox_image_y}}"] 
+    dest: /usr/local/connectbox/brand.txt
     owner: _connectbox
     group: _connectbox
     mode: 0644
