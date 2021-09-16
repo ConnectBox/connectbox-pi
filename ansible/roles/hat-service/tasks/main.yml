@@ -29,7 +29,9 @@
   when: connectbox_os != "raspbian"
 
 - name: change swap mode
-  command: chmod 600 /swapfile
+  file:
+    path: /swapfile
+    mode: 600
   when: connectbox_os != "raspbian"
 
 - name: make it a swapfile
