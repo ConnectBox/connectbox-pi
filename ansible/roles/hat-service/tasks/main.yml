@@ -119,7 +119,7 @@
   
 - name: Install the branding image into the directory for display
   copy:
-    content: "{{ connectbox_imange_dislay }}"
+    content: "{{ connectbox_image_display }}"
     dest: /usr/local/connectbox/logo_image.txt
     group: root
     owner: root
