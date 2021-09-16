@@ -1,14 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""
-===========================================
-  branding.py
-  https://github.com/ConnectBox/NEO_BatteryLevelShutdown
-  License: MIT
-  Version 1.0
-  DorJamJr - July 2021
-===========================================
-"""
+---
 
 import neo_batterylevelshutdown.globals as globals
 
