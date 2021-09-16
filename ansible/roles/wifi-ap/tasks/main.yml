@@ -45,6 +45,18 @@
     group: root
     mode: 0644
 
+- name: Create the default brand name before we try to bring up the AP
+  file:
+    path: "/usr/local/connectbox/brand_name.txt"
+    state: touch 
+    group: root
+    owner: root
+
+- name: Insert the brand_name into the file
+  copy:
+    content: "{{ connectbox_pretty_hostname }}" 
+    dest: "/usr/local/connectbox/brand_name.txt"
+
 # We're using the ifupdown method instead of the initscript method
 #  so this is just an ifdown and ifup operation rather than a
 #  service reload hostapd
