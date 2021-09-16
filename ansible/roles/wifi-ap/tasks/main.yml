@@ -1,6 +1,5 @@
 #!/usr/bin/python
 
-import io
 
 class Brand:
 
@@ -11,6 +10,7 @@ class Brand:
         with open('/usr/local/connectbox/logo_image.txt') as f:
         self.logo_image = f.read()
         f.close()
+        return
 
     def name(self):    
         return "%s" % self.brand_name
