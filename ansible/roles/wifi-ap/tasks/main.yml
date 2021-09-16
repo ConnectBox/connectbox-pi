@@ -1,22 +1,14 @@
 ---
 
-import neo_batterylevelshutdown.globals as globals
-
-
-# Maximum 10 characters
-global  brand_name
-# ttf file of logo 
-global  logo_image
-
 
 class Brand:
 
     def __init__(self):
         with open('/etc/hostnamet', encoding='utf-8') as f:
-        global self.brand_name = f.read()
+        self.brand_name = f.read()
         f.close()
         with open('/usr/local/connectbox/logo_image.txt') as f:
-        global self.logo_image = f.read()
+        self.logo_image = f.read()
         f.close()
 
     def name(self):    
