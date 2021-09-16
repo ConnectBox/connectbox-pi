@@ -119,14 +119,6 @@
     virtualenv: "{{ hat_service_virtualenv_dir }}"
   when: connectbox_os == "raspian"
   
-- name: Install the branding image into the directory for display
-  copy:
-    content: "{{ connectbox_image_display }}"
-    dest: /usr/local/connectbox/logo_image.txt
-    group: root
-    owner: root
-    mode: "644"
-
 # Install RPi.GPIO_NP_CB as RPi.GPIO
 
 - name: Set path to RPi.GPIO_NP_CB (NEO)
