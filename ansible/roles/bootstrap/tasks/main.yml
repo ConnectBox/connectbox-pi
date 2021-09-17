@@ -15,7 +15,7 @@
     msg: "Ansible Group Variables Target Specific {{ ansible_lsb['id']|lower }}"
 
 - debug:
-    msg: "Machine Type file {{ machine_type }}"
+    msg: "Machine Type file {{ machine_type['stdout_lines'] }}"
 
 - debug:
     msg: "connectbox_os {{ connectbox_os }}"
