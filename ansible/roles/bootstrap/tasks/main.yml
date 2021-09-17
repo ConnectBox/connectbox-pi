@@ -21,7 +21,7 @@
     msg: "Machine Type file {{ machine_type }}"
 
 - debug:
-    msg: "connectbox_os " + connectbox_os
+    msg: "connectbox_os {{ connectbox_os }}"
 
 - name: setup use of old-style interface names for predictability across devices
   file:
