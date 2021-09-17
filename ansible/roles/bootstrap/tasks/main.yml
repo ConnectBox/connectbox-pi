@@ -15,8 +15,7 @@
     msg: "Ansible Group Variables Target Specific {{ ansible_lsb['id']|lower }}"
 
 - debug:
-    msg: "Machine Type file {{ /sys/firmware/devicetree/base/model }}"
-    ignore_errors: true
+    msg: "Machine Type file {{ machine_type }}"
 
 - debug:
     msg: "connectbox_os {{ connectbox_os }}"
