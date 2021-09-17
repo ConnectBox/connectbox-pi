@@ -48,7 +48,7 @@
 - name: Enable fstab change
   lineinfile:
     path: /etc/fstab
-    line: '/swapfile swap sw rw, nodev, nosuid, size=400M 0 0\n'
+    line: '/swapfile none swap sw,rw,auto,nodev,nosuid,size=400M,rw,sync 0 0'
     state: present
     create: yes
   when: connectbox_os != "raspbian"

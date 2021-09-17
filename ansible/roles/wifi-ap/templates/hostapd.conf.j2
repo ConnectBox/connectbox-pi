@@ -21,6 +21,10 @@ channel={{ wireless_channel }}
 macaddr_acl=0 # accept unless in deny list
 
 max_num_sta=30
+ap_max_inactivity = 240
+dissassoc_low_ack=1
+
+ap_isolate=1
 
 # Disable non-OFDM rates given they consume disproportiately large amounts
 #  of airtime and aren't required for modern devices

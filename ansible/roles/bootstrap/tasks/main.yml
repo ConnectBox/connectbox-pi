@@ -20,6 +20,9 @@
 - debug:
     msg: "Machine Type file {{ machine_type }}"
 
+- debug:
+    msg: "connectbox_os " + connectbox_os
+
 - name: setup use of old-style interface names for predictability across devices
   file:
     dest: /etc/udev/rules.d/80-net-setup-link.rules
