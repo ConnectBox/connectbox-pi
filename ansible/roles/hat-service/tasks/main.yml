@@ -9,11 +9,12 @@
   copy:
     src: hostname
     dest: /etc/hostname
-
     
 - name: Expand Temp directory otherwise we will run out of space
   command: mount -o remount,size=400M /tmp/
   when: connectbox_os != "raspbian"
+
+#original swapfile on NEO is /dev/zram0 if size 121968 and priority 5
 
 - name: Expand swapfile
   command: fallocate -l 400M /swapfile
