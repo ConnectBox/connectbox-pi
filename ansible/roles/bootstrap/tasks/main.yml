@@ -228,11 +228,18 @@
   file:
     path: /usr/local/connectbox/bin
     state: directory
-    
+
 - name: Install CreateLogFiles.sh  
   copy: 
     src: usr_local_connectbox_bin_CreateLogFiles.sh
     dest: /usr/local/connectbox/bin/CreateLogFiles.sh
+  when: connectbox_os == "armbian" 
+    
+- name: Install mountCheck.py  
+  copy: 
+    src: usr_local_connectbox_bin_mountCheck.py
+    dest: /usr/local/connectbox/bin/mountCheck.py
+    mode: 0644
   when: connectbox_os == "armbian" 
 
 - name: Install rc.local 

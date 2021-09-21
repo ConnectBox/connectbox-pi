@@ -13,5 +13,7 @@
 
 # Create missing log files and restart nginx service
 sh /usr/local/connectbox/bin/CreateLogFiles.sh
+# Start daemon to watch for and mount USB as required
+/usr/bin/python3 /usr/local/connectbox/bin/mountCheck.py
 
 exit 0
