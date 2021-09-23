@@ -1,4 +1,4 @@
-ansible==2.7.*
+ansible==4.2.*
 ansible-lint
 cryptography>=2.8
 flake8
