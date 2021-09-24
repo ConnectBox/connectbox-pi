@@ -1,9 +1,0 @@
----
-connectbox_os: armbian
-ansible_user: root
-apty_services:
-  - unattended-upgrades
-  - apt-daily.service
-  - apt-daily.timer
-  - apt-daily-upgrade.service
-  - apt-daily-upgrade.timer

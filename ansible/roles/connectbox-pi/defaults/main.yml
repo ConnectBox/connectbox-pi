@@ -1,5 +1,0 @@
----
-developer_mode: False
-# Command to run at the end of the playbook run to potentially disable
-# accounts and sshd
-final_command: ""

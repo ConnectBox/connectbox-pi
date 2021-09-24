@@ -1,5 +1,0 @@
----
-- name: Restart captiveportal
-  service:
-    name: captiveportal
-    state: restarted
