@@ -1,0 +1,28 @@
+---
+- name: Warn against rebooting
+  debug:
+    msg:
+      - ===================================================================
+      - Once this playbook run has finished, do not reboot the device.
+      - If the device is rebooted, the resizing of the root filesystem
+      - would not happen for users of the image, and their wifi regulatory
+      - domain may be set incorrectly.
+      - ====================================================================
+      - .
+      - ====================================================================
+      - Wait until the target machine has completely shut down (no blinking 
+      - activity from on-board LEDs) before removing power!!
+      - ====================================================================
+
+# Skip lint because there's no way that ansible-lint can know at build time
+#  that we're legitimately use shell because of the && that is always
+#  present when this is run.
+- name: Perform final shutdown
+  shell: sleep 2 && /sbin/shutdown -h now
+  args:
+    warn: no
+  async: 1
+  poll: 0
+  when: shutdown_in_image_preparation
+  tags:
+  - skip_ansible_lint

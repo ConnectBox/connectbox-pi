@@ -1,0 +1,8 @@
+# Ansible Inventory File
+#
+# Add your device IP on a single line
+#
+# If your device has a WiFi access point, replace the wireless_country_code
+# with your two-letter country code (see https://git.kernel.org/cgit/linux/kernel/git/sforshee/wireless-regdb.git/tree/db.txt for a list of valid values)
+
+#192.168.20.180 wireless_country_code=AU

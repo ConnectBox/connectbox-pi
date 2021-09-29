@@ -1,0 +1,4 @@
+---
+apty_services: []
+# May be updated during execution of the bootstrap role
+reboot_required: False

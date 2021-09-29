@@ -1,0 +1,68 @@
+# Many thanks to https://www.pi-point.co.uk/closedcloud-walkthrough/
+
+# Never forward A or AAAA queries for plain names, without dots or domain
+#  parts, to upstream nameservers. If the name is not known from /etc/hosts
+# or DHCP then a "not found" answer is returned.
+domain-needed
+
+# Run whenever there's a dhcp event
+dhcp-script=/etc/dnsmasq/process-dhcp-event.sh
+
+# Bogus private reverse lookups. All reverse lookups for private IP ranges
+#  (ie 192.168.x.x, etc) which are not found in /etc/hosts or the DHCP leases
+#  file are answered with "no such domain" rather than being forwarded
+#  upstream.
+bogus-priv
+
+# Don't read /etc/resolv.conf. Get upstream servers only from the command
+#  line or the dnsmasq configuration file.
+no-resolv
+
+# Return Akami addresses for Android devices to display the captive portal
+# They don't need to be routable, just non-private IP space
+{% for host in hosts_requiring_non_private_captive_portal_ip %}
+address=/{{ host }}/{{ non_private_captive_portal_ip }}
+{% endfor %}
+
+# Return the connectbox-pi address for all queries, unless they match dhcp
+#  leases or are answered from /etc/hosts
+address=/#/{{ client_facing_if_ip_address }}
+
+# When a host is listed in /etc/hosts with multiple addresses, return the
+#  on associated with the interface on which the query was received.
+localise-queries
+
+# Tell clients to cache IP addresses for 5 seconds. This overrides the
+#  default of 0, which would place more load on this service because
+#  queries would never be cached. By setting the TTL very low, however,
+#  we make sure that the client's resolver won't have the bogus addresses
+#  from this service in cache when it switches away to another WiFi network
+#  or goes back to using a cellular service
+local-ttl=5
+
+# Don't log MAC addresses, as they're potentially incriminating
+quiet-dhcp
+quiet-dhcp6
+
+# Speed up DHCP by allowing it to reject unknown leases
+dhcp-authoritative
+
+# Don't keep a leasefile, as leases contain MAC addresses and they're
+#  potentially incriminating
+leasefile-ro
+
+domain={{ hostname }}
+
+{% if developer_mode -%}
+# Enable only dns on the external facing interface
+# We provide interface=* here because dnsmasq will refuse to start (thus
+#  causing all manner of problems) if the lan_dns_if is unavailable.
+#  While this means that dev images might expose dhcp if someone plugs
+#  in another interface, we're not attempting to protect for that scenario
+#  particularly because this only applies to dev images.
+interface=*
+no-dhcp-interface={{ lan_dns_if }}
+{%- endif %}
+
+interface={{ client_facing_if }}
+dhcp-range={{ dhcp_range_start }},{{ dhcp_range_end }},{{ client_facing_if_netmask }},{{ dhcp_lease_time_secs }}

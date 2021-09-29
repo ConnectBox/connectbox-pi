@@ -1,0 +1,2 @@
+---
+hostname: "{{ lookup('file', '../hat-service/files/hostname') }}.local"

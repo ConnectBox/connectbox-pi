@@ -1,0 +1,7 @@
+Host stretch.ci.connectbox.org
+        User admin
+        IdentityFile travis-ci-connectbox.pem
+
+Host ubuntu.ci.connectbox.org
+        User ubuntu
+        IdentityFile travis-ci-connectbox.pem

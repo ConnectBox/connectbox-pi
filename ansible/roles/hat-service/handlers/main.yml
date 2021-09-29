@@ -1,0 +1,13 @@
+---
+- name: restart pa pulldown service
+  systemd:
+    name: "{{ pa_pulldown_enabler_service_name }}"
+    daemon_reload: yes
+    state: restarted
+
+- name: restart neo battery shutdown service
+  systemd:
+    name: "{{ hat_service_name }}"
+    daemon_reload: yes
+    state: restarted
+

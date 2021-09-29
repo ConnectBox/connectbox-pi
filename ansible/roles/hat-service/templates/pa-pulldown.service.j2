@@ -1,0 +1,29 @@
+[Unit]
+Description=Enable pulldown resistor on NEO pin PA1 and PA6
+After=basic.target
+
+[Service]
+Type=oneshot
+# Address and value come from Allwinner H3 Datasheet
+#  http://dl.linux-sunxi.org/H3/Allwinner_H3_Datasheet_V1.0.pdf
+# section 4.22.1, Port Controller Register List, for base address and address
+#  offset of Pn_PUL0 where n=0 
+#
+# The 32 bits of data at 0x01c2081c are the control of whether (and which
+#  direction) pull ups/downs occur based on the assignment of [2i+1:2i].
+# For PA6, i=6, so that means bits 13 and 12 (decimal) control its state.
+# The translation of what the two bits do is:
+#  00 (high,low) => pullup/down disabled;
+#  01 => pull up;
+#  10 => pull down;
+#  11 => reserved.
+# 
+# Our original write for PA6 of 0x2000 to the control address works out to
+#  be bit 12 low, bit 13 high, (all the rest low at the moment) so [13:12]
+#  is 10 so PA6 is set with pull down enabled. To set PA1 with pull down
+#  active, we need a 10 for [3:2] which works out to writing 0x2008
+#  to that register.
+ExecStart=/usr/bin/devmem2 0x01c2081c h 0x2008
+
+[Install]
+WantedBy=basic.target

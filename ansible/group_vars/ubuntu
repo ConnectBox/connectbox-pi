@@ -1,0 +1,5 @@
+---
+connectbox_os: ubuntu
+apty_services:
+  - unattended-upgrades
+  - apt-daily

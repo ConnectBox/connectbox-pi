@@ -1,0 +1,16 @@
+---
+dependencies:
+  - bootstrap
+  - { role: hat-service, when: '"NanoPi NEO" in machine_type.stdout' }
+  - dns-dhcp
+  - network-interfaces
+  - wifi-ap
+  - mikegleasonjr.firewall
+  - nginx
+  - captive-portal
+  - webserver-content
+  - usb-content
+  - sample-content
+  - rpi-permissions
+  - wlan-set
+  - remove-lz4

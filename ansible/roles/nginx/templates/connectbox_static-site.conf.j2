@@ -1,0 +1,21 @@
+server {
+    listen 80;
+    # Wildcard .local i.e. respond to anything that comes in on that domain
+    #  which allows us to avoid calculating the mDNS name
+    server_name $hostname .local;
+    root {{ connectbox_usb_files_root }};
+    index index.html index.htm;
+    error_page 404 /index.html;
+    access_log {{ connectbox_access_log }};
+    error_log {{ connectbox_error_log }} error;
+    rewrite_log on;
+
+{{ nginx_chat_block }}
+{{ nginx_admin_block }}
+
+    # Admin interface
+    location /admin {
+      alias {{ connectbox_default_content_root }};
+      try_files $uri /admin/index.html;
+    }
+}

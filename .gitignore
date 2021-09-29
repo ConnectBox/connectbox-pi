@@ -1,0 +1,11 @@
+*.pyc
+.DS_Store
+*.swp
+*.retry
+.vagrant
+*.pem
+ci/inventory
+ghostdriver.log
+ci/terraform.tfstate*
+ansible/inventory
+~/.virtualenvs/*
