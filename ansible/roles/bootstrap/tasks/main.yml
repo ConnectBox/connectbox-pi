@@ -210,6 +210,12 @@
     state: present
   when: ansible_lsb["id"] == "Debian"
 
+# acl needed for good install of Postgres as per Leo-Nils 20211011
+- name: Install acl
+  apt:
+    name: acl
+    state: present
+
 # Needed in several subsequent roles
 - name: Install packages for python virtualenv
   apt:
