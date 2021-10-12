@@ -1,6 +1,7 @@
 ---
 connectbox_os: raspbian
 ansible_user: pi
+root_partition_size: "4GB"
 
 client_facing_if: "wlan0"
 eth_facing_if: "eth0"

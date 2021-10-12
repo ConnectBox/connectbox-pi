@@ -57,7 +57,7 @@
   when: connectbox_os == "raspbian"
 
 - name: Compile the 8812au driver for Raspbian"
-  command: "sh ./tmp/8812au-install.sh"
+  command: "sh /tmp/8812au-install.sh"
   when: connectbox_os == "raspbian"
 
 # Note: this is not a handler because we need the network configuration in

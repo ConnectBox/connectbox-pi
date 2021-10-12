@@ -108,6 +108,41 @@
   when: old_style_names.changed
   tags: skip_ansible_lint
 
+###########################################
+# Raspberry Pi partitioning
+- name: Get Name of SD card
+  shell: lsblk -d | grep disk | awk '{print $1;}'
+  register: sdcard_name
+  when: connectbox_os == "raspbian"
+
+- name: Read SD card information 
+  community.general.parted: device=/dev/{{ sdcard_name.stdout }} unit=MiB
+  register: sdcard_info
+  when: connectbox_os == "raspbian"
+
+- name: Extend the existing OS partition so we have enough space to load all software
+  community.general.parted:
+    device: /dev/{{ sdcard_name.stdout }}
+    number: "{{ sdcard_info.partitions | length }}"
+    part_end: "{{ root_partition_size }}"
+    resize: true
+    state: present
+  when: connectbox_os == "raspbian" and sdcard_info.partitions | length < 3
+  ignore_errors: yes
+
+- name: Complete the resize filesystem of OS partition 
+  command: resize2fs /dev/{{ sdcard_name.stdout }}p2
+  become: true
+  when: connectbox_os == "raspbian" and sdcard_info.partitions | length < 3
+
+- name: Re-Read SD card information 
+  community.general.parted: device=/dev/{{ sdcard_name.stdout }} unit=MiB
+  register: sdcard_info
+  when: connectbox_os == "raspbian"
+
+
+
+
 # Check early on to see whether the OS needs to be
 # rebooted to allow a disk expansion step to complete.
 # This is Armbian only, but the check doesn't hurt others.
@@ -165,8 +200,8 @@
     pre_reboot_delay=2
   when: reboot_required
 
-- name : Increase size of /tmp to handle upcoming installs
-  command: mount -o remount, size=400M /tmp/
+#- name : Increase size of /tmp to handle upcoming installs
+#  command: mount -o remount, size=400M /tmp/
   
 
 - name: Get current rfkill state for interface 0 (wireless LAN) on Raspbian
