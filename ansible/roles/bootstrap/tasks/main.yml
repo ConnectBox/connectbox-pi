@@ -1,5 +1,14 @@
 ---
+- name: Make connectbox directory
+  file:
+    state: directory
+    path: /usr/local/connectbox
+    mode: 0755
 
+- name: Copy brand.txt template
+  template:
+    src: brand_txt.j2
+    dest: /usr/local/connectbox/brand.txt
 
 # Needs to happen prior to partitioning
 - name: Create moodledata directory that Moodle requires for all its functions
