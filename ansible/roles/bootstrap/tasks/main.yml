@@ -64,6 +64,27 @@
 #  to reboot to activate the old-style interface names, we'll sort out the
 #  reboot oracle too, but if the reboot oracle check is before this check
 #  we'll need to reboot a second time (after creating the symlink)
+- debug:
+    msg: "Ansible Group Variables Family {{ ansible_os_family|lower }}"
+
+- debug:
+    msg: "Ansible Group Variables Distribution {{ ansible_distribution|lower }}"
+
+- debug:
+    msg: "Ansible Group Variables Target Specific {{ ansible_lsb['id']|lower }}"
+
+- debug:
+    msg: "Machine Type file {{ machine_type['stdout_lines'] }}"
+
+- debug:
+    msg: "connectbox_os {{ connectbox_os }}"
+
+- debug:
+    msg: "ansible_kernel {{ ansible_kernel }}"
+
+- debug:
+    msg: "ansible_interfaces {{ ansible_interfaces }}"
+
 - name: setup use of old-style interface names for predictability across devices
   file:
     dest: /etc/udev/rules.d/80-net-setup-link.rules
@@ -109,6 +130,23 @@
     state: absent
   when: connectbox_os == "armbian"
 
+- name: Disable systemd-resolve to remove port conflicts
+  command: systemctl disable systemd-resolved
+
+- name: Remove i2c0 in /boot/armbianEnv.txt
+  replace:
+    path: /boot/armbianEnv.txt
+    regexp: 'overlays=i2c0 usbhost0 '
+    replace: 'overlays='
+  when: connectbox_os != "raspbian"
+
+- name: Add i2c0 to /boot/armbianEnv.txt
+  replace:
+    path: /boot/armbianEnv.txt
+    regexp: '(overlays=)'
+    replace: '\1i2c0 usbhost0 '
+  when: connectbox_os != "raspbian"
+
 # The system takes 5-10 seconds to disappear from the network
 #  so let's wait 15 seconds before doing our first check
 #  Use newer ansible 2.7 function reboot
@@ -117,6 +155,10 @@
     post_reboot_delay=15
     pre_reboot_delay=2
   when: reboot_required
+
+- name : Increase size of /tmp to handle upcoming installs
+  command: mount -o remount, size=400M /tmp/
+  
 
 - name: Get current rfkill state for interface 0 (wireless LAN) on Raspbian
   command: cat /sys/class/rfkill/rfkill0/soft
@@ -187,7 +229,7 @@
 #  changed anything (and it's not worth lead-up tasks to work out
 #  whether this task would do anything i.e. using aptitude search ~ahold
 - name: Pin kernel and dtb packages
-  command: "aptitude -q hold linux-dtb-next-sunxi linux-image-next-sunxi linux-u-boot-nanopineo-next linux-stretch-root-next-nanopineo"
+  command: "aptitude -q hold linux-dtb-current-sunxi linux-image-current-sunxi linux-u-boot-nanopineo-current linux-focal-root-current-nanopineo"
   when: connectbox_os == "armbian" and "sunxi" in ansible_kernel
 
 # If we ever allow updates of the linux-...-root device package, this will
@@ -219,7 +261,7 @@
 # Needed in several subsequent roles
 - name: Install packages for python virtualenv
   apt:
-    name: ['python-virtualenv', 'python-pip', 'virtualenv']
+    name: ['python3-virtualenv', 'python3-pip', 'virtualenv']
     state: present
   tags:
     - captive_portal
@@ -230,8 +272,46 @@
     name: git
     state: present
 
+- name: Move armbian-resize filesystem
+  ansible.builtin.copy:
+    src: /usr/lib/armbian/armbian-resize-filesystem
+    dest: /usr/lib/armbian-resize-filesystem
+    remote_src: yes
+    mode: preserve
+  when: connectbox_os == "armbian"
+
 # See if we need to create a wlan0 interface when we're running in a sim
 #  environment i.e. running virtualised
 - name: Create a wlan0 interface
   command: /sbin/ip link add wlan0 type dummy
   when: "'wlan0' not in ansible_interfaces and ansible_virtualization_type != 'NA'"
+
+# The log files in /var/log/connectbox and /var/log/nginx are required for the
+#  nginx service to run. Unfortunately, some un-identified start up code is deleting
+#  those directories and causing the nginx service to fail. The following three steps
+#  create the directory, install a shell script to re-establish the required directories 
+#  and log files and then run that shell script at every startup.
+- name: Create the /usr/local/connectbox/bin directory
+  file:
+    path: /usr/local/connectbox/bin
+    state: directory
+
+- name: Install CreateLogFiles.sh  
+  copy: 
+    src: usr_local_connectbox_bin_CreateLogFiles.sh
+    dest: /usr/local/connectbox/bin/CreateLogFiles.sh
+  when: connectbox_os == "armbian" 
+    
+- name: Install mountCheck.py  
+  copy: 
+    src: usr_local_connectbox_bin_mountCheck.py
+    dest: /usr/local/connectbox/bin/mountCheck.py
+    mode: 0644
+  when: connectbox_os == "armbian" 
+
+- name: Install rc.local 
+  copy:
+    src: etc_rc.local 
+    dest: /etc/rc.local 
+  when: connectbox_os == "armbian" 
+

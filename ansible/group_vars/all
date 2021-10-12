@@ -9,6 +9,7 @@ connectbox_version: "{{ 'dev-%y%m%d' | strftime }}"
 #  test some client-facing capabilities but do not have a wifi interface
 client_facing_if: "wlan0"
 eth_facing_if: "wlan1"
+SSID_Box: "ConnectBox - Free WiFi!"
 
 # Client facing if stuff is defined here because we have a circular dependency
 # in that dns-dhcp depends
@@ -31,8 +32,11 @@ captiveportal_listen_port: 5001
 # Used to serve dns on LAN in developer mode, principally for testing.
 # In situations where there are multiple wired ethernet interfaces, this is
 #  not necessarily the same interface as the one used for SSH.
+
 lan_dns_if: eth0
 wifi_configurator_virtualenv_dir: /usr/local/connectbox/wifi_configurator_venv
+
+wifi_data_check_turnoff: www.gowifi.com
 
 connectbox_web_root: /var/www/connectbox
 connectbox_default_content_root: "{{ connectbox_web_root }}/connectbox_default"
@@ -42,8 +46,10 @@ connectbox_virtualenv: "{{ connectbox_web_root }}/connectbox_virtualenv"
 connectbox_config_root: /etc/connectbox
 connectbox_usb_files_root: /media/usb0
 connectbox_admin_credentials: admin:$apr1$CBOX2018$RlXBoHRRoiG3vMC7PS07q.
+
 connectbox_default_hostname: connectbox
 connectbox_logo: connectbox_logo.png
+
 connectbox_log_dir: /var/log/connectbox
 connectbox_access_log: "{{ connectbox_log_dir }}/connectbox-access.log"
 connectbox_error_log:  "{{ connectbox_log_dir }}/connectbox-error.log"
@@ -53,6 +59,8 @@ connectbox_client_repo: https://github.com/ConnectBox/connectbox-react-icon-clie
 connectbox_client_path: published/
 connectbox_system_password: "!1TheWell"
 build_moodle: False
+
+nginx_log_dir: /var/log/nginx
 
 nginx_admin_block: |
       location /admin/api {

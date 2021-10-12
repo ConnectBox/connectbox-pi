@@ -4,7 +4,8 @@
 #
 # Debian─┬─Ubuntu───Armbian
 #        ├─Raspbian
-#        └─Armbian
+#        └─Armbian─┬─stretch
+#                  └─focal
 #
 # (See also https://github.com/ConnectBox/connectbox-pi/wiki/Differentiating-platform-by-ansible-variables)
 
@@ -42,6 +43,6 @@
       ignore_errors: yes
       changed_when: False
   become: yes
-  roles:
+  roles:     
     - connectbox-pi
     - { role: image-preparation, when: do_image_preparation }
