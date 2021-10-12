@@ -1,0 +1,144 @@
+---
+######################################################
+# Moodle installation presumes previously installed PHP and PostgreSQL as per the playbooks
+
+
+- name: Recursively remove existing Moodle directory
+  file:
+    path: /var/www/moodle/
+    state: absent
+
+- name: Make Moodle directory
+  file:
+    state: directory
+    path: /var/www/moodle/
+    owner: www-data
+    group: www-data
+    mode: 0775
+    
+# This is from Relay Trust's Repo
+- name: Install Moodle 3.10 repo to /var/www/moodle
+  git:
+    repo: 'https://github.com/RT-coding-team/the-well-moodle310.git'
+    dest: /var/www/moodle/
+    clone: yes
+    update: yes
+
+- name: Download The Well App (Moodle Android App) from URL 
+  get_url:
+    url: 'https://thewell-images.s3-us-west-2.amazonaws.com/{{app_download_local_filename}}'
+    dest: /var/www/moodle/thewell
+
+- name: Customize App Download Page
+  template:
+    src: thewell_index_php.j2
+    dest: /var/www/moodle/thewell/index.php
+
+- name: Copy customcert plugin to /var/www/moodle/mod/
+  ansible.builtin.unarchive:
+    src: ../templates/customcert.tar.gz
+    dest: /var/www/moodle/mod/
+  become: true
+  when: buildDatabase.rc > 0 or overwrite_database
+
+- name: Recursively empty existing moodledata directory
+  shell: rm -rf /var/www/moodledata/*
+  become: true
+  ignore_errors: yes
+  when: buildDatabase.rc > 0 or overwrite_database
+  
+- name: Restore moodledata directory that Moodle requires for all its functions
+  file:
+    state: directory
+    path: /var/www/moodledata/
+    owner: www-data
+    group: www-data
+    mode: 0777
+
+- name: Copy filedir to /var/www/moodledata/filedir
+  ansible.builtin.unarchive:
+    src: ../templates/filedir.tar.gz
+    dest: /var/www/moodledata/
+  become: true
+  when: buildDatabase.rc > 0 or overwrite_database
+
+- name: configure temporary storage for Moodle cache
+  when: connectbox_os == "raspbian" 
+  mount:
+    path: '{{ item.name }}'
+    src: 'tmpfs'
+    fstype: 'tmpfs'
+    opts: 'size={{ item.size }},mode=777,uid=www-data,gid=www-data'
+    dump: '0'
+    passno: '0'
+    state: 'mounted'
+  with_items:
+    - { name: '/var/cache/moodle', size: '4M' }
+    - { name: '/var/www/moodledata/cache', size: '4M' }
+    - { name: '/var/www/moodledata/temp', size: '499M' }
+    - { name: '/var/www/moodledata/sessions', size: '4M' }
+    
+
+- name: Copy config.php to working directory
+  template:
+    src: var_www_moodle_config_php.j2
+    dest: /var/www/moodle/config.php
+
+#  Everything in Moodle runs as web server user
+- name: Recursively change ownership /var/www/moodle
+  become: true
+  file:
+    path: /var/www/moodle
+    state: directory
+    recurse: yes
+    owner: www-data
+    group: www-data
+    mode: 0775
+
+# Install generic PHP test script into the moodle directory so we can know that this is ok.    
+- name: Copy PHP info.php
+  template:
+    src: var_www_moodle_info_php.j2
+    dest: /var/www/moodle/info.php
+
+# Setup Moodle's Cron 
+- name: Setup Moodle's Cron To Run Every 15 Minutes as Per Moodle
+  ansible.builtin.cron:
+    name: "moodle cron"
+    minute: "1,16,31,46"
+    hour: "*"
+    user: www-data
+    job: "/usr/bin/php /var/www/moodle/admin/cli/cron.php >/tmp/cron.log"
+
+# Setup Moodle's Cron 
+- name: Setup chat_attachments/clean_up.php To Run Every Day
+  ansible.builtin.cron:
+    name: "chat_attachments/clean_up.php"
+    minute: "3"
+    hour: "3"
+    user: www-data
+    job: "/usr/bin/php /var/www/moodle/local/chat_attachments/clean_up.php >/tmp/cleanup.log"
+
+# Setup Moodle's Cron 
+- name: Setup chat_attachments/push_messages.php To Run Every 10 Minutes on Pi in Production
+  ansible.builtin.cron:
+    name: "chat_attachments/push_messages.php true"
+    minute: "*/10"
+    user: www-data
+    job: "/usr/bin/php /var/www/moodle/local/chat_attachments/push_messages.php true >/tmp/push_messages.log"
+  when: not developer_mode
+
+# Setup Moodle's Cron 
+- name: Setup chat_attachments/push_messages.php To Run Every Minute in Developer Mode
+  ansible.builtin.cron:
+    name: "chat_attachments/push_messages.php true"
+    minute: "*"
+    user: www-data
+    job: "/usr/bin/php /var/www/moodle/local/chat_attachments/push_messages.php true >/tmp/push_messages.log"
+  when: developer_mode
+  
+# Install ffmpeg to handle mpeg 
+- name: Install ffmpeg to handle video compression of chat attachments
+  apt:
+    pkg:
+    - ffmpeg
