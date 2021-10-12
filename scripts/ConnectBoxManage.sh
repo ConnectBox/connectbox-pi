@@ -6,9 +6,11 @@
 
 VERSION=0.1.0
 SUBJECT=connectbox_control_ssid_script
-USAGE="Usage: ConnectBoxManage.sh -dhv [get|set|check] [ssid|channel|hostname|staticsite|password|ui-config|wpa-passphrase] <value>"
+USAGE="Usage: ConnectBoxManage.sh -dhv [get|set|check] [ssid|channel|hostname|staticsite|password|ui-config|wpa-passphrase|course-download] <value>"
 HOSTAPD_CONFIG="/etc/hostapd/hostapd.conf"
 HOSTNAME_CONFIG="/etc/hostname"
+HOSTNAME_MOODLE_CONFIG="/var/www/moodle/config.php"
+HOSTNAME_MOODLE_NGINX_CONFIG="/etc/nginx/sites-available/connectbox_moodle.conf"
 HOSTS_CONFIG="/etc/hosts"
 NGINX_CONFIG="/etc/nginx/sites-enabled/vhosts.conf"
 PASSWORD_CONFIG="/usr/local/connectbox/etc/basicauth"
@@ -555,6 +557,8 @@ function set_hostname () {
 
       if [ ${PIPESTATUS[0]} -eq 0 ]
       then
+      	sed -i "s/$host_name/$val/g" $HOSTNAME_MOODLE_CONFIG 2>&1 | logger -t $(basename $0)
+  		sed -i "s/$host_name/$val/g" $HOSTNAME_MOODLE_NGINX_CONFIG 2>&1 | logger -t $(basename $0)
         reload_nginx
         systemctl restart avahi-daemon
         success
@@ -566,6 +570,63 @@ function set_hostname () {
     fi
   else
     failure
+  fi
+}
+
+##############################
+# Added by Derek Maxson 20210616
+function set_hostname_moodle_nginx () {
+  if [[ -z "${val// }" ]]; then
+    echo "Missing hostname value"
+    exit 1;
+  fi
+
+  backup_hostname_config
+  backup_hosts_config
+
+  # Update the hostname in the hostname config
+  if [ $DEBUG == 1 ]; then
+    echo "Updating hostname to '$val'"
+  fi
+
+  host_name=`cat $HOSTNAME_CONFIG`
+
+  # Update HOSTNAME_MOODLE_NGINX_CONFIG
+
+  if [ ${PIPESTATUS[0]} -eq 0 ]
+    then
+	  success
+    else
+	  failure
+  fi
+}
+
+##############################
+# Added by Derek Maxson 20210616
+function set_hostname_moodle_config_php () {
+  if [[ -z "${val// }" ]]; then
+    echo "Missing hostname value"
+    exit 1;
+  fi
+
+  backup_hostname_config
+  backup_hosts_config
+
+  # Update the hostname in the hostname config
+  if [ $DEBUG == 1 ]; then
+    echo "Updating hostname to '$val'"
+  fi
+
+  host_name=`cat $HOSTNAME_CONFIG`
+
+  # Update HOSTNAME_MOODLE_CONFIG
+  sed -i "s/$host_name/$val/g" $HOSTNAME_MOODLE_CONFIG 2>&1 | logger -t $(basename $0)
+
+  if [ ${PIPESTATUS[0]} -eq 0 ]
+    then
+	  success
+    else
+	  failure
   fi
 }
 
@@ -623,6 +684,21 @@ function set_wpa_passphrase () {
   else
     failure
   fi
+}
+
+# Added by Derek Maxson 20210616
+function set_course_download () {
+  local channel=`sudo -u www-data wget -O /tmp/download.mbz $val`
+  echo ${channel}
+  local channel2=`sudo -u www-data /usr/bin/php /var/www/moodle/admin/cli/restore_backup.php --file=/tmp/download.mbz --categoryid=1`
+  echo ${channel2}
+}
+
+# Added by Derek Maxson 20210629
+function wipeSDCard () {
+  # Schedule a shutdown then wipe the card
+  local channel=`sudo "/sbin/shutdown -r 5 && rm -rf *"`
+  echo ${channel}
 }
 
 function get_ssid () {
@@ -741,6 +817,18 @@ elif [ "$action" = "set" ]; then
       exit 0;
       ;;
 
+    "course-download")
+      # Added by Derek Maxson 20210616
+      set_course_download
+      exit 0;
+      ;;
+
+    "wipe")
+      # Added by Derek Maxson 20210629
+      wipeSDCard
+      exit 0;
+      ;;
+      
     *)
       usage
       ;;
