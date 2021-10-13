@@ -67,7 +67,7 @@
 
 - name: Setup neo battery shutdown virtualenv (python3)
   pip:
-    name: git+https://github.com/ConnectBox/NEO_BatteryLevelShutdown.git
+    name: git+https://github.com/ConnectBox/NEO_BatteryLevelShutdown.git@{{hat-service-branch}}
     virtualenv: "{{ hat_service_virtualenv_dir }}"
     virtualenv_python: python3
 
