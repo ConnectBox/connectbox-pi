@@ -43,6 +43,9 @@
   when: connectbox_os == "raspbian"
   register: etc_network_interfaces
 
+- name: Reboot so that latest kernel is used
+  reboot:
+
 - name: Copy over 8812au-install script for Raspian
   copy:
     src: 8812au-install.sh

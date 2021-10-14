@@ -55,7 +55,7 @@ access_log_analyzer_repo: https://github.com/ConnectBox/access-log-analyzer.git
 connectbox_client_repo: https://github.com/ConnectBox/connectbox-react-icon-client.git
 connectbox_client_path: published/
 
-hat-service-branch: master
+hat_service_branch: master
 
 nginx_log_dir: /var/log/nginx
 

@@ -99,7 +99,11 @@
 
 - name: Increase size of /tmp to handle upcoming installs
   command: mount -o remount, size=400M /tmp/
+<<<<<<< HEAD
   when: connectbox_os != "raspbian" 
+=======
+  when: connectbox_os != "raspbian"
+>>>>>>> 50038a5d1f52d612553f36676465fd42922a2518
 
 - name: Get current rfkill state for interface 0 (wireless LAN) on Raspbian
   command: cat /sys/class/rfkill/rfkill0/soft
