@@ -22,7 +22,6 @@
     name: systemd-resolved
     state: stopped
     enabled: no
-  when: connectbox_os != "raspian"
 
 - name: Configure network interfaces NEO
   template:

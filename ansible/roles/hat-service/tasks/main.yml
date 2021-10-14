@@ -66,7 +66,6 @@
     path: "{{ hat_service_virtualenv_dir }}"
     state: directory
 
-
 - name: Setup neo battery shutdown virtualenv (python3)
   pip:
     name: git+https://github.com/ConnectBox/NEO_BatteryLevelShutdown.git
@@ -79,17 +78,10 @@
     state: present 
   when: connectbox_os != "raspbian"
 
-#- name: Install devmem2 for raspbian
-#  apt:
-#    name: ['devmem2']
-#    state: present
-#  when: connectbox_os = "raspbian"
-
 - name: Make sure there is no Pillow code already there
   ansible.builtin.file:
     path: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/Pillow-6.2.1.tar.gz"
     state: absent
-  when: connectbox_os != "raspbian"
 
 - name: Get the code from the repository
   get_url:
@@ -125,7 +117,7 @@
 
 - name: Install Pillow in virtual environment
   pip:
-    name: ['Pillow==6.2.1', 'psutil', 'RPi.GPIO']
+    name: ['Pillow==6.2.1', 'psutil']
     virtualenv: "{{ hat_service_virtualenv_dir }}"
   when: connectbox_os == "raspbian"
   
@@ -158,11 +150,11 @@
 #  which will use the installed RPi.GPIO rather than trying to install RPi.GPIO 0.7.0
 - name: Install luma.core in hat service virtualenv
   command: "{{ hat_service_virtualenv_dir }}/bin/pip install luma.core==1.7.2"
-  when: connectbox_os != "raspbian"
+
 
 - name: Install luma.oled in hat service virtualenv
   command: "{{ hat_service_virtualenv_dir }}/bin/pip install luma.oled==2.4.1"
-  when: connectbox_os != "raspbian"
+
 
 - name: Install RPi.GPIO for Raspbian build
   command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.0"
@@ -177,6 +169,7 @@
     group: root
   notify:
     - restart pa pulldown service
+  when: connectbox_os != "raspbian"
 
 - name: Copy neo battery shutdown systemd service definition
   template:
@@ -192,7 +185,6 @@
     state: present
   notify:
      - "restart neo battery shutdown service"
-  when: connectbox_os != "raspbian"
 
 # Startup has either already happened, or will happen in the handler
 - name: Enable services
@@ -202,5 +194,13 @@
     enabled: yes
   with_items:
     - "{{ pa_pulldown_enabler_service_name }}"
+  when: connectbox_os != "raspbian"
+
+- name: Enable other services
+  systemd:
+    name: "{{ item }}"
+    daemon_reload: yes
+    enabled: yes
+  with_items:
     - "{{ hat_service_name }}"
     
