@@ -44,6 +44,9 @@
   when: connectbox_os == "raspbian"
   register: etc_network_interfaces
 
+- name: Reboot so that latest kernel is used
+  reboot:
+
 - name: Copy over 8812au-install script for Raspian
   copy:
     src: 8812au-install.sh
@@ -52,7 +55,7 @@
   when: connectbox_os == "raspbian"
 
 - name: Compile the 8812au driver for Raspbian"
-  command: "sh ./tmp/8812au-install.sh"
+  command: "sh /tmp/8812au-install.sh"
   when: connectbox_os == "raspbian"
 
 # Note: this is not a handler because we need the network configuration in
