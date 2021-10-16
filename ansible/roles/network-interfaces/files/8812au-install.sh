@@ -7,8 +7,7 @@ git clone --depth 1 https://github.com/gordboy/rtl8812au-5.9.3.2
 # alternate github repository is https://github.com/aircrack-ng/rtl8812au
 sudo ln -s linux $(uname -r)
 sudo ln -s /usr/src/linux-headers-$(uname -r) /lib/modules/$(uname -r)/build
-echo '\nare you running version\n Hit Enter\n'$(uname -r)
-read reply
+echo '\nyou running version\n'$(uname -r)
 cd ./rtl8812au-5.9.3.2/
 sed -i 's/CONFIG_PLATFORM_I386_PC = y/CONFIG_PLATFORM_I386_PC = n/g' Makefile
 sed -i 's/CONFIG_PLATFORM_ARM_RPI = n/CONFIG_PLATFORM_ARM_RPI = y/g' Makefile
