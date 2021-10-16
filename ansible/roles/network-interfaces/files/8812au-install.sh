@@ -9,11 +9,11 @@ then
 else
   if [ -f /lib/modules/$(uname -r)/kernel/drivers/net/wireless/realtek/88X2u.ko ];
   then
-    printf "Skipping the RTL8812au driver as it already exists\n"
+    printf "Skipping the RTL8812au driver as it is integrated into the kernel\n"
   else
     printf "Compiling the RTL8812au driver then installing\n"
     reboot = "yes"
-    if (-d ./rtl8812au-5.9.3.2];
+    if [ -d ./rtl8812au-5.9.3.2 ];
     then
       printf "Destination git directory already exsists\n"
     else
@@ -27,7 +27,7 @@ else
     sed -i 's/CONFIG_PLATFORM_I386_PC = y/CONFIG_PLATFORM_I386_PC = n/g' Makefile
     sed -i 's/CONFIG_PLATFORM_ARM_RPI = n/CONFIG_PLATFORM_ARM_RPI = y/g' Makefile
     sed -i 's/CONFIG_POWER_SAVING = y/CONFIG_POWER_SAVING = n/g' Makefile
-    if [[-f install.sh]];
+    if [ -f install.sh ];
     then
       printf "using install.sh\n"
       sudo chmod +x install.sh
@@ -46,13 +46,15 @@ else
 fi  
 if [ -f /lib/modules/$(uname -r)/kernel/drivers/net/wireless/88x2bu.ko ];
 then
-  printf "Skipping the RTL8812bu driver as it already exists\n"
+  printf "Driver rtl8812bu already exists\n"
 else
   if [ -f /lib/modules/$(uname -r)/kernel/drivers/net/wireless/realtek/88x2bu.ko ];
   then
+    printf "Skipping the rtl88x2bu driver as it is already integrated into the kernel\n"
+  else
     printf "Compiling the RTL8812bu driver then installing\n"
     reboot = "yes"
-    if (-d ./rtl88x2bu];
+    if [ -d ./rtl88x2bu];
     then
       printf "Destination git directory already exsists\n"
     else
@@ -65,7 +67,7 @@ else
     sed -i 's/CONFIG_PLATFORM_I386_PC = y/CONFIG_PLATFORM_I386_PC = n/g' Makefile
     sed -i 's/CONFIG_PLATFORM_ARM_RPI = n/CONFIG_PLATFORM_ARM_RPI = y/g' Makefile
     sed -i 's/CONFIG_POWER_SAVING = y/CONFIG_POWER_SAVING = n/g' Makefile
-    if [[-f install.sh]];
+    if [ -f install.sh ];
     then
       printf "using install.sh\n"
       sudo chmod +x install.sh
@@ -86,8 +88,9 @@ fi
 if [ -n "$reboot" ];
 then
   printf "system will need to be rebooted\n"
-  sudo apt-get remove build-essential bc libssl-dev 
-  sudo rm /lib/modules/$(uname -r)/build
-  sudo rm ../$(uname -r)
 fi
+sudo apt-get remove -y build-essential bc libssl-dev 
+sudo rm /lib/modules/$(uname -r)/build
+sudo rm ../$(uname -r)
+
 
