@@ -3,77 +3,91 @@ sudo apt update
 sudo apt -y upgrade
 sudo apt -y install build-essential bc git wget libelf-dev libssl-dev
 sudo apt -y install raspberrypi-kernel-headers
-if [(-f /lib/modules/$(uname -r)/kernel/drivers/net/wireless/8812au.ko) | (-f /lib/modules/$(uname -r)/kernel/drivers/net/wireless/realtek/88X2u.ko)]
+if [ -f /lib/modules/$(uname -r)/kernel/drivers/net/wireless/8812au.ko ];
 then
-  printf "Skipping the RTL8812au driver as it already exists"
+  printf "Driver rtl8812au.ko already exsists\n"
 else
-  printf "Compiling the RTL8812au driver then installing"
-  if (-d ./rtl8812au-5.9.3.2]
+  if [ -f /lib/modules/$(uname -r)/kernel/drivers/net/wireless/realtek/88X2u.ko ];
   then
-    printf "Destination git directory already exsists"
+    printf "Skipping the RTL8812au driver as it already exists\n"
   else
-    git clone --depth 1 https://github.com/gordboy/rtl8812au-5.9.3.2
+    printf "Compiling the RTL8812au driver then installing\n"
+    reboot = "yes"
+    if (-d ./rtl8812au-5.9.3.2]
+    then
+      printf "Destination git directory already exsists\n"
+    else
+      git clone --depth 1 https://github.com/gordboy/rtl8812au-5.9.3.2
+    fi
+    # alternate github repository is https://github.com/aircrack-ng/rtl8812au
+    sudo ln -s linux $(uname -r)
+    sudo ln -s /usr/src/linux-headers-$(uname -r) /lib/modules/$(uname -r)/build
+    printf '\nyou running version %s\n', "$(uname -r)"
+    cd ./rtl8812au-5.9.3.2/
+    sed -i 's/CONFIG_PLATFORM_I386_PC = y/CONFIG_PLATFORM_I386_PC = n/g' Makefile
+    sed -i 's/CONFIG_PLATFORM_ARM_RPI = n/CONFIG_PLATFORM_ARM_RPI = y/g' Makefile
+    sed -i 's/CONFIG_POWER_SAVING = y/CONFIG_POWER_SAVING = n/g' Makefile
+    if [[-f install.sh]]
+    then
+      printf "using install.sh\n"
+      sudo chmod +x install.sh
+      sudo sh ./install.sh
+    else
+      printf "using Makefile to build\n"
+      sudo make -j4
+      sudo make install
+      printf 'Make is complete ready to install\n'
+      sudo insmod 8812au.ko
+      sudo cp 8812au.ko /lib/modules/$(uname -r)/kernel/drivers/net/wireless/
+      sudo depmod
+    fi
+    rm -r ./rtl8812au-5.9.3.2
   fi
-  # alternate github repository is https://github.com/aircrack-ng/rtl8812au
-  sudo ln -s linux $(uname -r)
-  sudo ln -s /usr/src/linux-headers-$(uname -r) /lib/modules/$(uname -r)/build
-  printf '\nyou running version\n'$(uname -r)
-  cd ./rtl8812au-5.9.3.2/
-  sed -i 's/CONFIG_PLATFORM_I386_PC = y/CONFIG_PLATFORM_I386_PC = n/g' Makefile
-  sed -i 's/CONFIG_PLATFORM_ARM_RPI = n/CONFIG_PLATFORM_ARM_RPI = y/g' Makefile
-  sed -i 's/CONFIG_POWER_SAVING = y/CONFIG_POWER_SAVING = n/g' Makefile
-  if [[-f install.sh]]
+fi  
+if [ -f /lib/modules/$(uname -r)/kernel/drivers/net/wireless/88x2bu.ko ];
+then
+  printf "Skipping the RTL8812bu driver as it already exists\n"
+else
+  if [ -f /lib/modules/$(uname -r)/kernel/drivers/net/wireless/realtek/88x2bu.ko ];
   then
-    printf "\nusing install.sh\n"
-    sudo chmod +x install.sh
-    sudo sh ./install.sh
-  else
-    printf "\nusing Makefile to build\n"
-    sudo make -j4
-    sudo make install
-    pause 'Make is complete ready to install'
-    sudo insmod 8812au.ko
-    sudo cp 8812au.ko /lib/modules/$(uname -r)/kernel/drivers/net/wireless/
-    sudo depmod
+    printf "Compiling the RTL8812bu driver then installing\n"
+    reboot = "yes"
+    if (-d ./rtl88x2bu]
+    then
+      printf "Destination git directory already exsists\n"
+    else
+      git clone --depth 1 https://github.com/cilynx/rtl88x2bu
+    fi
+    sudo ln -s linux $(uname -r)
+    sudo ln -s /usr/src/linux-headers-$(uname -r) /lib/modules/$(uname -r)/build
+    printf 'you running version%s\n' "$(uname -r)"
+    cd ./rtl88x2bu/
+    sed -i 's/CONFIG_PLATFORM_I386_PC = y/CONFIG_PLATFORM_I386_PC = n/g' Makefile
+    sed -i 's/CONFIG_PLATFORM_ARM_RPI = n/CONFIG_PLATFORM_ARM_RPI = y/g' Makefile
+    sed -i 's/CONFIG_POWER_SAVING = y/CONFIG_POWER_SAVING = n/g' Makefile
+    if [[-f install.sh]]
+    then
+      printf "using install.sh\n"
+      sudo chmod +x install.sh
+      sudo sh ./install.sh
+    else
+      printf "using Makefile to build\n"
+      sudo make -j4
+      sudo make install
+      printf 'Make is complete ready to install\n'
+      sudo insmod 88x2bu.ko
+      sudo cp 88x2bu.ko /lib/modules/$(uname -r)/kernel/drivers/net/wireless/
+      sudo depmod
+    fi
+    rm -r ./88x2bu
   fi
 fi
-if [(-f /lib/modules/$(uname -r)/kernel/drivers/net/wireless/88x2bu.ko) | (-f /lib/modules/$(uname -r)/kernel/drivers/net/wireless/realtek/88x2bu.ko)]
+
+if [ -n "$reboot" ]
 then
-  printf "Skipping the RTL8812bu driver as it already exists"
-else
-  printf "Compiling the RTL8812bu driver then installing"
-  if (-d ./rtl88x2bu]
-  then
-    printf "Destination git directory already exsists"
-  else
-    git clone --depth 1 https://github.com/cilynx/rtl88x2bu
-  fi
-  sudo ln -s linux $(uname -r)
-  sudo ln -s /usr/src/linux-headers-$(uname -r) /lib/modules/$(uname -r)/build
-  printf '\nyou running version\n'$(uname -r)
-  cd ./rtl88x2bu/
-  sed -i 's/CONFIG_PLATFORM_I386_PC = y/CONFIG_PLATFORM_I386_PC = n/g' Makefile
-  sed -i 's/CONFIG_PLATFORM_ARM_RPI = n/CONFIG_PLATFORM_ARM_RPI = y/g' Makefile
-  sed -i 's/CONFIG_POWER_SAVING = y/CONFIG_POWER_SAVING = n/g' Makefile
-  if [[-f install.sh]]
-  then
-    printf "\nusing install.sh\n"
-    sudo chmod +x install.sh
-    sudo sh ./install.sh
-  else
-    printf "\nusing Makefile to build\n"
-    sudo make -j4
-    sudo make install
-    pause 'Make is complete ready to install'
-    sudo insmod 88x2bu.ko
-    sudo cp 88x2bu.ko /lib/modules/$(uname -r)/kernel/drivers/net/wireless/
-    sudo depmod
-  fi
+  printf "system will need to be rebooted\n"
+  sudo apt-get remove build-essential bc libssl-dev 
+  sudo rm /lib/modules/$(uname -r)/build
+  sudo rm ../$(uname -r)
 fi
-printf "system will need to be rebooted"
-sudo apt-get remove build-essential bc libssl-dev 
-sudo rm /lib/modules/$(uname -r)/build
-sudo rm ../$(uname -r)
-
-
 
