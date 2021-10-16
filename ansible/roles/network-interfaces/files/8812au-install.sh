@@ -8,7 +8,12 @@ then
   printf "Skipping the RTL8812au driver as it already exists"
 else
   printf "Compiling the RTL8812au driver then installing"
-  git clone --depth 1 https://github.com/gordboy/rtl8812au-5.9.3.2
+  if (-d ./rtl8812au-5.9.3.2]
+  then
+    printf "Destination git directory already exsists"
+  else
+    git clone --depth 1 https://github.com/gordboy/rtl8812au-5.9.3.2
+  fi
   # alternate github repository is https://github.com/aircrack-ng/rtl8812au
   sudo ln -s linux $(uname -r)
   sudo ln -s /usr/src/linux-headers-$(uname -r) /lib/modules/$(uname -r)/build
@@ -37,7 +42,12 @@ then
   printf "Skipping the RTL8812bu driver as it already exists"
 else
   printf "Compiling the RTL8812bu driver then installing"
-  git clone --depth 1 https://github.com/cilynx/rtl88x2bu
+  if (-d ./rtl88x2bu]
+  then
+    printf "Destination git directory already exsists"
+  else
+    git clone --depth 1 https://github.com/cilynx/rtl88x2bu
+  fi
   sudo ln -s linux $(uname -r)
   sudo ln -s /usr/src/linux-headers-$(uname -r) /lib/modules/$(uname -r)/build
   printf '\nyou running version\n'$(uname -r)
