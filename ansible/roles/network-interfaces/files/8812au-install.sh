@@ -13,7 +13,7 @@ else
   else
     printf "Compiling the RTL8812au driver then installing\n"
     reboot = "yes"
-    if (-d ./rtl8812au-5.9.3.2]
+    if (-d ./rtl8812au-5.9.3.2];
     then
       printf "Destination git directory already exsists\n"
     else
@@ -27,7 +27,7 @@ else
     sed -i 's/CONFIG_PLATFORM_I386_PC = y/CONFIG_PLATFORM_I386_PC = n/g' Makefile
     sed -i 's/CONFIG_PLATFORM_ARM_RPI = n/CONFIG_PLATFORM_ARM_RPI = y/g' Makefile
     sed -i 's/CONFIG_POWER_SAVING = y/CONFIG_POWER_SAVING = n/g' Makefile
-    if [[-f install.sh]]
+    if [[-f install.sh]];
     then
       printf "using install.sh\n"
       sudo chmod +x install.sh
@@ -52,7 +52,7 @@ else
   then
     printf "Compiling the RTL8812bu driver then installing\n"
     reboot = "yes"
-    if (-d ./rtl88x2bu]
+    if (-d ./rtl88x2bu];
     then
       printf "Destination git directory already exsists\n"
     else
@@ -65,7 +65,7 @@ else
     sed -i 's/CONFIG_PLATFORM_I386_PC = y/CONFIG_PLATFORM_I386_PC = n/g' Makefile
     sed -i 's/CONFIG_PLATFORM_ARM_RPI = n/CONFIG_PLATFORM_ARM_RPI = y/g' Makefile
     sed -i 's/CONFIG_POWER_SAVING = y/CONFIG_POWER_SAVING = n/g' Makefile
-    if [[-f install.sh]]
+    if [[-f install.sh]];
     then
       printf "using install.sh\n"
       sudo chmod +x install.sh
@@ -83,7 +83,7 @@ else
   fi
 fi
 
-if [ -n "$reboot" ]
+if [ -n "$reboot" ];
 then
   printf "system will need to be rebooted\n"
   sudo apt-get remove build-essential bc libssl-dev 
