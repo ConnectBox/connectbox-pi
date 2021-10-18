@@ -4,5 +4,5 @@
 - include_tasks: persist-debian.yml
   when: ansible_os_family == 'Debian' or connectbox_os == 'raspbian'
 
-#- include_tasks: persist-redhat.yml
-#  when: ansible_os_family == 'RedHat'
+- include_tasks: persist-redhat.yml
+  when: ansible_os_family == 'RedHat'

@@ -28,9 +28,6 @@ address=/{{ host }}/{{ non_private_captive_portal_ip }}
 #  leases or are answered from /etc/hosts
 address=/#/{{ client_facing_if_ip_address }}
 
-# Set the learn.wellbox (or alternate hostname) for Moodle (DM 20210804)
-address=/learn.{{connectbox_default_hostname}}/{{ client_facing_if_ip_address }}
-
 # When a host is listed in /etc/hosts with multiple addresses, return the
 #  on associated with the interface on which the query was received.
 localise-queries
