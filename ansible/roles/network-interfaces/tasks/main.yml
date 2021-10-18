@@ -52,7 +52,9 @@
   when: connectbox_os == "raspbian"
 
 - name: Compile the 8812au & 88x2bu driver for Raspbian or NEO"
-  command: "cd /tmp && sh 8812au-install.sh"
+  chdir: /tmp
+  cmd: "sh 8812au-install.sh"
+  
 
 # Note: this is not a handler because we need the network configuration in
 # effect before proceeding with the wifi-ap and firewall roles, which will
