@@ -51,9 +51,10 @@
     mode: "+x"
   when: connectbox_os == "raspbian"
 
-- name: Compile the 8812au & 88x2bu driver for Raspbian or NEO"
-  chdir: /tmp
-  cmd: "sh 8812au-install.sh"
+- name: Compile the 8812au & 88x2bu driver for Raspbian or NEO
+  command:
+     chdir: /tmp
+     cmd: "sh 8812au-install.sh"
   
 
 # Note: this is not a handler because we need the network configuration in
