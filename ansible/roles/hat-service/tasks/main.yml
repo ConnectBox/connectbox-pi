@@ -58,11 +58,7 @@
 
 - name: Setup neo battery shutdown virtualenv (python3)
   pip:
-<<<<<<< HEAD
     name: git+https://github.com/ConnectBox/NEO_BatteryLevelShutdown.git
-=======
-    name: "git+https://github.com/ConnectBox/NEO_BatteryLevelShutdown.git@{{hat_service_branch}}"
->>>>>>> 50038a5d1f52d612553f36676465fd42922a2518
     virtualenv: "{{ hat_service_virtualenv_dir }}"
     virtualenv_python: python3
 
@@ -72,10 +68,17 @@
     state: present 
   when: connectbox_os != "raspbian"
 
+#- name: Install devmem2 for raspbian
+#  apt:
+#    name: ['devmem2']
+#    state: present
+#  when: connectbox_os = "raspbian"
+
 - name: Make sure there is no Pillow code already there
   ansible.builtin.file:
     path: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/Pillow-6.2.1.tar.gz"
     state: absent
+  when: connectbox_os != "raspbian"
 
 - name: Get the code from the repository
   get_url:
@@ -111,7 +114,7 @@
 
 - name: Install Pillow in virtual environment
   pip:
-    name: ['Pillow==6.2.1', 'psutil']
+    name: ['Pillow==6.2.1', 'psutil', 'RPi.GPIO']
     virtualenv: "{{ hat_service_virtualenv_dir }}"
   when: connectbox_os == "raspbian"
   
