@@ -86,7 +86,7 @@ if [ -n "$reboot" ];
 then
   printf "system will need to be rebooted\n"
 fi
-sudo rm /lib/modules/$(uname -r)/build
-sudo rm ../$(uname -r)
+if [ -f /lib/modules/$(uname -r)/build ]; then sudo rm /lib/modules/$(uname -r)/build
+if [ -f ../$(uname -r) ]; then sudo rm ../$(uname -r)
 
 
