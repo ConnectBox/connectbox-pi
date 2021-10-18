@@ -1,8 +1,5 @@
 #!/bin/bash
-sudo apt update
-sudo apt -y upgrade
-sudo apt -y install build-essential bc git wget libelf-dev libssl-dev
-sudo apt -y install raspberrypi-kernel-headers
+
 if [ -f /lib/modules/$(uname -r)/kernel/drivers/net/wireless/8812au.ko ];
 then
   printf "Driver rtl8812au.ko already exsists\n"
@@ -89,7 +86,6 @@ if [ -n "$reboot" ];
 then
   printf "system will need to be rebooted\n"
 fi
-sudo apt-get remove -y build-essential bc libssl-dev 
 sudo rm /lib/modules/$(uname -r)/build
 sudo rm ../$(uname -r)
 
