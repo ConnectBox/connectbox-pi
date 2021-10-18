@@ -1,14 +1,4 @@
 ---
-
-- name: Copy brand.txt to /usr/local/connectbox
-  copy:
-    src: brand.txt
-    dest: /usr/local/connectbox/brand.txt
-
-- name: Copy hostname to /etc
-  copy:
-    src: hostname
-    dest: /etc/hostname
     
 - name: Expand Temp directory otherwise we will run out of space
   command: mount -o remount,size=400M /tmp/
@@ -65,7 +55,6 @@
   file:
     path: "{{ hat_service_virtualenv_dir }}"
     state: directory
-
 
 - name: Setup neo battery shutdown virtualenv (python3)
   pip:
@@ -158,11 +147,11 @@
 #  which will use the installed RPi.GPIO rather than trying to install RPi.GPIO 0.7.0
 - name: Install luma.core in hat service virtualenv
   command: "{{ hat_service_virtualenv_dir }}/bin/pip install luma.core==1.7.2"
-  when: connectbox_os != "raspbian"
+
 
 - name: Install luma.oled in hat service virtualenv
   command: "{{ hat_service_virtualenv_dir }}/bin/pip install luma.oled==2.4.1"
-  when: connectbox_os != "raspbian"
+
 
 - name: Install RPi.GPIO for Raspbian build
   command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.0"
@@ -177,6 +166,7 @@
     group: root
   notify:
     - restart pa pulldown service
+  when: connectbox_os != "raspbian"
 
 - name: Copy neo battery shutdown systemd service definition
   template:
@@ -192,7 +182,6 @@
     state: present
   notify:
      - "restart neo battery shutdown service"
-  when: connectbox_os != "raspbian"
 
 # Startup has either already happened, or will happen in the handler
 - name: Enable services
@@ -202,5 +191,13 @@
     enabled: yes
   with_items:
     - "{{ pa_pulldown_enabler_service_name }}"
+  when: connectbox_os != "raspbian"
+
+- name: Enable other services
+  systemd:
+    name: "{{ item }}"
+    daemon_reload: yes
+    enabled: yes
+  with_items:
     - "{{ hat_service_name }}"
     
