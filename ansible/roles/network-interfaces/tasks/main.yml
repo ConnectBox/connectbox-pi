@@ -23,7 +23,6 @@
     name: systemd-resolved
     state: stopped
     enabled: no
-  when: connectbox_os != "raspian"
 
 - name: Install usbmuxd for Tethering Internet Connection
   apt:
@@ -48,6 +47,9 @@
     mode: 0644
   when: connectbox_os == "raspbian"
   register: etc_network_interfaces
+
+- name: Reboot so that latest kernel is used
+  reboot:
 
 - name: Copy over 8812au-install script for Raspian
   copy:

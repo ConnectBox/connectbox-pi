@@ -29,6 +29,7 @@
   command: mkswap /swapfile
   register: command_result
   ignore_errors: yes
+  when: connectbox_os != "raspbian"
 
 - name: turn swapfile on
   command: swapon /swapfile
@@ -48,16 +49,20 @@
   apt:
     name: ['libjpeg-turbo8', 'python3-dev', 'libfreetype6', 'libfreetype6-dev','zlib1g-dev', 'libpng-dev', 'devmem2']
     state: present
+  when: connectbox_os != "raspbian"
 
 - name: Make neo battery shutdown virtualenv directory
   file:
     path: "{{ hat_service_virtualenv_dir }}"
     state: directory
 
-
 - name: Setup neo battery shutdown virtualenv (python3)
   pip:
+<<<<<<< HEAD
     name: git+https://github.com/ConnectBox/NEO_BatteryLevelShutdown.git
+=======
+    name: "git+https://github.com/ConnectBox/NEO_BatteryLevelShutdown.git@{{hat_service_branch}}"
+>>>>>>> 50038a5d1f52d612553f36676465fd42922a2518
     virtualenv: "{{ hat_service_virtualenv_dir }}"
     virtualenv_python: python3
 
@@ -65,7 +70,7 @@
   apt:
     name: [python3-dev, python3-setuptools, libtiff5-dev, libjpeg8-dev, libopenjp2-7-dev, zlib1g-dev, libfreetype6-dev, liblcms2-dev, libwebp-dev, tcl8.6-dev, tk8.6-dev, python3-tk, libharfbuzz-dev, libfribidi-dev, libxcb1-dev, libtiff5]
     state: present 
-  when: connectbox_os != "raspian"
+  when: connectbox_os != "raspbian"
 
 - name: Make sure there is no Pillow code already there
   ansible.builtin.file:
@@ -76,14 +81,14 @@
   get_url:
     url: "https://files.pythonhosted.org/packages/5b/bb/cdc8086db1f15d0664dd22a62c69613cdc00f1dd430b5b19df1bea83f2a3/Pillow-6.2.1.tar.gz" 
     dest: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/"
-  when: connectbox_os != "raspian"
+  when: connectbox_os != "raspbian"
 
 - name: unzip Pillow in virtual environment (python3)
   ansible.builtin.unarchive:
     src:  "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/Pillow-6.2.1.tar.gz"
     dest: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/"
     remote_src: yes
-  when: connectbox_os != "raspian"
+  when: connectbox_os != "raspbian"
 
 - name: Install lower level of docutils == 0.16 for now
   pip:
@@ -94,7 +99,7 @@
   pip:
     requirements: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/Pillow-6.2.1/requirements.txt"
     virtualenv: "{{ hat_service_virtualenv_dir }}"
-  when: connectbox_os != "raspian"
+  when: connectbox_os != "raspbian"
   
 - name: compile Pillow in virtual environment (python3)
   command: "{{ hat_service_virtualenv_dir }}/bin/python3 {{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/Pillow-6.2.1/setup.py install"
@@ -102,13 +107,13 @@
     chdir: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/Pillow-6.2.1/"
   environment:
     MAX_CONCURRENCY: 1
-  when: connectbox_os != "raspian"
+  when: connectbox_os != "raspbian"
 
 - name: Install Pillow in virtual environment
   pip:
-    name: Pillow==6.2.1
+    name: ['Pillow==6.2.1', 'psutil']
     virtualenv: "{{ hat_service_virtualenv_dir }}"
-  when: connectbox_os == "raspian"
+  when: connectbox_os == "raspbian"
   
 # Install RPi.GPIO_NP_CB as RPi.GPIO
 
@@ -139,16 +144,14 @@
 #  which will use the installed RPi.GPIO rather than trying to install RPi.GPIO 0.7.0
 - name: Install luma.core in hat service virtualenv
   command: "{{ hat_service_virtualenv_dir }}/bin/pip install luma.core==1.7.2"
-  when: connectbox_os != "raspbian"
+
 
 - name: Install luma.oled in hat service virtualenv
   command: "{{ hat_service_virtualenv_dir }}/bin/pip install luma.oled==2.4.1"
-  when: connectbox_os != "raspbian"
+
 
 - name: Install RPi.GPIO for Raspbian build
   command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.0"
-  args:
-    chdir: "{{ RPi_GPIO_path }}"
   when: connectbox_os == "raspbian"  
 
 - name: Copy PA pulldown resistor systemd service definition
@@ -160,6 +163,7 @@
     group: root
   notify:
     - restart pa pulldown service
+  when: connectbox_os != "raspbian"
 
 - name: Copy neo battery shutdown systemd service definition
   template:
@@ -175,7 +179,6 @@
     state: present
   notify:
      - "restart neo battery shutdown service"
-  when: connectbox_os != "raspbian"
 
 # Startup has either already happened, or will happen in the handler
 - name: Enable services
@@ -185,5 +188,13 @@
     enabled: yes
   with_items:
     - "{{ pa_pulldown_enabler_service_name }}"
+  when: connectbox_os != "raspbian"
+
+- name: Enable other services
+  systemd:
+    name: "{{ item }}"
+    daemon_reload: yes
+    enabled: yes
+  with_items:
     - "{{ hat_service_name }}"
     

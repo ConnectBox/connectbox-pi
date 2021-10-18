@@ -1,7 +1,7 @@
 ---
 dependencies:
   - bootstrap
-  - { role: hat-service, when: '"NanoPi NEO" in machine_type.stdout' }
+  - hat-service
   - dns-dhcp
   - network-interfaces
   - wifi-ap
