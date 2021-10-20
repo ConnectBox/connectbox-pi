@@ -68,12 +68,12 @@
     - raspberrypi-kernel-headers
     state: present
   when: connectbox_os == "raspbian"
-
+  
+# or apt-get install linux-headers-$(uname -r)
 - name: apt install linux-headers-current-sunxi
   apt:
     pkg:
     - linux-headers-current-sunxi
-# or apt-get install linux-headers-$(uname -r)
     state: present
   when: connectbox_os != "raspian"
 
