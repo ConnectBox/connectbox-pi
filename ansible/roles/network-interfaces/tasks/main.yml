@@ -75,7 +75,7 @@
     pkg:
     - linux-headers-current-sunxi
     state: present
-  when: connectbox_os != "raspian"
+  when: connectbox_os != "raspbian"
 
 # The system takes 5-10 seconds to disappear from the network
 #  so let's wait 15 seconds before doing our first check
