@@ -79,10 +79,10 @@
     state: present 
   when: connectbox_os != "raspbian"
 
-#- apt:
-#   name: ['devmem2']
-#   state: present
-# when: connectbox_os != "raspbian"
+- apt:
+   name: ['devmem2']
+   state: present
+  when: connectbox_os != "raspbian"
 
 - name: Make sure there is no Pillow code already there
   ansible.builtin.file:
