@@ -79,11 +79,11 @@
     state: present 
   when: connectbox_os != "raspbian"
 
-#- name: Install devmem2 for raspbian
-#  apt:
-#    name: ['devmem2']
-#    state: present
-#  when: connectbox_os = "raspbian"
+- name: Install devmem2 for raspbian
+  apt:
+    name: ['devmem2']
+    state: present
+  when: connectbox_os = "raspbian"
 
 - name: Make sure there is no Pillow code already there
   ansible.builtin.file:
@@ -177,6 +177,7 @@
     group: root
   notify:
     - restart pa pulldown service
+  when: connectbox_os != "raspbian"
 
 - name: Copy neo battery shutdown systemd service definition
   template:
@@ -192,7 +193,7 @@
     state: present
   notify:
      - "restart neo battery shutdown service"
-  when: connectbox_os != "raspbian"
+
 
 # Startup has either already happened, or will happen in the handler
 - name: Enable services
@@ -202,5 +203,12 @@
     enabled: yes
   with_items:
     - "{{ pa_pulldown_enabler_service_name }}"
-    - "{{ hat_service_name }}"
-    
+  when: connectbox_os != "raspbian"
+
+- name: Enable and restart NEO_BatteryLevelShutdown
+  systemd:
+    name: "{{ item }}"
+    daemon_reload: yes
+    enabled: yes
+  with_items
+  - "{{ hat_service_name }}"
