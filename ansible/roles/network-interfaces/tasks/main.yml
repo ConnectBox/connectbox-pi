@@ -68,7 +68,7 @@
     - raspberrypi-kernel-headers
     state: present
   when: connectbox_os == "raspbian"
-  
+
 # or apt-get install linux-headers-$(uname -r)
 - name: apt install linux-headers-current-sunxi
   apt:
@@ -84,7 +84,9 @@
   reboot:
     post_reboot_delay=15
     pre_reboot_delay=2
-  when: reboot_required
+
+# we trust that we get the same IP address.  If not we will have to re-run the script.
+# note that we loose everything in the /tmp directory on the reboot.  
 
 - name: Copy over 8812au-install script for Raspian
   copy:
