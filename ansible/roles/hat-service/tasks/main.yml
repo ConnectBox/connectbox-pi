@@ -158,11 +158,9 @@
 #  which will use the installed RPi.GPIO rather than trying to install RPi.GPIO 0.7.0
 - name: Install luma.core in hat service virtualenv
   command: "{{ hat_service_virtualenv_dir }}/bin/pip install luma.core==1.7.2"
-  when: connectbox_os != "raspbian"
 
 - name: Install luma.oled in hat service virtualenv
   command: "{{ hat_service_virtualenv_dir }}/bin/pip install luma.oled==2.4.1"
-  when: connectbox_os != "raspbian"
 
 - name: Install RPi.GPIO for Raspbian build
   command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.0"
@@ -196,7 +194,7 @@
 
 
 # Startup has either already happened, or will happen in the handler
-- name: Enable services
+- name: Enable services pa_pulldown_enabler
   systemd:
     name: "{{ item }}"
     daemon_reload: yes
