@@ -210,5 +210,5 @@
     name: "{{ item }}"
     daemon_reload: yes
     enabled: yes
-  with_items
+  with_items:
   - "{{ hat_service_name }}"
