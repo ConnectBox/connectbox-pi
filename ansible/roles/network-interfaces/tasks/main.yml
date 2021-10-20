@@ -83,9 +83,13 @@
 - name: Reboot device for changes to take effect
   reboot:
     post_reboot_delay: 15
-    pre_reboot_delay: 2
     reboot_timeout: 600
-
+  when:
+    - result.reboot_required is defined
+    - result.reboot_required
+    - update_count.found_update_count|int >=1
+  pre_reboot_delay: 5
+  
 # we trust that we get the same IP address.  If not we will have to re-run the script.
 # note that we loose everything in the /tmp directory on the reboot.  
 
