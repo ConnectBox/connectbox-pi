@@ -87,7 +87,7 @@ nginx_chat_block: |
     }
 
 # Don't perform image prep tasks unless overridden
-do_image_preparation: False
+do_image_preparation: True
 
 firewall_v4_group_rules:
   200 allow ssh:
