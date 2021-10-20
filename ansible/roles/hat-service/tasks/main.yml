@@ -145,6 +145,7 @@
     force: yes
   when: connectbox_os != "raspbian"  
 
+# new RPi_GPIO handles the pull down service for these pins where it did not in focal
 # The command must include the path to the virtual environment version of python3 or the resulting
 #  library will be installed in usr/local/lib/python3.8/dist-packages rather than the desired
 #  location of /usr/local/connectbox/battery_tool_venv/lib/python3.8/site-packages 
@@ -166,16 +167,17 @@
   command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.0"
   when: connectbox_os == "raspbian"  
 
-- name: Copy PA pulldown resistor systemd service definition
-  template:
-    src: "{{ pa_pulldown_enabler_service_name }}.j2"
-    dest: "/etc/systemd/system/{{ pa_pulldown_enabler_service_name }}"
-    mode: 0644
-    owner: root
-    group: root
-  notify:
-    - restart pa pulldown service
-  when: connectbox_os != "raspbian"
+# new RPi_GPIO handles the pull down service for these pins where it did not in focal
+#- name: Copy PA pulldown resistor systemd service definition
+#  template:
+#    src: "{{ pa_pulldown_enabler_service_name }}.j2"
+#    dest: "/etc/systemd/system/{{ pa_pulldown_enabler_service_name }}"
+#    mode: 0644
+#    owner: root
+#    group: root
+#  notify:
+#    - restart pa pulldown service
+#  when: connectbox_os != "raspbian"
 
 - name: Copy neo battery shutdown systemd service definition
   template:
@@ -194,14 +196,14 @@
 
 
 # Startup has either already happened, or will happen in the handler
-- name: Enable services pa_pulldown_enabler
-  systemd:
-    name: "{{ item }}"
-    daemon_reload: yes
-    enabled: yes
-  with_items:
-    - "{{ pa_pulldown_enabler_service_name }}"
-  when: connectbox_os != "raspbian"
+#- name: Enable services pa_pulldown_enabler
+#  systemd:
+#    name: "{{ item }}"
+#    daemon_reload: yes
+#    enabled: yes
+#  with_items:
+#    - "{{ pa_pulldown_enabler_service_name }}"
+#  when: connectbox_os != "raspbian"
 
 - name: Enable and restart NEO_BatteryLevelShutdown
   systemd:

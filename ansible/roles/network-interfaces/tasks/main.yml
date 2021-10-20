@@ -60,8 +60,22 @@
     - wget
     - libelf-dev
     - libssl-dev
+    state: present
+
+- name: apt install raspberrypi-kernel-headers
+  apt:
+    pkg:
     - raspberrypi-kernel-headers
     state: present
+  when: connectbox_os == "raspbian"
+
+- name: apt install linux-headers-current-sunxi
+  apt:
+    pkg:
+    - linux-headers-current-sunxi
+# or apt-get install linux-headers-$(uname -r)
+    state: present
+  when: connectbox_os != "raspian"
 
 # The system takes 5-10 seconds to disappear from the network
 #  so let's wait 15 seconds before doing our first check
@@ -77,7 +91,6 @@
     src: 8812au-install.sh
     dest: /tmp/8812au-install.sh
     mode: "+x"
-  when: connectbox_os == "raspbian"
 
 - name: Compile the 8812au & 88x2bu driver for Raspbian or NEO
   command:
