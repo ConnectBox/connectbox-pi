@@ -77,21 +77,20 @@
     state: present
   when: connectbox_os != "raspbian"
 
-- name: Check if reboot is required
-  stat:
-    path: /var/run/reboot-required
-  register: reboot_required_file
+- pause:
+    prompt: "check for reboot required"
+    minutes: 1
 
 # The system takes 5-10 seconds to disappear from the network
 #  so let's wait 15 seconds before doing our first check
 #  Use newer ansible 2.7 function reboot
 - name: Reboot device for changes to take effect if required
-  reboot:
-    post_reboot_delay: 15
-    reboot_timeout: 600
-    pre_reboot_delay: 5
-  when: reboot_required_file.stat.exists == true
-
+  shell: sleep 10 && /sbin/shutdown -r now 'Rebooting box to update sysetm libs/kernel'
+  args:
+    removes: /var/run/reboot-required
+  async: 300
+  poll: 0
+  ignore_errors: true
   
 # we trust that we get the same IP address.  If not we will have to re-run the script.
 # note that we loose everything in the /tmp directory on the reboot.  
