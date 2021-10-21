@@ -1,2 +1,2 @@
 ---
-hostname: "{{ connectbox_default_hostname }}.local"
+hostname: "{{ lookup('file', '../hat-service/files/hostname') }}.local"
