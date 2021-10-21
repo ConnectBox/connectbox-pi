@@ -1,9 +1,6 @@
 [Unit]
 Description=ConnectBox NEO Battery Shutdown Service
-After=basic.target {{ pa_pulldown_enabler_service_name }}
-# We must not start this service if we cannot enable pulldown on PA pins
-#  because it may shutdown non-HAT NEOs
-Requires={{ pa_pulldown_enabler_service_name }}
+# removed pa-pulldown service as it no longer is relevant after Focal
 
 [Service]
 Type=simple
