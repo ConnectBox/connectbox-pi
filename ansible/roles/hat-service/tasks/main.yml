@@ -57,15 +57,20 @@
 
 - name: Install packages to allow building of pillow and psutil, running of OLED and direct mem writes
   apt:
-    name: ['libjpeg-turbo8', 'python3-dev', 'libfreetype6', 'libfreetype6-dev','zlib1g-dev', 'libpng-dev', 'devmem2']
+    ['libjpeg-turbo8', 'python3-dev', 'libfreetype6', 'libfreetype6-dev','zlib1g-dev', 'libpng-dev', 'devmem2']
     state: present
-  when: connectbox_os != "raspbian"
+  when: connectbox_os != "raspbian" 
+
+  name: Install packages to run OLED for Raspbian
+  apt:
+    ['libjpeg-dev', 'python3-dev', 'libjpeg8', 'libfreetype6', 'libfreetype6-dev']
+    state: present
+  when: connectbox_os == "raspbian" 
 
 - name: Make neo battery shutdown virtualenv directory
   file:
     path: "{{ hat_service_virtualenv_dir }}"
     state: directory
-
 
 - name: Setup neo battery shutdown virtualenv (python3)
   pip:
@@ -124,7 +129,7 @@
 
 - name: Install Pillow in virtual environment
   pip:
-    name: ['Pillow==6.2.1', 'psutil', 'RPi.GPIO']
+    name: ['Pillow==6.2.1', 'psutil', 'zlib']
     virtualenv: "{{ hat_service_virtualenv_dir }}"
   when: connectbox_os == "raspbian"
   
@@ -144,6 +149,10 @@
     force: yes
   when: connectbox_os != "raspbian"  
 
+- name: Install RPi.GPIO for Raspbian build
+  command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.0"
+  when: connectbox_os == "raspbian" 
+
 # new RPi_GPIO handles the pull down service for these pins where it did not in focal
 # The command must include the path to the virtual environment version of python3 or the resulting
 #  library will be installed in usr/local/lib/python3.8/dist-packages rather than the desired
@@ -162,9 +171,6 @@
 - name: Install luma.oled in hat service virtualenv
   command: "{{ hat_service_virtualenv_dir }}/bin/pip install luma.oled==2.4.1"
 
-- name: Install RPi.GPIO for Raspbian build
-  command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.0"
-  when: connectbox_os == "raspbian"  
 
 # new RPi_GPIO handles the pull down service for these pins where it did not in focal
 #- name: Copy PA pulldown resistor systemd service definition
