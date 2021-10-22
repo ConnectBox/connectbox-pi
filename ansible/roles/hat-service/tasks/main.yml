@@ -63,7 +63,7 @@
 
 - name: Install packages to run OLED for Raspbian
   apt:
-    name: [ 'libjpeg-dev', 'python3-dev', 'libjpeg8', 'libfreetype6', 'libfreetype6-dev', 'zlib1g', 'zlib1g-dev' ]
+    name: [ 'libjpeg-dev', 'python3-dev', 'libjpeg8', 'libfreetype6', 'libfreetype6-dev', 'zlib1g', 'zlib1g-dev', 'libopenjp2-7', 'libtiff5' ]
     state: present
   when: connectbox_os == "raspbian" 
 
