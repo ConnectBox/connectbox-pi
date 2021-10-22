@@ -57,13 +57,13 @@
 
 - name: Install packages to allow building of pillow and psutil, running of OLED and direct mem writes
   apt:
-    ['libjpeg-turbo8', 'python3-dev', 'libfreetype6', 'libfreetype6-dev','zlib1g-dev', 'libpng-dev', 'devmem2']
+    [ 'libjpeg-turbo8', 'python3-dev', 'libfreetype6', 'libfreetype6-dev','zlib1g-dev', 'libpng-dev', 'devmem2' ]
     state: present
   when: connectbox_os != "raspbian" 
 
-  name: Install packages to run OLED for Raspbian
+- name: Install packages to run OLED for Raspbian
   apt:
-    ['libjpeg-dev', 'python3-dev', 'libjpeg8', 'libfreetype6', 'libfreetype6-dev']
+    [ 'libjpeg-dev', 'python3-dev', 'libjpeg8', 'libfreetype6', 'libfreetype6-dev' ]
     state: present
   when: connectbox_os == "raspbian" 
 
