@@ -154,18 +154,6 @@
   command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.0"
   when: connectbox_os == "raspbian"  
 
-# new RPi_GPIO handles the pull down service for these pins where it did not in focal
-#- name: Copy PA pulldown resistor systemd service definition
-#  template:
-#    src: "{{ pa_pulldown_enabler_service_name }}.j2"
-#    dest: "/etc/systemd/system/{{ pa_pulldown_enabler_service_name }}"
-#    mode: 0644
-#    owner: root
-#    group: root
-#  notify:
-#    - restart pa pulldown service
-#  when: connectbox_os != "raspbian"
-
 - name: Copy neo battery shutdown systemd service definition
   template:
     src: "{{ hat_service_name }}.j2"

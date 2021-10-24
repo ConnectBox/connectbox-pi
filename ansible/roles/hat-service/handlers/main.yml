@@ -1,10 +1,4 @@
 ---
-- name: restart pa pulldown service
-  systemd:
-    name: "{{ pa_pulldown_enabler_service_name }}"
-    daemon_reload: yes
-    state: restarted
-  when: connectbox_os != "raspbian"
 
 - name: restart neo battery shutdown service
   systemd:
