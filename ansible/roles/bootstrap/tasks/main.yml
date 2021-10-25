@@ -266,5 +266,5 @@
   copy:
     src: etc_rc.local 
     dest: /etc/rc.local 
-  when: connectbox_os == "armbian" 
+  when: connectbox_os == "armbian" or connecbox_os == "raspbian"
 
