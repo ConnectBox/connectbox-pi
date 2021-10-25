@@ -45,13 +45,13 @@
     dest: /proc/cpuinfo
     line: "Compute Module" 
   check_mode: yes
-  register: presence_CM4 is defined
+  register: CM4_present='yes'
 
 - name: Install boot for CM4 on i2c and usbhost
   copy:
     src: config.txt 
     dest: /boot/config.txt
-  when: presence_CM4 is defined
+  when: CM4_present == 'yes'
 
 - name: Install i2c modules
   copy:
