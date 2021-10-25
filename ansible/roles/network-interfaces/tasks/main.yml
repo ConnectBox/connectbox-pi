@@ -51,6 +51,7 @@
 - name: apt upgrade before kernel downloads
   apt:
     upgrade: dist
+  register: dist_upgraded
 
 - name: apt install build tools
   apt:
@@ -85,6 +86,16 @@
   reboot:
     reboot_timeout: 600
   ignore_errors: true
+  when: dist_upgraded is defined
+
+# if the distribution was upgraded and we rebooted then we will have a differnt IP address
+# on the end of the reboot so we need to break the script here and allow them to rerun it from
+# a new inventory file.
+
+- name: check if we rebooted as the IP address will have changed
+  pause:
+    prompt: "you need to ^C here to rerun the script with a new IP address for the target"
+  when: dist_upgraded is defined
   
 # we trust that we get the same IP address.  If not we will have to re-run the script.
 # note that we loose everything in the /tmp directory on the reboot.  
