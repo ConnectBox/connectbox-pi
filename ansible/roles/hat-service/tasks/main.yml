@@ -1,15 +1,4 @@
----
-
-- name: Copy brand.txt to /usr/local/connectbox
-  copy:
-    src: brand.txt
-    dest: /usr/local/connectbox/brand.txt
-
-- name: Copy hostname to /etc
-  copy:
-    src: hostname
-    dest: /etc/hostname
-    
+--- 
 - name: Expand Temp directory otherwise we will run out of space
   command: mount -o remount,size=400M /tmp/
   when: connectbox_os != "raspbian"
@@ -21,7 +10,6 @@
   register: command_result
   ignore_errors: yes
   when: connectbox_os != "raspbian"
-
 
 - name: fill swapfile
   command: dd if=/dev/zero of=/swapfile bs=1024 count=409600
