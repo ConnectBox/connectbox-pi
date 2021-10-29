@@ -37,20 +37,23 @@ import os
 
 progress_file = '/usr/local/connectbox/bin/expand_progress.txt'
 
-# Sort out how far we are in the process
-file_exists = os.path.exists(progress_file)
-if file_exists == False:
-	do_fdisk()
 
-else: 
-    f = open(progress_file, "r")
-    progress = f.read()
-    f.close()
-    if "resize2fs_done" not in progress:
-    	do_resize2fs()
+def main():
+
+    # Sort out how far we are in the process
+    file_exists = os.path.exists(progress_file)
+    if file_exists == False:
+	    do_fdisk()
+
+    else: 
+        f = open(progress_file, "r")
+        progress = f.read()
+        f.close()
+        if "resize2fs_done" not in progress:
+    	    do_resize2fs()
     
-    else:
-        exit()
+        else:
+            exit()
 
 
 def do_resize2fs():
@@ -66,11 +69,11 @@ def do_resize2fs():
     out = pexpect.run(cmd, timeout=600)  # 10 minutes should be enough for the resize
     out = out.decode('utf-8')
     if "blocks long" in out:
-		print("resize2fs complete... now reboot")
-		f = open(progress_file, "w")
-	    f.write("resize2fs_done")
-	    f.close()
-	    os.system('reboot')
+        print("resize2fs complete... now reboot")
+        f = open(progress_file, "w")
+        f.write("resize2fs_done")
+        f.close()
+        os.system('reboot')
         
 
 def do_fdisk():
@@ -84,86 +87,74 @@ def do_fdisk():
 	    print (str(child))
 
 	# the value of i is the reference to which of the [] arguments was found
-	if i==1:
-		print("There is no /dev/mmcblk0 partition... exiting")
-		child.kill(0)
-	if i==0:
-	    print("Found it!")	
+    if i==1:
+        print("There is no /dev/mmcblk0 partition... exiting")
+        child.kill(0)
+    if i==0:
+        print("Found it!")	
 	# continuing
 
 	# "p" get partition info and search out the starting sector of mmcblk0p1
-	child.sendline('p')
-	i = child.expect('Command (m for help)*')  
+    child.sendline('p')
+    i = child.expect('Command (m for help)*')  
 	# the child.before contains all that came BEFORE we found the expected text
 	#print (child.before)  
-	response = child.before
+    response = child.before
 
 	# change from binary to string
-	respString = response.decode('utf-8')
+    respString = response.decode('utf-8')
 	
-	p = re.compile('mmcblk[0-9]p[0-9]\s*[0-9]+')		# create a regexp to get close to the sector info
-	m = p.search(respString)		# should find "mmcblk0p1   8192" or similar, saving as object m
-	match = m.group()				# get the text of the find
-	p = re.compile('\s[0-9]+')		# a new regex to find just the number from the match above
-	m = p.search(match)
-	startSector = m.group()
-	print("starting sector = ", startSector )
+    p = re.compile('mmcblk[0-9]p[0-9]\s*[0-9]+')		# create a regexp to get close to the sector info
+    m = p.search(respString)		# should find "mmcblk0p1   8192" or similar, saving as object m
+    match = m.group()				# get the text of the find
+    p = re.compile('\s[0-9]+')		# a new regex to find just the number from the match above
+    m = p.search(match)
+    startSector = m.group()
+    print("starting sector = ", startSector )
 
 	# "d" for delete the partition
-	child.sendline('d')
-	i = child.expect('Command (m for help)*')  
+    child.sendline('d')
+    i = child.expect('Command (m for help)*')  
 #	print("after delete ",child.before)
 
 	# "n" for new partition
-	child.sendline('n')
-	i = child.expect('(default p):*')
+    child.sendline('n')
+    i = child.expect('(default p):*')
 #	print("after new ",child.before)
 
 	# "p" for primary partition
-	child.sendline('p')
-	i = child.expect('default 1*')
+    child.sendline('p')
+    i = child.expect('default 1*')
 #	print ("after p ", child.before)
 
 	# "1" for partition number 1
-	child.sendline('1')
-	i = child.expect('default 2048*')
+    child.sendline('1')
+    i = child.expect('default 2048*')
 #	print (child.before)
 
 	# send the startSector number
-	child.sendline(startSector)
-	child.expect('Last sector*')
+    child.sendline(startSector)
+    child.expect('Last sector*')
 #	print("At last sector... the after is: ", child.after)
 
 	# take default for last sector
-	child.sendline('')
-	i = child.expect('signature*')
+    child.sendline('')
+    i = child.expect('signature*')
 
 	# "N" don't remove the signature
-	child.sendline('N')
-	i = child.expect('Command (m for help)*')  
+    child.sendline('N')
+    i = child.expect('Command (m for help)*')  
 
 	# "w" for write and exit
-	child.sendline('w')
-	i = child.expect('Syncing disks*')  
+    child.sendline('w')
+    i = child.expect('Syncing disks*')  
 
-	print("exiting the fdisk program... now reboot")
-	f = open(progress_file, "w")
+    print("exiting the fdisk program... now reboot")
+    f = open(progress_file, "w")
     f.write("fdisk_done")
     f.close()
     os.system('reboot')
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+if __name__ == "__main__":
+    main()
