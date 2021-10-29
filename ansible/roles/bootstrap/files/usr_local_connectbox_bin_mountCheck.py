@@ -6,38 +6,50 @@
 import os
 import time
 
-usbMounteda = False
-usbMountedb = False
+global total
+c=["","",""]
+loc=[-1,-1,-1,-1,-1,-1,-1,-1,-1]
+mnt=[-1,-1,-1,-1,-1,-1,-1,-1,-1]
+d=["","","","","","","","","","",""]
 
 def mountCheck():
-    global usbMounteda
-    global usbMountedb
+    global mnt
+    i=0
+    j=0
     b = os.popen('lsblk').read()
-    if 'sda1' in b:
-        if usbMounteda == True:
-            return
-        res = os.system("mount /dev/sda1 /media/usb0 -o iocharset=utf8")
-        if res == 0:
-            usbMounteda = True
-    else:
-        if (usbMounteda == False):
-            return
-        os.system("umount /media/usb0")
-        usbMounteda = False
+    c = b.partition("\n")
+    while ((c[2] != "") and (i<10)):
+      d[i] = c[0]
+      a = 'sd'+chr(ord("a")+j)+"1"
+      if a in d[i]:
+        loc[j]=i
+        j += 1 
+      c = c[2].partition("\n")
+      i += 1
+    d[i] = c[0]
+    a = 'sd'+chr(ord("a")+j)+"1"
+    if a in d[i]:
+      loc[j]=i
+      j += 1 
+    total = j
+    i = 0 
+    j = 0
+    while (i <= total):
+      if (mnt[i] < 0) and (loc[i] > 0):
+        c = d[i].partition("part")
+        if c[2] == " ":
+          a = 'sd'+chr(ord("a")+i)+"1"
+          b = "mount /dev/" + a + " /media/usb" + chr(j) + " -o iochrset=utf8"
+          res = os.system(b)
+          if res == 0:
+             mnt[i] = j
+             j += 1
+        else:
+          if (mnt[i] >= 0):
+            b = "umount /media/usb" + chr(mnt[i])
+            os.system(b)
+            mnt[i] = -1
 
-    if 'sdb1' in b:
-        if usbMounteda == True:
-            return
-        if usbMountedb == True:
-            return
-        res = os.system("mount /dev/sdb1 /media/usb0 -o iocharset=utf8")
-        if res == 0:
-            usbMountedb = True
-    else:
-        if (usbMountedb == False):
-            return
-        os.system("umount /media/usb0")
-        usbMountedb = False
 
 if __name__ == '__main__':
     while True:
