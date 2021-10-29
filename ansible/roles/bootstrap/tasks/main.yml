@@ -266,5 +266,16 @@
   copy:
     src: etc_rc.local 
     dest: /etc/rc.local 
-  when: connectbox_os == "armbian" or connecbox_os == "raspbian"
+  when: connectbox_os == "armbian" or connectbox_os == "raspbian"
 
+# Moved from 
+- name: Make connectbox directory
+  file:
+    state: directory
+    path: /usr/local/connectbox
+    mode: 0755
+
+- name: Copy brand.txt template
+  template:
+    src: brand_txt.j2
+    dest: /usr/local/connectbox/brand.txt
