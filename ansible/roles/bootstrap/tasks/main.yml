@@ -259,7 +259,14 @@
   copy: 
     src: usr_local_connectbox_bin_mountCheck.py
     dest: /usr/local/connectbox/bin/mountCheck.py
-    mode: 0644
+    mode: 0755
+  when: connectbox_os == "armbian" or connectbox_os == "raspbian"
+
+- name: Install expandFS.py  
+  copy: 
+    src: usr_local_connectbox_bin_expandFS.py
+    dest: /usr/local/connectbox/bin/expandFS.py
+    mode: 0755
   when: connectbox_os == "armbian" or connectbox_os == "raspbian"
 
 - name: Install rc.local 
