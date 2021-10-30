@@ -255,6 +255,13 @@
     dest: /usr/local/connectbox/bin/CreateLogFiles.sh
   when: connectbox_os == "armbian" 
     
+# Moved from 
+- name: Make connectbox directory
+  file:
+    state: directory
+    path: /usr/local/connectbox
+    mode: 0755
+
 - name: Install mountCheck.py  
   copy: 
     src: usr_local_connectbox_bin_mountCheck.py
@@ -262,12 +269,16 @@
     mode: 0755
   when: connectbox_os == "armbian" or connectbox_os == "raspbian"
 
-- name: Install expandFS.py  
-  copy: 
-    src: usr_local_connectbox_bin_expandFS.py
-    dest: /usr/local/connectbox/bin/expandFS.py
-    mode: 0755
-  when: connectbox_os == "armbian" or connectbox_os == "raspbian"
+- name: set up resize of filesystem
+  debug:
+    msg: Setting up resize of filesystem
+  notify:
+    - Install expandFS.py
+  changed_when: True
+
+- name: install pexpect (needed for resize script)
+  pip:
+    name: pexpect
 
 - name: Install rc.local 
   copy:
@@ -275,12 +286,6 @@
     dest: /etc/rc.local 
   when: connectbox_os == "armbian" or connectbox_os == "raspbian"
 
-# Moved from 
-- name: Make connectbox directory
-  file:
-    state: directory
-    path: /usr/local/connectbox
-    mode: 0755
 
 - name: Copy brand.txt template
   template:

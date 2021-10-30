@@ -1,1 +1,8 @@
 ---
+
+- name: Install expandFS.py  
+  copy: 
+    src: usr_local_connectbox_bin_expandFS.py
+    dest: /usr/local/connectbox/bin/expandFS.py
+    mode: 0755
+  when: connectbox_os == "armbian" or connectbox_os == "raspbian"
