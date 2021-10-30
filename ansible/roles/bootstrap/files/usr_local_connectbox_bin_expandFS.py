@@ -56,7 +56,7 @@ def main():
     	    do_resize2fs()
     
         else:
-            exit()
+            sys.exit(0)
 
 
 def do_resize2fs():
