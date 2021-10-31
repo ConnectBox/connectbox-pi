@@ -262,21 +262,14 @@
     path: /usr/local/connectbox
     mode: 0755
 
-- name: Install mountCheck.py  
-  copy: 
-    src: usr_local_connectbox_bin_mountCheck.py
-    dest: /usr/local/connectbox/bin/mountCheck.py
-    mode: 0755
-  when: connectbox_os == "armbian" or connectbox_os == "raspbian"
-
 - name: set up resize of filesystem
   debug:
     msg: Setting up resize of filesystem
   notify:
-    - Install expandFS.py
+    - Install PxUSBm.py
   changed_when: True
 
-- name: install pexpect (needed for resize script)
+- name: install pexpect (needed for PxUSBm.py script)
   pip:
     name: pexpect
 
