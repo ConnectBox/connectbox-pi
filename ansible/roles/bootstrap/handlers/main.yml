@@ -1,1 +1,8 @@
 ---
+
+- name: Install PxUSBm.py  
+  copy: 
+    src: usr_local_connectbox_bin_PxUSBm.py
+    dest: /usr/local/connectbox/bin/PxUSBm.py
+    mode: 0755
+  when: connectbox_os == "armbian" or connectbox_os == "raspbian"

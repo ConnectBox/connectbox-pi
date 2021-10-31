@@ -93,10 +93,11 @@
 # a new inventory file.
 
 - name: check if we rebooted as the IP address will have changed
-  pause:
-    prompt: "you need to ^C here to rerun the script with a new IP address for the target"
-  when: dist_upgraded is defined
-  
+  debug:
+    msg: 
+      - If you are stalled here you need to ^C here to stop and rerun the 
+      -  ansible script with a new IP address for the target
+
 # we trust that we get the same IP address.  If not we will have to re-run the script.
 # note that we loose everything in the /tmp directory on the reboot.  
 
