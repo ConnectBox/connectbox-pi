@@ -16,8 +16,5 @@
 # Start daemon to watch for and mount USB as required
 /usr/bin/python3 /usr/local/connectbox/bin/mountCheck.py &
 
-_IP=$(hostname -I) || true
-if [ "$_IP" ]: then
-  printf "My IP address is %s\n" "$_IP"
-fi
+
 exit 0
