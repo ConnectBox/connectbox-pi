@@ -109,7 +109,7 @@ def mountCheck():
             k += 1
           if not (os.path.exists("/media/usb"+chr(ord("0")+k))):  #if the /mount/usbx isn't there create it
             res = os.system("mkdir /media/usb"+chr(ord("0")+k))
-          b = "mount /dev/" + e.group() + " /media/usb" + chr(ord('0')+k+ "-o noatime,nodev,nosuid,sync,iocharset=utf8")
+          b = "mount /dev/" + e.group() + " /media/usb" + chr(ord('0')+k)+ " -o noatime,nodev,nosuid,sync,iocharset=utf8"
           res = os.system(b)
           if DEBUG: print("completed mount /dev/",e.group)
           mnt[k]=i
