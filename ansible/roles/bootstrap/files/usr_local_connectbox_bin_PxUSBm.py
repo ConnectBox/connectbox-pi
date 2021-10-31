@@ -57,11 +57,10 @@ global total
 total = 0
 c=["","",""]
 loc=[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]
+# mnt[x]>=0 where x is the usb port of the mount and mnt[x] is the line of the /dev/sdx1
 global mnt
 mnt=[-1,-1,-1,-1,-1,-1,-1,-1,-1, -1, -1]
 d=["","","","","","","","","","","","","","","","","","","","","",""]
-
-
 
 def mountCheck():
     global mnt
@@ -88,8 +87,8 @@ def mountCheck():
           #Were here with the device still mounted
           j += 1
       else:
-        #were here because there was no mount device detected which is odd as its supposed to be
-        if DEBUG: print("Error as device should have been mounted usb", j)
+        #were here because there was no mount device detected
+        if DEBUG: print("device not mounted usb", j)
         j += 1
     i=0                       #line iterator
     j=0                       #used for finding sdx1's
@@ -104,15 +103,16 @@ def mountCheck():
       e=re.search('sd[a-z]1', d[i])
       if e: 
         loc[j]=i
-        if not (('usb' in d[i]) or ('part /' in d[i])):
-          while (k < 10) and (mnt[k] >= 0):
+        if not (('usb' in d[i]) or ('part /' in d[i])):     #True if were not mounted but should be
+          while (k < 10) and (mnt[k] >= 0):                 #Find an empty usbX to mount to
             if DEBUG: print("loop 3, iterate:",k)
             k += 1
-          if not (os.path.exists("/media/usb"+chr(ord("0")+k))):
+          if not (os.path.exists("/media/usb"+chr(ord("0")+k))):  #if the /mount/usbx isn't there create it
             res = os.system("mkdir /media/usb"+chr(ord("0")+k))
-          b = "mount /dev/" + e.group() + " /media/usb" + chr(ord('0')+k)
+          b = "mount /dev/" + e.group() + " /media/usb" + chr(ord('0')+k+ "-o noatime,nodev,nosuid,sync,iocharset=utf8")
           res = os.system(b)
           if DEBUG: print("completed mount /dev/",e.group)
+          mnt[k]=i
           k += 1
           j += 1
         else:
@@ -150,7 +150,7 @@ def mountCheck():
             i += 1
             k += 1
             if DEBUG: print("had to move mount to new location",k," from ",i)
-          else:         # we have no mount here
+          else:     # we have no mount here
             k += 1
         if (k == 10):           # if we have look at all mounts then were done otherwise we will check again
           i=10
