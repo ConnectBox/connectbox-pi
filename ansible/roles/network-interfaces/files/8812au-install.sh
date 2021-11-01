@@ -40,7 +40,9 @@ else
     fi
     rm -r ./rtl8812au-5.9.3.2
   fi
-fi  
+fi 
+sleep 2
+ 
 if [ -f /lib/modules/$(uname -r)/kernel/drivers/net/wireless/88x2bu.ko ];
 then
   printf "Driver rtl8812bu already exists\n"
