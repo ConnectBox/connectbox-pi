@@ -12,6 +12,7 @@ HOSTNAME_CONFIG="/etc/hostname"
 HOSTNAME_MOODLE_CONFIG="/var/www/moodle/config.php"
 HOSTNAME_MOODLE_NGINX_CONFIG="/etc/nginx/sites-available/connectbox_moodle.conf"
 HOSTS_CONFIG="/etc/hosts"
+BRANDS_CONFIG="/usr/local/connectbox/brands.txt"
 NGINX_CONFIG="/etc/nginx/sites-enabled/vhosts.conf"
 PASSWORD_CONFIG="/usr/local/connectbox/etc/basicauth"
 WIFI_CONFIGURATOR="/usr/local/connectbox/wifi_configurator_venv/bin/wifi_configurator"
@@ -545,6 +546,9 @@ function set_hostname () {
   # Update /etc/hostname
   sed -i "s/$host_name/$val/g" $HOSTNAME_CONFIG 2>&1 | logger -t $(basename $0)
 
+  # Set current hostname
+  hostname $val 2>&1
+
   if [ ${PIPESTATUS[0]} -eq 0 ]
   then
     # Update /etc/hosts
@@ -552,8 +556,8 @@ function set_hostname () {
 
     if [ ${PIPESTATUS[0]} -eq 0 ]
     then
-      # Update hostname
-      hostname $val 2>&1 | logger -t $(basename $0)
+      # Update brands.txt
+      sed -i 's/\"$host_name\"/\"$val\"/g' $BRANDS_CONFIG 2>&1 | logger -t $(basename $0)
 
       if [ ${PIPESTATUS[0]} -eq 0 ]
       then

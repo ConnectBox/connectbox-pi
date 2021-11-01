@@ -12,8 +12,12 @@
 # By default this script does nothing.
 
 # Create missing log files and restart nginx service
-sh /usr/local/connectbox/bin/CreateLogFiles.sh
-# Start daemon to watch for and mount USB as required
-/usr/bin/python3 /usr/local/connectbox/bin/mountCheck.py
+#  we need this or nginx won't run
+sh /usr/local/connectbox/bin/CreateLogFiles.sh   
+
+# script to expand the file system to use the entire uSD space and 
+#  run daemon to watch for and mount USB as required 
+/usr/bin/python3 /usr/local/connectbox/bin/PxUSBm.py &
 
 exit 0
+

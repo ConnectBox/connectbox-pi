@@ -55,6 +55,7 @@
 - name: apt upgrade before kernel downloads
   apt:
     upgrade: dist
+  register: dist_upgraded
 
 - name: apt install build tools
   apt:
@@ -64,17 +65,45 @@
     - wget
     - libelf-dev
     - libssl-dev
+    state: present
+
+- name: apt install raspberrypi-kernel-headers
+  apt:
+    pkg:
     - raspberrypi-kernel-headers
     state: present
+  when: connectbox_os == "raspbian"
+
+# or apt-get install linux-headers-$(uname -r)
+- name: apt install linux-headers-current-sunxi
+  apt:
+    pkg:
+    - linux-headers-current-sunxi
+    state: present
+  when: connectbox_os != "raspbian"
+
 
 # The system takes 5-10 seconds to disappear from the network
 #  so let's wait 15 seconds before doing our first check
 #  Use newer ansible 2.7 function reboot
-- name: Reboot device for changes to take effect
+- name: Reboot device for changes to take effect if required
   reboot:
-    post_reboot_delay=15
-    pre_reboot_delay=2
-  when: reboot_required
+    reboot_timeout: 600
+  ignore_errors: true
+  when: dist_upgraded is defined
+
+# if the distribution was upgraded and we rebooted then we will have a differnt IP address
+# on the end of the reboot so we need to break the script here and allow them to rerun it from
+# a new inventory file.
+
+- name: check if we rebooted as the IP address will have changed
+  debug:
+    msg: 
+      - If you are stalled here you need to ^C here to stop and rerun the 
+      -  ansible script with a new IP address for the target
+
+# we trust that we get the same IP address.  If not we will have to re-run the script.
+# note that we loose everything in the /tmp directory on the reboot.  
 
 
 - name: Copy over 8812au-install script for Raspian
@@ -82,7 +111,6 @@
     src: 8812au-install.sh
     dest: /tmp/8812au-install.sh
     mode: "+x"
-  when: connectbox_os == "raspbian"
 
 
 - name: Compile the 8812au & 88x2bu driver for Raspbian or NEO

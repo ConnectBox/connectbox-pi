@@ -64,7 +64,7 @@ connectbox_client_path: published/
 connectbox_system_password: "!1TheWell"
 build_moodle: False
 
-hat_service_branch: master
+connectbox_default_hostname: ConnectBox
 
 nginx_log_dir: /var/log/nginx
 
@@ -96,7 +96,7 @@ nginx_chat_block: |
     }
 
 # Don't perform image prep tasks unless overridden
-do_image_preparation: False
+do_image_preparation: True
 
 firewall_v4_group_rules:
   200 allow ssh:

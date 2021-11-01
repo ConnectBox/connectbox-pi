@@ -1,5 +1,4 @@
----
-    
+--- 
 - name: Expand Temp directory otherwise we will run out of space
   command: mount -o remount,size=400M /tmp/
   when: connectbox_os != "raspbian"
@@ -11,7 +10,6 @@
   register: command_result
   ignore_errors: yes
   when: connectbox_os != "raspbian"
-
 
 - name: fill swapfile
   command: dd if=/dev/zero of=/swapfile bs=1024 count=409600
@@ -47,9 +45,15 @@
 
 - name: Install packages to allow building of pillow and psutil, running of OLED and direct mem writes
   apt:
-    name: ['libjpeg-turbo8', 'python3-dev', 'libfreetype6', 'libfreetype6-dev','zlib1g-dev', 'libpng-dev', 'devmem2']
+    name: [ 'libjpeg-turbo8', 'python3-dev', 'libfreetype6', 'libfreetype6-dev','zlib1g-dev', 'libpng-dev', 'devmem2' ]
     state: present
-  when: connectbox_os != "raspbian"
+  when: connectbox_os != "raspbian" 
+
+- name: Install packages to run OLED for Raspbian
+  apt:
+    name: [ 'libjpeg-dev', 'python3-dev', 'libjpeg8', 'libfreetype6', 'libfreetype6-dev', 'zlib1g', 'zlib1g-dev', 'libopenjp2-7', 'libtiff5' ]
+    state: present
+  when: connectbox_os == "raspbian" 
 
 - name: Make neo battery shutdown virtualenv directory
   file:
@@ -68,11 +72,10 @@
     state: present 
   when: connectbox_os != "raspbian"
 
-#- name: Install devmem2 for raspbian
-#  apt:
-#    name: ['devmem2']
-#    state: present
-#  when: connectbox_os = "raspbian"
+- apt:
+    name: ['devmem2']
+    state: present
+  when: connectbox_os != "raspbian"
 
 - name: Make sure there is no Pillow code already there
   ansible.builtin.file:
@@ -114,7 +117,7 @@
 
 - name: Install Pillow in virtual environment
   pip:
-    name: ['Pillow==6.2.1', 'psutil', 'RPi.GPIO']
+    name: ['Pillow==6.2.1', 'psutil']
     virtualenv: "{{ hat_service_virtualenv_dir }}"
   when: connectbox_os == "raspbian"
   
@@ -134,6 +137,11 @@
     force: yes
   when: connectbox_os != "raspbian"  
 
+- name: Install RPi.GPIO for Raspbian build
+  command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.0"
+  when: connectbox_os == "raspbian" 
+
+# new RPi_GPIO handles the pull down service for these pins where it did not in focal
 # The command must include the path to the virtual environment version of python3 or the resulting
 #  library will be installed in usr/local/lib/python3.8/dist-packages rather than the desired
 #  location of /usr/local/connectbox/battery_tool_venv/lib/python3.8/site-packages 
@@ -148,25 +156,8 @@
 - name: Install luma.core in hat service virtualenv
   command: "{{ hat_service_virtualenv_dir }}/bin/pip install luma.core==1.7.2"
 
-
 - name: Install luma.oled in hat service virtualenv
   command: "{{ hat_service_virtualenv_dir }}/bin/pip install luma.oled==2.4.1"
-
-
-- name: Install RPi.GPIO for Raspbian build
-  command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.0"
-  when: connectbox_os == "raspbian"  
-
-- name: Copy PA pulldown resistor systemd service definition
-  template:
-    src: "{{ pa_pulldown_enabler_service_name }}.j2"
-    dest: "/etc/systemd/system/{{ pa_pulldown_enabler_service_name }}"
-    mode: 0644
-    owner: root
-    group: root
-  notify:
-    - restart pa pulldown service
-  when: connectbox_os != "raspbian"
 
 - name: Copy neo battery shutdown systemd service definition
   template:
@@ -184,20 +175,19 @@
      - "restart neo battery shutdown service"
 
 # Startup has either already happened, or will happen in the handler
-- name: Enable services
-  systemd:
-    name: "{{ item }}"
-    daemon_reload: yes
-    enabled: yes
-  with_items:
-    - "{{ pa_pulldown_enabler_service_name }}"
-  when: connectbox_os != "raspbian"
+#- name: Enable services pa_pulldown_enabler
+#  systemd:
+#    name: "{{ item }}"
+#    daemon_reload: yes
+#    enabled: yes
+#  with_items:
+#    - "{{ pa_pulldown_enabler_service_name }}"
+#  when: connectbox_os != "raspbian"
 
-- name: Enable other services
+- name: Enable and restart NEO_BatteryLevelShutdown
   systemd:
     name: "{{ item }}"
     daemon_reload: yes
     enabled: yes
   with_items:
-    - "{{ hat_service_name }}"
-    
+  - "{{ hat_service_name }}"

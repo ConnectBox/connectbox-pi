@@ -1,0 +1,25 @@
+lcd_logo: (this is not here because it is pulled from group_vars/all hostname)
+lcd_logo: connectbox_logo.png
+
+lcd_font_size: 27
+lcd_x_position: 6
+lcd_y_position: 0
+
+enable_mass_storage: 0
+usb0NoMount: 0
+
+lcd_pages_main: 1
+lcd_pages_info: 1
+lcd_pages_battery: 1
+lcd_pages_memory: 1
+lcd_pages_stats_hour_one: 1
+lcd_pages_stats_hour_two: 1
+lcd_pages_stats_day_one: 1
+lcd_pages_stats_day_two: 1
+lcd_pages_stats_week_one: 1
+lcd_pages_stats_week_two: 1
+lcd_pages_stats_month_one: 1
+lcd_pages_stats_month_two: 1
+lcd_pages_admin: 1
+
+lcd_g_device: g_serial
