@@ -4,7 +4,7 @@ if [ -f /lib/modules/$(uname -r)/kernel/drivers/net/wireless/8812au.ko ];
 then
   printf "Driver rtl8812au.ko already exsists\n"
 else
-  if [ -f /lib/modules/$(uname -r)/kernel/drivers/net/wireless/realtek/88X2u.ko ];
+  if [ -d /lib/modules/$(uname -r)/kernel/drivers/net/wireless/realtek/8xxxu ];
   then
     printf "Skipping the RTL8812au driver as it is integrated into the kernel\n"
   else
@@ -45,7 +45,7 @@ if [ -f /lib/modules/$(uname -r)/kernel/drivers/net/wireless/88x2bu.ko ];
 then
   printf "Driver rtl8812bu already exists\n"
 else
-  if [ -f /lib/modules/$(uname -r)/kernel/drivers/net/wireless/realtek/88x2bu.ko ];
+  if [ -d /lib/modules/$(uname -r)/kernel/drivers/net/wireless/realtek/88x2bu ];
   then
     printf "Skipping the rtl88x2bu driver as it is already integrated into the kernel\n"
   else

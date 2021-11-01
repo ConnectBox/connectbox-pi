@@ -40,6 +40,26 @@
   when: old_style_names.changed
   tags: skip_ansible_lint
 
+- name: Check for CM4 modules
+  lineinfile:
+    dest: /proc/cpuinfo
+    line: "Compute Module" 
+  check_mode: yes
+  register: CM4_present
+
+- name: Install boot for CM4 on i2c and usbhost
+  copy:
+    src: config.txt 
+    dest: /boot/config.txt
+  when: CM4_present
+
+- name: Install i2c modules
+  copy:
+    src: modules
+    dest: /etc/modules
+  when: connectbox_os == "raspbian"
+
+
 # Check early on to see whether the OS needs to be
 # rebooted to allow a disk expansion step to complete.
 # This is Armbian only, but the check doesn't hurt others.
@@ -235,25 +255,30 @@
     dest: /usr/local/connectbox/bin/CreateLogFiles.sh
   when: connectbox_os == "armbian" 
     
-- name: Install mountCheck.py  
-  copy: 
-    src: usr_local_connectbox_bin_mountCheck.py
-    dest: /usr/local/connectbox/bin/mountCheck.py
-    mode: 0644
-  when: connectbox_os == "armbian" 
-
-- name: Install rc.local 
-  copy:
-    src: etc_rc.local 
-    dest: /etc/rc.local 
-  when: connectbox_os == "armbian" 
-
 # Moved from 
 - name: Make connectbox directory
   file:
     state: directory
     path: /usr/local/connectbox
     mode: 0755
+
+- name: set up resize of filesystem
+  debug:
+    msg: Setting up resize of filesystem
+  notify:
+    - Install PxUSBm.py
+  changed_when: True
+
+- name: install pexpect (needed for PxUSBm.py script)
+  pip:
+    name: pexpect
+
+- name: Install rc.local 
+  copy:
+    src: etc_rc.local 
+    dest: /etc/rc.local 
+  when: connectbox_os == "armbian" or connectbox_os == "raspbian"
+
 
 - name: Copy brand.txt template
   template:
