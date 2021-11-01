@@ -17,7 +17,6 @@
     pkg: network-manager
     state: absent
 
-
 - name: Make sure systemd-resolved is not running
   service:
     name: systemd-resolved
@@ -48,14 +47,8 @@
   when: connectbox_os == "raspbian"
   register: etc_network_interfaces
 
-- name: apt update before kernal dowloads
-  apt:
-    update_cache: yes 
-
-- name: apt upgrade before kernel downloads
-  apt:
-    upgrade: dist
-  register: dist_upgraded
+# Note we have already upgraded the OS to the lattest in role bootstrap
+# now we just install the current OS build tools
 
 - name: apt install build tools
   apt:
@@ -81,30 +74,6 @@
     - linux-headers-current-sunxi
     state: present
   when: connectbox_os != "raspbian"
-
-
-# The system takes 5-10 seconds to disappear from the network
-#  so let's wait 15 seconds before doing our first check
-#  Use newer ansible 2.7 function reboot
-- name: Reboot device for changes to take effect if required
-  reboot:
-    reboot_timeout: 600
-  ignore_errors: true
-  when: dist_upgraded is defined
-
-# if the distribution was upgraded and we rebooted then we will have a differnt IP address
-# on the end of the reboot so we need to break the script here and allow them to rerun it from
-# a new inventory file.
-
-- name: check if we rebooted as the IP address will have changed
-  debug:
-    msg: 
-      - If you are stalled here you need to ^C here to stop and rerun the 
-      -  ansible script with a new IP address for the target
-
-# we trust that we get the same IP address.  If not we will have to re-run the script.
-# note that we loose everything in the /tmp directory on the reboot.  
-
 
 - name: Copy over 8812au-install script for Raspian
   copy:

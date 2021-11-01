@@ -146,6 +146,18 @@
     enabled: no
   with_items: "{{ apty_services }}"
 
+# We are putting the update early in the build so that we reduce the number of reboots.  This update will
+# bring the kernal up to date.  We will need this when we compile the network drivers later.
+
+- name: apt update before kernal dowloads
+  apt:
+    update_cache: yes 
+
+- name: apt upgrade before kernel downloads
+  apt:
+    upgrade: dist
+  register: dist_upgraded
+
 # Needs to happen before the initial reboot, given the job triggers actions
 #  on @reboot
 - name: Disable armbian auto-update processes
@@ -178,7 +190,7 @@
   reboot:
     post_reboot_delay=15
     pre_reboot_delay=2
-  when: reboot_required
+  when: reboot_required or dist_upgraded is succeeded
 
 
 - name: Increase size of /tmp to handle upcoming installs
