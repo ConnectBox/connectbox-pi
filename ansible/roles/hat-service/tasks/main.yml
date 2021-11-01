@@ -160,18 +160,6 @@
   command: "{{ hat_service_virtualenv_dir }}/bin/pip install luma.oled==2.4.1"
 
 
-# new RPi_GPIO handles the pull down service for these pins where it did not in focal
-#- name: Copy PA pulldown resistor systemd service definition
-#  template:
-#    src: "{{ pa_pulldown_enabler_service_name }}.j2"
-#    dest: "/etc/systemd/system/{{ pa_pulldown_enabler_service_name }}"
-#    mode: 0644
-#    owner: root
-#    group: root
-#  notify:
-#    - restart pa pulldown service
-#  when: connectbox_os != "raspbian"
-
 - name: Copy neo battery shutdown systemd service definition
   template:
     src: "{{ hat_service_name }}.j2"
