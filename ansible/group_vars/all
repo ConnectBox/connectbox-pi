@@ -34,6 +34,7 @@ captiveportal_listen_port: 5001
 # In situations where there are multiple wired ethernet interfaces, this is
 #  not necessarily the same interface as the one used for SSH.
 
+aws_instance: false
 lan_dns_if: eth0
 wifi_configurator_virtualenv_dir: /usr/local/connectbox/wifi_configurator_venv
 
@@ -41,6 +42,8 @@ wifi_data_check_turnoff: www.gowifi.com
 
 connectbox_web_root: /var/www/connectbox
 connectbox_default_content_root: "{{ connectbox_web_root }}/connectbox_default"
+connectbox_enhanced_content_root: "/var/www/enhanced/content/www"
+connectbox_enhanced_admin_root: "/var/www/enhanced/admin/dist"
 connectbox_admin_root: "{{ connectbox_web_root }}/admin"
 connectbox_app_root: "{{ connectbox_web_root }}/app"
 connectbox_virtualenv: "{{ connectbox_web_root }}/connectbox_virtualenv"
