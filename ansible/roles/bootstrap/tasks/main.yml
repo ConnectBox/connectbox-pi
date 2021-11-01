@@ -5,11 +5,6 @@
     path: /usr/local/connectbox
     mode: 0755
 
-- name: Copy brand.txt template
-  template:
-    src: brand_txt.j2
-    dest: /usr/local/connectbox/brand.txt
-
 # Needs to happen prior to partitioning
 - name: Create moodledata directory that Moodle requires for all its functions
   file:
@@ -147,14 +142,14 @@
     path: /boot/armbianEnv.txt
     regexp: 'overlays=i2c0 usbhost0 '
     replace: 'overlays='
-  when: connectbox_os != "raspbian"
+  when: connectbox_os != "raspbian" and not aws_instance
 
 - name: Add i2c0 to /boot/armbianEnv.txt
   replace:
     path: /boot/armbianEnv.txt
     regexp: '(overlays=)'
     replace: '\1i2c0 usbhost0 '
-  when: connectbox_os != "raspbian"
+  when: connectbox_os != "raspbian" and not aws_instance
 
 # The system takes 5-10 seconds to disappear from the network
 #  so let's wait 15 seconds before doing our first check
@@ -168,20 +163,21 @@
 
 - name: Increase size of /tmp to handle upcoming installs
   command: mount -o remount, size=400M /tmp/
-  when: connectbox_os != "raspbian"
+  when: connectbox_os != "raspbian" and not aws_instance
 
 - name: Get current rfkill state for interface 0 (wireless LAN) on Raspbian
   command: cat /sys/class/rfkill/rfkill0/soft
   register: rfkill0_state
   ignore_errors: yes
   changed_when: False
-  when: connectbox_os == "raspbian"
+  when: connectbox_os != "raspbian" and not aws_instance
 
 # Raspbian-lite buster and onwards rfkill wlan0 by default, which causes
 #  problems when we try to start wlan0 (at hostapd reload)
 # This change persists across reboots, so it's safe to do here.
 - name: Unblock rfkill'ed interface 0 (wireless LAN) on Raspbian
   command: /usr/sbin/rfkill unblock 0
+  ignore_errors: yes
   when: "connectbox_os == 'raspbian' and '0' not in rfkill0_state.stdout"
 
 - name: Get current rfkill state for interface 1 (wireless LAN) on Raspbian
