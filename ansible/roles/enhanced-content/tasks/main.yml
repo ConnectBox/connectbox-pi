@@ -1,0 +1,87 @@
+---
+- name: create folders for default content/shared and config
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: 0775
+  with_items:
+    - "/var/www/enhanced"
+    - "/var/www/enhanced/content"
+    - "/var/www/enhanced/admin"
+
+- name: Get media interface latest release
+  ansible.builtin.unarchive:
+    src: https://github.com/RT-coding-team/mediainterface/releases/download/latest/latest.zip
+    dest: /var/www/enhanced/content/
+    remote_src: yes
+
+- name: Get admin interface latest release
+  ansible.builtin.unarchive:
+    src: https://github.com/RT-coding-team/cbadmin/releases/download/latest/latest.zip
+    dest: /var/www/enhanced/admin/
+    remote_src: yes
+
+
+#- name: retrieve connectbox-client-repo
+#  git:
+#    repo: "{{ connectbox_client_repo }}"
+#    dest: /tmp/connectbox_client
+#
+#- name: Copy external connectbox client interface
+#  command: cp -r . "{{ connectbox_default_content_root }}"
+#  args:
+#    chdir: /tmp/connectbox_client/{{ connectbox_client_path }}
+#
+#- name: fix ownership of connectbox_web_root
+#  file:
+#    path: "{{ connectbox_web_root }}"
+#    state: directory
+#    owner: www-data
+#    group: www-data
+#    recurse: yes
+#
+## The chat and admin backend
+#- name: Install packages for connectbox server process
+#  pip:
+#    virtualenv: "{{ connectbox_web_root }}/connectbox_virtualenv"  # XXX Could do better?
+#    virtualenv_python: python3
+#
+#    name: ['flask>=1.0.0', 'ua-parser==0.10.0', 'gunicorn==20.1.0', 'requests==2.25.1', 'six==1.11.0', 'sqlalchemy==1.3.0']
+#    state: latest
+#  tags:
+#    - captive_portal
+#
+## Copy client interface files
+#- name: Copy connectbox client interface
+#  synchronize:
+#    src: ../python/
+#    dest: "{{ connectbox_app_root }}"
+#  tags:
+#    - captive_portal
+#  notify:
+#    - Restart gunicorn
+#
+#- name: Copy gunicorn tempfiles definition
+#  template:
+#    src: etc_tmpfiles.d_gunicorn.conf.j2
+#    dest: /etc/tmpfiles.d/gunicorn.conf
+#  tags:
+#    - captive_portal
+#
+#- name: Copy gunicorn systemd unit file
+#  template:
+#    src: etc_systemd_system_gunicorn.service.j2
+#    dest: /etc/systemd/system/gunicorn.service
+#  tags:
+#    - captive_portal
+#  notify: Restart gunicorn
+#
+#- name: Enable gunicorn service
+#  service:
+#    name: gunicorn
+#    enabled: yes
+#    #state: started
+#  tags:
+#    - captive_portal
