@@ -363,12 +363,17 @@
   pip:
     name: pexpect
 
-- name: Install rc.local 
-  copy:
-    src: etc_rc.local 
-    dest: /etc/rc.local 
-  when: connectbox_os == "armbian" or connectbox_os == "raspbian"
-
+- name: Add items to rc.local
+  blockinfile:
+    path: /etc/rc.local
+    insertafter: "# By default this script does nothing."
+    block: |
+      # Create missing log files and restart nginx service
+      #  we need this or nginx won't run
+      sh /usr/local/connectbox/bin/CreateLogFiles.sh   
+      # script to expand the file system to use the entire uSD space and 
+      #  run daemon to watch for and mount USB as required 
+      /usr/bin/python3 /usr/local/connectbox/bin/PxUSBm.py &
 
 - name: Copy brand.txt template
   template:
