@@ -1,11 +1,15 @@
 ---
 dependencies:
   - bootstrap
-  - hat-service
+  - { role: hat-service, when: not aws_instance}
   - dns-dhcp
-  - network-interfaces
+  - { role: network-interfaces, when: not aws_instance}
   - wifi-ap
   - mikegleasonjr.firewall
+  - { role: php, when: build_moodle}
+  - { role: ansible-postgresql, when: build_moodle}
+  - { role: moodle, when: build_moodle}
+  - enhanced-content
   - nginx
   - captive-portal
   - webserver-content

@@ -90,4 +90,3 @@ if [ -f /lib/modules/$(uname -r)/build ]; then sudo rm /lib/modules/$(uname -r)/
 fi
 if [ -f ../$(uname -r) ]; then sudo rm ../$(uname -r)
 fi
-
