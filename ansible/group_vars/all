@@ -61,7 +61,7 @@ connectbox_error_log:  "{{ connectbox_log_dir }}/connectbox-error.log"
 access_log_analyzer_repo: https://github.com/ConnectBox/access-log-analyzer.git
 connectbox_client_repo: https://github.com/ConnectBox/connectbox-react-icon-client.git
 connectbox_client_path: published/
-connectbox_system_password: "!1TheWell"
+connectbox_system_password: "connectbox"
 build_moodle: False
 
 connectbox_default_hostname: ConnectBox
