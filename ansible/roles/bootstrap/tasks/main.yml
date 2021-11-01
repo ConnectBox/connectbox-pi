@@ -15,7 +15,7 @@
     mode: 0775
 
 ###########################################
-# Raspberry Pi partitioning
+# Raspberry Pi partitioning for building via Ansible
 - name: Get Name of SD card
   shell: lsblk -d | grep disk | awk '{print $1;}'
   register: sdcard_name
@@ -346,6 +346,11 @@
     state: directory
     path: /usr/local/connectbox
     mode: 0755
+
+- name: Install PIP
+  apt:
+    name: python-pip
+    state: present
 
 - name: set up resize of filesystem
   debug:
