@@ -81,11 +81,21 @@
     dest: /tmp/8812au-install.sh
     mode: "+x"
 
-
-- name: Compile the 8812au & 88x2bu driver for Raspbian or NEO
+- name: Compile the 8812au driver for Raspbian or NEO
   command:
      chdir: /tmp
      cmd: "sh 8812au-install.sh"
+
+- name: Copy over 88x2bu-install script for Raspian
+  copy:
+    src: 88x2bu-install.sh
+    dest: /tmp/88x2bu-install.sh
+    mode: "+x"
+
+- name: Compile the 88x2bu driver for Raspbian or NEO
+  command:
+     chdir: /tmp
+     cmd: "sh 88x2bu-install.sh"
 
 - name: remove build tools
   apt:
