@@ -34,7 +34,8 @@ captiveportal_listen_port: 5001
 # In situations where there are multiple wired ethernet interfaces, this is
 #  not necessarily the same interface as the one used for SSH.
 
-aws_instance: false
+aws_instance: False
+
 lan_dns_if: eth0
 wifi_configurator_virtualenv_dir: /usr/local/connectbox/wifi_configurator_venv
 
