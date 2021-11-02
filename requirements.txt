@@ -5,7 +5,7 @@
 #    pip-compile requirements.in
 #
 ansible-lint==4.2.0       # via -r requirements.in (line 2)
-ansible==2.7.16           # via -r requirements.in (line 1), ansible-lint
+ansible>=2.7.16           # via -r requirements.in (line 1), ansible-lint
 bcrypt==3.1.7             # via paramiko
 certifi==2019.11.28       # via requests
 cffi==1.14.0              # via bcrypt, cryptography, pynacl
