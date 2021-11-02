@@ -33,8 +33,9 @@
     part_end: "4GB"
     resize: true
     state: present
-  when: connectbox_os == "raspbian" and sdcard_info.partitions | length < 3
   ignore_errors: yes
+  when: connectbox_os == "raspbian" and sdcard_info.partitions | length < 3
+
 
 - name: Complete the resize filesystem of OS partition 
   command: resize2fs /dev/{{ sdcard_name.stdout }}p2
