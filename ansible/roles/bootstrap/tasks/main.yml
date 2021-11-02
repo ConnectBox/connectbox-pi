@@ -15,6 +15,7 @@
     mode: 0775
 
 ###########################################
+
 # Raspberry Pi partitioning for building via Ansible
 - name: Get Name of SD card
   shell: lsblk -d | grep disk | awk '{print $1;}'
