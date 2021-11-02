@@ -23,3 +23,11 @@ lcd_pages_stats_month_two: 1
 lcd_pages_admin: 1
 
 lcd_g_device: g_serial
+
+
+server_url: ""
+server_authorization: ""
+server_sitename: ""
+server_siteadmin_name: ""
+server_siteadmin_email: ""
+server_siteadmin_phone: ""
