@@ -347,6 +347,18 @@
     path: /usr/local/connectbox
     mode: 0755
 
+# Set default python version to python3
+- name: Delete old python version
+  ansible.builtin.file:
+    path: /usr/bin/python
+    state: absent
+    
+- name: Set symlink to python3
+  ansible.builtin.file:
+    src: /usr/bin/python3
+    dest: /usr/bin/python
+    state: link
+
 - name: Install PIP
   apt:
     name: python-pip
@@ -374,7 +386,8 @@
       # script to expand the file system to use the entire uSD space and 
       #  run daemon to watch for and mount USB as required 
       /usr/bin/python3 /usr/local/connectbox/bin/PxUSBm.py &
-
+  when: not aws_instance
+  
 - name: Copy brand.txt template
   template:
     src: brand_txt.j2
