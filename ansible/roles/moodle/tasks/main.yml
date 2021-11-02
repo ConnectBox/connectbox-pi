@@ -107,7 +107,7 @@
     minute: "1,16,31,46"
     hour: "*"
     user: www-data
-    job: "/usr/bin/php /var/www/moodle/admin/cli/cron.php >/tmp/cron.log"
+    job: "/usr/bin/php /var/www/moodle/admin/cli/cron.php >/tmp/cron.log 2>&1"
 
 # Setup Moodle's Cron 
 - name: Setup chat_attachments/clean_up.php To Run Every Day
@@ -116,7 +116,7 @@
     minute: "3"
     hour: "3"
     user: www-data
-    job: "/usr/bin/php /var/www/moodle/local/chat_attachments/clean_up.php >/tmp/cleanup.log"
+    job: "/usr/bin/php /var/www/moodle/local/chat_attachments/clean_up.php >/tmp/cleanup.log 2>&1"
 
 # Setup Moodle's Cron 
 - name: Setup chat_attachments/push_messages.php To Run Every 10 Minutes on Pi in Production
@@ -124,7 +124,7 @@
     name: "chat_attachments/push_messages.php true"
     minute: "*/10"
     user: www-data
-    job: "/usr/bin/php /var/www/moodle/local/chat_attachments/push_messages.php true >/tmp/push_messages.log"
+    job: "/usr/bin/php /var/www/moodle/local/chat_attachments/push_messages.php true >/tmp/push_messages.log 2>&1"
   when: not developer_mode
 
 # Setup Moodle's Cron 
@@ -133,7 +133,7 @@
     name: "chat_attachments/push_messages.php true"
     minute: "*"
     user: www-data
-    job: "/usr/bin/php /var/www/moodle/local/chat_attachments/push_messages.php true >/tmp/push_messages.log"
+    job: "/usr/bin/php /var/www/moodle/local/chat_attachments/push_messages.php true >/tmp/push_messages.log 2>&1"
   when: developer_mode
   
 # Install ffmpeg to handle mpeg 
