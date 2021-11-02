@@ -6,13 +6,13 @@
 
 VERSION=0.1.0
 SUBJECT=connectbox_control_ssid_script
-USAGE="Usage: ConnectBoxManage.sh -dhv [get|set|check] [ssid|channel|hostname|staticsite|password|ui-config|wpa-passphrase|course-download] <value>"
+USAGE="Usage: ConnectBoxManage.sh -dhv [get|set|check] [ssid|channel|hostname|staticsite|password|ui-config|wpa-passphrase|course-download|brand] <value> <extended>"
 HOSTAPD_CONFIG="/etc/hostapd/hostapd.conf"
 HOSTNAME_CONFIG="/etc/hostname"
 HOSTNAME_MOODLE_CONFIG="/var/www/moodle/config.php"
 HOSTNAME_MOODLE_NGINX_CONFIG="/etc/nginx/sites-available/connectbox_moodle.conf"
 HOSTS_CONFIG="/etc/hosts"
-BRANDS_CONFIG="/usr/local/connectbox/brands.txt"
+BRAND_CONFIG="/usr/local/connectbox/brand.txt"
 NGINX_CONFIG="/etc/nginx/sites-enabled/vhosts.conf"
 PASSWORD_CONFIG="/usr/local/connectbox/etc/basicauth"
 WIFI_CONFIGURATOR="/usr/local/connectbox/wifi_configurator_venv/bin/wifi_configurator"
@@ -58,6 +58,7 @@ shift $((OPTIND - 1))
 action=$1
 module=$2
 val=$3
+extended=$4  # Used only from brand
 
 logger -t $(basename $0) "$action $module $val"
 
@@ -556,8 +557,8 @@ function set_hostname () {
 
     if [ ${PIPESTATUS[0]} -eq 0 ]
     then
-      # Update brands.txt
-      sed -i 's/\"$host_name\"/\"$val\"/g' $BRANDS_CONFIG 2>&1 | logger -t $(basename $0)
+      # Update brand.txt
+      sed -i 's/\"$host_name\"/\"$val\"/g' $BRAND_CONFIG 2>&1 | logger -t $(basename $0)
 
       if [ ${PIPESTATUS[0]} -eq 0 ]
       then
@@ -705,6 +706,16 @@ function wipeSDCard () {
   echo ${channel}
 }
 
+# Added by Derek Maxson 20211102
+# This supports all root level elements of /usr/local/connectbox/brand.txt EXCEPT the Screen Enable section  (TODO)
+function editBrandTxt () {
+  local jqString="jq '.[\"${val}\"]=\"${extended}\"' $BRAND_CONFIG"
+  #echo ${jqString}
+  local editme=$(eval "$jqString")
+  echo ${editme} >$BRAND_CONFIG  # Write the resulting file
+  success
+}
+
 function get_ssid () {
   local ssid=`grep '^ssid=' $HOSTAPD_CONFIG | cut -d"=" -f2`
   echo ${ssid};
@@ -832,7 +843,13 @@ elif [ "$action" = "set" ]; then
       wipeSDCard
       exit 0;
       ;;
-      
+
+    "brand")
+      # Added by Derek Maxson 20211102
+      editBrandTxt
+      exit 0;
+      ;;
+       
     *)
       usage
       ;;

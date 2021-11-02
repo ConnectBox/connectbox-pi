@@ -43,6 +43,9 @@
       register: machine_type
       ignore_errors: yes
       changed_when: False
+    - name: Is this a Moodle Box?
+      debug: 
+        var: build_moodle
   become: yes
   roles:     
     - connectbox-pi
