@@ -1,10 +1,11 @@
 ---
 dependencies:
   - bootstrap
-  - { role: hat-service, when: not aws_instance}
-  - dns-dhcp
-  - { role: network-interfaces, when: not aws_instance}
-  - wifi-ap
+  - { role: hat-service, when: not aws_instance }
+  - { role: dns-dhcp, when: not aws_instance }
+  - { role: network-interfaces, when: not aws_instance }
+  - { role: wifi-ap, when: not aws_instance }
+  - { role: mikegleasonjr.firewall, when: not aws_instance }
   - mikegleasonjr.firewall
   - { role: php, when: build_moodle}
   - { role: ansible-postgresql, when: build_moodle}
@@ -16,5 +17,5 @@ dependencies:
   - usb-content
   - sample-content
   - rpi-permissions
-  - wlan-set
+  - { role: wlan-set, when: not aws_instance }
   - remove-lz4
