@@ -22,8 +22,12 @@ print ("boxId: " + boxId)
 
 # Get authorization token
 if len(brand["server_authorization"]) < 8: 
-  brand["server_authorzation"] = str(uuid.uuid4())
+  brand["server_authorization"] = str(uuid.uuid4())
   print ("No server_authorization so we generated a GUID: " + brand["server_authorization"])
+  # Save token to json
+  with open('/usr/local/connectbox/brand.txt', 'w', encoding='utf-8') as f:
+    json.dump(brand, f, ensure_ascii=False, indent=4)
+  print ("Saved authorization to brand.txt")
 token = "Bearer " + brand["server_authorization"]
 print ("token: " + token)
 
