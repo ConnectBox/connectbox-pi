@@ -193,6 +193,7 @@
     post_reboot_delay=15
     pre_reboot_delay=2
   when: reboot_required or dist_upgraded is succeeded
+  tags: reboot1
 
 
 - name: Increase size of /tmp to handle upcoming installs
