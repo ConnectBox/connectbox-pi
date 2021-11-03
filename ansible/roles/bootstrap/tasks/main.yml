@@ -243,6 +243,11 @@
     name: apt
     state: present
 
+- name: Install jq so that ConnectBoxManage.sh can edit brand.txt easily
+  apt:
+    name: jq
+    state: present
+
 # mikegleasonjr.firewall assumes iptables but Armbian doesn't ship with it
 - name: Install iptables
   apt:
@@ -298,6 +303,9 @@
     name: acl
     state: present
 
+- name: Set /usr/bin/python to python3 so everything runs happy
+  shell: "rm -f /usr/bin/python && sleep 2 && ln -s /usr/bin/python3 /usr/bin/python"
+  
 # Needed in several subsequent roles
 - name: Install packages for python virtualenv
   apt:
@@ -349,18 +357,6 @@
     path: /usr/local/connectbox
     mode: 0755
 
-# Set default python version to python3
-- name: Delete old python version
-  ansible.builtin.file:
-    path: /usr/bin/python
-    state: absent
-    
-- name: Set symlink to python3
-  ansible.builtin.file:
-    src: /usr/bin/python3
-    dest: /usr/bin/python
-    state: link
-
 - name: Install PIP
   apt:
     name: python-pip
@@ -394,3 +390,12 @@
   template:
     src: brand_txt.j2
     dest: /usr/local/connectbox/brand.txt
+    mode: '0666'
+        
+- name: Cause phonehome.py to execute every 10 minutes via cron IF not a Moodle box  (We have different process for Moodle)
+  ansible.builtin.cron:
+    name: "phonehome.py"
+    minute: "*/10"
+    user: www-data
+    job: "/usr/bin/python /usr/local/connectbox/bin/phonehome.py >/tmp/push_messages.log  2>&1"
+  when: not build_moodle
