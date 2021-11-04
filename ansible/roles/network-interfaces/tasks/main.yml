@@ -37,6 +37,15 @@
   when: connectbox_os != "raspbian"
   register: etc_network_interfaces
 
+- name: Configure wpa_supplicant.conf on RPi
+  template:
+    src: wpa_supplicant.conf.j2
+    dest: /etc/wpa_supplicant/wpa_supplicant.conf
+    owner: root
+    group: root
+    mode: 0644
+  when: connectbox_os == "raspbian"
+
 - name: Configure network interfaces RPi
   template:
     src: etc_network_interfaces-RPi.j2
@@ -46,6 +55,16 @@
     mode: 0644
   when: connectbox_os == "raspbian"
   register: etc_network_interfaces
+
+- name: Add items to rc.local
+  blockinfile:
+    path: /etc/init.d/dhcpcd
+    insertafter: "### END INIT INFO"
+    block: |
+      # This fires up the WLAN0 on Pi
+      /usr/local/connectbox/bin/wlan0.pl &
+  when: not aws_instance
+  
 
 # Note we have already upgraded the OS to the lattest in role bootstrap
 # now we just install the current OS build tools

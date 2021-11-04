@@ -1,0 +1,10 @@
+country={{ wireless_country_code }}
+ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+update_config=1
+
+# This can be updated by ConnectBoxManage.sh
+network={
+ssid="{{ client_ssid }}"
+psk="{{ client_wifipassword }}"
+}
+

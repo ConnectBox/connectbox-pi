@@ -65,6 +65,9 @@ connectbox_client_path: published/
 connectbox_system_password: "connectbox"
 build_moodle: False
 
+client_ssid: ""
+client_wifipassword: ""
+
 connectbox_default_hostname: ConnectBox
 
 nginx_log_dir: /var/log/nginx
