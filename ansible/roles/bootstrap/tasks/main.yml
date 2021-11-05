@@ -18,7 +18,7 @@
 
 # Raspberry Pi partitioning for building via Ansible
 - name: Get Name of SD card
-  shell: lsblk -d | grep disk | awk '{print $1;}'
+  shell: lsblk -d | grep mmcblk0 | awk '{print $1;}'
   register: sdcard_name
   when: connectbox_os == "raspbian"
 
