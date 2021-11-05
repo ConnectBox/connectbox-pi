@@ -56,14 +56,14 @@
   when: connectbox_os == "raspbian"
   register: etc_network_interfaces
 
-- name: Add items to rc.local
+- name: Add script to fire up wlan0 via piggybacking on init.d
   blockinfile:
-    path: /etc/init.d/dhcpcd
+    path: /etc/init.d/raspi-config
     insertafter: "### END INIT INFO"
     block: |
       # This fires up the WLAN0 on Pi
-      /usr/local/connectbox/bin/wlan0.pl &
-  when: not aws_instance
+      /usr/local/connectbox/bin/wlan0.pl >/tmp/wlan0.log 2>&1 &
+  when: connectbox_os == "raspbian"
   
 
 # Note we have already upgraded the OS to the lattest in role bootstrap
