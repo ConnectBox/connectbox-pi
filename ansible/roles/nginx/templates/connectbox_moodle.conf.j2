@@ -5,7 +5,7 @@ server {
     root /var/www/moodle/;
     index index.php index.html index.htm;
 
-    server_name learn.{{connectbox_default_hostname}};
+    server_name learn.{{connectbox_default_hostname}} learn.thewell learn.connectbox;
 
     location / {
         try_files $uri $uri/ =404;

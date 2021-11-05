@@ -16,12 +16,16 @@
     src: https://github.com/RT-coding-team/mediainterface/releases/download/latest/latest.zip
     dest: /var/www/enhanced/content/
     remote_src: yes
+    owner: www-data
+    group: www-data
 
 - name: Get admin interface latest release
   ansible.builtin.unarchive:
     src: https://github.com/RT-coding-team/cbadmin/releases/download/latest/latest.zip
     dest: /var/www/enhanced/admin/
     remote_src: yes
+    owner: www-data
+    group: www-data
 
 
 #- name: retrieve connectbox-client-repo
