@@ -18,7 +18,7 @@
 
 # Raspberry Pi partitioning for building via Ansible
 - name: Get Name of SD card
-  shell: lsblk -d | grep disk | awk '{print $1;}'
+  shell: lsblk -d | grep mmcblk0 | awk '{print $1;}'
   register: sdcard_name
   when: connectbox_os == "raspbian"
 
@@ -160,6 +160,11 @@
     upgrade: dist
   register: dist_upgraded
 
+- name: Setup reboot if Upgrade actually occured
+  set_fact:
+    reboot_required: True
+when: not "0 upgraded, 0 newly installed, 0 to remove and 0" in dist_upgraded.stdout
+
 # Needs to happen before the initial reboot, given the job triggers actions
 #  on @reboot
 - name: Disable armbian auto-update processes
@@ -185,14 +190,14 @@
     replace: '\1i2c0 usbhost0 '
   when: connectbox_os != "raspbian" and not aws_instance
 
-# The system takes 5-10 seconds to disappear from the network
-#  so let's wait 15 seconds before doing our first check
-#  Use newer ansible 2.7 function reboot
+ The system takes 5-10 seconds to disappear from the network
+  so let's wait 15 seconds before doing our first check
+  Use newer ansible 2.7 function reboot
 - name: Reboot device for changes to take effect
   reboot:
     post_reboot_delay=15
     pre_reboot_delay=2
-  when: reboot_required or dist_upgraded is succeeded
+  when: reboot_required
   tags: reboot1
 
 
@@ -349,7 +354,8 @@
     src: usr_local_connectbox_bin_CreateLogFiles.sh
     dest: /usr/local/connectbox/bin/CreateLogFiles.sh
   when: connectbox_os == "armbian" 
-    
+
+
 # Moved from 
 - name: Make connectbox directory
   file:
@@ -361,6 +367,13 @@
   apt:
     name: python-pip
     state: present
+  ignore_errors: yes
+
+- name: Install PIP3
+  apt:
+    name: python3-pip
+    stat: present
+  ignore_errors: yes
 
 - name: set up resize of filesystem
   debug:
