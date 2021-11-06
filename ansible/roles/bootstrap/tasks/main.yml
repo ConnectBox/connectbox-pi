@@ -353,7 +353,7 @@
   copy: 
     src: usr_local_connectbox_bin_CreateLogFiles.sh
     dest: /usr/local/connectbox/bin/CreateLogFiles.sh
-  when: connectbox_os == "armbian" 
+  when: connectbox_os == "armbian" or connectbox_os == "raspbian"
 
 
 # Moved from 
