@@ -9,8 +9,7 @@ print "rfkill says: $rfkill\n";
 if ($rfkill =~ /yes/) {
 	print "Unkilling the rfkill for wlan0\n";
 	system ("rfkill unblock 0");
-	system ("./wlan0.pl");
-	die;
+	system ("/usr/local/connectbox/bin/wlan0.pl &");
 }
 else {
 	system ("ifdown wlan0");
