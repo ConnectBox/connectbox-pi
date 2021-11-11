@@ -72,6 +72,7 @@
   with_items:
     - { src: "{{ nginx_vhost_file_captive_portal }}.j2", dest: "{{ nginx_vhost_file_captive_portal }}" }
     - { src: "{{ nginx_vhost_file_enhanced }}.j2", dest: "{{ nginx_vhost_file_enhanced }}" }
+    - { src: "{{ nginx_vhost_file_classic }}.j2", dest: "{{ nginx_vhost_file_classic }}" }
     - { src: "{{ nginx_vhost_file_static_site }}.j2", dest: "{{ nginx_vhost_file_static_site }}" }
 #    - { src: "{{ nginx_vhost_file_icon_only }}.j2", dest: "{{ nginx_vhost_file_icon_only }}" }
 
@@ -93,7 +94,6 @@
     dest: "{{ nginx_enabled_vhosts_path }}/{{ nginx_vhost_file_captive_portal }}"
     state: link
     force: yes
-  notify: restart nginx
 
 - name: Create nginx active vhost symlink for Moodle vhost
   file:
@@ -104,12 +104,22 @@
   notify: restart nginx
   when: build_moodle
 
-- name: Create nginx active vhost symlink for selected interface
+- name: Create nginx active vhost symlink for ENHANCED interface
   file:
     src: "{{ nginx_available_vhosts_path }}/{{ nginx_vhost_file_enhanced }}"
     dest: "{{ nginx_enabled_vhosts_path }}/connectbox_interface.conf"
     state: link
     force: yes
+  when: enhanced_interface
+  notify: restart nginx
+
+- name: Create nginx active vhost symlink for CLASSIC interface
+  file:
+    src: "{{ nginx_available_vhosts_path }}/{{ nginx_vhost_file_classic }}"
+    dest: "{{ nginx_enabled_vhosts_path }}/connectbox_interface.conf"
+    state: link
+    force: yes
+  when: not enhanced_interface
   notify: restart nginx
 
 - name: Ensure nginx is started and enabled to start at boot

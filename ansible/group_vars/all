@@ -64,6 +64,7 @@ connectbox_client_repo: https://github.com/ConnectBox/connectbox-react-icon-clie
 connectbox_client_path: published/
 connectbox_system_password: "connectbox"
 build_moodle: False
+enhanced_interface: True
 
 client_ssid: ""
 client_wifipassword: ""
