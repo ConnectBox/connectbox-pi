@@ -74,7 +74,6 @@
     pkg:
     - build-essential
     - bc
-    - wget
     - libelf-dev
     - libssl-dev
     state: present
@@ -121,7 +120,6 @@
     pkg:
     - build-essential
     - bc
-    - wget
     - libelf-dev
     - libssl-dev
     - raspbewrrypi-kernel-headers

@@ -16,6 +16,11 @@
     name: unzip
     state: present
 
+- name: Install wget 
+  apt:
+    name: wget
+    state: present
+
 - name: Get media interface latest release
   ansible.builtin.unarchive:
     src: https://github.com/RT-coding-team/mediainterface/releases/download/latest/latest.zip
