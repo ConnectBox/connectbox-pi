@@ -6,7 +6,7 @@
 
 VERSION=0.1.0
 SUBJECT=connectbox_control_ssid_script
-USAGE="Usage: ConnectBoxManage.sh -dhv [get|set|check] [ssid|channel|hostname|staticsite|password|ui-config|wpa-passphrase|course-download|brand] <value> <extended>"
+USAGE="Usage: ConnectBoxManage.sh -dhv [get|set|check] [ssid|channel|wpa-passphrase|hostname|staticsite|password|ui-config|client-ssid|client-wifipassword|course-download|course-usb|openwell-download|openwell-usb|brand] <value>"
 HOSTAPD_CONFIG="/etc/hostapd/hostapd.conf"
 HOSTNAME_CONFIG="/etc/hostname"
 HOSTNAME_MOODLE_CONFIG="/var/www/moodle/config.php"
@@ -16,6 +16,7 @@ BRAND_CONFIG="/usr/local/connectbox/brand.txt"
 NGINX_CONFIG="/etc/nginx/sites-enabled/vhosts.conf"
 PASSWORD_CONFIG="/usr/local/connectbox/etc/basicauth"
 WIFI_CONFIGURATOR="/usr/local/connectbox/wifi_configurator_venv/bin/wifi_configurator"
+CLIENTWIFI_CONFIG="/etc/network/interfaces"
 PASSWORD_SALT="CBOX2018"
 UI_CONFIG="/var/www/connectbox/connectbox_default/config/default.json"
 DEBUG=0
@@ -387,7 +388,7 @@ function restart_hostapd () {
     echo "Restarting hostapd"
   fi
 
-  ifdown wlan0  2>&1 | logger -t $(basename $0)
+  ifdown wlan1  2>&1 | logger -t $(basename $0)
   if [ ${PIPESTATUS[0]} -ne 0 ]
   then
     failure
@@ -395,7 +396,7 @@ function restart_hostapd () {
 
   sleep 1
 
-  ifup wlan0  2>&1 | logger -t $(basename $0)
+  ifup wlan1  2>&1 | logger -t $(basename $0)
 
   if [ ${PIPESTATUS[0]} -ne 0 ]
   then
@@ -691,12 +692,61 @@ function set_wpa_passphrase () {
   fi
 }
 
+# Added by Derek Maxson 20211102
+function get_client_ssid () {
+  local channel=`grep 'wpa-ssid' $CLIENTWIFI_CONFIG | cut -d"\"" -f2`
+  echo ${channel}
+}
+
+function get_client_wifipassword () {
+  local channel=`grep 'wpa-psk' $CLIENTWIFI_CONFIG | cut -d"\"" -f2`
+  echo ${channel}
+}
+
 # Added by Derek Maxson 20210616
 function set_course_download () {
   local channel=`sudo -u www-data wget -O /tmp/download.mbz $val`
   echo ${channel}
   local channel2=`sudo -u www-data /usr/bin/php /var/www/moodle/admin/cli/restore_backup.php --file=/tmp/download.mbz --categoryid=1`
   echo ${channel2}
+  SUCCESS
+}
+
+# Added by Derek Maxson 20211108
+function set_course_usb () {
+  local channel2=`sudo -u www-data /usr/bin/php /var/www/moodle/admin/cli/restore_courses_directory.php /media/usb0/`
+  echo ${channel2}
+  SUCCESS
+}
+
+# Added by Derek Maxson 20211104
+function set_openwell_download () {
+  sudo -u www-data wget -O /tmp/openwell.zip $val >/dev/null
+  sudo -u www-data rm -rf /var/www/enhanced/content/www/assets/content >/dev/null 
+  sudo -u www-data unzip -o /tmp/openwell.zip -d /var/www/enhanced/content/www/assets/ | logger -t $(basename $0)
+
+  if [ ${PIPESTATUS[0]} -eq 0 ]
+  then
+    sudo rm /tmp/openwell.zip
+    success
+  else
+    failure
+  fi
+}
+
+# Added by Derek Maxson 20211108
+function set_openwell_usb () {
+  sudo -u cp /media/usb0/openwell.zip /tmp/openwell.zip $val >/dev/null
+  sudo -u www-data rm -rf /var/www/enhanced/content/www/assets/content >/dev/null 
+  sudo -u www-data unzip -o /tmp/openwell.zip -d /var/www/enhanced/content/www/assets/ | logger -t $(basename $0)
+
+  if [ ${PIPESTATUS[0]} -eq 0 ]
+  then
+    sudo rm /tmp/openwell.zip
+    success
+  else
+    failure
+  fi
 }
 
 # Added by Derek Maxson 20210629
@@ -707,10 +757,23 @@ function wipeSDCard () {
 }
 
 # Added by Derek Maxson 20211102
-# This supports all root level elements of /usr/local/connectbox/brand.txt EXCEPT the Screen Enable section  (TODO)
-function editBrandTxt () {
-  local jqString="jq '.[\"${val}\"]=\"${extended}\"' $BRAND_CONFIG"
-  #echo ${jqString}
+# This supports all root level elements of /usr/local/connectbox/brand.txt 
+function get_brand () {
+  IFS='=' read -r -a array <<< "$val"
+  local jqString="jq '.[\"${array[0]}\"]' $BRAND_CONFIG"
+  local editme=$(eval "$jqString")
+  echo ${editme}
+}
+
+# Added by Derek Maxson 20211102
+# This supports all root level elements of /usr/local/connectbox/brand.txt 
+function setBrand () {
+  IFS='=' read -r -a array <<< "$val"
+  if [ ${array[0]} == 'Screen_Enable' ]; then
+    jqString="jq '.[\"${array[0]}\"]=${array[1]}' $BRAND_CONFIG"  
+  else 
+    jqString="jq '.[\"${array[0]}\"]=\"${array[1]}\"' $BRAND_CONFIG"
+  fi
   local editme=$(eval "$jqString")
   echo ${editme} >$BRAND_CONFIG  # Write the resulting file
   success
@@ -789,6 +852,21 @@ if [ "$action" = "get" ]; then
       exit 0;
       ;;
 
+    "client-ssid")
+      get_client_ssid
+      exit 0;
+      ;;
+
+    "client-wifipassword")
+      get_client_wifipassword
+      exit 0;
+      ;;
+
+    "brand")
+      get_brand
+      exit 0;
+      ;;
+
 
     *)
       usage
@@ -832,12 +910,40 @@ elif [ "$action" = "set" ]; then
       exit 0;
       ;;
 
+    "client-ssid")
+      set_client_ssid
+      exit 0;
+      ;;
+
+    "client-wifipassword")
+      set_client_wifipassword
+      exit 0;
+      ;;
+
     "course-download")
       # Added by Derek Maxson 20210616
       set_course_download
       exit 0;
       ;;
 
+    "course-usb")
+      # Added by Derek Maxson 20211108
+      set_course_usb
+      exit 0;
+      ;;
+
+    "openwell-download")
+      # Added by Derek Maxson 20211104
+      set_openwell_download
+      exit 0;
+      ;;
+
+    "openwell-usb-zip")
+      # Added by Derek Maxson 20211108
+      set_openwell_usb_zip
+      exit 0;
+      ;;
+      
     "wipe")
       # Added by Derek Maxson 20210629
       wipeSDCard
@@ -846,7 +952,7 @@ elif [ "$action" = "set" ]; then
 
     "brand")
       # Added by Derek Maxson 20211102
-      editBrandTxt
+      setBrand
       exit 0;
       ;;
        
