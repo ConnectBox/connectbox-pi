@@ -35,18 +35,17 @@
     resize: true
     state: present
   ignore_errors: yes
-  when: connectbox_os == "raspbian" and sdcard_info.partitions | length < 3
-
+  when: connectbox_os == "raspbian" and sdcard_info.partitions[1].size < 5000
 
 - name: Complete the resize filesystem of OS partition 
   command: resize2fs /dev/{{ sdcard_name.stdout }}p2
   become: true
-  when: connectbox_os == "raspbian" and sdcard_info.partitions | length < 3
+  when: connectbox_os == "raspbian" and sdcard_info.partitions[1].size < 5000
 
 - name: Re-Read SD card information 
   community.general.parted: device=/dev/{{ sdcard_name.stdout }} unit=MiB
   register: sdcard_info
-  when: connectbox_os == "raspbian"
+  when: connectbox_os == "raspbian" and sdcard_info.partitions[1].size < 5000
 
 
 ##########################################
