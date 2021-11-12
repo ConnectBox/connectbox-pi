@@ -10,12 +10,12 @@ dependencies:
   - { role: php, when: build_moodle}
   - { role: ansible-postgresql, when: build_moodle}
   - { role: moodle, when: build_moodle}
-  - enhanced-content
+  - { role: enhanced-content, when: enhanced_interface}
   - nginx
   - captive-portal
   - webserver-content
   - usb-content
-  - sample-content
+  - { role: sample-content, when: not enhanced_interface}
   - rpi-permissions
   - { role: wlan-set, when: not aws_instance }
   - remove-lz4

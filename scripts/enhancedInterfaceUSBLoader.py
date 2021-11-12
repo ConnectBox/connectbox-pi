@@ -63,6 +63,9 @@ for filename in os.listdir(mediaDirectory):
 	file = os.path.join(mediaDirectory, filename)	# Example  /media/usb0/movie.mp4
 	slug = pathlib.Path(file).stem					# Example  movie      (ALSO, slug is a term used in the BoltCMS mediabuilder that I'm adapting here)
 	extension = pathlib.Path(file).suffix			# Example  .mp4
+	if filename[0] == '.':
+	  print ("Skipping file that starts with . " + filename)
+	  continue
 	try:
 		# Load the item template file
 		f = open (contentDirectory + "/en/data/item.json");
