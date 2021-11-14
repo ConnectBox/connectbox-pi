@@ -107,7 +107,7 @@
 - name: Create nginx active vhost symlink for ENHANCED interface
   file:
     src: "{{ nginx_available_vhosts_path }}/{{ nginx_vhost_file_enhanced }}"
-    dest: "{{ nginx_enabled_vhosts_path }}/connectbox_interface.conf"
+    dest: "{{ nginx_enabled_vhosts_path }}/connectbox_enhanced.conf"
     state: link
     force: yes
   when: enhanced_interface
@@ -116,7 +116,7 @@
 - name: Create nginx active vhost symlink for CLASSIC interface
   file:
     src: "{{ nginx_available_vhosts_path }}/{{ nginx_vhost_file_classic }}"
-    dest: "{{ nginx_enabled_vhosts_path }}/connectbox_interface.conf"
+    dest: "{{ nginx_enabled_vhosts_path }}/connectbox_classic.conf"
     state: link
     force: yes
   when: not enhanced_interface
