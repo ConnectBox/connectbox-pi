@@ -14,7 +14,7 @@ templatesDirectory = "/var/www/enhanced/content/www/assets/templates/en"
 contentDirectory = "/var/www/enhanced/content/www/assets/content/"
 
 # Retrieve languageCodes.json
-f = open('/var/www/enhanced/content/www/assets/templates/en/languageCodes.json',)
+f = open('/var/www/enhanced/content/www/assets/templates/languageCodes.json',)
 languageCodes = json.load(f)
 
 # Retrieve brand.txt
