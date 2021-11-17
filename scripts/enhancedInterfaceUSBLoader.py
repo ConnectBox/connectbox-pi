@@ -10,8 +10,12 @@ import shutil
 
 # Defaults for Connectbox / TheWell
 mediaDirectory = "/media/usb0"
-templatesDirectory = "/var/www/enhanced/content/www/assets/templates"
+templatesDirectory = "/var/www/enhanced/content/www/assets/templates/en"
 contentDirectory = "/var/www/enhanced/content/www/assets/content/"
+
+# Retrieve languageCodes.json
+f = open('/var/www/enhanced/content/www/assets/templates/en/languageCodes.json',)
+languageCodes = json.load(f)
 
 # Retrieve brand.txt
 f = open('/usr/local/connectbox/brand.txt',)
@@ -28,69 +32,103 @@ if hasattr(brand, 'Logo') and len(brand['Logo']) > 2:
 else:
 	brand['Logo'] = "imgs/logo.png"
 
-print (brand)
-
 print ("Building Content For " + brand['Brand'])
 
 # Copy templates to content folder
-shutil.rmtree(contentDirectory)
-shutil.copytree(templatesDirectory, contentDirectory) 
-os.system ("chown -R www-data.www-data " + contentDirectory + "/")
+try:
+	shutil.rmtree(contentDirectory)
+except:
+	temp = 1 # There is a directory already
 
-# Insert Brand and Logo
-f = open (contentDirectory + "/en/data/interface.json");   # We will always place USB content in EN language which is default
+# Insert Brand and Logo into the interface template.  We will write this at the end to each language
+f = open (templatesDirectory + "/data/interface.json");   # We will always place USB content in EN language which is default
 interface = json.load(f);
-#print (interface)
 interface["APP_NAME"] = brand["Brand"]
 interface["APP_LOGO"] = brand["Logo"]
-#print (interface)
-with open(contentDirectory + "/en/data/interface.json", 'w', encoding='utf-8') as f:
-    json.dump(interface, f, ensure_ascii=False, indent=4)
 
 # Load dictionary of file types
-f = open (contentDirectory + "/en/data/types.json");
+f = open (templatesDirectory + "/data/types.json");
 types = json.load(f);
 #print (types)
 
-# Load main.json template
-f = open (contentDirectory + "/en/data/main.json");
-main = json.load(f);
-#print (main)
 
-# Load directory of files
-for filename in os.listdir(mediaDirectory):
-	# Get file attributes
-	file = os.path.join(mediaDirectory, filename)	# Example  /media/usb0/movie.mp4
-	slug = pathlib.Path(file).stem					# Example  movie      (ALSO, slug is a term used in the BoltCMS mediabuilder that I'm adapting here)
-	extension = pathlib.Path(file).suffix			# Example  .mp4
-	if filename[0] == '.':
-	  print ("Skipping file that starts with . " + filename)
-	  continue
-	try:
+mains = {}  # This object contains all the data to construct each main.json at the end.  We add as we go along
+
+for path,dirs,files in os.walk(mediaDirectory):
+	#print (path,dirs,files)
+	# These next two lines ignore directories and files that start with .
+	files = [f for f in files if not f[0] == '.']
+	dirs[:] = [d for d in dirs if not d[0] == '.']
+    
+	language = "en"  # By default but it will be overwritten if there are other language directories on the USB
+	if path.replace(mediaDirectory + "/","") in languageCodes:
+		language = path.replace(mediaDirectory + "/","")
+	for filename in files:
+		print ("Processing: " + filename)
+		fullFilename = path + "/" + filename							# Example /media/usb0/video.mp4
+		slug = pathlib.Path(path + "/" + filename).stem					# Example  movie      (ALSO, slug is a term used in the BoltCMS mediabuilder that I'm adapting here)
+		extension = pathlib.Path(path + "/" + filename).suffix			# Example  .mp4
+		#print (slug,extension)
+		if (extension is None or extension == ''):
+			print ("		Skipping: Extension null: " + fullFilename)
+			continue
+		if (extension not in types):
+			print ("		Skipping: Extension not supported: " + fullFilename)
+			continue
 		# Load the item template file
-		f = open (contentDirectory + "/en/data/item.json");
+		f = open (templatesDirectory + "/data/item.json");
 		item = json.load(f);
 		# Update item attributes
 		item["filename"] = filename
 		item["image"] = types[extension]["image"]
 		item["mediaType"] = types[extension]["mediaType"]
+		item["mimeType"] = types[extension]["mimeType"]
 		item["slug"] = slug
 		item["title"] = slug
 		item["categories"].append(types[extension]["category"])
-		# Save the item to a json file
-		with open(contentDirectory + "/en/data/" + slug + ".json", 'w', encoding='utf-8') as f:
+		# If the directory is not a language, make a non-duplicate category to organize that content
+		if (os.path.basename(os.path.normpath(path)) != language and path != mediaDirectory and types[extension]["category"] != os.path.basename(os.path.normpath(path)).capitalize()):
+			item["categories"].append(os.path.basename(os.path.normpath(path)).capitalize())
+		#print (item)
+
+		# See if the language already exists in the directory, if not make and populate a directory from the template
+		if (not os.path.exists(contentDirectory + language)):
+			print ("Creating Directory: " + contentDirectory + language)			
+			shutil.copytree(templatesDirectory, contentDirectory + language)
+			os.system ("chown -R www-data.www-data " + contentDirectory + language)
+			# Load the main.json template and populate the mains for that language.
+			f = open (templatesDirectory + "/data/main.json")
+			mains[language] = json.load(f)
+
+		# Save the item to item json file -- one per item
+		with open(contentDirectory + language + "/data/" + slug + ".json", 'w', encoding='utf-8') as f:
 			json.dump(item, f, ensure_ascii=False, indent=4)
-		os.system ("ln -s '" + file + "' " + contentDirectory + "/en/media/")
-		# Add item to main.json
-		main["content"].append(item)
-		print ("Based on file type " + file + " added to enhanced interface")
-	except:
-		print ("Skipping (extension not supported): " + file)
+			
+		# Make a symlink to the file on USB to display the content
+		os.system ("ln -s '" + fullFilename + "' " + contentDirectory + "/" + language + "/media/")
 
-# Now write main.json with an array of item objects that were pushed
-with open(contentDirectory + "/en/data/main.json", 'w', encoding='utf-8') as f:
-	json.dump(main, f, ensure_ascii=False, indent=4)
+		# Add item to main.json -- which is the store of all content in this language
+		mains[language]["content"].append(item)
+		print ("Based on file type " + fullFilename + " added to enhanced interface for language " + language)
 
+
+# Now go through each language that we found and processed and write the interface.json and main.json for each 
+languageJson = []
+for language in mains:
+	print ("Writing main.json for " + language)
+	with open(contentDirectory + language + "/data/main.json", 'w', encoding='utf-8') as f:
+		json.dump(mains[language], f, ensure_ascii=False, indent=4)
+	print ("Writing interface.json for " + language)
+	with open(contentDirectory + language + "/data/interface.json", 'w', encoding='utf-8') as f:
+		json.dump(interface, f, ensure_ascii=False, indent=4)
+	# Add this language to the language interface
+	languageJsonObject = {}
+	languageJsonObject["codes"] = [language]
+	languageJsonObject["text"] = languageCodes[language]["nativeName"]
+	languageJson.append(languageJsonObject)
+	
+print ("Writing languages.json")
+with open(contentDirectory + "languages.json", 'w', encoding='utf-8') as f:
+	json.dump(languageJson, f, ensure_ascii=False, indent=4)
 
 print ("loader: Done")
-
