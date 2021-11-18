@@ -124,11 +124,18 @@ for language in mains:
 	# Add this language to the language interface
 	languageJsonObject = {}
 	languageJsonObject["codes"] = [language]
-	languageJsonObject["text"] = languageCodes[language]["nativeName"]
+	languageJsonObject["text"] = languageCodes[language]["native"][0]
 	languageJson.append(languageJsonObject)
-	
+
+# Determine which language should be default.  It is english or first one found
+hasDefault = 0
+for record in languageJson:
+	if (record["codes"][0] == "en"):
+		hasDefault = 1
+		record["default"] = true
+if (hasDefault == 0):
+	languageJson[0]["default"] = True
+
 print ("Writing languages.json")
 with open(contentDirectory + "languages.json", 'w', encoding='utf-8') as f:
 	json.dump(languageJson, f, ensure_ascii=False, indent=4)
-
-print ("loader: Done")
