@@ -85,7 +85,10 @@ for path,dirs,files in os.walk(mediaDirectory):
 		item["mediaType"] = types[extension]["mediaType"]
 		if (types[extension]["mediaType"] == "image"):
 			item["image"] = filename
-		item["mimeType"] = mimetypes.types_map[extension]
+		if (hasattr(mimetypes.types_map, extension)):
+			item["mimeType"] = mimetypes.types_map[extension]
+		else:
+			item["mimeType"] = "application/octet-stream"
 		item["slug"] = slug
 		item["title"] = slug
 		item["categories"].append(types[extension]["category"])
