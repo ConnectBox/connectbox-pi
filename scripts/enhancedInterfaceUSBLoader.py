@@ -7,6 +7,7 @@ import json
 import os
 import pathlib
 import shutil 
+import mimetypes
 
 # Defaults for Connectbox / TheWell
 mediaDirectory = "/media/usb0"
@@ -55,7 +56,7 @@ types = json.load(f);
 mains = {}  # This object contains all the data to construct each main.json at the end.  We add as we go along
 
 for path,dirs,files in os.walk(mediaDirectory):
-	#print (path,dirs,files)
+	print (path,dirs,files)
 	# These next two lines ignore directories and files that start with .
 	files = [f for f in files if not f[0] == '.']
 	dirs[:] = [d for d in dirs if not d[0] == '.']
@@ -82,7 +83,9 @@ for path,dirs,files in os.walk(mediaDirectory):
 		item["filename"] = filename
 		item["image"] = types[extension]["image"]
 		item["mediaType"] = types[extension]["mediaType"]
-		item["mimeType"] = types[extension]["mimeType"]
+		if (types[extension]["mediaType"] == "image"):
+			item["image"] = filename
+		item["mimeType"] = mimetypes.types_map[extension]
 		item["slug"] = slug
 		item["title"] = slug
 		item["categories"].append(types[extension]["category"])
@@ -132,7 +135,7 @@ hasDefault = 0
 for record in languageJson:
 	if (record["codes"][0] == "en"):
 		hasDefault = 1
-		record["default"] = true
+		record["default"] = True
 if (hasDefault == 0):
 	languageJson[0]["default"] = True
 
