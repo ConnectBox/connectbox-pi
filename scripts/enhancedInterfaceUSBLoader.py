@@ -85,6 +85,7 @@ for path,dirs,files in os.walk(mediaDirectory):
 		item["mediaType"] = types[extension]["mediaType"]
 		if (types[extension]["mediaType"] == "image"):
 			item["image"] = filename
+			os.system ("ln -s '" + fullFilename + "' " + contentDirectory + "/" + language + "/images/")
 		if (hasattr(mimetypes.types_map, extension)):
 			item["mimeType"] = mimetypes.types_map[extension]
 		else:
