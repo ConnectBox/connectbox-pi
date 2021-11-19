@@ -43,15 +43,9 @@
     state: touch 
     mode: "u=rw,g=rw,o=rw"
     
-# Remove old geerlingguy.nginx vhosts configuration
-# This task can be removed once we have transitioned all our connectbox
-# instances to this multi-vhost definition arrangement
-- name: Remove old-style nginx vhost definition
-  file:
-    path: "{{ nginx_enabled_vhosts_path}}/vhosts.conf"
-    state: absent
-  notify: restart nginx
-
+- name: Remove all existing sites-enabled
+  shell: /bin/rm -rf /etc/nginx/sites-enabled/*
+  
 - name: Copy nginx config
   template:
     src: nginx.conf.j2
@@ -110,7 +104,7 @@
     dest: "{{ nginx_enabled_vhosts_path }}/connectbox_enhanced.conf"
     state: link
     force: yes
-  when: enhanced_interface
+  when: enhanced_interface|bool == true
   notify: restart nginx
 
 - name: Create nginx active vhost symlink for CLASSIC interface
@@ -119,7 +113,7 @@
     dest: "{{ nginx_enabled_vhosts_path }}/connectbox_classic.conf"
     state: link
     force: yes
-  when: not enhanced_interface
+  when: enhanced_interface|bool == false
   notify: restart nginx
 
 - name: Ensure nginx is started and enabled to start at boot
