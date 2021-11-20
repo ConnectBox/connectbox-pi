@@ -698,9 +698,25 @@ function get_client_ssid () {
   echo ${channel}
 }
 
+function set_client_ssid () {
+  sudo sed -i -e "/ssid=/ s/=.*/=${val}/" /etc/wpa_supplicant/wpa_supplicant.conf
+  sudo sed -i -e "/wpa-ssid=/ s/=.*/=${val}/" /etc/network/interfaces
+  ifdown wlan0 2>&1 
+  ifup wlan0  2>&1 
+  success
+}
+
 function get_client_wifipassword () {
   local channel=`grep 'wpa-psk' $CLIENTWIFI_CONFIG | cut -d"\"" -f2`
   echo ${channel}
+}
+
+function set_client_wifipassword () {
+  sudo sed -i -e "/psk=/ s/=.*/=${val}/" /etc/wpa_supplicant/wpa_supplicant.conf
+  sudo sed -i -e "/wpa-psk=/ s/=.*/=${val}/" /etc/network/interfaces
+  ifdown wlan0 2>&1 
+  ifup wlan0  2>&1 
+  success
 }
 
 # Added by Derek Maxson 20210616
