@@ -699,8 +699,8 @@ function get_client_ssid () {
 }
 
 function set_client_ssid () {
-  sudo sed -i -e "/ssid=/ s/=.*/=${val}/" /etc/wpa_supplicant/wpa_supplicant.conf
-  sudo sed -i -e "/wpa-ssid=/ s/=.*/=${val}/" /etc/network/interfaces
+  sudo sed -i -e "/ssid=/ s/=.*/=\"${val}\"/" /etc/wpa_supplicant/wpa_supplicant.conf
+  sudo sed -i -e "/wpa-ssid=/ s/=.*/=\"${val}\"/" /etc/network/interfaces
   ifdown wlan0 2>&1 
   ifup wlan0  2>&1 
   success
@@ -712,8 +712,8 @@ function get_client_wifipassword () {
 }
 
 function set_client_wifipassword () {
-  sudo sed -i -e "/psk=/ s/=.*/=${val}/" /etc/wpa_supplicant/wpa_supplicant.conf
-  sudo sed -i -e "/wpa-psk=/ s/=.*/=${val}/" /etc/network/interfaces
+  sudo sed -i -e "/psk=/ s/=.*/=\"${val}\"/" /etc/wpa_supplicant/wpa_supplicant.conf
+  sudo sed -i -e "/wpa-psk=/ s/=.*/=\"${val}\"/" /etc/network/interfaces
   ifdown wlan0 2>&1 
   ifup wlan0  2>&1 
   success
