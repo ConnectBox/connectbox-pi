@@ -1,8 +1,12 @@
 import base64,logging,subprocess
 from flask import request,abort,jsonify,make_response
 
-valid_properties = ["ssid", "channel", "hostname", "staticsite", "password",
+valid_properties = ["ssid", "brand", "client-ssid", "client-wifipassword", "channel", "hostname", "staticsite", "password",
                     "system", "ui-config", "wpa-passphrase"]
+
+valid_brand_properties = ["Screen_Enable", "g_device", "server_url", "server_authorization", "server_sitename", 
+                    "server_siteadmin_name", "server_siteadmin_email", "server_siteadmin_phone", "enable_mass_storage", 
+                    "usb0NoMount", "enhanced", "openwell-download", "moodle_download"]
 
 connectbox_version = 'dev'
 try:
@@ -61,9 +65,18 @@ def get_property(prop):
     _authenticate(request)
 
     prop_string = prop
-    if prop_string not in valid_properties:
+    if prop_string not in valid_properties or prop_string == "password" or prop_string == "client-wifipassword":
         _abort_bad_request()
     return _call_command(["get", prop_string])
+
+def get_brand_property(prop):
+   logging.debug("get brand property")
+   _authenticate(request)
+
+   prop_string = prop
+   if prop_string not in valid_brand_properties or prop_string == "server_authorization":
+      _abort_bad_request()
+   return _call_command(["get", "brand", prop_string])
 
 
 def set_property_value_wrapped(prop):
@@ -90,14 +103,14 @@ def set_property(prop):
     _authenticate(request)
 
     prop_string = prop
-    if prop_string not in valid_properties:
+    if prop_string not in valid_brand_properties:
         _abort_bad_request() # bad request
+
     string_data = request.get_data(as_text=True)
     if not string_data:
         _abort_bad_request() # bad request
 
     return _call_command(["set", prop_string, string_data.encode("utf-8")])
-
 
 def set_system_property():
     logging.debug("set_system_property")
@@ -123,6 +136,11 @@ def register(app):
         rule='/admin/api/',
         endpoint='not_authorized',
         view_func=not_authorized)
+    app.add_url_rule(
+        rule='/admin/api/brand/<prop>',
+        endpoint='get_brand_property',
+        methods=['GET'],
+        view_func=get_brand_property)
     app.add_url_rule(
         rule='/admin/api/<prop>',
         endpoint='get_property',
