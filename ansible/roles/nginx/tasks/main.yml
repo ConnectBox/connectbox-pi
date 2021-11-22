@@ -68,7 +68,7 @@
     - { src: "{{ nginx_vhost_file_enhanced }}.j2", dest: "{{ nginx_vhost_file_enhanced }}" }
     - { src: "{{ nginx_vhost_file_classic }}.j2", dest: "{{ nginx_vhost_file_classic }}" }
     - { src: "{{ nginx_vhost_file_static_site }}.j2", dest: "{{ nginx_vhost_file_static_site }}" }
-#    - { src: "{{ nginx_vhost_file_icon_only }}.j2", dest: "{{ nginx_vhost_file_icon_only }}" }
+    - { src: "{{ nginx_vhost_file_icon_only }}.j2", dest: "{{ nginx_vhost_file_icon_only }}" }
 
 - name: Copy vhost config for Moodle
   template:
