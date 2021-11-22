@@ -40,5 +40,5 @@ iface {{ client_facing_if }} inet static
 
 allow-hotplug {{ eth_facing_if }}
 iface {{ eth_facing_if }} inet dhcp
-    wpa-ssid "<your local network>"
-    wpa-psk "<your local network password>"
+    wpa-ssid "{{ client_ssid }}"
+    wpa-psk "{{ client_wifipassword }}"
