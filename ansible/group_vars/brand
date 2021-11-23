@@ -7,7 +7,7 @@ lcd_y_position: 0
 
 device_type: "NEO"
 enable_mass_storage: 0
-usb0NoMount: 0
+usbNoMount: 0
 
 lcd_pages_main: 1
 lcd_pages_info: 1
