@@ -104,15 +104,12 @@
   when: old_style_names.changed
   tags: skip_ansible_lint
 
-- name: change /proc/cpuinfo for write to use lineinfile
-  ansible.builtin.file:
-    path: /proc/cpuinfo
-    mode: '1777'
 
 - name: Check for CM4 modules
   lineinfile:
-    path: /proc/cpuinfo
-    line: "Compute Module" 
+    dest: /proc/cpuinfo
+    line: "Compute Module"
+  check_mode: yes
   register: CM4_present
 
 - name: Install boot for CM4 on i2c and usbhost
@@ -422,7 +419,7 @@
 - name: Check for device_type CM4
   replace:
     path: /usr/local/connectbox/brand.txt
-    regexp: '"Device_type": *,'
+    regexp: '"Device_type": .*,'
     replace: '"Device_type": "CM",'
   when: CM4_present
 
