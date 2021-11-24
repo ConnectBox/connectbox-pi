@@ -107,14 +107,12 @@
 - name: change /proc/cpuinfo for write to use lineinfile
   ansible.builtin.file:
     path: /proc/cpuinfo
-    mode: o=rw
+    mode: o=rw, u=rw, g=rw
 
 - name: Check for CM4 modules
   lineinfile:
     path: /proc/cpuinfo
     line: "Compute Module" 
-    owner: root
-    group: root
   register: CM4_present
 
 - name: Install boot for CM4 on i2c and usbhost
