@@ -106,8 +106,10 @@
 
 - name: Check for CM4 modules
   lineinfile:
-    src: /proc/cpuinfo
+    path: /proc/cpuinfo
     line: "Compute Module" 
+    owner: root
+    group: root
   register: CM4_present
 
 - name: Install boot for CM4 on i2c and usbhost
