@@ -104,6 +104,11 @@
   when: old_style_names.changed
   tags: skip_ansible_lint
 
+- name: change /proc/cpuinfo for write to use lineinfile
+  ansible.builtin.file:
+    path: /proc/cpuinfo
+    mode: o=rw
+
 - name: Check for CM4 modules
   lineinfile:
     path: /proc/cpuinfo
