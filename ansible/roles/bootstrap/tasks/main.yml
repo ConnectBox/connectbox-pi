@@ -454,14 +454,14 @@
 
 - name: Check for device_type CM4
   replace:
-    path: /usr/local/connectbox/brand.brand_txt
+    path: /usr/local/connectbox/brand.txt
     regexp: '"Device_type": *,'
     replace: '"Device_type": "CM",'
   when: connectbox_os == "CM"
 
 - name: Check for device_type PI
   replace:
-    path: /usr/local/connectbox/brand.brand_txt
+    path: /usr/local/connectbox/brand.txt
     regexp: '"Device_type": *,'
     replace: '"Device_type": "PI",'
   when: connectbox_os == "raspbian"
