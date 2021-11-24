@@ -108,7 +108,6 @@
   lineinfile:
     dest: /proc/cpuinfo
     line: "Compute Module" 
-  check_mode: yes
   register: CM4_present
 
 - name: Install boot for CM4 on i2c and usbhost
@@ -232,7 +231,7 @@
 - name: Unblock rfkill'ed interface 1 (wireless LAN) on Raspbian
   command: /usr/sbin/rfkill unblock 1
   ignore_errors: yes
-  when: "connectbox_os == 'raspbian' and '0' not in rfkill1_state.stdout"
+  when: "connectbox_os == 'raspbian'"
 
 - name: Set default locale
   lineinfile:
@@ -415,6 +414,14 @@
     dest: /usr/local/connectbox/brand.txt
     mode: '0666'
 
+- name: Check for device_type CM4
+  replace:
+    path: /usr/local/connectbox/brand.txt
+    regexp: '"Device_type": *,'
+    replace: '"Device_type": "CM",'
+  when: CM4_present
+
+
 - name: Check if multiple-batteries are available
   replace:
     path: /usr/local/connectbox/brand.txt
@@ -451,13 +458,6 @@
       {{ lcd_pages_admin }}
       ],'
   when: CM4_present  
-
-- name: Check for device_type CM4
-  replace:
-    path: /usr/local/connectbox/brand.txt
-    regexp: '"Device_type": *,'
-    replace: '"Device_type": "CM",'
-  when: CM4_present
 
 - name: Check for device_type PI
   replace:
