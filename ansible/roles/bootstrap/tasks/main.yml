@@ -450,20 +450,21 @@
       {{ lcd_pages_stats_month_two }},
       {{ lcd_pages_admin }}
       ],'
-    when connectbox_os != "CM"  
+  when: connectbox_os != "CM"  
 
 - name: Check for device_type CM4
   replace:
     path: /usr/local/connectbox/brand.brand_txt
     regexp: '"Device_type": *,'
     replace: '"Device_type": "CM",'
-    when connectbox_os == "CM"
+  when: connectbox_os == "CM"
 
-- nemae Check for device_type PI
+- name: Check for device_type PI
+  replace:
     path: /usr/local/connectbox/brand.brand_txt
     regexp: '"Device_type": *,'
     replace: '"Device_type": "PI",'
-    when connectbox_os == "raspbian"
+  when: connectbox_os == "raspbian"
         
 - name: Cause phonehome.py to execute every 10 minutes via cron IF not a Moodle box  (We have different process for Moodle)
   ansible.builtin.cron:
