@@ -106,7 +106,7 @@
 
 - name: Check for CM4 modules
   lineinfile:
-    dest: /proc/cpuinfo
+    src: /proc/cpuinfo
     line: "Compute Module" 
   register: CM4_present
 
