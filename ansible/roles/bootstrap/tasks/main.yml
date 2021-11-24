@@ -107,7 +107,7 @@
 - name: change /proc/cpuinfo for write to use lineinfile
   ansible.builtin.file:
     path: /proc/cpuinfo
-    mode: o=rw, u=rw, g=rw
+    mode: '1777'
 
 - name: Check for CM4 modules
   lineinfile:
