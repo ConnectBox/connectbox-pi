@@ -51,7 +51,7 @@
 
 - name: Install packages to run OLED for Raspbian
   apt:
-    name: [ 'libjpeg-dev', 'python3-dev', 'libjpeg8', 'libfreetype6', 'libfreetype6-dev', 'zlib1g', 'zlib1g-dev', 'libopenjp2-7', 'libtiff5', 'smbus2' ]
+    name: [ 'libjpeg-dev', 'python3-dev', 'libjpeg8', 'libfreetype6', 'libfreetype6-dev', 'zlib1g', 'zlib1g-dev', 'libopenjp2-7', 'libtiff5' ]
     state: present
   when: connectbox_os == "raspbian" 
 
@@ -72,7 +72,8 @@
     state: present 
   when: connectbox_os != "raspbian"
 
-- apt:
+- name: Install devmem2 in NEO
+  apt:
     name: ['devmem2']
     state: present
   when: connectbox_os != "raspbian"
@@ -100,6 +101,12 @@
   pip:
     name: docutils==0.16
     virtualenv: "{{ hat_service_virtualenv_dir }}"
+
+- name: Install smbus2 in raspbian
+  pip:
+    name: smbus2
+    virtualenv: "{{ hat_service_virtualenv_dir }}"
+  when: connectbox_os == "raspbian" 
 
 - name: Install Pillow library requriements in virtual environment
   pip:
