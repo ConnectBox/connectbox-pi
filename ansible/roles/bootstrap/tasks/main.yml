@@ -205,35 +205,43 @@
   command: mount -o remount, size=400M /tmp/
   when: connectbox_os != "raspbian" and not aws_instance
 
-- name: Get current rfkill state for interface 0 (wireless LAN) on Raspbian
-  command: cat /sys/class/rfkill/rfkill0/soft
-  register: rfkill0_state
+# Unblock wlan0 and wlan1 unconditionally (not a problem if redundant)
+- name: unblock wlan0
+  command: /usr/sbin/rfkill unblock 0
   ignore_errors: yes
-  changed_when: False
-  when: connectbox_os != "raspbian" and not aws_instance
+  when: connectbox_os == "raspbian"
+
+- name: unblock wlan1
+  command: /usr/sbin/rfkill unblock 1
+  ignore_errors: yes
+  when: connectbox_os == "raspbian"
+
+
+#- name: Get current rfkill state for interface 0 (wireless LAN) on Raspbian
+#  command: cat /sys/class/rfkill/rfkill0/soft
+#  register: rfkill0_state
+#  ignore_errors: yes
+#  changed_when: False
+#  when: connectbox_os != "raspbian" and not aws_instance
 
 # Raspbian-lite buster and onwards rfkill wlan0 by default, which causes
 #  problems when we try to start wlan0 (at hostapd reload)
 # This change persists across reboots, so it's safe to do here.
-- name: Unblock rfkill'ed interface 0 (wireless LAN) on Raspbian
-  command: /usr/sbin/rfkill unblock 0
-  ignore_errors: yes
-  when: "connectbox_os == 'raspbian' and '0' not in rfkill0_state.stdout"
+#- name: Unblock rfkill'ed interface 0 (wireless LAN) on Raspbian
+#  command: /usr/sbin/rfkill unblock 0
+#  ignore_errors: yes
+#  when: "connectbox_os == 'raspbian' and '0' not in rfkill0_state.stdout"
 
-- name: Get current rfkill state for interface 1 (wireless LAN) on Raspbian
-  command: cat /sys/class/rfkill/rfkill1/soft
-  register: rfkill1_state
-  ignore_errors: yes
-  changed_when: False
-  when: connectbox_os == "raspbian"
+#- name: Get current rfkill state for interface 1 (wireless LAN) on Raspbian
+#  command: cat /sys/class/rfkill/rfkill1/soft
+#  register: rfkill1_state
+#  ignore_errors: yes
+#  changed_when: False
+#  when: connectbox_os == "raspbian"
 
 # Raspbian-lite buster and onwards rfkill wlan1 by default, which causes
 #  problems when we try to start wlan1 (at hostapd reload)
 # This change persists across reboots, so it's safe to do here.
-- name: Unblock rfkill'ed interface 1 (wireless LAN) on Raspbian
-  command: /usr/sbin/rfkill unblock 1
-  ignore_errors: yes
-  when: "connectbox_os == 'raspbian'"
 
 - name: Set default locale
   lineinfile:
@@ -423,26 +431,10 @@
     replace: '"Device_type": "CM",'
   when: CM4_present
 
-
-- name: Check if multiple-batteries are available
+- name: Remove multiple-batteries screen if not CM4
   replace:
     path: /usr/local/connectbox/brand.txt
-    regexp: '"Screen_Enable": [
-      ?,
-      ?,
-      ?,
-      ?,
-      ?,
-      ?,
-      ?,
-      ?,
-      ?,
-      ?,
-      ?,
-      ?,
-      ?,
-      ?
-      ],'
+    regexp:  '"Screen_Enable": \[.*\]'
     replace: '"Screen_Enable": [
       {{ lcd_pages_main }},
       {{ lcd_pages_info }},
@@ -458,8 +450,8 @@
       {{ lcd_pages_stats_month_one }},
       {{ lcd_pages_stats_month_two }},
       {{ lcd_pages_admin }}
-      ],'
-  when: CM4_present  
+      ]'
+  when: not CM4_present  
 
 - name: Check for device_type PI
   replace:
