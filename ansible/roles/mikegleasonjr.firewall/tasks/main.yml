@@ -18,7 +18,7 @@
 - name: Save rules (iptables-persistent)
   command: /etc/init.d/iptables-persistent save
   when: not ansible_check_mode and (v4_script is changed or v6_script is changed) and is_netfilter.rc == 0
-  ignore_erros: yes
+  ignore_errors: yes
 
 #- include_tasks: persist-redhat.yml
 #  when: ansible_os_family == 'RedHat'
