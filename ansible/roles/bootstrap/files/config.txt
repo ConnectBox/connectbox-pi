@@ -61,9 +61,9 @@ dtparam=i2c_vc=on
 # Enable DRM VC4 V3D driver on top of the dispmanx display stack
 dtoverlay=vc4-fkms-v3d
 max_framebuffers=2
-dtoverlay=dwc2, drmode=host
+
 
 
 [all]
 #dtoverlay=vc4-fkms-v3d
-
+dtoverlay=dwc2, dr_mode=host
