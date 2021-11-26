@@ -1,8 +1,24 @@
 ---
+
 - include_tasks: rules.yml
 
-- include_tasks: persist-debian.yml
-  when: ansible_os_family == 'Debian' or connectbox_os == 'raspbian'
+- name: Check if netfilter-persistent is present
+  shell: which netfilter-persistent
+  register: is_netfilter
+  when: (v4_script is changed or v6_script is changed) and connectbox_os = 'raspbian'
+  changed_when: false
+  ignore_errors: yes
+  check_mode: no
+
+- name: Save rules (netfilter-persistent)
+  command: netfilter-persistent save
+  when: not ansible_check_mode and (v4_script is changed or v6_script is changed) and is_netfilter.rc == 0
+  ignore_errors: yes
+
+- name: Save rules (iptables-persistent)
+  command: /etc/init.d/iptables-persistent save
+  when: not ansible_check_mode and (v4_script is changed or v6_script is changed) and is_netfilter.rc == 0
+  ignore_erros: yes
 
 #- include_tasks: persist-redhat.yml
 #  when: ansible_os_family == 'RedHat'

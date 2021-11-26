@@ -4,6 +4,44 @@
   register: v4_script
   when: firewall_v4_configure
 
+- name: Ensure that iptables are loaded
+  apt: iptables
+  state: present
+  ignore_errors: yes
+
+  - name: Remove any obsolete scripts used by an old version of the role
+  file: path={{ item }} state=absent
+  with_items:
+    - /etc/network/if-post-down.d/iptables-v4
+    - /etc/network/if-pre-up.d/iptables-v4
+    - /etc/iptables.v4.saved
+  when: ansible_os_family == 'Debian' or connectbox_os == 'raspbian'
+
+- name: Install iptables-persistent
+  apt: 
+    name: iptables
+    state: present
+
+- name: Determine what version of debian were running
+  command: lsb_release -a
+  register: OS_Release
+  when: ansible_os_family == 'Debian' or connectbox_os == 'raspbian'
+
+- name: Check for Bullseye
+  register: OS_Bullseye
+  when: '"bullseye" in OS_Release.stdout' and (ansible_os_family == 'Debian' or connectbox_os == 'raspbian')
+
+- name: Setup old style iptables
+  command: update-alternatives --set iptables /usr/sbin/iptables-legacy
+  when: OS_Bullseye
+
+- name: Setup old style ip6tables
+  command: update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
+  when: OS_Bullseye
+ 
+- name: Generate v4 rules
+  command: /etc/iptables.v4.
+
 - name: Load v4 rules
   command: /etc/iptables.v4.generated
   register: v4_script_load_result
