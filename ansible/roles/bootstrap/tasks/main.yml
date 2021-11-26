@@ -485,7 +485,7 @@
     path: /etc/avrdude.conf
     regexp: "reset = 25;.*\n.*baudrate=40"
     line: 'reset = 22;\n  baudrate=20'
-    state: resent
+    state: present
   when: CM4_present
 
         
