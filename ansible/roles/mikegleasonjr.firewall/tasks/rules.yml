@@ -12,8 +12,7 @@
 - name: Ensure that iptables are loaded
   apt: iptables
   state: present
-  ignore_errors: yes
-
+ 
 - name: Remove any obsolete scripts used by an old version of the role
   file: path={{ item }} state=absent
   with_items:
