@@ -1,4 +1,4 @@
-c---
+---
 - name: Generate v4 rules
   ansible.builtin.template:
     src: generated.v4.j2
