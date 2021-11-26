@@ -483,7 +483,7 @@
 - name: Change the config file for avrduee on CM4
   lineinfile:
     path: /etc/avrdude.conf
-    regexp: "reset = 25;.*\n.*baudrate=40"
+    regexp: "reset = 25;\n.*?baudrate=40"
     line: 'reset = 22;\n  baudrate=20'
     state: present
   when: CM4_present
