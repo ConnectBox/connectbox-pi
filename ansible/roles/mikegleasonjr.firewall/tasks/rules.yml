@@ -34,8 +34,8 @@
 
 - name: Check for Bullseye
   register: OS_Bullseye
-  when: '"bullseye" in OS_Release.stdout' and (ansible_os_family == 'Debian' or connectbox_os == 'raspbian')
-
+  when: '"bullseye" in OS_Release.stdout'
+  
 - name: Setup old style iptables
   command: update-alternatives --set iptables /usr/sbin/iptables-legacy
   when: OS_Bullseye
