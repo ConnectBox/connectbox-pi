@@ -470,11 +470,11 @@
 - name: Check for device_type PI
   replace:
     path: /usr/local/connectbox/brand.txt
-    regexp: '"Device_type": *,'
+    regexp: '"Device_type": .*,'
     replace: '"Device_type": "PI",'
   when: connectbox_os == "raspbian" and not CM4_present
 
-- name for CM4 install avrdude
+- name: for CM4 install avrdude
   apt:
     name: avrdude
     state: present
