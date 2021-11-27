@@ -7,14 +7,14 @@
     group: root
     mode: '0755'
   register: v4_script
- 
 
 - name: Ensure that iptables are loaded
   apt: iptables
   state: present
- 
+
 - name: Remove any obsolete scripts used by an old version of the role
-  file: path={{ item }} state=absent
+  file: path={{ item }}
+  state: absent
   with_items:
     - /etc/network/if-post-down.d/iptables-v4
     - /etc/network/if-pre-up.d/iptables-v4
