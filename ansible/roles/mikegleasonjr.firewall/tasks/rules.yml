@@ -9,8 +9,9 @@
   register: v4_script
 
 - name: Ensure that iptables are loaded
-  apt: iptables
-  state: present
+  apt:
+    name: iptables
+    state: present
 
 - name: Remove any obsolete scripts used by an old version of the role
   file: path={{ item }}
