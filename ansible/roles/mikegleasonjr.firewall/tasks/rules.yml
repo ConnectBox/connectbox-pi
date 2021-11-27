@@ -11,16 +11,17 @@
 - name: Ensure that iptables are loaded
   apt:
     name: iptables
-    state: present
+
 
 - name: Remove any obsolete scripts used by an old version of the role
   file:
-    path: '/{{ item }}'
+    path: '{{ item }}'
     state: absent
     with_items:
-      - etc/network/if-post-down.d/iptables-v4
-      - etc/network/if-pre-up.d/iptables-v4
-      - etc/iptables.v4.saved
+      - /etc/network/if-post-down.d/iptables-v4
+      - /etc/network/if-pre-up.d/iptables-v4
+      - /etc/iptables.v4.saved
+    ignore_errors: yes
   when: ansible_os_family == 'Debian' or connectbox_os == 'raspbian'
 
 - name: Install iptables-persistent
