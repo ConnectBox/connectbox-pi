@@ -14,12 +14,13 @@
     state: present
 
 - name: Remove any obsolete scripts used by an old version of the role
-  file: path={{ item }}
-  state: absent
-  with_items:
-    - /etc/network/if-post-down.d/iptables-v4
-    - /etc/network/if-pre-up.d/iptables-v4
-    - /etc/iptables.v4.saved
+  file:
+    path: {{ item }}
+    state: absent
+    with_items:
+      - /etc/network/if-post-down.d/iptables-v4
+      - /etc/network/if-pre-up.d/iptables-v4
+      - /etc/iptables.v4.saved
   when: ansible_os_family == 'Debian' or connectbox_os == 'raspbian'
 
 - name: Install iptables-persistent
@@ -44,9 +45,6 @@
   command: update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
   when: OS_Bullseye
  
-- name: Generate v4 rules
-  command: /etc/iptables.v4.
-
 - name: Load v4 rules
   command: /etc/iptables.v4.generated
   register: v4_script_load_result
