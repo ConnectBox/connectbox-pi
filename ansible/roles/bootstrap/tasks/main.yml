@@ -64,14 +64,13 @@
   become: true
   
 - Check for release of OS  
-  command: lsb_release -a
+  shell: lsb_release -a
   register: OS_Release
-when: connectbox_os == "raspbian"
 
 - Look for Bullseye
   register OS_Bullseye
-  msg: "Found were running Bullseye"
-when: OS_Release.stdout.find("bullseye")
+  echo: "Found were running Bullseye"
+  when: OS_Release.stdout.find("bullseye") != -1
 
 
 # Check early on to see if the style of interface names need to be changed
