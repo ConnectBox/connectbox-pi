@@ -63,6 +63,17 @@
     password: "{{ connectbox_system_password|password_hash('sha512') }}"
   become: true
   
+- Check for release of OS  
+  command: lsb_release -a
+  register: OS_Release
+when: connectbox_os == "raspbian"
+
+- Look for Bullseye
+  register OS_Bullseye
+  msg: "Found were running Bullseye"
+when: OS_Release.stdout.find("bullseye")
+
+
 # Check early on to see if the style of interface names need to be changed
 #  (only applicable to Ubuntu, and not when we're running virtualised)
 # We do this before the check for the Armbian reboot oracle. If we need
