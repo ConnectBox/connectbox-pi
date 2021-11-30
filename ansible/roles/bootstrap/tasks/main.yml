@@ -227,43 +227,35 @@
   command: mount -o remount, size=400M /tmp/
   when: connectbox_os != "raspbian" and not aws_instance
 
-# Unblock wlan0 and wlan1 unconditionally (not a problem if redundant)
-- name: unblock wlan0
-  command: /usr/sbin/rfkill unblock 0
+- name: Get current rfkill state for interface 0 (wireless LAN) on Raspbian
+  command: cat /sys/class/rfkill/rfkill0/soft
+  register: rfkill0_state
   ignore_errors: yes
-  when: connectbox_os == "raspbian"
-
-- name: unblock wlan1
-  command: /usr/sbin/rfkill unblock 1
-  ignore_errors: yes
-  when: connectbox_os == "raspbian"
-
-
-#- name: Get current rfkill state for interface 0 (wireless LAN) on Raspbian
-#  command: cat /sys/class/rfkill/rfkill0/soft
-#  register: rfkill0_state
-#  ignore_errors: yes
-#  changed_when: False
-#  when: connectbox_os != "raspbian" and not aws_instance
+  changed_when: False
+  when: connectbox_os != "raspbian" and not aws_instance
 
 # Raspbian-lite buster and onwards rfkill wlan0 by default, which causes
 #  problems when we try to start wlan0 (at hostapd reload)
 # This change persists across reboots, so it's safe to do here.
-#- name: Unblock rfkill'ed interface 0 (wireless LAN) on Raspbian
-#  command: /usr/sbin/rfkill unblock 0
-#  ignore_errors: yes
-#  when: "connectbox_os == 'raspbian' and '0' not in rfkill0_state.stdout"
+- name: Unblock rfkill'ed interface 0 (wireless LAN) on Raspbian
+  command: /usr/sbin/rfkill unblock 0
+  ignore_errors: yes
+  when: "connectbox_os == 'raspbian'"
 
-#- name: Get current rfkill state for interface 1 (wireless LAN) on Raspbian
-#  command: cat /sys/class/rfkill/rfkill1/soft
-#  register: rfkill1_state
-#  ignore_errors: yes
-#  changed_when: False
-#  when: connectbox_os == "raspbian"
+- name: Get current rfkill state for interface 1 (wireless LAN) on Raspbian
+  command: cat /sys/class/rfkill/rfkill1/soft
+  register: rfkill1_state
+  ignore_errors: yes
+  changed_when: False
+  when: connectbox_os == "raspbian"
 
 # Raspbian-lite buster and onwards rfkill wlan1 by default, which causes
 #  problems when we try to start wlan1 (at hostapd reload)
 # This change persists across reboots, so it's safe to do here.
+- name: Unblock rfkill'ed interface 1 (wireless LAN) on Raspbian
+  command: /usr/sbin/rfkill unblock 1
+  ignore_errors: yes
+  when: "connectbox_os == 'raspbian'"
 
 - name: Set default locale
   lineinfile:
@@ -282,6 +274,12 @@
   apt:
     name: jq
     state: present
+
+- name: Install usb utilities
+  apt:
+    name: usbutils
+    state: present
+  when: CM4_present
 
 # mikegleasonjr.firewall assumes iptables but Armbian doesn't ship with it
 - name: Install iptables
@@ -453,10 +451,11 @@
     replace: '"Device_type": "CM",'
   when: CM4_present
 
-- name: Remove multiple-batteries screen if not CM4
+
+- name: Check if multiple-batteries are available
   replace:
     path: /usr/local/connectbox/brand.txt
-    regexp:  '"Screen_Enable": \[.*\]'
+    regexp: '"Screen_Enable": \[.*\]'
     replace: '"Screen_Enable": [
       {{ lcd_pages_main }},
       {{ lcd_pages_info }},
@@ -478,9 +477,24 @@
 - name: Check for device_type PI
   replace:
     path: /usr/local/connectbox/brand.txt
-    regexp: '"Device_type": *,'
+    regexp: '"Device_type": .*,'
     replace: '"Device_type": "PI",'
   when: connectbox_os == "raspbian" and not CM4_present
+
+- name: for CM4 install avrdude
+  apt:
+    name: avrdude
+    state: present
+  when: CM4_present
+
+- name: Change the config file for avrduee on CM4
+  lineinfile:
+    path: /etc/avrdude.conf
+    regexp: "reset = 25;\n.*?baudrate=40"
+    line: 'reset = 22;\n  baudrate=20'
+    state: present
+  when: CM4_present
+
         
 - name: Cause phonehome.py to execute every 10 minutes via cron IF not a Moodle box  (We have different process for Moodle)
   ansible.builtin.cron:
