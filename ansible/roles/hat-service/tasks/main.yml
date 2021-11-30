@@ -144,9 +144,13 @@
     force: yes
   when: connectbox_os != "raspbian"  
 
+- name: Install RPi.GPIO for buster build
+  command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.0"
+  when: connectbox_os == "raspbian" and not OS_Bullseye
+
 - name: Install RPi.GPIO for Raspbian build
   command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.1a4"
-  when: connectbox_os == "raspbian" 
+  when: connectbox_os == "raspbian"  and OS_Bullseye
 
 # new RPi_GPIO handles the pull down service for these pins where it did not in focal
 # The command must include the path to the virtual environment version of python3 or the resulting
