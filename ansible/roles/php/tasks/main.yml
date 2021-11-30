@@ -32,19 +32,19 @@
 - name: Install PHP & Libraries required by Moodle
   apt:
     pkg:
-    - php
-    - php-cli 
-    - php-common 
-    - php-curl 
-    - php-mbstring
-    - php-pgsql
-    - php-xml
-    - php-zip
-    - php-intl
-    - php-xmlrpc
-    - php-soap
-    - php-fpm
-    - php-gd
+    - php{{ php_version }}
+    - php{{ php_version }}-cli 
+    - php{{ php_version }}-common 
+    - php{{ php_version }}-curl 
+    - php{{ php_version }}-mbstring
+    - php{{ php_version }}-pgsql
+    - php{{ php_version }}-xml
+    - php{{ php_version }}-zip
+    - php{{ php_version }}-intl
+    - php{{ php_version }}-xmlrpc
+    - php{{ php_version }}-soap
+    - php{{ php_version }}-fpm
+    - php{{ php_version }}-gd
 
 # Set larger uploads configs for PHP
 
