@@ -68,7 +68,7 @@
   register: OS_Release
 
 - name: Look for Bullseye
-  register OS_Bullseye
+  register: OS_Bullseye
   debug:
     msg: "Found were running Bullseye"
   when: OS_Release.stdout.find("bullseye") != -1
