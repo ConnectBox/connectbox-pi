@@ -427,15 +427,6 @@
       /usr/bin/python3 /usr/local/connectbox/bin/PxUSBm.py &
   when: not aws_instance
 
-    
-- name: Install mountCheck.py  
-  copy: 
-    src: usr_local_connectbox_bin_mountCheck.py
-    dest: /usr/local/connectbox/bin/mountCheck.py
-    mode: 0644
-  when: connectbox_os == "armbian" or connectbox_os == 'raspbian'
-
-
 - name: Copy brand.txt template
   template:
     src: brand_txt.j2
