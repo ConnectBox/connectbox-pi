@@ -425,8 +425,6 @@
       # script to expand the file system to use the entire uSD space and 
       #  run daemon to watch for and mount USB as required 
       /usr/bin/python3 /usr/local/connectbox/bin/PxUSBm.py &
-      #  run daemon for mount USB and resize SD card
-      /usr/bin/python3 /usr/local/connectbox/bin/mountCheck.py &
   when: not aws_instance
 
     
