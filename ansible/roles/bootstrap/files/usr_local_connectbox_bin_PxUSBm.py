@@ -161,7 +161,7 @@ def mountCheck():
 
 
 
-def do_resize2fs():
+def do_resize2fs(rpi_platform):
 	# find the filesystem name ... like "/dev/mmcblk0p1"
     out = pexpect.run('df -h')
     p = re.compile('/dev/mmcblk[0-9]p[0-9]+')
@@ -170,6 +170,8 @@ def do_resize2fs():
     FS = m.group()
     
     # we have the FS string, so build the command and run it
+    if rpi_platform == True:
+      FS = "/dev/mmcblk0p2"
     cmd = 'resize2fs ' + FS
     out = pexpect.run(cmd, timeout=600)  # 10 minutes should be enough for the resize
     out = out.decode('utf-8')
@@ -181,76 +183,90 @@ def do_resize2fs():
         os.system('reboot')
         
 
-def do_fdisk():
+def do_fdisk(rpi_platform):
 
     child = pexpect.spawn('fdisk /dev/mmcblk0', timeout = 10)
     try:
-	    i = child.expect(['Command (m for help)*', 'No such file or directory']) # the match is looking for the LAST thing that came up so we need the *
+      i = child.expect(['Command (m for help)*', 'No such file or directory']) # the match is looking for the LAST thing that came up so we need the *
     except:
-	    print("Exception thrown")
-	    print("debug info:")
-	    print (str(child))
+      print("Exception thrown")
+      print("debug info:")
+      print (str(child))
 
-	# the value of i is the reference to which of the [] arguments was found
+  # the value of i is the reference to which of the [] arguments was found
     if i==1:
         print("There is no /dev/mmcblk0 partition... exiting")
         child.kill(0)
     if i==0:
-        print("Found it!")	
-	# continuing
+        print("Found it!")  
+  # continuing
 
-	# "p" get partition info and search out the starting sector of mmcblk0p1
+  # "p" get partition info and search out the starting sector of mmcblk0p1
     child.sendline('p')
     i = child.expect('Command (m for help)*')  
-	# the child.before contains all that came BEFORE we found the expected text
-	#print (child.before)  
+  # the child.before contains all that came BEFORE we found the expected text
+  #print (child.before)  
     response = child.before
 
-	# change from binary to string
+  # change from binary to string
     respString = response.decode('utf-8')
-	
-    p = re.compile('mmcblk[0-9]p[0-9]\s*[0-9]+')		# create a regexp to get close to the sector info
-    m = p.search(respString)		# should find "mmcblk0p1   8192" or similar, saving as object m
-    match = m.group()				# get the text of the find
-    p = re.compile('\s[0-9]+')		# a new regex to find just the number from the match above
+
+#   for CM4, we get one line beginning /dev/mmcblk0p1, 
+#   and one line beginning /dev/mmcblk0p2 ... this is the line that we are looking for 
+    if rpi_platform == True:  
+        p = re.compile('mmcblk[0-9]p2\s*[0-9]+')        # create a regexp to get close to the sector info - CM4
+    else:    
+        p = re.compile('mmcblk[0-9]p[0-9]\s*[0-9]+')    # create a regexp to get close to the sector info - NEO
+
+    m = p.search(respString)    # should find "mmcblk0p1   8192" or similar, saving as object m (NEO)
+                                    #  or "mmcblk0p2   532480" or similar for CM4
+    match = m.group()       # get the text of the find
+    p = re.compile('\s[0-9]+')    # a new regex to find just the number from the match above
     m = p.search(match)
     startSector = m.group()
     print("starting sector = ", startSector )
 
-	# "d" for delete the partition
+  # "d" for delete the partition
     child.sendline('d')
-    i = child.expect('Command (m for help)*')  
-#	print("after delete ",child.before)
 
-	# "n" for new partition
+    if rpi_platform == True:    # CM4 has 2 partitions... select partition 2
+        i = child.expect('Partition number (1,2, default 2)*')  
+        child.sendline('2')  
+
+    i = child.expect('Command (m for help)*')  
+# print("after delete ",child.before)
+
+  # "n" for new partition
     child.sendline('n')
     i = child.expect('(default p):*')
-#	print("after new ",child.before)
+# print("after new ",child.before)
 
-	# "p" for primary partition
+  # "p" for primary partition
     child.sendline('p')
-    i = child.expect('default 1*')
-#	print ("after p ", child.before)
+    if rpi_platform == True:    # CM4 has 2 partitions... select partition 2
+        i = child.expect('default 2*')
+        child.sendline('2')                 # "2" for partition number 2
+        i = child.expect('default 2048*')
+    else:
+        i = child.expect('default 1*')      # "1" for partition number 1
+        child.sendline('1')
+        i = child.expect('default 2048*')
+# print (child.before)
 
-	# "1" for partition number 1
-    child.sendline('1')
-    i = child.expect('default 2048*')
-#	print (child.before)
-
-	# send the startSector number
+  # send the startSector number
     child.sendline(startSector)
     child.expect('Last sector*')
-#	print("At last sector... the after is: ", child.after)
+# print("At last sector... the after is: ", child.after)
 
-	# take default for last sector
+  # take default for last sector
     child.sendline('')
     i = child.expect('signature*')
 
-	# "N" don't remove the signature
+  # "N" don't remove the signature
     child.sendline('N')
     i = child.expect('Command (m for help)*')  
 
-	# "w" for write and exit
+  # "w" for write and exit
     child.sendline('w')
     i = child.expect('Syncing disks*')  
 
@@ -262,19 +278,29 @@ def do_fdisk():
 
 
 if __name__ == "__main__":
+
 # First handle the partition expansion
+# Determine if we are on NEO or CM
+    brand_file = '/usr/local/connectbox/brand.txt'
+    rpi_platform = False
+    # see if we are NEO or CM
+    f = open(brand_file,"r")
+    brand = f.read()
+    f.close()
+    if 'CM' in brand:
+        rpi_platform = True
 
     # Sort out how far we are in the partition expansion process
     file_exists = os.path.exists(progress_file)
     if file_exists == False:
-        do_fdisk()             # this ends in reboot() so won't return
+        do_fdisk(rpi_platform)             # this ends in reboot() so won't return
 
     else: 
         f = open(progress_file, "r")
         progress = f.read()
         f.close()
         if "resize2fs_done" not in progress:
-            do_resize2fs()     # this ends in reboot() so won't return
+            do_resize2fs(rpi_platform)     # this ends in reboot() so won't return
 
 # Once partition expansion is complete, handle the ongoing monitor of USBs
 
