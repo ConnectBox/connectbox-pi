@@ -63,12 +63,34 @@
     password: "{{ connectbox_system_password|password_hash('sha512') }}"
   become: true
   
+- name: Check for release of OS  
+  command: lsb_release -a
+  register: OS_Release
+
+- name: Look for Bullseye
+  register: OS_Bullseye
+  debug:
+    msg: "Found were running Bullseye"
+  when: OS_Release.stdout.find("bullseye") != -1
+
+
 # Check early on to see if the style of interface names need to be changed
 #  (only applicable to Ubuntu, and not when we're running virtualised)
 # We do this before the check for the Armbian reboot oracle. If we need
 #  to reboot to activate the old-style interface names, we'll sort out the
 #  reboot oracle too, but if the reboot oracle check is before this check
 #  we'll need to reboot a second time (after creating the symlink)
+
+- name: Check for release of OS_Release
+  command: lsb_release -a
+  register: OS_Release
+
+- name: Check the OS_Release for OS_Bullseye
+  debug:
+    msg: "Found were running Bullseye"
+  register: OS_Bullseye
+  when: OS_Release.stdout.find("bullseye") != -1
+
 - debug:
     msg: "Ansible Group Variables Family {{ ansible_os_family|lower }}"
 

@@ -1,4 +1,7 @@
 ---
+- include_tasks: bullseye-debian.yml
+  when: OS_Bullseye
+
 - include_tasks: rules.yml
 
 - include_tasks: persist-debian.yml

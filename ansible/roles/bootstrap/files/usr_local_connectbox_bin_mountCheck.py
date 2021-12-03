@@ -15,7 +15,7 @@ c=["","",""]
 loc=[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]
 # mnt[x]>=0 where x is the usb port of the mount and mnt[x] is the line of the /dev/sdx1
 global mnt
-mnt=[-1,-1,-1,-1,-1,-1,-1,-1,-1, -1, -1]
+mnt=[-1,-1,-1,-1,-1,-1,-1,-1,-1, -1, -1, -1]
 d=["","","","","","","","","","","","","","","","","","","","","",""]
 
 def mountCheck():
@@ -52,7 +52,7 @@ def mountCheck():
     i=0                       #line iterator
     j=0                       #used for finding sdx1's
     k=0                       #used for usb mounts
-    loc=[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]
+    loc=[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]
     b = os.popen('lsblk').read()
     c = b.partition("\n")
 # while we have lines to parse we check each line for an sdx1 device and mount it if not already
@@ -128,8 +128,12 @@ def mountCheck():
 
 
 if __name__ == '__main__':
+    try: os.remove('/usr/local/connectbox/PauseMount')
+    except:
+      if DEBUG: print("there was no PauseMount file keeping us from going forward")
     while True:
         loop_time = 3
-        mountCheck()
+        if not os.path.exists('/usr/local/connectbox/PauseMount'):
+            mountCheck()
         time.sleep(loop_time)
 
