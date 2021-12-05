@@ -31,6 +31,12 @@
     virtualenv_python: python3
     name: git+https://github.com/ConnectBox/wifi-configurator.git
 
+- name: Set hostapd to correct default wlan
+  replace:
+    path: "{{ wifi_configurator_virtualenv_dir }}/lib/python3.7/site-packages/wifi_configurator/cli.py"
+    regexp: 'default="wlan0"'
+    replace: 'default="{{ client_facing_if }}"'
+
 - name: Populate /etc/default/crda with regulatory domain override
   template:
     src: etc_default_crda.j2
