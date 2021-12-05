@@ -56,79 +56,112 @@ DEBUG = 0
 global total
 total = 0
 c=["","",""]
-loc=[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]
-# mnt[x]>=0 where x is the usb port of the mount and mnt[x] is the line of the /dev/sdx1
+global loc
+loc=[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]
+#mnt[x]>=0 where x is the usb port of the mount and mnt[x] is the line of the /dev/sdx1
 global mnt
-mnt=[-1,-1,-1,-1,-1,-1,-1,-1,-1, -1, -1]
-d=["","","","","","","","","","","","","","","","","","","","","",""]
+mnt=[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]
+d=["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""]
 
 def mountCheck():
     global mnt
+    global loc
     global total
+    total = 0
     j = 0                   #mount iterator looking for unmounted devices
     b = os.popen('lsblk').read()
-    while (j < total):
-      if DEBUG: print("loop 1, iterate",j)
+    while (j < 11):
+      if DEBUG: print("loop 1, unmount",j)
       if (mnt[j] >= 0):
-        if not ('usb' + chr(ord('0')+j) in b):
-          c = "umount /media/usb" + chr(ord('0')+j)
+        if not ('sd'+chr(mnt[j])+'1' in b):
+          c = '/dev/sd' + chr(mnt[j])+'1'
+          c = 'umount '+c
+          if DEBUG: print("No longer present sd"+chr(mnt[j])+"1  so well "+c)
+          if DEBUG: print("the value of b is"+b)
           res = os.system(c)
-          if DEBUG: print("completed unmount /media/usb", chr(ord('0')+j))
-          if not res:
+          if DEBUG: print("completed "+c)
+          if res == 0:
+            if loc[j] > ord('0'):
+               os.popen('rmdir /media/usb'+chr(loc[j]))
+               if DEBUG: print("Deleted the directory /media/usb",chr(loc[j]))
+            loc[j]=-1
             mnt[j] = -1
-            if j>0:
-               os.popen('rmdir /media/usb'+chr(ord('0')+j))
             j += 1
           else:
             if DEBUG: print("Failed to " + c)
             mnt[j] = -1
+            loc[j] = -1
             j += 1
         else:
-          #Were here with the device still mounted
+        #Were here with the device still mounted
           j += 1
+          total += 1
       else:
         #were here because there was no mount device detected
         if DEBUG: print("device not mounted usb", j)
         j += 1
     i=0                       #line iterator
     j=0                       #used for finding sdx1's
-    k=0                       #used for usb mounts
-    loc=[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]
-    b = os.popen('lsblk').read()
+    k=0                       #used for usb mount
     c = b.partition("\n")
 # while we have lines to parse we check each line for an sdx1 device and mount it if not already
-    while ((c[0] != "") and (i<10)):
+    while ((c[0] != "") and (i<35)):
       if DEBUG: print("Loop 2, iterate:",i, c[0])
       d[i] = c[0]
       e=re.search('sd[a-z]1', d[i])
-      if e: 
-        loc[j]=i
+      if e:
         if not (('usb' in d[i]) or ('part /' in d[i])):     #True if were not mounted but should be
-          while (k < 10) and (mnt[k] >= 0):                 #Find an empty usbX to mount to
+          a = ord('0')
+          j = 9
+          k = 0
+          f=[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]
+          while (k < 10):                                   #Find an empty spot to note a mount for usbX 
+            if loc[k] == -1 and k < j:                      #find an empty location to do the mount recording
+              j = k
+            if loc[k] > 0:
+              f[loc[k]-ord('0')]=loc[k]
             if DEBUG: print("loop 3, iterate:",k)
             k += 1
-          if not (os.path.exists("/media/usb"+chr(ord("0")+k))):  #if the /mount/usbx isn't there create it
-            res = os.system("mkdir /media/usb"+chr(ord("0")+k))
-          b = "mount /dev/" + e.group() + " /media/usb" + chr(ord('0')+k)+ " -o noatime,nodev,nosuid,sync,iocharset=utf8"
+          k=0;
+          while (k <10) and (f[k] != -1):
+            k += 1
+          a = ord('0')+k
+          if DEBUG: print("end of loop were going to use location "+str(j)+" and ord "+chr(a))
+# Now e know we need to do a mount and have found the lowest mount point to use in (a)
+          if not (os.path.exists("/media/usb"+chr(a))):  #if the /mount/usbx isn't there create it
+            res = os.system("mkdir /media/usb"+chr(a))
+            if DEBUG: print("created new direcotry %s","/media/usb"+chr(a))
+          b = "mount /dev/" + e.group() + " /media/usb" + chr(a)+ " -o noatime,nodev,nosuid,sync,iocharset=utf8"
           res = os.system(b)
           if DEBUG: print("completed mount /dev/",e.group)
-          mnt[k]=i
-          k += 1
-          j += 1
-        else:
-          if ('usb' in d[i]):
-            a = d[i].partition("usb")
+          mnt[j]=ord(e.group()[len(e.group())-2])
+          loc[j]=a
+          total += 1
+        else:                                               #True if we are mounted, check for usb(?).
+          if ('usb' in d[i]):                               #we need to register a mount or make sure it is
+            a = d[i].partition('usb')
             if (a[2] != "") and (a[2].isalnum()):
-              l = ord(a[2])-ord("0")
-              mnt[l]=i
-              j+=1
-              if DEBUG: print("/dev/sdx1 is already mounted as usb",chr(l+ord('0')))
+              l = ord(a[2])
+              k = 0
+              j = 10
+              while k<10:                                    #check through the current registered mounts
+                if loc[k] == -1 and k < j:
+                  j = k
+                if loc[k] == l:
+                  break
+                else:
+                  k += 1
+# We know know if we found usb? in the table if k < 10
+              if k == 10 and j < 10:                          #mount was not in table to so add it
+                loc[j] = l                                  #set loc to usb(l) at j sice we didn't find it
+                mnt[j] = ord(e.group()[len(e.group())-2])   #set mnt to sd(?)1 finish the mount registration
+                if DEBUG: print("/dev/"+e.group()+" is already mounted as usb"+chr(l)+"but we added it to the table")
+              else:
+                if DEBUG: print("/dev/"+e.group()+" was mounted and in the table at ",k)
             else:
               if DEBUG: print("Error parsing usb# in line", i)
-              j+= 1
           else:
               if DEBUG: print("/dev/sdx1 is already mounted but not as usb", d[i])
-              j+= 1
       c = c[2].partition("\n")
       i += 1
 # now that we have looked at all lines in the current lsblk we need to count up the mounts
@@ -136,27 +169,30 @@ def mountCheck():
     i = 0
     while (i < 10):            # we will check a maximum of 10 mounts
       if DEBUG: print("loop 4, iterate:",i)
-      if (mnt[i] != -1):
+      if (mnt[i] != -1):      # if mounted we move on
+        if DEBUG: print("Found a mount",i)
         i +=1
         j +=1
       else:                   # we have a hole or are done but need to validate
         k = i+1
-        while (k < 10) and (mnt[i] == -1):  #checking next mount to see if it is valid
+        while (k < 11) and (mnt[i] == -1):  #checking next mount to see if it is valid
           if DEBUG: print("loop 5, iterate:",k,i)
           if (mnt[k] != -1):
             mnt[i] = mnt[k]   # move the mount into this hole and clear the other point
-            j += 1
+            loc[i] = loc[k]   # move the location into this hole as well.
             mnt[k] = -1
+            loc[k] = -1
+            j += 1
             i += 1
             k += 1
             if DEBUG: print("had to move mount to new location",k," from ",i)
           else:     # we have no mount here
+            i += 1
             k += 1
-        if (k == 10):           # if we have look at all mounts then were done otherwise we will check again
-          i=10
     total = j+1
     if DEBUG: print("total of devices mounted is", total)
-    if DEBUG: print("located", mnt)
+    if DEBUG: print("located sdX1 of", mnt)
+    if DEBUG: print("located ustX of", loc)
     return()
 
 
@@ -168,7 +204,7 @@ def do_resize2fs(rpi_platform):
     out = out.decode('utf-8') 
     m = p.search(out)
     FS = m.group()
-    
+
     # we have the FS string, so build the command and run it
     if rpi_platform == True:
       FS = "/dev/mmcblk0p2"
@@ -180,8 +216,9 @@ def do_resize2fs(rpi_platform):
         f = open(progress_file, "w")
         f.write("resize2fs_done")
         f.close()
+        os.sync()
         os.system('reboot')
-        
+
 
 def do_fdisk(rpi_platform):
 
@@ -274,6 +311,7 @@ def do_fdisk(rpi_platform):
     f = open(progress_file, "w")
     f.write("fdisk_done")
     f.close()
+    os.sync()
     os.system('reboot')
 
 
@@ -306,6 +344,7 @@ if __name__ == "__main__":
 
     while True:
         loop_time = 3
-        mountCheck()
+        if not os.path.exists("/usr/local/connectbox/PauseMount"):
+          mountCheck()
         time.sleep(loop_time)
 
