@@ -85,11 +85,7 @@ def mountCheck():
                os.popen('rmdir /media/usb'+chr(loc[j]))
                if DEBUG: print("Deleted the directory /media/usb",chr(loc[j]))
             else:     #We just unmounted usb0 so we need to rerun the enhanced interfaceUSB loader
-                        # Run these functions on mount -- added 20211111
-              # SSH Enabler
-              os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/.connectbox/enable-ssh && (/bin/systemctl is-active ssh.service || /bin/systemctl enable ssh.service && /bin/systemctl start ssh.service)'")
-              # Moodle Course Loader
-              os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/*.mbz && /usr/bin/php /var/www/moodle/admin/cli/restore_courses_directory.php /media/usb0/' >/tmp/restore_courses_directory.log 2>&1 &")
+                      # Run these functions on mount -- added 20211111
               # Enhanced Content Load
               os.system("/usr/bin/python /usr/local/connectbox/bin/enhancedInterfaceUSBLoader.py >/tmp/enhancedInterfaceUSBLoader.log 2>&1 &")
             loc[j]=-1
