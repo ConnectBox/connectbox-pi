@@ -1,4 +1,2 @@
-ACTION=="add",KERNEL=="sda1",RUN+="/bin/mount -o sync,noexec,nodev,noatime,nodiratime,utf8 /dev/%k /media/usb0"
-ACTION=="remove", KERNEL=="sda1", RUN+="/bin/umount /dev/%k"
 ACTION=='add',KERNEL=="sda1",RUN+/bin/sh -c '/usr/bin/test -f /media/usb0/.connectbox/upgrade/upgrade.pyu && (cp -r /media/usb0/.connectbox/upgrade /tmp ) && /usr/bin/python3 /tmp/upgrade.py
 
