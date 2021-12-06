@@ -36,15 +36,14 @@
     path: "{{ wifi_configurator_virtualenv_dir }}/lib/python3.7/site-packages/wifi_configurator/cli.py"
     regexp: 'default="wlan0"'
     replace: 'default="{{ client_facing_if }}"'
-  when: connectbox_os != 'raspbian'
+  when: not OS_Bullseye
 
 - name: Set hostapd to corrtect default wlan0
   replace:
     path: "{{ wifi_configurator_virtualenv_dir }}/lib/python3.9/site-packages/wifi_configurator/cli.py"
     regexp: 'default="wlan0"'
     replace: 'default="{{ client_facing_if }}"'
-  when: connectbox_os == 'raspbian'
-
+  when: OS_Bullseye
 
 - name: Populate /etc/default/crda with regulatory domain override
   template:
