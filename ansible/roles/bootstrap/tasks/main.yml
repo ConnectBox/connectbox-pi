@@ -80,22 +80,24 @@
   register: OS_Release
 
 - name: Look for Bullseye
-  command: OS_Release.stdout.find("bullseye")
   register: OS_Bullseye
   debug:
     msg: "Testing what version were running, is it 'Bullseye'? "
+  when: OS_Release.stdout.find("bullseye")
 
 - name: Check the OS_Release for OS_Bullseye
   debug:
     msg: "Found were running Bullseye"
   register: OS_Bullseye
   when: OS_Bullseye
+  ignore_errors:
 
 - name: Check that OS_Release is not OS_Bullseye
   debug:
     msg: "Found we are NOT running Bullseye"
   when: not OS_Bullseye
-
+  ignore_errors:
+    
 - debug:
     msg: "Ansible Group Variables Family {{ ansible_os_family|lower }}"
 
