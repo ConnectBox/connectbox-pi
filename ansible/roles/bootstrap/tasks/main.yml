@@ -80,7 +80,7 @@
   register: OS_Release
 
 - name: Look for Bullseye
-  ansible.builtin.shell: OS_Release.stdout.find("bullseye")
+  command: OS_Release.stdout.find("bullseye")
   register: OS_Bullseye
   debug:
     msg: "Testing what version were running, is it 'Bullseye'? "
