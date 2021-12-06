@@ -67,12 +67,6 @@
   command: lsb_release -a
   register: OS_Release
 
-- name: Look for Bullseye
-  register: OS_Bullseye
-  debug:
-    msg: "Found were running Bullseye"
-  when: OS_Release.stdout.find("bullseye") != -1
-
 
 # Check early on to see if the style of interface names need to be changed
 #  (only applicable to Ubuntu, and not when we're running virtualised)
@@ -85,11 +79,22 @@
   command: lsb_release -a
   register: OS_Release
 
+- name: Look for Bullseye
+  register: OS_Bullseye
+  debug:
+    msg: "Found were running Bullseye"
+  when: OS_Release.stdout.find("bullseye") != -1
+
 - name: Check the OS_Release for OS_Bullseye
   debug:
     msg: "Found were running Bullseye"
   register: OS_Bullseye
   when: OS_Release.stdout.find("bullseye") != -1
+
+- name: Check that OS_Release is not OS_Bullseye
+  debug:
+    msg: "Found we are NOT running Bullseye"
+  when: not OS_BUllseye
 
 - debug:
     msg: "Ansible Group Variables Family {{ ansible_os_family|lower }}"
