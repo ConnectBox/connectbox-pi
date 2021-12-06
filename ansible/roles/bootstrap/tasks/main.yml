@@ -89,14 +89,12 @@
   debug:
     msg: "Found were running Bullseye"
   register: OS_Bullseye
-  when: OS_Bullseye
-  ignore_errors:
+  when: OS_Release.stdout.find("bullseye")
 
 - name: Check that OS_Release is not OS_Bullseye
   debug:
     msg: "Found we are NOT running Bullseye"
-  when: not OS_Bullseye
-  ignore_errors:
+  when: not OS_Release.stdout.find("bullseye")
     
 - debug:
     msg: "Ansible Group Variables Family {{ ansible_os_family|lower }}"

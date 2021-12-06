@@ -36,15 +36,15 @@
     path: "{{ wifi_configurator_virtualenv_dir }}/lib/python3.7/site-packages/wifi_configurator/cli.py"
     regexp: 'default="wlan0"'
     replace: 'default="{{ client_facing_if }}"'
-  when: not OS_Bullseye
+  when: not OS_Release.stdout.find("bullseye")
 
 - name: Set hostapd to corrtect default wlan0
   replace:
     path: "{{ wifi_configurator_virtualenv_dir }}/lib/python3.9/site-packages/wifi_configurator/cli.py"
     regexp: 'default="wlan0"'
     replace: 'default="{{ client_facing_if }}"'
-  when: OS_Bullseye
-
+  when: OS_Release.stdout.find("bullseye")
+  
 - name: Populate /etc/default/crda with regulatory domain override
   template:
     src: etc_default_crda.j2
