@@ -82,6 +82,8 @@
 - name: Check the OS_Release for OS Codename
   set_fact:
       OS_Version: "{{ OS_Release.stdout.partition('Codename:')[2].strip() }}"
+
+- name: Display the Codename
   debug:
     msg: "The version your running is {{ OS_Version }} for Codename:" 
 
