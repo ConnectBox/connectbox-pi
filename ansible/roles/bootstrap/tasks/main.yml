@@ -98,7 +98,7 @@
   debug:
     msg: "Found we are NOT running Bustert"
     msg: OS_Release.stdout.find("buster")
-  register OS_Buster
+  register: OS_Buster
   when: OS_Release.stdout.find("buster")
     
 - debug:
