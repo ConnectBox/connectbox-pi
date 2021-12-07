@@ -80,7 +80,7 @@
   register: OS_Release
 
 - name: Check the OS_Release for OS Codename
-  vars:
+  set_fact:
       OS_Version: "{{ OS_Release.stdout.partition('Codename:')[2].strip() }}"
   debug:
     msg: "The version your running is {{ OS_Version }} for Codename:" 
