@@ -1,6 +1,6 @@
 ---
 - include_tasks: bullseye-debian.yml
-  when: OS_Bullseye
+  when: OS_Version == 'bullseye'
 
 - include_tasks: rules.yml
 

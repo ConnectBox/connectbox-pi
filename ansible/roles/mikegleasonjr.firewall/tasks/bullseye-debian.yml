@@ -3,11 +3,11 @@
   apt:
     name: iptables
     state: present
-  when: OS_Bullseye 
+  when: OS_Version == 'bullseye' 
 
 - name: Set Legacy Mode
   command: update-alternatives --set iptables /usr/sbin/iptables-legacy
   command: update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
-  when: OS_Bullseye
+  when: OS_Version == 'bullseye' 
 
   
