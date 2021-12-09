@@ -1,7 +1,7 @@
 import base64,logging,subprocess
 from flask import request,abort,jsonify,make_response
 
-valid_properties = ["ssid", "brand", "client-ssid", "client-wifipassword", "channel", "hostname", "staticsite", "password",
+valid_properties = ["ssid", "brand", "wipe", "client-ssid", "client-wifipassword", "channel", "hostname", "staticsite", "password",
                     "system", "ui-config", "wpa-passphrase", "openwell-download", "moodle_download"]
 
 valid_brand_properties = ["Screen_Enable", "g_device", "server_url", "server_authorization", "server_sitename", 
