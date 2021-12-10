@@ -146,12 +146,12 @@
 
 - name: Install RPi.GPIO for Buster build
   command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.0"
-  when: connectbox_os == "raspbian" and not OS_Bullseye
+  when: OS_Version  == 'buster' and connectbox_os == 'raspbian'
 
 - name: Install RPi.GPIO for Bullseye build
   command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.1a4"
-  when: connectbox_os == "raspbian"  and OS_Bullseye
-
+  when: OS_Version == 'bullseye' and connectbox_os == 'raspbian'
+  
 # new RPi_GPIO handles the pull down service for these pins where it did not in focal
 # The command must include the path to the virtual environment version of python3 or the resulting
 #  library will be installed in usr/local/lib/python3.8/dist-packages rather than the desired

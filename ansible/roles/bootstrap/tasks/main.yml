@@ -75,27 +75,18 @@
 #  reboot oracle too, but if the reboot oracle check is before this check
 #  we'll need to reboot a second time (after creating the symlink)
 
-- name: Check for release of OS_Release
+- name: Check for release of OS_Release Codename
   command: lsb_release -a
   register: OS_Release
 
-- name: Look for Bullseye
-  register: OS_Bullseye
-  debug:
-    msg: "Testing what version were running, is it 'Bullseye'? "
-  when: OS_Release.stdout.find("bullseye")
+- name: Check the OS_Release for OS Codename
+  set_fact:
+      OS_Version: "{{ OS_Release.stdout.partition('Codename:')[2].strip() }}"
 
-- name: Check the OS_Release for OS_Bullseye
+- name: Display the Codename
   debug:
-    msg: "Found were running Bullseye"
-  register: OS_Bullseye
-  when: OS_Release.stdout.find("bullseye")
+    msg: "The version your running is {{ OS_Version }} for Codename:" 
 
-- name: Check that OS_Release is not OS_Bullseye
-  debug:
-    msg: "Found we are NOT running Bullseye"
-  when: not OS_Release.stdout.find("bullseye")
-    
 - debug:
     msg: "Ansible Group Variables Family {{ ansible_os_family|lower }}"
 
