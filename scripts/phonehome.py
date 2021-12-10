@@ -39,10 +39,10 @@ if len(brand["server_authorization"]) < 8:
   with open('/usr/local/connectbox/brand.txt', 'w', encoding='utf-8') as f:
     json.dump(brand, f, ensure_ascii=False, indent=4)
   print ("Saved authorization to brand.txt")
-token = "Bearer " + brand["server_authorization"]
+token = "Bearer " + boxId + "|" + brand["server_authorization"]
 print ("token: " + token)
 
-headers = {"X-BoxId": boxId, "Authorization": token}
+headers = {"Authorization": token}
 
 
 def processSettings(settings):
