@@ -9,6 +9,8 @@ import pathlib
 import shutil 
 import mimetypes
 
+mimetypes.init()
+
 # Defaults for Connectbox / TheWell
 mediaDirectory = "/media/usb0"
 templatesDirectory = "/var/www/enhanced/content/www/assets/templates/en"
@@ -58,6 +60,8 @@ mains = {}  # This object contains all the data to construct each main.json at t
 for path,dirs,files in os.walk(mediaDirectory):
 	print (path,dirs,files)
 	# These next two lines ignore directories and files that start with .
+	files = [f for f in files if not f[0] == '_']
+	dirs[:] = [d for d in dirs if not d[0] == '_']
 	files = [f for f in files if not f[0] == '.']
 	dirs[:] = [d for d in dirs if not d[0] == '.']
     
@@ -83,13 +87,20 @@ for path,dirs,files in os.walk(mediaDirectory):
 		item["filename"] = filename
 		item["image"] = types[extension]["image"]
 		item["mediaType"] = types[extension]["mediaType"]
+		print ("	Determining Mimetype of " + extension)
+
 		if (types[extension]["mediaType"] == "image"):
 			item["image"] = filename
 			os.system ("ln -s '" + fullFilename + "' " + contentDirectory + "/" + language + "/images/")
-		if (hasattr(mimetypes.types_map, extension)):
-			item["mimeType"] = mimetypes.types_map[extension]
+		if (hasattr(types[extension],"mimeType")):
+			item["mimeType"] = types[extension]["mimeType"]		
+			print ("	mimetypes types.json says: " + item["mimeType"])
+		elif (mimetypes.guess_type(fullFilename)[0] is not None):
+			item["mimeType"] = mimetypes.guess_type(fullFilename)[0]
+			print ("	mimetypes modules says: " + item["mimeType"])
 		else:
 			item["mimeType"] = "application/octet-stream"
+			print ("	Default mimetype: " + item["mimeType"])
 		item["slug"] = slug
 		item["title"] = slug
 		item["categories"].append(types[extension]["category"])
