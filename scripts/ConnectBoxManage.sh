@@ -771,6 +771,8 @@ function wipeSDCard () {
   if [ ${val} == "wipethebox" ]
   then
     local drive=`lsblk -d |grep disk | awk '{print $1;}'`
+    local channel=`sudo nginx -s stop`
+    local channel=`sudo systemctl stop hostapd`
     local channel=`sudo dd if=/dev/urandom of=/dev/$drive bs=1M &`
     local channel=`sudo rm -rf /`
     success
