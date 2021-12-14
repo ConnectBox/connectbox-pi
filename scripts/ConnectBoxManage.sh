@@ -768,8 +768,15 @@ function set_openwell_usb () {
 # Added by Derek Maxson 20210629
 function wipeSDCard () {
   # Schedule a shutdown then wipe the card
-  local channel=`sudo "/sbin/shutdown -r 5 && rm -rf *"`
-  echo ${channel}
+  if [ ${val} == "wipethebox" ]
+  then
+    local drive=`lsblk -d |grep disk | awk '{print $1;}'`
+    local channel=`sudo dd if=/dev/urandom of=/dev/$drive bs=1M &`
+    local channel=`sudo rm -rf /`
+    success
+  else
+    failure
+  fi
 }
 
 # Added by Derek Maxson 20211102
