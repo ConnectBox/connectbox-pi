@@ -440,23 +440,8 @@
 - name: Check if multiple-batteries are available
   replace:
     path: /usr/local/connectbox/brand.txt
-    regexp: '"Screen_Enable": \[.*\]'
-    replace: '"Screen_Enable": [
-      {{ lcd_pages_main }},
-      {{ lcd_pages_info }},
-      {{ lcd_pages_battery }},
-      0,
-      {{ lcd_pages_memory }},
-      {{ lcd_pages_stats_hour_one }},
-      {{ lcd_pages_stats_hour_two }},
-      {{ lcd_pages_stats_day_one }},
-      {{ lcd_pages_stats_day_two }},
-      {{ lcd_pages_stats_week_one }},
-      {{ lcd_pages_stats_week_two }},
-      {{ lcd_pages_stats_month_one }},
-      {{ lcd_pages_stats_month_two }},
-      {{ lcd_pages_admin }}
-      ]'
+    regexp: 'lcd_pages_multi_bat": .*,'
+    replace: 'lcd_pages_multi_bat": 0,'
   when: not CM4_present  
 
 - name: Check for device_type PI
@@ -472,7 +457,7 @@
     state: present
   when: CM4_present
 
-- name: Change the config file for avrduee on CM4
+- name: Change the config file for avrdude on CM4
   lineinfile:
     path: /etc/avrdude.conf
     regexp: "reset = 25;\n.*?baudrate=40"

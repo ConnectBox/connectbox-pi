@@ -12,7 +12,7 @@ usbNoMount: 0
 lcd_pages_main: 1
 lcd_pages_info: 1
 lcd_pages_battery: 1
-lcd_pages_multi_bat: 1
+lcd_pages_multi_bat: 0
 lcd_pages_memory: 1
 lcd_pages_stats_hour_one: 1
 lcd_pages_stats_hour_two: 1
@@ -25,7 +25,7 @@ lcd_pages_stats_month_two: 1
 lcd_pages_admin: 1
 
 lcd_g_device: g_serial
-otg_enable: 1
+otg_enable: 0
 
 
 server_url: ""
