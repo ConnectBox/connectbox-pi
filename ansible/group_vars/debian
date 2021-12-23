@@ -1,0 +1,5 @@
+---
+connectbox_os: debian
+apty_services:
+  - unattended-upgrades
+  - apt-daily
