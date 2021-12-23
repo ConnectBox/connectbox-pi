@@ -129,6 +129,7 @@
     line: "Compute Module"
   check_mode: yes
   register: CM4_present
+  when: "NanoPi" not in {{ machiine_type['stdout_lines'] }}
 
 - name: Install boot for CM4 on i2c and usbhost
   copy:
