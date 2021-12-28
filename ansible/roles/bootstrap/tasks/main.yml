@@ -177,7 +177,7 @@
 
 - name: apt upgrade before kernel downloads
   apt:
-    upgrade: dist
+    upgrade: full
   register: dist_upgraded
 
 - name: Setup reboot if Upgrade actually occured
