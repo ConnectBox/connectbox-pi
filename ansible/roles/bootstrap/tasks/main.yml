@@ -166,7 +166,7 @@
     state: stopped
     enabled: no
   with_items: "{{ apty_services }}"
-  when connectbox_os == 'armbian'
+  when: connectbox_os == 'armbian'
 
 # We are putting the update early in the build so that we reduce the number of reboots.  This update will
 # bring the kernal up to date.  We will need this when we compile the network drivers later.
