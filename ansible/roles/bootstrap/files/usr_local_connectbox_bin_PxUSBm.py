@@ -339,6 +339,8 @@ if __name__ == "__main__":
     f.close()
     if 'CM' in brand:
         rpi_platform = True
+    if "PI" in brand:
+        rpi_platform = True
 
     # Sort out how far we are in the partition expansion process
     file_exists = os.path.exists(progress_file)
