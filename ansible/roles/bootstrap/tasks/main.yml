@@ -130,8 +130,6 @@
     state: present
   check_mode: yes
   register: CM4_present
-  failed_when: (CM4_present is changed) or (CM4_present is failed)
-
 
 - name: Install boot for CM4 on i2c and usbhost
   copy:
