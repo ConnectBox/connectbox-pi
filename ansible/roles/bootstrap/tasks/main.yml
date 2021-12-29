@@ -125,16 +125,19 @@
 
 - name: Check for CM4 modules
   lineinfile:
-    dest: /proc/cpuinfo
+    path: /proc/cpuinfo
     line: "Compute Module"
+    state: present
   check_mode: yes
   register: CM4_present
-  when: connectbox_os == "raspbian"
+  failed_when: (CM4_present is changed) or (CM4_present is failed)
+
 
 - name: Install boot for CM4 on i2c and usbhost
   copy:
     src: config.txt 
     dest: /boot/config.txt
+  msg: "the value of CM4_present is: {{ CM4_present }}"  
   when: CM4_present
 
 - name: Install i2c modules
@@ -436,7 +439,7 @@
     path: /usr/local/connectbox/brand.txt
     regexp: '"Device_type": .*,'
     replace: '"Device_type": "CM",'
-  when: CM4_present
+  when: CM4_present and connectbox_os =='raspbian'
 
 
 - name: Check if multiple-batteries are available
@@ -444,7 +447,7 @@
     path: /usr/local/connectbox/brand.txt
     regexp: 'lcd_pages_multi_bat": .*,'
     replace: 'lcd_pages_multi_bat": 0,'
-  when: not CM4_present  
+  when: not CM4_present or connectbox_os != 'raspbian' 
 
 - name: Check for device_type PI
   replace:
