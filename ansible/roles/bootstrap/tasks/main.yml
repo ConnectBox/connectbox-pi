@@ -126,6 +126,7 @@
 - name: Check for CM4 modules
   lineinfile:
     path: /proc/cpuinfo
+    regexp: "Compute Module"
     line: "Compute Module"
     state: present
   check_mode: yes
@@ -135,7 +136,7 @@
   copy:
     src: config.txt 
     dest: /boot/config.txt
-  msg: "the value of CM4_present is: {{ CM4_present }}"  
+    msg: "CM4 copy occured"
   when: CM4_present
 
 - name: Install i2c modules
