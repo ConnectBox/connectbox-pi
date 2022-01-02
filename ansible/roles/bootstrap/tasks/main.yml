@@ -126,18 +126,19 @@
 - name: Check for CM4 modules
   lineinfile:
     path: /proc/cpuinfo
-    regexp: "Compute Module"
     line: "Compute Module"
     state: present
   check_mode: yes
   register: CM4_present
 
+- debug:
+    msg: "CM4 was found ' {{ CM4_present }} '"
+
 - name: Install boot for CM4 on i2c and usbhost
   copy:
     src: config.txt 
     dest: /boot/config.txt
-    msg: "CM4 copy occured"
-  when: CM4_present
+  when: CM4_present.stdout == 0
 
 - name: Install i2c modules
   copy:
@@ -279,7 +280,7 @@
   apt:
     name: usbutils
     state: present
-  when: CM4_present
+  when: CM4_present.stdout == 0
 
 # mikegleasonjr.firewall assumes iptables but Armbian doesn't ship with it
 - name: Install iptables
@@ -438,7 +439,7 @@
     path: /usr/local/connectbox/brand.txt
     regexp: '"Device_type": .*,'
     replace: '"Device_type": "CM",'
-  when: CM4_present and connectbox_os =='raspbian'
+  when: CM4_present.stdout == 0 and connectbox_os =='raspbian'
 
 
 - name: Check if multiple-batteries are available
@@ -446,20 +447,19 @@
     path: /usr/local/connectbox/brand.txt
     regexp: 'lcd_pages_multi_bat": .*,'
     replace: 'lcd_pages_multi_bat": 0,'
-  when: not CM4_present or connectbox_os != 'raspbian' 
+  when: not CM4_present.stdout == 0 or connectbox_os != 'raspbian' 
 
 - name: Check for device_type PI
   replace:
     path: /usr/local/connectbox/brand.txt
     regexp: '"Device_type": .*,'
     replace: '"Device_type": "PI",'
-  when: connectbox_os == "raspbian" and not CM4_present
-
+  when: connectbox_os == "raspbian" and CM4_present != 0
 - name: for CM4 install avrdude
   apt:
     name: avrdude
     state: present
-  when: CM4_present
+  when: CM4_present.stdout == 0
 
 - name: Change the config file for avrdude on CM4
   lineinfile:
@@ -467,7 +467,7 @@
     regexp: "reset = 25;\n.*?baudrate=40"
     line: 'reset = 22;\n  baudrate=20'
     state: present
-  when: CM4_present
+  when: CM4_present.stdout == 0
 
         
 - name: Cause phonehome.py to execute every 10 minutes via cron IF not a Moodle box  (We have different process for Moodle)
