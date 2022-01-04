@@ -106,7 +106,32 @@
     msg: "ansible_kernel {{ ansible_kernel }}"
 
 - debug:
-    msg: "ansible_interfaces {{ ansible_interfaces }}"
+    msg: "ansible_facts['os_family']: {{ ansible_facts['os_family'] }} "
+
+- debug:
+    msg: "Operating System is: {{  ansible_facts['os_family'] }}"
+
+- debug:
+    msg: "ansible_interfaces {{ ansible_interfaces }} "
+
+- debug:
+    msg: "machine_type['stdout_lines']: {{ machine_type['stdout_lines'] }} "
+
+- name: Try setting up a find on text and regex on text
+  set_fact:
+    CM4_present: '{{ happy2 }}'
+    Pi_present:  '{{ happy3 }}'  
+  vars:
+    happy0: "stdout_lines"
+    happy1: '{{  machine_type[happy0] }}|first'
+    happy2: '{{ happy1.find("Compute Module 4") > 0 }}'
+    happy3: '{{ happy1.find("Pi") > 0 and not happy2 }}'
+
+- debug:
+    msg: "search fro CM4 present : {{ CM4_present  }} "
+
+- debug:
+    msg: "search for Pi present : {{ Pi_present }}"
 
 - name: setup use of old-style interface names for predictability across devices
   file:
@@ -122,36 +147,24 @@
   when: old_style_names.changed
   tags: skip_ansible_lint
 
-
-- name: Check for CM4 modules
-  lineinfile:
-    path: /proc/cpuinfo
-    regexp: "Compute Module"
-    line: "Compute Module"
-    state: present
-  check_mode: yes
-  register: CM4_present
-
 - name: Install boot for CM4 on i2c and usbhost
   copy:
     src: config.txt 
     dest: /boot/config.txt
-    msg: "CM4 copy occured"
   when: CM4_present
 
 - name: Install i2c modules
   copy:
     src: modules
     dest: /etc/modules
-  when: connectbox_os == "raspbian"
+  when: ansible_facts['os_family'] == 'Debian'
 
 
 # Check early on to see whether the OS needs to be
 # rebooted to allow a disk expansion step to complete.
 # This is Armbian only, but the check doesn't hurt others.
-- name: Check for resize2fs reboot oracle
-  stat:
-    path: "/var/run/resize2fs-reboot"
+- stat:
+    path: /var/run/resize2fs-reboot
   register: resize2fs_reboot
 
 # If the oracle above exists then we shouldn't continue
@@ -162,30 +175,36 @@
 
 # Disable automated apt-y things before attempting to install packages
 # unattended-upgrades and apt.systemd.daily only run on Ubuntu
-- name: Stop automated apty services
+- name: Stop automated apt services
   service:
-    name: "{{ item }}"
+    name: '{{ item }}' 
     state: stopped
     enabled: no
-  with_items: "{{ apty_services }}"
-  when: connectbox_os == 'armbian'
+  with_items: '{{ apt_services }}'
+  when: ansible_facts['os_family'] == 'Ubuntu'
 
 # We are putting the update early in the build so that we reduce the number of reboots.  This update will
 # bring the kernal up to date.  We will need this when we compile the network drivers later.
 
-- name: apt update before kernal dowloads
-  apt:
-    update_cache: yes 
-
 - name: apt upgrade before kernel downloads
-  apt:
-    upgrade: full
+  command: apt update -y
+
+- name: apt update full package
+  command:  apt full-upgrade -y
   register: dist_upgraded
+
+- name: Check the changes to see if we need to reboot
+  set_fact:
+    rbtreq: dist_upgraded.stdout | regex_search('0 upgraded, 0 newly installed, 0 to remove and 0') == -1
+
+- name: Auto clean the packages
+  apt:
+    autoclean: yes
 
 - name: Setup reboot if Upgrade actually occured
   set_fact:
     reboot_required: True
-  when: not "0 upgraded, 0 newly installed, 0 to remove and 0" in dist_upgraded.stdout
+  when: rbtreq
 
 # Needs to happen before the initial reboot, given the job triggers actions
 #  on @reboot
@@ -193,7 +212,8 @@
   file:
     path: /etc/cron.d/armbian-updates
     state: absent
-  when: connectbox_os == "armbian"
+  when: ansible_facts['os_family'] == 'Ubuntu'
+
 
 - name: Disable systemd-resolve to remove port conflicts
   command: systemctl disable systemd-resolved
@@ -203,14 +223,14 @@
     path: /boot/armbianEnv.txt
     regexp: 'overlays=i2c0 usbhost0 '
     replace: 'overlays='
-  when: connectbox_os != "raspbian" and not aws_instance
+  when: ansible_facts['os_family'] == 'Ubuntu' and not aws_instance
 
 - name: Add i2c0 to /boot/armbianEnv.txt
   replace:
     path: /boot/armbianEnv.txt
     regexp: '(overlays=)'
-    replace: '\1i2c0 usbhost0 '
-  when: connectbox_os != "raspbian" and not aws_instance
+    replace: 'i2c0 usbhost0 '
+  when: ansible_facts['os_family'] == 'Ubuntu' and not aws_instance
 
 # The system takes 5-10 seconds to disappear from the network
 #  so let's wait 15 seconds before doing our first check
@@ -225,14 +245,14 @@
 
 - name : Increase size of /tmp to handle upcoming installs
   command: mount -o remount, size=400M /tmp/
-  when: connectbox_os != "raspbian" and not aws_instance
+  when: ansible_facts['os_family'] == 'Ubuntu' and not aws_instance
 
 - name: Get current rfkill state for interface 0 (wireless LAN) on Raspbian
   command: cat /sys/class/rfkill/rfkill0/soft
   register: rfkill0_state
   ignore_errors: yes
   changed_when: False
-  when: connectbox_os != "raspbian" and not aws_instance
+  when: ansible_facts['os_family'] == 'Ubuntu' and not aws_instance
 
 # Raspbian-lite buster and onwards rfkill wlan0 by default, which causes
 #  problems when we try to start wlan0 (at hostapd reload)
@@ -240,14 +260,15 @@
 - name: Unblock rfkill'ed interface 0 (wireless LAN) on Raspbian
   command: /usr/sbin/rfkill unblock 0
   ignore_errors: yes
-  when: "connectbox_os == 'raspbian'"
+  when: ansible_facts['os_family'] == 'Debian'
 
 - name: Get current rfkill state for interface 1 (wireless LAN) on Raspbian
   command: cat /sys/class/rfkill/rfkill1/soft
   register: rfkill1_state
   ignore_errors: yes
   changed_when: False
-  when: connectbox_os == "raspbian"
+  when: ansible_facts['os_family'] == 'Debian'
+
 
 # Raspbian-lite buster and onwards rfkill wlan1 by default, which causes
 #  problems when we try to start wlan1 (at hostapd reload)
@@ -255,16 +276,16 @@
 - name: Unblock rfkill'ed interface 1 (wireless LAN) on Raspbian
   command: /usr/sbin/rfkill unblock 1
   ignore_errors: yes
-  when: "connectbox_os == 'raspbian'"
+  when: ansible_facts['os_family'] == 'Debian'
 
 - name: Set default locale
   lineinfile:
-    path=/etc/default/locale
-    state=present
-    line="LC_ALL=en_US.UTF-8"
-  when: connectbox_os == "armbian"
+    path: /etc/default/locale
+    line: LC_ALL=en_US.UTF-8
+    state: present
+  when: ansible_facts['os_family'] == 'Ubuntu'
 
-# Needed for package upgrades via ansible (aptitude safe-upgrade)
+#  Needed for package upgrades via ansible (aptitude safe-upgrade)
 - name: Install apt
   apt:
     name: apt
@@ -279,14 +300,15 @@
   apt:
     name: usbutils
     state: present
-  when: CM4_present
+  when: ansible_facts['os_family'] == 'Debian'
 
 # mikegleasonjr.firewall assumes iptables but Armbian doesn't ship with it
 - name: Install iptables
   apt:
     name: iptables
     state: present
-  when: connectbox_os == "armbian"
+  when: ansible_facts['os_family'] == 'Ubuntu'
+
 
 # Only repopulate daily so we don't slow runs down unnecessarily
 - name: Populate apt cache
@@ -298,7 +320,7 @@
 #  kernel, dtb and uboot packages from being installed (lest they
 #  overwrite our changes)
 # This task will bomb if we're running on a sunxi device and using
-#  something other than the "next" branch or using something other
+#  something other than the next branch or using something other
 #  than stretch
 # We use aptitude instead of apt-hold because aptitude's first run clears
 #  the package holds which causes us to upgrade these packages.
@@ -306,9 +328,10 @@
 #  already on hold, so it's not possible to show whether this task
 #  changed anything (and it's not worth lead-up tasks to work out
 #  whether this task would do anything i.e. using aptitude search ~ahold
+
 - name: Pin kernel and dtb packages
-  command: "aptitude -q hold linux-dtb-current-sunxi linux-image-current-sunxi linux-u-boot-nanopineo-current linux-focal-root-current-nanopineo"
-  when: connectbox_os == "armbian" and "sunxi" in ansible_kernel
+  command: aptitude -q hold linux-dtb-current-sunxi linux-image-current-sunxi linux-u-boot-nanopineo-current linux-focal-root-current-nanopineo
+  when: ansible_facts['os_family'] == 'Ubuntu'
 
 # If we ever allow updates of the linux-...-root device package, this will
 #  need to move into a service or some other method (noting the package
@@ -321,14 +344,14 @@
     path: /etc/default/cpufrequtils
     regexp: '^GOVERNOR='
     line: 'GOVERNOR=conservative'
-  when: connectbox_os == "armbian"
+  when: ansible_facts['os_family'] == 'Ubuntu'
 
 # Needed by Debian Stretch
 - name: Install openresolv
   apt:
     name: openresolv
     state: present
-  when: ansible_lsb["id"] == "Debian"
+  when: ansible_facts['os_family'] == 'Debian'
 
 # acl needed for good install of Postgres as per Leo-Nils 20211011
 - name: Install acl
@@ -337,7 +360,7 @@
     state: present
 
 - name: Set /usr/bin/python to python3 so everything runs happy
-  shell: "rm -f /usr/bin/python && sleep 2 && ln -s /usr/bin/python3 /usr/bin/python"
+  ansible.builtin.shell: rm -f /usr/bin/python && sleep 2 && ln -s /usr/bin/python3 /usr/bin/python
   
 # Needed in several subsequent roles
 - name: Install packages for python virtualenv
@@ -359,13 +382,16 @@
     dest: /usr/lib/armbian-resize-filesystem
     remote_src: yes
     mode: preserve
-  when: connectbox_os == "armbian"
+  when: ansible_facts['os_family'] == 'Ubuntu'
+
 
 # See if we need to create a wlan0 interface when we're running in a sim
 #  environment i.e. running virtualised
+
 - name: Create a wlan0 interface
   command: /sbin/ip link add wlan0 type dummy
-  when: "'wlan0' not in ansible_interfaces and ansible_virtualization_type != 'NA'"
+  when: (ansible_interfaces | regex_search('wlan0') ==-1) and (ansible_virtualization_type != 'NA')
+
 
 # The log files in /var/log/connectbox and /var/log/nginx are required for the
 #  nginx service to run. Unfortunately, some un-identified start up code is deleting
@@ -381,7 +407,6 @@
   copy: 
     src: usr_local_connectbox_bin_CreateLogFiles.sh
     dest: /usr/local/connectbox/bin/CreateLogFiles.sh
-  when: (connectbox_os == "armbian") or (connectbox_os == "raspbian")
 
 
 # Moved from 
@@ -438,22 +463,23 @@
     path: /usr/local/connectbox/brand.txt
     regexp: '"Device_type": .*,'
     replace: '"Device_type": "CM",'
-  when: CM4_present and connectbox_os =='raspbian'
+  when: CM4_present and ansible_facts['os_family'] == 'Debian'
 
 
-- name: Check if multiple-batteries are available
+- name: Check if multiple-batteries are not available
   replace:
     path: /usr/local/connectbox/brand.txt
     regexp: 'lcd_pages_multi_bat": .*,'
     replace: 'lcd_pages_multi_bat": 0,'
-  when: not CM4_present or connectbox_os != 'raspbian' 
+  when: (not CM4_present) or (ansible_facts['os_family'] == 'Ubuntu')
+ 
 
 - name: Check for device_type PI
   replace:
     path: /usr/local/connectbox/brand.txt
     regexp: '"Device_type": .*,'
     replace: '"Device_type": "PI",'
-  when: connectbox_os == "raspbian" and not CM4_present
+  when: Pi_present and ansible_facts['os_family'] == 'Debian'
 
 - name: for CM4 install avrdude
   apt:

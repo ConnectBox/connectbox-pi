@@ -153,23 +153,28 @@ def mountCheck():
           if ('usb' in d[i]):                               #we need to register a mount or make sure it is
             a = d[i].partition('usb')
             if (a[2] != "") and (a[2].isalnum()):
-              l = ord(a[2])
-              k = 0
-              j = 10
-              while k<10:                                    #check through the current registered mounts
-                if loc[k] == -1 and k < j:
-                  j = k
-                if loc[k] == l:
-                  break
-                else:
-                  k += 1
+              if len(a[2]) == 1:
+                l = ord(a[2])
+                k = 0
+                j = 10
+                while k<10:                                    #check through the current registered mounts
+                  if loc[k] == -1 and k < j:
+                    j = k
+                  if loc[k] == l:
+                    break
+                  else:
+                    k += 1
 # We know know if we found usb? in the table if k < 10
-              if k == 10 and j < 10:                          #mount was not in table to so add it
-                loc[j] = l                                  #set loc to usb(l) at j sice we didn't find it
-                mnt[j] = ord(e.group()[len(e.group())-2])   #set mnt to sd(?)1 finish the mount registration
-                if DEBUG: print("/dev/"+e.group()+" is already mounted as usb"+chr(l)+"but we added it to the table")
+                if k == 10 and j < 10:                          #mount was not in table to so add it
+                  loc[j] = l                                  #set loc to usb(l) at j sice we didn't find it
+                  mnt[j] = ord(e.group()[len(e.group())-2])   #set mnt to sd(?)1 finish the mount registration
+                  if DEBUG: print("/dev/"+e.group()+" is already mounted as usb"+chr(l)+"but we added it to the table")
+                else:
+                  if DEBUG: print("/dev/"+e.group()+" was mounted and in the table at ",k)
               else:
-                if DEBUG: print("/dev/"+e.group()+" was mounted and in the table at ",k)
+                if DEBUG: print("USB number >= 10 ", a[2], " We will unmount it")
+                b = 'unmount /media/usb'+a[2]
+                res = os.system(b)
             else:
               if DEBUG: print("Error parsing usb# in line", i)
           else:

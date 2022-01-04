@@ -164,9 +164,6 @@
 
 # With RPi.GPIO installed, we can now install the luma.core and luma.oled modules
 #  which will use the installed RPi.GPIO rather than trying to install RPi.GPIO 0.7.0
-- name: Install luma.core in hat service virtualenv
-  command: "{{ hat_service_virtualenv_dir }}/bin/pip install luma.core==1.7.2"
-
 - name: Install luma.oled in hat service virtualenv
   command: "{{ hat_service_virtualenv_dir }}/bin/pip install luma.oled==2.4.1"
 
