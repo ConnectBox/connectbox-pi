@@ -360,7 +360,7 @@
     state: present
 
 - name: Set /usr/bin/python to python3 so everything runs happy
-  ansible.builtin.shell: rm -f /usr/bin/python && sleep 2 && ln -s /usr/bin/python3 /usr/bin/python
+  shell: rm -f /usr/bin/python && sleep 2 && ln -s /usr/bin/python3 /usr/bin/python
   
 # Needed in several subsequent roles
 - name: Install packages for python virtualenv
