@@ -782,19 +782,25 @@ function wipeSDCard () {
 
 # Added by Derek Maxson 20211102
 # This supports all root level elements of /usr/local/connectbox/brand.txt 
+# Revised for lcd_pages to be done as keys not array 20220104
 function get_brand () {
   IFS='=' read -r -a array <<< "$val"
-  local jqString="jq '.[\"${array[0]}\"]' $BRAND_CONFIG"
+  if [ ${array[0]} == 'lcd_pages_stats' ]; then
+    jqString="jq '.[\"lcd_pages_stats_hour_one\"]' $BRAND_CONFIG"
+  else 
+    jqString="jq '.[\"${array[0]}\"]' $BRAND_CONFIG"
+  fi
   local editme=$(eval "$jqString")
   echo ${editme}
 }
 
 # Added by Derek Maxson 20211102
 # This supports all root level elements of /usr/local/connectbox/brand.txt 
+# Revised for lcd_pages to be done as keys not array 20220104
 function setBrand () {
   IFS='=' read -r -a array <<< "$val"
-  if [ ${array[0]} == 'Screen_Enable' ]; then
-    jqString="jq '.[\"${array[0]}\"]=${array[1]}' $BRAND_CONFIG"  
+  if [ ${array[0]} == 'lcd_pages_stats' ]; then
+    jqString="jq -M '. + { \"lcd_pages_stats_hour_one\":${array[1]},\"lcd_pages_stats_hour_two\":${array[1]},\"lcd_pages_stats_day_one\":${array[1]},\"lcd_pages_stats_day_two\":${array[1]},\"lcd_pages_stats_week_one\":${array[1]},\"lcd_pages_stats_week_two\":${array[1]},\"lcd_pages_stats_month_one\":${array[1]},\"lcd_pages_stats_month_two\":${array[1]} }' $BRAND_CONFIG"
   else 
     jqString="jq '.[\"${array[0]}\"]=\"${array[1]}\"' $BRAND_CONFIG"
   fi
