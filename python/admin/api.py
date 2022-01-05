@@ -4,9 +4,10 @@ from flask import request,abort,jsonify,make_response
 valid_properties = ["ssid", "brand", "client-ssid", "client-wifipassword", "channel", "hostname", "staticsite", "password",
                     "system", "ui-config", "wpa-passphrase", "openwell-download", "moodle_download"]
 
-valid_brand_properties = ["Screen_Enable", "g_device", "server_url", "server_authorization", "server_sitename", 
+valid_brand_properties = ["g_device", "server_url", "server_authorization", "server_sitename", 
                     "server_siteadmin_name", "server_siteadmin_email", "server_siteadmin_phone", "enable_mass_storage", 
-                    "usb0NoMount", "enhanced"]
+                    "usb0NoMount", "enhanced","lcd_pages_main","lcd_pages_info","lcd_pages_battery","lcd_pages_multi_bat",
+                    "lcd_pages_memory","lcd_pages_stats","lcd_pages_admin"]
 
 connectbox_version = 'dev'
 try:
