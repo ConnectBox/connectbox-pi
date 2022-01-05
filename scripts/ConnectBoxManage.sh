@@ -799,9 +799,15 @@ function get_brand () {
 # Revised for lcd_pages to be done as keys not array 20220104
 function setBrand () {
   IFS='=' read -r -a array <<< "$val"
+  re='^[0-9]+$'  # this is a regular expression to test for number
   if [ ${array[0]} == 'lcd_pages_stats' ]; then
+    # This has one input from the UI but writes several values in JSON -- special case
     jqString="jq -M '. + { \"lcd_pages_stats_hour_one\":${array[1]},\"lcd_pages_stats_hour_two\":${array[1]},\"lcd_pages_stats_day_one\":${array[1]},\"lcd_pages_stats_day_two\":${array[1]},\"lcd_pages_stats_week_one\":${array[1]},\"lcd_pages_stats_week_two\":${array[1]},\"lcd_pages_stats_month_one\":${array[1]},\"lcd_pages_stats_month_two\":${array[1]} }' $BRAND_CONFIG"
+  elif [[ ${array[1]} =~ $re ]] ; then
+    # If the value is a number, write the value as such in the JSON
+    jqString="jq '.[\"${array[0]}\"]=${array[1]}' $BRAND_CONFIG"
   else 
+    # Or if the value is a string...
     jqString="jq '.[\"${array[0]}\"]=\"${array[1]}\"' $BRAND_CONFIG"
   fi
   local editme=$(eval "$jqString")
