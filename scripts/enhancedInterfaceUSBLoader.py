@@ -78,6 +78,15 @@ for path,dirs,files in os.walk(mediaDirectory):
     
 	language = "en"  # By default but it will be overwritten if there are other language directories on the USB
 
+	# Check for language folder
+	tryLanguage = os.path.basename(os.path.normpath(path))
+	print ('Checking For Language Folder: '+ tryLanguage)
+	try:
+		print ('Found Language: ' + json.dumps(languageCodes[tryLanguage]))
+		language = tryLanguage
+	except:
+		notANewLanguage = True  # This is not going to do anything.  More of a comment
+
 	# For web content, we need to see if we've made this folder and index then skip everything else in that folder
 	skipWebPath = False;
 	for testPath in webpaths:
