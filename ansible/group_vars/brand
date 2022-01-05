@@ -1,5 +1,6 @@
 lcd_logo: (this is not here because it is pulled from group_vars/all hostname)
 lcd_logo: connectbox_logo.png
+enhanced_interface_logo: ""
 
 lcd_font_size: 27
 lcd_x_position: 6
