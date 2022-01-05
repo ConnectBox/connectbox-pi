@@ -44,13 +44,13 @@ brand = json.load(f)
 
 # Sanity Checks
 error = 0
-if hasattr(brand, "Brand") and len(brand['Brand']) > 2:
-	print ("")
-else:
-	brand['Brand'] = "Connectbox"
-if hasattr(brand, 'Logo') and len(brand['Logo']) > 2:
-	print ("")
-else:
+try:
+	print ("Custom Branding: " + brand['Brand'])
+except:
+	brand['Brand'] = "The Open Well"
+try:
+	print ("Custom Logo: " + brand['Logo'])
+except:
 	brand['Logo'] = "imgs/logo.png"
 
 print ("Building Content For " + brand['Brand'])
@@ -67,6 +67,13 @@ types = json.load(f);
 #print (types)
 
 webpaths = []     # As we find web content, add here so we skip files and folders within
+
+# Check for empty directory and write default content if empty
+if len(os.listdir(mediaDirectory) ) == 0:
+	print("Directory is empty")
+	f = open(mediaDirectory + "/theopenwell.txt", "a")
+	f.write("<h2>Media Directory Is Empty</h2>Please refer to documentation (placeholder).")
+	f.close()
 
 for path,dirs,files in os.walk(mediaDirectory):
 	print (path,dirs,files)
