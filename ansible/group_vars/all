@@ -53,6 +53,7 @@ connectbox_usb_files_root: /media/usb0
 connectbox_admin_credentials: admin:$apr1$CBOX2018$RlXBoHRRoiG3vMC7PS07q.
 
 connectbox_default_hostname: ConnectBox
+lcd_brand: connectbox_default_hostname
 connectbox_logo: connectbox_logo.png
 
 connectbox_log_dir: /var/log/connectbox

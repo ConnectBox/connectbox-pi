@@ -63,7 +63,8 @@
     block: |
       # This fires up the WLAN0 on Pi
       /usr/local/connectbox/bin/wlan0.pl &
-  when: not aws_instance and connectbox_os != "armbian"
+  when: not aws_instance and connectbox_os != "armbian" and connectbox_os != 'ubuntu'
+
   
 
 # Note we have already upgraded the OS to the lattest in role bootstrap

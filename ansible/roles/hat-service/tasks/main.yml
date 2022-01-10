@@ -1,7 +1,49 @@
 --- 
+- name: Find the /tmp  system paramaters
+  command: df -h /tmp
+  register: tempoutput
+  ignore_errors: yes
+
+- name: Set a default fact for Swap_Val
+  set_fact:
+     SWAP_Val:  ""
+
+- name: Find the /swap system paramaters
+  command: df -h /swap
+  register: swapoutput
+  ignore_errors: yes
+
+- name: Set /TMP size value into variable
+  set_fact:
+     tempval: tempoutput.stdout | regex_search('[0-9]*[KMG]')
+     cacheable: yes
+  ignore_errors: yes
+
+- name: Set /Swap size value into variable
+  set_fact:
+     swapval:  swapoutput.stdout | regex_search('[0-9]*[KMG]')
+     cacheable: yes
+  ignore_errors: yes
+ 
+- name: Print the temp variables we have found on file size
+  debug:
+    msg: "temp file size is {{ tempval }}"
+  ignore_errors: yes
+
+- name: print the swap variables we have found on file size
+  debug:
+    msg: "swap file size is {{ swapval }}"
+  ignore_errors: yes
+
 - name: Expand Temp directory otherwise we will run out of space
-  command: mount -o remount,size=400M /tmp/
-  when: connectbox_os != "raspbian"
+  command: umount /tmp
+  ignore_errors: yes
+  when: connectbox_os != "raspbian" and tempval != "" and (tempval < '400M' and tempval.find('G') == 0)
+
+- name: recreate the Temp directory
+  command: mount -t tmpfs -o size=400M tmpfs /tmp
+  ignore_errors: yes
+  when: connectbox_os != "raspbian" and tempval != "" and (tempval < '400M' and tempval.find('G') == 0)
 
 #original swapfile on NEO is /dev/zram0 if size 121968 and priority 5
 
@@ -9,31 +51,32 @@
   command: fallocate -l 400M /swapfile
   register: command_result
   ignore_errors: yes
-  when: connectbox_os != "raspbian"
+  when: connectbox_os != "raspbian" and swapval != "" and (swapval < '400M' and swapval.find('G') == 0)
+
 
 - name: fill swapfile
   command: dd if=/dev/zero of=/swapfile bs=1024 count=409600
   register: command_result
   ignore_errors: yes
-  when: connectbox_os != "raspbian"
+  when: connectbox_os != "raspbian" and swapval != ""
 
 - name: change swap mode
   file:
     path: /swapfile
     mode: 600
-  when: connectbox_os != "raspbian"
+  when: connectbox_os != "raspbian" and swapval != ""
 
 - name: make it a swapfile
   command: mkswap /swapfile
   register: command_result
   ignore_errors: yes
-  when: connectbox_os != "raspbian"
+  when: connectbox_os != "raspbian" and swaoval != ""
 
 - name: turn swapfile on
   command: swapon /swapfile
   register: command_result
   ignore_errors: yes 
-  when: connectbox_os != "raspbian"
+  when: connectbox_os != "raspbian" and swapval != ""
 
 - name: Enable fstab change
   lineinfile:
@@ -41,7 +84,7 @@
     line: '/swapfile none swap sw,rw,auto,nodev,nosuid,size=400M,rw,sync 0 0'
     state: present
     create: yes
-  when: connectbox_os != "raspbian"
+  when: connectbox_os != "raspbian" and swapval != ""
 
 - name: Install packages to allow building of pillow and psutil, running of OLED and direct mem writes
   apt:

@@ -1,4 +1,4 @@
-lcd_logo: (this is not here because it is pulled from group_vars/all hostname)
+lcd_logo_hostname: (this is not here because it is pulled from group_vars/all hostname)
 lcd_logo: connectbox_logo.png
 enhanced_interface_logo: ""
 
@@ -7,13 +7,13 @@ lcd_x_position: 6
 lcd_y_position: 0
 
 device_type: "NEO"
-enable_mass_storage: 0
+enable_mass_storage: ""           #OTG module extention if g_mass_storage needing a directory
 usbNoMount: 0
 
 lcd_pages_main: 1
 lcd_pages_info: 1
 lcd_pages_battery: 1
-lcd_pages_multi_bat: 1
+lcd_pages_multi_bat: 0            #By default we don't show the multi-bat page except on a CM4 build
 lcd_pages_memory: 1
 lcd_pages_stats_hour_one: 1
 lcd_pages_stats_hour_two: 1
@@ -25,8 +25,8 @@ lcd_pages_stats_month_one: 1
 lcd_pages_stats_month_two: 1
 lcd_pages_admin: 1
 
-lcd_g_device: g_serial
-otg_enable: 0
+lcd_g_device: "g_serial"           # module to load by default for OTG enable
+otg_enable: 1                      # 0, 1 or "none" with 0 being logic invert on the signal line
 
 
 server_url: ""

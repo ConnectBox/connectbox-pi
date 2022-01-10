@@ -97,9 +97,6 @@
     msg: "Ansible Group Variables Target Specific {{ ansible_lsb['id']|lower }}"
 
 - debug:
-    msg: "Machine Type file {{ machine_type['stdout_lines'] }}"
-
-- debug:
     msg: "connectbox_os {{ connectbox_os }}"
 
 - debug:
@@ -107,9 +104,6 @@
 
 - debug:
     msg: "ansible_facts['os_family']: {{ ansible_facts['os_family'] }} "
-
-- debug:
-    msg: "Operating System is: {{  ansible_facts['os_family'] }}"
 
 - debug:
     msg: "ansible_interfaces {{ ansible_interfaces }} "
@@ -121,11 +115,15 @@
   set_fact:
     CM4_present: '{{ happy2 }}'
     Pi_present:  '{{ happy3 }}'  
+    MType: '{{ happy1 }}'
   vars:
     happy0: "stdout_lines"
     happy1: '{{  machine_type[happy0] }}|first'
     happy2: '{{ happy1.find("Compute Module 4") > 0 }}'
-    happy3: '{{ happy1.find("Pi") > 0 and not happy2 }}'
+    happy3: '{{ (happy1.find("Pi") > 0) and not happy2 and not (happy1.find("NanoPi") > 0) }}'
+
+-  debug:
+    msg: "working on base of {{ MType  }}"
 
 - debug:
     msg: "search fro CM4 present : {{ CM4_present  }} "
@@ -186,16 +184,20 @@
 # We are putting the update early in the build so that we reduce the number of reboots.  This update will
 # bring the kernal up to date.  We will need this when we compile the network drivers later.
 
-- name: apt upgrade before kernel downloads
+- name: apt update before kernel downloads
   command: apt update -y
 
-- name: apt update full package
-  command:  apt full-upgrade -y
+- name: apt upgrade full package
+  command:  apt upgrade -y
   register: dist_upgraded
 
 - name: Check the changes to see if we need to reboot
   set_fact:
-    rbtreq: dist_upgraded.stdout | regex_search('0 upgraded, 0 newly installed, 0 to remove and 0') == -1
+    rbtreq: dist_upgraded.stdout | regex_search('0 upgraded, 0 newly installed, 0 to remove and 0') 
+
+- name: print the facts of reboot needed
+  debug:
+    msg: "the output of dist_upgrade was {{ dist_upgraded.stdout }} and reboot required is {{ rbtreq }}"
 
 - name: Auto clean the packages
   apt:
@@ -204,7 +206,7 @@
 - name: Setup reboot if Upgrade actually occured
   set_fact:
     reboot_required: True
-  when: rbtreq
+  when: rbtreq == ""
 
 # Needs to happen before the initial reboot, given the job triggers actions
 #  on @reboot
@@ -237,15 +239,27 @@
 #  Use newer ansible 2.7 function reboot
 - name: Reboot device for changes to take effect
   reboot:
-    post_reboot_delay=15
-    pre_reboot_delay=2
   when: reboot_required
   tags: reboot1
 
+- name: check that we have dns working on Ubuntu Debian focal
+  shell:
+    echo 'nameserver 8.8.8.8\n' >> /etc/resolv.conf
+  when: (OS_Version == 'focal') and  (ansible_os_family|lower == 'debian') and (connectbox_os == 'ubuntu') 
+
+- name: Copy over a new dnsmasq file if were on ubuntu debian focal
+  copy: 
+    src: etc_dnsmasq.conf
+    dest: /etc/dnsmasq.conf
+  when: (OS_Version == 'focal') and  (ansible_os_family|lower == 'debian') and (connectbox_os == 'ubuntu') 
+
+- name: Restart dns services if were on Ubuntu Debian focal
+  command: systemctl restart dnsmasq
+  when: (OS_Version == 'focal') and  (ansible_os_family|lower == 'debian') and (connectbox_os == 'ubuntu') 
 
 - name : Increase size of /tmp to handle upcoming installs
   command: mount -o remount, size=400M /tmp/
-  when: ansible_facts['os_family'] == 'Ubuntu' and not aws_instance
+  when: ansible_facts['os_family'] == 'ubuntu' and not aws_instance
 
 - name: Get current rfkill state for interface 0 (wireless LAN) on Raspbian
   command: cat /sys/class/rfkill/rfkill0/soft
@@ -264,7 +278,7 @@
 
 - name: Get current rfkill state for interface 1 (wireless LAN) on Raspbian
   command: cat /sys/class/rfkill/rfkill1/soft
-  register: rfkill1_state
+  register: rfkill1_stateXray 
   ignore_errors: yes
   changed_when: False
   when: ansible_facts['os_family'] == 'Debian'
@@ -307,8 +321,7 @@
   apt:
     name: iptables
     state: present
-  when: ansible_facts['os_family'] == 'Ubuntu'
-
+  when: ansible_distribution|lower == 'ubuntu'
 
 # Only repopulate daily so we don't slow runs down unnecessarily
 - name: Populate apt cache
@@ -331,7 +344,7 @@
 
 - name: Pin kernel and dtb packages
   command: aptitude -q hold linux-dtb-current-sunxi linux-image-current-sunxi linux-u-boot-nanopineo-current linux-focal-root-current-nanopineo
-  when: ansible_facts['os_family'] == 'Ubuntu'
+  when: ansible_distribution|lower == 'ubuntu' and ansible_os_family|lower != 'debian'
 
 # If we ever allow updates of the linux-...-root device package, this will
 #  need to move into a service or some other method (noting the package
@@ -344,7 +357,7 @@
     path: /etc/default/cpufrequtils
     regexp: '^GOVERNOR='
     line: 'GOVERNOR=conservative'
-  when: ansible_facts['os_family'] == 'Ubuntu'
+  when: ansible_distribution|lower == 'Ubuntu' and ansible_os_family|lower != 'debian'
 
 # Needed by Debian Stretch
 - name: Install openresolv
@@ -382,7 +395,7 @@
     dest: /usr/lib/armbian-resize-filesystem
     remote_src: yes
     mode: preserve
-  when: ansible_facts['os_family'] == 'Ubuntu'
+  when: ansible_facts['os_family'] == 'ubuntu'
 
 
 # See if we need to create a wlan0 interface when we're running in a sim
