@@ -737,9 +737,7 @@ function set_course_usb () {
 
 # Added by Derek Maxson 20211104
 function set_openwell_download () {
-  sudo -u www-data wget -O /tmp/openwell.zip $val >/dev/null
-  sudo -u www-data rm -rf /var/www/enhanced/content/www/assets/content >/dev/null 
-  sudo -u www-data unzip -o /tmp/openwell.zip -d /var/www/enhanced/content/www/assets/ | logger -t $(basename $0)
+  sudo -u www-data /usr/bin/python /usr/local/connectbox/bin/lazyLoader.py $val | logger -t $(basename $0)
 
   if [ ${PIPESTATUS[0]} -eq 0 ]
   then
