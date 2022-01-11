@@ -38,7 +38,11 @@ iface {{ client_facing_if }} inet static
 #  (Leave these lines uncommented even if you don't want internet connectivity 
 #    as it seems that without these lines, the internet connection will take over wlan1)
 
+# Test
+auto {{ eth_facing_if }}
 allow-hotplug {{ eth_facing_if }}
 iface {{ eth_facing_if }} inet dhcp
-    wpa-ssid "{{ client_ssid }}"
-    wpa-psk "{{ client_wifipassword }}"
+wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf
+iface default inet dhcp
+
+

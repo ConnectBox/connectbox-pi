@@ -34,7 +34,6 @@
     owner: root
     group: root
     mode: 0644
-  when: connectbox_os != "raspbian"
   register: etc_network_interfaces
 
 - name: Configure wpa_supplicant.conf on RPi
@@ -44,17 +43,7 @@
     owner: root
     group: root
     mode: 0644
-  when: connectbox_os == "raspbian"
 
-- name: Configure network interfaces RPi
-  template:
-    src: etc_network_interfaces-RPi.j2
-    dest: /etc/network/interfaces
-    owner: root
-    group: root
-    mode: 0644
-  when: connectbox_os == "raspbian"
-  register: etc_network_interfaces
 
 - name: Add items dhcpcd under init.d
   blockinfile:
