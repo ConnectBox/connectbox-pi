@@ -14,7 +14,7 @@ mimetypes.init()
 # Defaults for Connectbox / TheWell
 mediaDirectory = "/media/usb0"
 templatesDirectory = "/var/www/enhanced/content/www/assets/templates"
-contentDirectory = "/var/www/enhanced/content/www/assets/content/"
+contentDirectory = "/var/www/enhanced/content/www/assets/content"
 
 # Init 
 mains = {}        # This object contains all the data to construct each main.json at the end.  We add as we go along
@@ -27,12 +27,13 @@ try:
 except:
 	temp = 1 # There is a directory already
 
-	os.sytem ("mkdir " + contentDirectory)
-	shutil.copytree(templatesDirectory + '/en', contentDirectory + '/en')
-	os.system ("chown -R www-data.www-data " + contentDirectory + '/en')   # REMOVE AFTER TEST
-	f = open (templatesDirectory + "/en/data/main.json")
-	mains[language] = json.load(f)
-
+# Make and populate directory for language en (default) and set permissions
+os.system ("mkdir " + contentDirectory)
+shutil.copytree(templatesDirectory + '/en', contentDirectory + '/en')
+os.system ("chown -R www-data.www-data " + contentDirectory + '/en')   # REMOVE AFTER TEST
+f = open (templatesDirectory + "/en/data/main.json")
+mains["en"] = json.load(f)
+os.system ("chmod -R 755 " + mediaDirectory)
 
 # Retrieve languageCodes.json
 f = open(templatesDirectory + '/languageCodes.json',)
@@ -178,6 +179,13 @@ for path,dirs,files in os.walk(mediaDirectory):
 			# Load the main.json template and populate the mains for that language.
 			f = open (templatesDirectory + "/en/data/main.json")
 			mains[language] = json.load(f)
+
+		# If this is a video, we can probably make a thumbnail
+		if (item["mediaType"] == 'video'):
+			print ("	Attempting to make a thumbnail for the video")
+			os.system("ffmpeg -i '" + fullFilename + "' -ss 00:00:01.000 -vframes 1 " + contentDirectory + "/" + language + "/images/" + slug + ".png")
+			item["image"] = slug + ".png"
+			print ("	Thumbnail is created at: " + item["image"])
 
 		# Save the item to item json file -- one per item
 		with open(contentDirectory + "/" + language + "/data/" + slug + ".json", 'w', encoding='utf-8') as f:
