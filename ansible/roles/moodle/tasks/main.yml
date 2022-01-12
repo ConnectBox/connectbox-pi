@@ -17,7 +17,7 @@
     mode: 0775
     
 # This is from Relay Trust's Repo
-- name: Install Moodle 3.10 repo to /var/www/moodle
+- name: Install Relay Trust Moodle 3.10 repo to /var/www/moodle
   git:
     repo: 'https://github.com/RT-coding-team/the-well-moodle310.git'
     dest: /var/www/moodle/
