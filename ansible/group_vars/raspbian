@@ -5,5 +5,3 @@ root_partition_size: "4GB"
 
 client_facing_if: "wlan1"
 eth_facing_if: "wlan0"
-
-php_version: 7.3
