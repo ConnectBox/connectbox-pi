@@ -27,7 +27,6 @@ try:
 except:
 	temp = 1 # There is a directory already
 
-# Make and populate directory for language en (default) and set permissions
 os.system ("mkdir " + contentDirectory)
 shutil.copytree(templatesDirectory + '/en', contentDirectory + '/en')
 os.system ("chown -R www-data.www-data " + contentDirectory + '/en')   # REMOVE AFTER TEST
@@ -110,8 +109,6 @@ for path,dirs,files in os.walk(mediaDirectory):
 		# See if the language already exists in the directory, if not make and populate a directory from the template
 		# Make a symlink to the file on USB to display the content
 		os.system ("ln -s '" + path + "' " + contentDirectory + "/" + language + "/web/")
-		f = open (templatesDirectory + "/en/data/main.json")
-		mains[language] = json.load(f)
 		print (dirs,path,files)
 		dirs = []
 		webpaths.append(path)
@@ -183,7 +180,7 @@ for path,dirs,files in os.walk(mediaDirectory):
 		# If this is a video, we can probably make a thumbnail
 		if (item["mediaType"] == 'video'):
 			print ("	Attempting to make a thumbnail for the video")
-			os.system("ffmpeg -i '" + fullFilename + "' -ss 00:00:01.000 -vframes 1 " + contentDirectory + "/" + language + "/images/" + slug + ".png")
+			os.system("ffmpeg -i '" + fullFilename + "' -ss 00:00:05.000 -vframes 1 " + contentDirectory + "/" + language + "/images/" + slug + ".png")
 			item["image"] = slug + ".png"
 			print ("	Thumbnail is created at: " + item["image"])
 
