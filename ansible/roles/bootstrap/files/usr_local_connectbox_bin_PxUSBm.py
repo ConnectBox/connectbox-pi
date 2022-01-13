@@ -47,7 +47,7 @@ import pexpect
 import time
 import re
 import os
-import neo_batterylevelshutdown.globals as globals
+
 
 # globals for Partion expansion
 progress_file = '/usr/local/connectbox/bin/expand_progress.txt'
@@ -68,7 +68,15 @@ def mountCheck():
     global mnt
     global loc
     global total
-    if globals.usbnomount == 1:
+    try:
+         f = open("/usr/local/connectbox/brand.txt", "r")
+         a = f.read()
+         f.close()
+    except:
+         a =  ""
+    c = a.split('usb0NoMount": ')
+    a = str(c[1])
+    if a[1] == "1":
       return
     total = 0
     j = 0                   #mount iterator looking for unmounted devices
