@@ -14,11 +14,16 @@
   register: swapoutput
   ignore_errors: yes
 
+- debug:
+    msg: "Temp system output: {{tempoutput.stdout}}"
+    msg: "Swap system output: {{swapoutput.stdout}}"
+
+
 - name: Set /TMP size value into variable
   vars:
      tmpvl: tempoutput.stdout | regex_search('[0-9]*[KMG]')
   set_fact:
-     Temp_Val: {{ tmpvl }}
+     Temp_Val: '{{ tmpvl }}'
      cacheable: yes
   ignore_errors: yes
 
@@ -26,7 +31,7 @@
   vars:
      swpvl:  swapoutput.stdout | regex_search('[0-9]*[KMG]')
   set_fact:
-     Swap_Val: {{ swpvl }}
+     Swap_Val: '{{ swpvl }}'
      cacheable: yes
   ignore_errors: yes
  
