@@ -2,9 +2,10 @@
 - block:
   - name: Checkout sample content
     git:
-      repo: https://github.com/ConnectBox/connectbox-sample-content.git
+      repo: "{{ sample_content_repo }}"
       dest: /tmp/connectbox-sample-content
       depth: 1
+      version: '{{sample_repo_rev}}'
       update: no
 
   - name: Place sample content at USB drive location

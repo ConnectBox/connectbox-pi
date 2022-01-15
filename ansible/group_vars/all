@@ -60,8 +60,18 @@ connectbox_log_dir: /var/log/connectbox
 connectbox_access_log: "{{ connectbox_log_dir }}/connectbox-access.log"
 connectbox_error_log:  "{{ connectbox_log_dir }}/connectbox-error.log"
 
+# External Repo references
 access_log_analyzer_repo: https://github.com/ConnectBox/access-log-analyzer.git
+access_log_rev: "HEAD"
 connectbox_client_repo: https://github.com/ConnectBox/connectbox-react-icon-client.git
+connectbox_repo_rev: "HEAD"
+hat_services_repo: https://github.com/ConnectBox/Rpi.GPIO_NP_CB
+hat_service_repo_rev: "HEAD"
+moodle_repo: 'https://github.com/RT-coding-team/the-well-moodle310.git'
+moodle_repo_rev: "HEAD"
+sample_content_repo: https://github.com/ConnectBox/connectbox-sample-content.git
+sample_repo_rev: "HEAD"
+
 connectbox_client_path: published/
 connectbox_system_password: "connectbox"
 build_moodle: False

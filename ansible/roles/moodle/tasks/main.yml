@@ -19,10 +19,11 @@
 # This is from Relay Trust's Repo
 - name: Install Relay Trust Moodle 3.10 repo to /var/www/moodle
   git:
-    repo: 'https://github.com/RT-coding-team/the-well-moodle310.git'
+    repo: '{{ moodle_repo }}'
     dest: /var/www/moodle/
     clone: yes
     update: yes
+    version: '{{ moodle_repo_rev }}'
 
 - name: Download The Well App (Moodle Android App) from URL 
   get_url:

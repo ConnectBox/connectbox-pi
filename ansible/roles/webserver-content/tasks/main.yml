@@ -14,6 +14,7 @@
   git:
     repo: "{{ connectbox_client_repo }}"
     dest: /tmp/connectbox_client
+    version: '{{ sample_repo_rev }}'
 
 - name: Copy external connectbox client interface
   command: cp -r . "{{ connectbox_default_content_root }}"

@@ -191,11 +191,12 @@
 
 - name: Clone the RPi.GPIO_NP_CB repo to battery venv (NEO)
   git: 
-    repo: https://github.com/ConnectBox/Rpi.GPIO_NP_CB
+    repo: "{{ hat_services_repo }}"
     dest: "{{ RPi_GPIO_path }}"
     clone: yes
     update: yes
     force: yes
+    version: '{{ hat_service_repo }}'
   when: connectbox_os != "raspbian"  
 
 - name: Install RPi.GPIO for Buster build
