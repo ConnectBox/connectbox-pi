@@ -6,7 +6,7 @@
 
 VERSION=0.1.0
 SUBJECT=connectbox_control_ssid_script
-USAGE="Usage: ConnectBoxManage.sh -dhv [get|set|check] [ssid|channel|wpa-passphrase|hostname|staticsite|password|ui-config|client-ssid|client-wifipassword|course-download|course-usb|openwell-download|openwell-usb|brand] <value>"
+USAGE="Usage: ConnectBoxManage.sh -dhv [get|set|check] [ssid|channel|wpa-passphrase|hostname|staticsite|password|ui-config|client-ssid|client-wifipassword|client-wificountry|course-download|course-usb|openwell-download|openwell-usb|brand] <value>"
 HOSTAPD_CONFIG="/etc/hostapd/hostapd.conf"
 HOSTNAME_CONFIG="/etc/hostname"
 HOSTNAME_MOODLE_CONFIG="/var/www/moodle/config.php"
@@ -700,8 +700,7 @@ function get_client_ssid () {
 
 function set_client_ssid () {
   sudo sed -i -e "/ssid=/ s/=.*/=\"${val}\"/" /etc/wpa_supplicant/wpa_supplicant.conf
-  sudo sed -i -e "/wpa-ssid=/ s/=.*/=\"${val}\"/" /etc/network/interfaces
-  ifdown wlan0 2>&1 
+  sudo sed -i -e "/wpa-ssid / s/wpa-ssid .*/wpa-ssid \"${val}\"/" /etc/network/interfaces  ifdown wlan0 2>&1 
   ifup wlan0  2>&1 
   success
 }
@@ -713,7 +712,19 @@ function get_client_wifipassword () {
 
 function set_client_wifipassword () {
   sudo sed -i -e "/psk=/ s/=.*/=\"${val}\"/" /etc/wpa_supplicant/wpa_supplicant.conf
-  sudo sed -i -e "/wpa-psk=/ s/=.*/=\"${val}\"/" /etc/network/interfaces
+  sudo sed -i -e "/wpa-psk / s/wpa-psk .*/wpa-psk \"${val}\"/" /etc/network/interfaces
+  ifdown wlan0 2>&1 
+  ifup wlan0  2>&1 
+  success
+}
+
+function get_client_wificountry () {
+  local channel=`grep 'country' /etc/wpa_supplicant/wpa_supplicant.conf | cut -d"=" -f2`
+  echo ${channel}
+}
+
+function set_client_wificountry () {
+  sudo sed -i -e "/country=/ s/=.*/=${val}/" /etc/wpa_supplicant/wpa_supplicant.conf
   ifdown wlan0 2>&1 
   ifup wlan0  2>&1 
   success
@@ -725,14 +736,14 @@ function set_course_download () {
   echo ${channel}
   local channel2=`sudo -u www-data /usr/bin/php /var/www/moodle/admin/cli/restore_backup.php --file=/tmp/download.mbz --categoryid=1`
   echo ${channel2}
-  SUCCESS
+  success
 }
 
 # Added by Derek Maxson 20211108
 function set_course_usb () {
   local channel2=`sudo -u www-data /usr/bin/php /var/www/moodle/admin/cli/restore_courses_directory.php /media/usb0/`
   echo ${channel2}
-  SUCCESS
+  success
 }
 
 # Added by Derek Maxson 20211104
@@ -896,6 +907,11 @@ if [ "$action" = "get" ]; then
       exit 0;
       ;;
 
+    "client-wificountry")
+      get_client_wificountry
+      exit 0;
+      ;;
+
     "brand")
       get_brand
       exit 0;
@@ -951,6 +967,11 @@ elif [ "$action" = "set" ]; then
 
     "client-wifipassword")
       set_client_wifipassword
+      exit 0;
+      ;;
+
+    "client-wificountry")
+      set_client_wificountry
       exit 0;
       ;;
 
