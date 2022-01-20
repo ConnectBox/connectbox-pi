@@ -18,7 +18,7 @@ print ("Handling File: " + url)
 os.system("wget '" + url + "' -O /tmp/openwell.zip")
 os.system("unzip -o /tmp/openwell.zip -d /var/www/enhanced/content/www/assets/")
 
-directories =  ["data", "images", "media", "web"]
+directories =  ["data", "images", "media", "html"]
 
 # Go through all the language folders in the package
 for language in next(os.walk(contentDirectory))[1]:

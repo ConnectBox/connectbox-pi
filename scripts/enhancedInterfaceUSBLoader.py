@@ -108,7 +108,7 @@ for path,dirs,files in os.walk(mediaDirectory):
 		print ("	" + path + " is HTML web content")
 		# See if the language already exists in the directory, if not make and populate a directory from the template
 		# Make a symlink to the file on USB to display the content
-		os.system ("ln -s '" + path + "' " + contentDirectory + "/" + language + "/web/")
+		os.system ("ln -s '" + path + "' " + contentDirectory + "/" + language + "/html/")
 		print (dirs,path,files)
 		dirs = []
 		webpaths.append(path)
@@ -138,7 +138,7 @@ for path,dirs,files in os.walk(mediaDirectory):
 		# Handle Web Content Index Page
 		if (extension == '.html'):
 			print (path,filename)
-			item["webPath"] = "/assets/content/en/web/" + path.replace(mediaDirectory,"") + "/" + filename
+			item["webPath"] = "/assets/content/en/html/" + path.replace(mediaDirectory,"") + "/" + filename
 			slug = os.path.basename(os.path.normpath(path))
 			print (filename)
 
