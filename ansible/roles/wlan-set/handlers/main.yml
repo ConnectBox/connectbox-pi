@@ -5,18 +5,9 @@
 
 - name: update cli.py
   replace:
-    path: /usr/local/connectbox/wifi_configurator_venv/lib/python3.7/site-packages/wifi_configurator/cli.py
+    path: /usr/local/connectbox/wifi_configurator_venv/lib/{{ python version}}/site-packages/wifi_configurator/cli.py
     regexp: 'wlan0'
     replace: '{{ client_facing_if }}'
-  when: connectbox_os == "raspbian" and OS_Version ==  'buster'
-
-- name: update cli.py OS_Bullseye
-  replace:
-    path: /usr/local/connectbox/wifi_configurator_venv/lib/python3.9/site-packages/wifi_configurator/cli.py
-    regexp: 'wlan0'
-    replace: '{{ client_facing_if }}'
-  when: connectbox_os == "raspbian" and OS_Version == 'bullseye'
-
 
 - name: update ConnectBoxManage.sh
   replace:

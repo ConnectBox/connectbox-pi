@@ -38,7 +38,7 @@
   apt:
 # (looping deprecated in 2.11)
 #    name: "{{ item }}"
-    name: ['autoconf', 'automake', 'autotools-dev', 'build-essential', 'bison', 'cpp', 'cpp-5', 'dpkg-dev', 'g++', 'g++-5', 'gcc', 'gcc-5', 'git', 'git-man', 'libasan2', 'libbison-dev', 'libc-dev-bin', 'libc6-dev', 'libexpat1-dev', 'libfl-dev', 'libfreetype6-dev', 'libgcc-5-dev',  'libmysqlclient-dev', 'libnl-3-dev', 'libnl-genl-3-dev', 'libpng12-dev', 'libpython3-dev', 'lib{{ python_version }}-dev', 'libsigsegv2', 'libssl-dev', 'libstdc++-5-dev', 'libubsan0','libwrap0-dev', 'linux-libc-dev','make', 'm4', 'patch', 'python3-dev', '{{ python_Version }}-dev', 'zlib1g-dev']
+    name: ['autoconf', 'automake', 'autotools-dev', 'build-essential', 'bison', 'cpp', 'cpp-5', 'dpkg-dev', 'g++', 'g++-5', 'gcc', 'gcc-5', 'git', 'git-man', 'libasan2', 'libbison-dev', 'libc-dev-bin', 'libc6-dev', 'libexpat1-dev', 'libfl-dev', 'libfreetype6-dev', 'libgcc-5-dev',  'libmysqlclient-dev', 'libnl-3-dev', 'libnl-genl-3-dev', 'libpng12-dev', 'libpython3-dev', 'libpython3.5-dev', 'libsigsegv2', 'libssl-dev', 'libstdc++-5-dev', 'libubsan0','libwrap0-dev', 'linux-libc-dev','make', 'm4', 'patch', 'python3-dev', 'python3.5-dev', 'zlib1g-dev']
     state: absent
     purge: yes
 #  with_items:
@@ -114,7 +114,7 @@
   apt:
 # (looping deprecated in 2.11)
 #    name: "{{ item }}"
-    name: ['alsa-utils', 'bsdmainutils', 'btrfs-tools', 'console-setup', 'debconf-i18n', 'dirmngr', 'fontconfig-config', 'fonts-dejavu-core', 'haveged', 'libasound2', 'libasound2-dat', 'libassuan0', 'libatm1', 'libatomic1', 'libbind9-140', 'libcaca0', 'libcc1-0', 'libdns162', 'libdpkg-perl', 'liberror-perl', 'libfftw3-double3', 'libgd3', 'libgeoip1', 'libgomp1', 'libgpm2', 'libfontconfig1', 'libicu55', 'libisc160', 'libisccc140', 'libisccfg140', 'libisl15', 'libksba8', 'liblwres141', 'liblzo2-2', 'libmagic1', 'libmpc3', 'libmpfr4', 'libnpth0', 'libperl5.22', 'lib{{ python_version }}', 'libsamplerate0', 'libtext-charwidth-perl', 'libtext-iconv-perl', 'libtext-wrapi18n-perl', 'libvpx3', 'libx11-6', 'libx11-data', 'libxau6', 'libxcb1', 'libxml2', 'libxpm4', 'libxslt1.1', 'mysql-common', 'ncurses-term', 'perl', 'perl-modules-5.22', 'python-apt', 'python3-command-not-found', 'python3-gdbm', 'python3-gi', 'rcconf', 'toilet', 'toilet-fonts', 'xkb-data']
+    name: ['alsa-utils', 'bsdmainutils', 'btrfs-tools', 'console-setup', 'debconf-i18n', 'dirmngr', 'fontconfig-config', 'fonts-dejavu-core', 'haveged', 'libasound2', 'libasound2-dat', 'libassuan0', 'libatm1', 'libatomic1', 'libbind9-140', 'libcaca0', 'libcc1-0', 'libdns162', 'libdpkg-perl', 'liberror-perl', 'libfftw3-double3', 'libgd3', 'libgeoip1', 'libgomp1', 'libgpm2', 'libfontconfig1', 'libicu55', 'libisc160', 'libisccc140', 'libisccfg140', 'libisl15', 'libksba8', 'liblwres141', 'liblzo2-2', 'libmagic1', 'libmpc3', 'libmpfr4', 'libnpth0', 'libperl5.22', 'libpython3.5', 'libsamplerate0', 'libtext-charwidth-perl', 'libtext-iconv-perl', 'libtext-wrapi18n-perl', 'libvpx3', 'libx11-6', 'libx11-data', 'libxau6', 'libxcb1', 'libxml2', 'libxpm4', 'libxslt1.1', 'mysql-common', 'ncurses-term', 'perl', 'perl-modules-5.22', 'python-apt', 'python3-command-not-found', 'python3-gdbm', 'python3-gi', 'rcconf', 'toilet', 'toilet-fonts', 'xkb-data']
     state: absent
     purge: yes
 #  with_items:

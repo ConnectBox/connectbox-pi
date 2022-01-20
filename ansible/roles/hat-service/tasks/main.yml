@@ -15,7 +15,6 @@
   ignore_errors: yes
 
 - debug:
-    msg: "Temp system output: {{tempoutput.stdout}}"
     msg: "Swap system output: {{swapoutput.stdout}}"
 
 
@@ -23,15 +22,17 @@
   vars:
      tmpvl: tempoutput.stdout | regex_search('[0-9]*[KMG]')
   set_fact:
-     Temp_Val: "{{ tmpvl }}"
+     Temp_Val: '{{ tmpvl }}'
      cacheable: yes
   ignore_errors: yes
 
+- debug:
+    msg: "Temp system output: {{tempoutput.stdout}}"
 - name: Set /Swap size value into variable
   vars:
      swpvl:  swapoutput.stdout | regex_search('[0-9]*[KMG]')
   set_fact:
-     Swap_Val: "{{ swpvl }}"
+     Swap_Val: '{{ swpvl }}'
      cacheable: yes
   ignore_errors: yes
  
@@ -126,6 +127,23 @@
     state: present 
   when: connectbox_os != "raspbian"
 
+- name: determine python version
+  command: python --version
+  register: python_version_raw
+
+- debug:
+    msg: "{{ python_version_raw.stdout }}"
+
+- name: parse the python version
+  vars:
+     pythonversion: "{{ python_version_raw.stdout | regex_replace('P[a-z]*\\s(\\d\\.\\d).*', 'python\\1') }}"
+  set_fact:
+     python_version: "{{ pythonversion }}"
+     cacheable: yes
+
+- debug:
+    msg: "Your running Python versioin: {{ python_version }}"
+  
 - name: Install devmem2 in NEO
   apt:
     name: ['devmem2']
@@ -134,20 +152,20 @@
 
 - name: Make sure there is no Pillow code already there
   ansible.builtin.file:
-    path: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/Pillow-6.2.1.tar.gz"
+    path: "{{ hat_service_virtualenv_dir }}/lib/{{ python_version }}/site-packages/Pillow-6.2.1.tar.gz"
     state: absent
   when: connectbox_os != "raspbian"
 
 - name: Get the code from the repository
   get_url:
     url: "https://files.pythonhosted.org/packages/5b/bb/cdc8086db1f15d0664dd22a62c69613cdc00f1dd430b5b19df1bea83f2a3/Pillow-6.2.1.tar.gz" 
-    dest: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/"
+    dest: "{{ hat_service_virtualenv_dir }}/lib/{{ python_version }}/site-packages/"
   when: connectbox_os != "raspbian"
 
 - name: unzip Pillow in virtual environment (python3)
   ansible.builtin.unarchive:
-    src:  "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/Pillow-6.2.1.tar.gz"
-    dest: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/"
+    src:  "{{ hat_service_virtualenv_dir }}/lib/{{ python_version }}/site-packages/Pillow-6.2.1.tar.gz"
+    dest: "{{ hat_service_virtualenv_dir }}/lib/{{ python_version }}/site-packages/"
     remote_src: yes
   when: connectbox_os != "raspbian"
 
@@ -164,14 +182,14 @@
 
 - name: Install Pillow library requriements in virtual environment
   pip:
-    requirements: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/Pillow-6.2.1/requirements.txt"
+    requirements: "{{ hat_service_virtualenv_dir }}/lib/{{ python_version }}/site-packages/Pillow-6.2.1/requirements.txt"
     virtualenv: "{{ hat_service_virtualenv_dir }}"
   when: connectbox_os != "raspbian"
   
 - name: compile Pillow in virtual environment (python3)
-  command: "{{ hat_service_virtualenv_dir }}/bin/python3 {{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/Pillow-6.2.1/setup.py install"
+  command: "{{ hat_service_virtualenv_dir }}/bin/python3 {{ hat_service_virtualenv_dir }}/lib/{{ python_version }}/site-packages/Pillow-6.2.1/setup.py install"
   args:
-    chdir: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/Pillow-6.2.1/"
+    chdir: "{{ hat_service_virtualenv_dir }}/lib/{{ python_version }}/site-packages/Pillow-6.2.1/"
   environment:
     MAX_CONCURRENCY: 1
   when: connectbox_os != "raspbian"
@@ -186,7 +204,7 @@
 
 - name: Set path to RPi.GPIO_NP_CB (NEO)
   set_fact:
-    RPi_GPIO_path: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/RPi.GPIO_NP_CB"
+    RPi_GPIO_path: "{{ hat_service_virtualenv_dir }}/lib/{{ python_version }}/site-packages/RPi.GPIO_NP_CB"
   when: connectbox_os != "raspbian"  
 
 - name: Clone the RPi.GPIO_NP_CB repo to battery venv (NEO)
@@ -196,7 +214,6 @@
     clone: yes
     update: yes
     force: yes
-    version: '{{ hat_service_repo }}'
   when: connectbox_os != "raspbian"  
 
 - name: Install RPi.GPIO for Buster build

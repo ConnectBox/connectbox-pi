@@ -27,7 +27,7 @@
   apt:
     package: usbmuxd
 
-- name: Configure network interfaces 
+- name: Configure network interfaces NEO
   template:
     src: etc_network_interfaces.j2
     dest: /etc/network/interfaces
@@ -35,14 +35,6 @@
     group: root
     mode: 0644
   register: etc_network_interfaces
-
-- name: Send out the default template for etc_network_interfaces
-  template:
-    src: etc_network_interfaces.j2
-    dest: /etc/network/interfaces.j2
-    owner: root
-    group: root
-    mode: 0644
 
 - name: Configure wpa_supplicant.conf on RPi
   template:

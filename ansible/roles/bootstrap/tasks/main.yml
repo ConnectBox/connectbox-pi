@@ -234,6 +234,44 @@
     replace: 'i2c0 usbhost0 '
   when: ansible_facts['os_family'] == 'Ubuntu' and not aws_instance
 
+- name: Remove g_mass_storage device as default
+  command: modprobe -r g_mass_storage
+  when: connectbox_os == 'ubuntu' and (OS_Version == 'xenial' or OS_Version == 'focal')
+
+- name: Add g_serial device as default
+  command: modprobe g_serial
+  when: connectbox_os == 'ubuntu' and (OS_Version == 'xenial' or OS_Version == 'focal')
+
+- name: Make service file for ttyGS0
+  file:
+     path: /etc/systemd/system/serial-getty@ttyGS0.service.d
+     state: directory
+     mode: '0755'
+
+- name: copy service file over
+  template:
+     src: 10-switch-role.conf.j2
+     dest: /etc/systemd/system/serial-getty@ttyGS0.service.d/10-switch-role.conf
+     mode: '0666'
+  when: connectbox_os == 'ubuntu' and (OS_Version == 'xenial' or OS_Version == 'focal')
+
+- name: setup link for ttyGS0 service
+  file:
+     src: /lib/systemd/system/serial-getty@.service
+     dest: /etc/systemd/system/getty.target.wants/serial-getty@ttyGS0.service
+     state: link
+  when: connectbox_os == 'ubuntu' and (OS_Version == 'xenial' or OS_Version == 'focal')
+     
+- name: add it to default load of modules
+  command: echo 'g_serial' >> /etc/modules
+  when: connectbox_os == 'ubuntu' and (OS_Version == 'xenial' or OS_Version == 'focal')
+
+- name: make sure we  delete the g_mass_storage.conf if it exsists
+  file:
+    path: /etc/modules-load.d/g_mass_storage.conf
+    state: absent
+   
+
 # The system takes 5-10 seconds to disappear from the network
 #  so let's wait 15 seconds before doing our first check
 #  Use newer ansible 2.7 function reboot
@@ -242,10 +280,6 @@
   when: reboot_required
   tags: reboot1
 
-- name: check that we have dns working on Ubuntu Debian focal
-  shell:
-    echo 'nameserver 8.8.8.8\n' >> /etc/resolv.conf
-  when: (OS_Version == 'focal') and  (ansible_os_family|lower == 'debian') and (connectbox_os == 'ubuntu') 
 
 - name: Copy over a new dnsmasq file if were on ubuntu debian focal
   copy: 
@@ -365,6 +399,29 @@
     name: openresolv
     state: present
   when: ansible_facts['os_family'] == 'Debian'
+
+- name: check that we have a valid file for resolve.conf
+  ansible.builtin.stat:
+    path: /etc/resolv.conf
+  register: res_st
+
+- name: if /etc/resolv.conf is a link delete it and create a file or is non exsistent
+  ansible.builtin.file:
+    path: /etc/resolv.conf
+    state: absent
+  when: res_st.stat.islnk
+
+- name:  if /etc/resolve.conf was a link or absent we create it
+  ansible.builtin.file:
+    path: /etc/resolv.conf
+    state: touch
+  when: res_st.stat.islnk or res_st.stat is not defined
+
+- name: check that we have dns working on Ubuntu Debian focal
+  shell:
+    echo 'nameserver 8.8.8.8\n' >> /etc/resolv.conf
+  when: (OS_Version == 'focal' or OS_Version == "Xenial") and  (ansible_os_family|lower == 'debian') and (connectbox_os == 'ubuntu') 
+
 
 # acl needed for good install of Postgres as per Leo-Nils 20211011
 - name: Install acl
