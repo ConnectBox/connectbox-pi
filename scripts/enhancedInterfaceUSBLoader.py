@@ -138,8 +138,8 @@ for path,dirs,files in os.walk(mediaDirectory):
 		# Handle Web Content Index Page
 		if (extension == '.html'):
 			print (path,filename)
-			item["webPath"] = "/assets/content/en/html/" + path.replace(mediaDirectory,"") + "/" + filename
 			slug = os.path.basename(os.path.normpath(path))
+			filename = slug + ".zip"
 			print (filename)
 
 		# Update item attributes
@@ -162,7 +162,6 @@ for path,dirs,files in os.walk(mediaDirectory):
 			print ("	Default mimetype: " + item["mimeType"])
 		item["slug"] = slug
 		item["title"] = slug
-		item["categories"].append(types[extension]["category"])
 		# If the directory is not a language, make a non-duplicate category to organize that content
 		if (os.path.basename(os.path.normpath(path)) != language and path != mediaDirectory and types[extension]["category"] != os.path.basename(os.path.normpath(path)).capitalize()):
 			item["categories"].append(os.path.basename(os.path.normpath(path)).capitalize())
