@@ -62,7 +62,7 @@ connectbox_error_log:  "{{ connectbox_log_dir }}/connectbox-error.log"
 
 # External Repo references
 access_log_analyzer_repo: https://github.com/ConnectBox/access-log-analyzer.git
-access_log_rev: "HEAD"
+access_log_repo_rev: "HEAD"
 connectbox_client_repo: https://github.com/ConnectBox/connectbox-react-icon-client.git
 connectbox_repo_rev: "HEAD"
 hat_services_repo: https://github.com/ConnectBox/Rpi.GPIO_NP_CB

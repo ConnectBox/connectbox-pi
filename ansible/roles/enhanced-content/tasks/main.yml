@@ -37,3 +37,9 @@
     owner: www-data
     group: www-data
 
+- name: Cause phonehome.py to execute every 10 minutes via cron IF not a Moodle box  (We have different process for Moodle)
+  ansible.builtin.cron:
+    name: "phonehome.py"
+    minute: "*/10"
+    user: www-data
+    job: "/usr/bin/python /usr/local/connectbox/bin/phonehome.py >/tmp/push_messages.log  2>&1"

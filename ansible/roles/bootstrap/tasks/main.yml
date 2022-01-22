@@ -564,12 +564,3 @@
     line: 'reset = 22;\n  baudrate=20'
     state: present
   when: CM4_present
-
-        
-- name: Cause phonehome.py to execute every 10 minutes via cron IF not a Moodle box  (We have different process for Moodle)
-  ansible.builtin.cron:
-    name: "phonehome.py"
-    minute: "*/10"
-    user: www-data
-    job: "/usr/bin/python /usr/local/connectbox/bin/phonehome.py >/tmp/push_messages.log  2>&1"
-  when: not build_moodle

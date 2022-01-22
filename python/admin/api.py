@@ -1,7 +1,7 @@
 import base64,logging,subprocess
 from flask import request,abort,jsonify,make_response
 
-valid_properties = ["ssid", "brand", "client-ssid", "client-wifipassword", "channel", "hostname", "staticsite", "password",
+valid_properties = ["ssid", "brand", "client-ssid", "client-wifipassword", "client-wificountry", "channel", "hostname", "staticsite", "password",
                     "system", "ui-config", "wpa-passphrase", "openwell-download", "moodle_download"]
 
 valid_brand_properties = ["g_device", "server_url", "server_authorization", "server_sitename", 
@@ -66,7 +66,7 @@ def get_property(prop):
     _authenticate(request)
 
     prop_string = prop
-    if prop_string not in valid_properties or prop_string == "password" or prop_string == "client-wifipassword":
+    if prop_string not in valid_properties or prop_string == "password":
         _abort_bad_request()
     return _call_command(["get", prop_string])
 

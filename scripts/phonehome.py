@@ -53,9 +53,14 @@ def processSettings(settings):
     if setting["key"] == 'authorization':
       command = "set brand server_" + setting["key"] + " " + setting["value"];
     print ("Handling Setting: " + command)
-    results = subprocess.check_output("sudo /usr/local/connectbox/bin/ConnectBoxManage.sh " + command, shell=True)
-    print(results.decode('utf-8'))
-    if results.decode('utf-8') == "SUCCESS\n":
+	try:
+      results = subprocess.check_output("sudo /usr/local/connectbox/bin/ConnectBoxManage.sh " + command, shell=True)
+      results = results.decode('utf-8')
+    except:
+      print ("Could not process the setting: " + command)
+      results = "Null (ConnectBoxManage.sh returned fatal)"
+    print("ConnectBoxManage.sh returned: " + results)
+    if results == "SUCCESS\n":
       print ("Setting For " + command + " was successful! Now inform server to delete setting") 
       response = requests.delete(brand["server_url"] + "/chathost/settings/" + setting["deleteId"],headers=headers)
       if response.status_code == 200: 	
