@@ -35,9 +35,10 @@ iface {{ client_facing_if }} inet static
 
 # To add local wifi connectivity, substitue your wifi ssid and password (below)
 #  (Leave these lines uncommented even if you don't want internet connectivity 
-#    as it seems that without these lines, the internet connection will take over wlan1)
+#3    as it seems that without these lines, the internet connection will take over wlan1)
 
-# Test
+#CLIENTIF#
+
 auto {{ eth_facing_if }}
 allow-hotplug {{ eth_facing_if }}
 iface {{ eth_facing_if }} inet dhcp
