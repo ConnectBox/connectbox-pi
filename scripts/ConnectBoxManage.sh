@@ -731,7 +731,8 @@ function set_client_wificountry () {
   sudo sed -i -e "/country_code=/ s/=.*/=${val}/" /etc/hostapd/hostapd.conf
   ifdown wlan0 2>&1 
   ifup wlan0  2>&1 
-  # COMMAND TO RESTART WIFI CONFIGURATOR??
+  ifdown wlan1 2>&1 
+  ifup wlan1  2>&1 
   success
 }
 
