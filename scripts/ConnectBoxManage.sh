@@ -16,6 +16,7 @@ BRAND_CONFIG="/usr/local/connectbox/brand.txt"
 NGINX_CONFIG="/etc/nginx/sites-enabled/vhosts.conf"
 PASSWORD_CONFIG="/usr/local/connectbox/etc/basicauth"
 WIFI_CONFIGURATOR="/usr/local/connectbox/wifi_configurator_venv/bin/wifi_configurator"
+WIFI_CONFIG="/usr/local/connectbox/wificonf.txt"
 CLIENTWIFI_CONFIG="/etc/network/interfaces"
 PASSWORD_SALT="CBOX2018"
 UI_CONFIG="/var/www/connectbox/connectbox_default/config/default.json"
@@ -23,6 +24,8 @@ DEBUG=0
 SUCCESS="SUCCESS"
 FAILURE="Unexpected Error"
 
+ACCESS_POINT_WLAN=`grep 'wpa-ssid' $WIFI_CONFIG | cut -d"=" -f2`
+CLIENT_WLAN=`grep 'wpa-ssid' $WIFI_CONFIG | cut -d"=" -f2`
 # --- Options processing -------------------------------------------
 
 while getopts ":dvhg" optname
@@ -725,8 +728,10 @@ function get_client_wificountry () {
 
 function set_client_wificountry () {
   sudo sed -i -e "/country=/ s/=.*/=${val}/" /etc/wpa_supplicant/wpa_supplicant.conf
+  sudo sed -i -e "/country_code=/ s/=.*/=${val}/" /etc/hostapd/hostapd.conf
   ifdown wlan0 2>&1 
   ifup wlan0  2>&1 
+  # COMMAND TO RESTART WIFI CONFIGURATOR??
   success
 }
 
