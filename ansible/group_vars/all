@@ -78,9 +78,9 @@ build_moodle: False
 enhanced_interface: True
 php_version: 7.4
 
-client_ssid: ""
-client_wifipassword: ""
-client_country: ""
+client_ssid: "Default"
+client_wifipassword: "Default1"
+wireless_country_code: "00"
 
 
 nginx_log_dir: /var/log/nginx

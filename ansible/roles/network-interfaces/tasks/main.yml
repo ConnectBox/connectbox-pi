@@ -36,6 +36,14 @@
     mode: 0644
   register: etc_network_interfaces
 
+- name: Configure network interfaces.j2 base
+ template:
+    src: etc_network_interfaces.j2
+    dest: /etc/network/interfaces.j2
+    owner: root
+    group: root
+    mode: 0644
+
 - name: Configure wpa_supplicant.conf on RPi
   template:
     src: wpa_supplicant.conf.j2
