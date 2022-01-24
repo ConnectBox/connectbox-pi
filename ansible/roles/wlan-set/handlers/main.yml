@@ -2,12 +2,20 @@
 
 # For RPi modules (these have internal wifi)
 # Use selected client_facing_if specified wlan in two files
+# We no longer need the update of CLI.py since we get the AP automatically.
+#- name: update cli.py
+#  replace:
+#    path: /usr/local/connectbox/wifi_configurator_venv/lib/{{ python version}}/site-packages/wifi_configurator/cli.py
+#    regexp: 'wlan0'
+#    replace: '{{ client_facing_if }}'
 
-- name: update cli.py
-  replace:
-    path: /usr/local/connectbox/wifi_configurator_venv/lib/{{ python version}}/site-packages/wifi_configurator/cli.py
-    regexp: 'wlan0'
-    replace: '{{ client_facing_if }}'
+- name: Get client interface name
+  vars:
+     wlan_data: "{{ lookup('file', '/usr/local/connectbox/wificonf.txt') }}"
+  set_fact: client_facing_if = "{{ 'wlan' + wlan_data.split('ClientIF=')[1][0] }}"
+
+- debug:
+    msg: "we pulled the Client Interface out as {{ client_facing_if }}"
 
 - name: update ConnectBoxManage.sh
   replace:

@@ -9,7 +9,7 @@
   changed_when: True
   notify:
     - update ConnectBoxManage.sh
-    - update cli.py
+#    - update cli.py     - no longer needed at cli.py determines the wlan ports automatically.
   when: connectbox_os == "raspbian"
 
 
