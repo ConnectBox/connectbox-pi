@@ -44,7 +44,12 @@
     group: root
     mode: 0644
 
-- name: Configure wpa_supplicant.conf on RPi
+- name: Configure /etc/wpa_supplicant/template direcotry
+  file:
+     path: /etc/wpa_supplicant/templates
+     state: direcotry  
+
+- name: Configure wpa_supplicant.conf
   template:
     src: wpa_supplicant.conf.j2
     dest: /etc/wpa_supplicant/wpa_supplicant.conf
@@ -52,6 +57,13 @@
     group: root
     mode: 0644
 
+- name: Configure wpa_supplicant/templates 
+  template:
+    src: wpa_supplicant.conf.j2
+    dest: /etc/wpa_supplicant/templates/wpa_supplicant.conf.j2
+    owner: root
+    group: root
+    mode: 0644
 
 - name: Add items dhcpcd under init.d
   blockinfile:
