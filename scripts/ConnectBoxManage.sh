@@ -6,7 +6,7 @@
 
 VERSION=0.1.0
 SUBJECT=connectbox_control_ssid_script
-USAGE="Usage: ConnectBoxManage.sh -dhv [get|set|check] [ssid|channel|wpa-passphrase|hostname|staticsite|password|ui-config|client-ssid|client-wifipassword|client-wificountry|course-download|course-usb|openwell-download|openwell-usb|brand] <value>"
+USAGE="Usage: ConnectBoxManage.sh -dhv [get|set|check] [ssid|channel|wpa-passphrase|hostname|staticsite|password|ui-config|client-ssid|client-wifipassword|client-wificountry|course-download|course-usb|openwell-download|openwell-usb|load-usb|brand] <value>"
 HOSTAPD_CONFIG="/etc/hostapd/hostapd.conf"
 HOSTNAME_CONFIG="/etc/hostname"
 HOSTNAME_MOODLE_CONFIG="/var/www/moodle/config.php"
@@ -738,46 +738,38 @@ function set_client_wificountry () {
 
 # Added by Derek Maxson 20210616
 function set_course_download () {
-  local channel=`sudo -u www-data wget -O /tmp/download.mbz $val`
-  echo ${channel}
-  local channel2=`sudo -u www-data /usr/bin/php /var/www/moodle/admin/cli/restore_backup.php --file=/tmp/download.mbz --categoryid=1`
-  echo ${channel2}
+  wget -O /tmp/download.mbz $val >/tmp/course-download.log 2>&1
+  /usr/bin/php /var/www/moodle/admin/cli/restore_backup.php --file=/tmp/download.mbz --categoryid=1 | logger -t $(basename $0)
   success
 }
 
 # Added by Derek Maxson 20211108
-function set_course_usb () {
-  local channel2=`sudo -u www-data /usr/bin/php /var/www/moodle/admin/cli/restore_courses_directory.php /media/usb0/`
-  echo ${channel2}
+function course_usb () {
+  sudo /usr/bin/php /var/www/moodle/admin/cli/restore_courses_directory.php /media/usb0/ | logger -t $(basename $0)
   success
 }
 
 # Added by Derek Maxson 20211104
 function set_openwell_download () {
-  sudo -u www-data /usr/bin/python /usr/local/connectbox/bin/lazyLoader.py $val | logger -t $(basename $0)
-
-  if [ ${PIPESTATUS[0]} -eq 0 ]
-  then
-    sudo rm /tmp/openwell.zip
-    success
-  else
-    failure
-  fi
+  sudo /usr/bin/python /usr/local/connectbox/bin/lazyLoader.py $val | logger -t $(basename $0) 
+  #sudo rm /tmp/openwell.zip
+  success
 }
 
 # Added by Derek Maxson 20211108
-function set_openwell_usb () {
-  sudo -u cp /media/usb0/openwell.zip /tmp/openwell.zip $val >/dev/null
-  sudo -u www-data rm -rf /var/www/enhanced/content/www/assets/content >/dev/null 
-  sudo -u www-data unzip -o /tmp/openwell.zip -d /var/www/enhanced/content/www/assets/ | logger -t $(basename $0)
-
-  if [ ${PIPESTATUS[0]} -eq 0 ]
-  then
-    sudo rm /tmp/openwell.zip
-    success
-  else
-    failure
-  fi
+function openwell_usb () {
+	if [ -f "/media/usb0/openwell.zip" ]; then
+	  sudo cp /media/usb0/openwell.zip /tmp/openwell.zip $val >/dev/null 2>&1
+	  sudo rm -rf /var/www/enhanced/content/www/assets/content >/dev/null 2>&1
+	  sudo unzip -o /tmp/openwell.zip -d /var/www/enhanced/content/www/assets/ | logger -t $(basename $0)
+	  sudo chown -R www-data.www-data /var/www/enhanced/content/www/assets/content >/dev/null 2>&1  
+	  sudo chmod -R 777 /var/www/enhanced/content/www/assets/content >/dev/null 2>&1  
+	  sudo rm /tmp/openwell.zip >/dev/null 2>&1  
+	  success
+	else
+	  python /usr/local/connectbox/bin/enhancedInterfaceUSBLoader.py | logger -t $(basename $0)
+	  success
+	fi
 }
 
 # Added by Derek Maxson 20210629
@@ -987,24 +979,12 @@ elif [ "$action" = "set" ]; then
       exit 0;
       ;;
 
-    "course-usb")
-      # Added by Derek Maxson 20211108
-      set_course_usb
-      exit 0;
-      ;;
-
     "openwell-download")
       # Added by Derek Maxson 20211104
       set_openwell_download
       exit 0;
       ;;
 
-    "openwell-usb-zip")
-      # Added by Derek Maxson 20211108
-      set_openwell_usb_zip
-      exit 0;
-      ;;
-      
     "wipe")
       # Added by Derek Maxson 20210629
       wipeSDCard
@@ -1022,6 +1002,10 @@ elif [ "$action" = "set" ]; then
       ;;
 
   esac
+elif [ "$action" = "course-usb" ]; then
+  course_usb
+elif [ "$action" = "openwell-usb" ]; then
+  openwell_usb
 elif [ "$action" = "unmountusb" ]; then
   unmountusb
 elif [ "$action" = "shutdown" ]; then
