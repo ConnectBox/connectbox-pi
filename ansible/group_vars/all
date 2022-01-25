@@ -80,7 +80,7 @@ php_version: 7.4
 
 client_ssid: "Default"
 client_wifipassword: "Default1"
-wireless_country_code: "00"
+wireless_country_code: "US"
 
 
 nginx_log_dir: /var/log/nginx
