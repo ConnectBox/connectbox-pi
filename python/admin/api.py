@@ -2,7 +2,7 @@ import base64,logging,subprocess
 from flask import request,abort,jsonify,make_response
 
 valid_properties = ["ssid", "brand", "client-ssid", "client-wifipassword", "client-wificountry", "channel", "hostname", "staticsite", "password",
-                    "system", "ui-config", "wpa-passphrase", "openwell-download", "moodle_download"]
+                    "system", "ui-config", "wpa-passphrase", "openwell-download", "course-download"]
 
 valid_brand_properties = ["g_device", "server_url", "server_authorization", "server_sitename", 
                     "server_siteadmin_name", "server_siteadmin_email", "server_siteadmin_phone", "enable_mass_storage", 
@@ -120,7 +120,7 @@ def set_system_property():
     if (not request.json) or ("value" not in request.json):
         _abort_bad_request() # bad request
 
-    if not request.json["value"] in ["shutdown", "reboot", "unmountusb", "reset"]:
+    if not request.json["value"] in ["shutdown", "reboot", "unmountusb", "reset","openwell-usb","course-usb"]:
         _abort_bad_request() # bad request
 
     return _call_command([request.json["value"]])

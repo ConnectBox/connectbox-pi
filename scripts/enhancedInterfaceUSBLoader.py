@@ -121,7 +121,8 @@ for path,dirs,files in os.walk(mediaDirectory):
 			print ("Webpath file " + filename + " is not index so skip")
 			continue
 		fullFilename = path + "/" + filename							# Example /media/usb0/video.mp4
-		slug = pathlib.Path(path + "/" + filename).stem					# Example  movie      (ALSO, slug is a term used in the BoltCMS mediabuilder that I'm adapting here)
+		shortName = pathlib.Path(path + "/" + filename).stem			# Example  video      (ALSO, slug is a term used in the BoltCMS mediabuilder that I'm adapting here)
+		slug = os.path.basename(fullFilename).replace('.','-')			# Example  video.mp4
 		extension = pathlib.Path(path + "/" + filename).suffix			# Example  .mp4
 
 		if (extension is None or extension == ''):
@@ -139,6 +140,7 @@ for path,dirs,files in os.walk(mediaDirectory):
 		if (extension == '.html'):
 			print (path,filename)
 			slug = os.path.basename(os.path.normpath(path))
+			item["mimeType"] = "application/zip"
 			filename = slug + ".zip"
 			print (filename)
 
@@ -161,7 +163,8 @@ for path,dirs,files in os.walk(mediaDirectory):
 			item["mimeType"] = "application/octet-stream"
 			print ("	Default mimetype: " + item["mimeType"])
 		item["slug"] = slug
-		item["title"] = slug
+		item["title"] = shortName
+		#item["categories"].append(types[extension]["category"])
 		# If the directory is not a language, make a non-duplicate category to organize that content
 		if (os.path.basename(os.path.normpath(path)) != language and path != mediaDirectory and types[extension]["category"] != os.path.basename(os.path.normpath(path)).capitalize()):
 			item["categories"].append(os.path.basename(os.path.normpath(path)).capitalize())

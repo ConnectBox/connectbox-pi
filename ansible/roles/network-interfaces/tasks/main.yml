@@ -37,7 +37,7 @@
   register: etc_network_interfaces
 
 - name: Configure network interfaces.j2 base
- template:
+  template:
     src: etc_network_interfaces.j2
     dest: /etc/network/interfaces.j2
     owner: root
