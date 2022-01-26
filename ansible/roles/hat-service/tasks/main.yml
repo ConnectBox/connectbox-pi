@@ -142,7 +142,7 @@
      cacheable: yes
 
 - debug:
-    msg: "Your running Python versioin: {{ python_version }}"
+    msg: "Your running Python version: {{ python_version }}"
   
 - name: Install devmem2 in NEO
   apt:
@@ -271,3 +271,9 @@
     enabled: yes
   with_items:
   - "{{ hat_service_name }}"
+
+- name: Copy alternative logo from URL for LCD logo
+  get_url:
+    url: "{{ alternative_lcd_logo }}"
+    dest: "/usr/local/connectbox/battery_tool_venv/lib/{{ python_version }}/site-packages/neo_batterylevelshutdown/assets/lcdlogo.png"
+  when: alternative_lcd_logo
