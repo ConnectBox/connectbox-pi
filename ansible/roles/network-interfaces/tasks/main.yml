@@ -47,7 +47,7 @@
 - name: Configure /etc/wpa_supplicant/template direcotry
   file:
      path: /etc/wpa_supplicant/templates
-     state: direcotry  
+     state: directory  
 
 - name: Configure wpa_supplicant.conf
   template:
