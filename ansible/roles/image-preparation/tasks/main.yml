@@ -18,16 +18,16 @@
      libpythonx:  "lib{{ python_vers }}"
 
 - debug:
-     msg: "the version of python is: {{ python_version }}"
+   msg: "the version of python is: {{ python_version }}"
 
- - debug:
-     msg: "the libpythonx.x_dev is: {{ libpythonx_dev }}"
+- debug:
+   msg: "the libpythonx.x_dev is: {{ libpythonx_dev }}"
  
- - debug:
-     msg: "the pythonx_dev is: {{ pythonx_dev }}"
+- debug:
+   msg: "the pythonx_dev is: {{ pythonx_dev }}"
  
- - debug:
-     msg: "the libpythonx is: {{ libpythonx }}"
+- debug:
+   msg: "the libpythonx is: {{ libpythonx }}"
   
 # In preparation for purging packages in the next step...
 # Some packages have lite versions that can be subbed in
