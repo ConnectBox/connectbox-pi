@@ -114,7 +114,7 @@
   apt:
     name: [ 'libjpeg62-turbo', 'python3-dev', 'libjpeg62-turbo-dev', 'libfreetype6', 'libfreetype6-dev', 'lib1g', 'zlib1g-dev', 'libopenjp2-7', 'libtiff5', 'lshw']
     state: present
-  when: connectbox_os != "raspbian" ans OS_Version == 'bullseye'
+  when: connectbox_os != "raspbian" and OS_Version == 'bullseye'
 
 - name: Make neo battery shutdown virtualenv directo
   file:
