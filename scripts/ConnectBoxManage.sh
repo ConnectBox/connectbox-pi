@@ -6,7 +6,7 @@
 
 VERSION=0.1.0
 SUBJECT=connectbox_control_ssid_script
-USAGE="Usage: ConnectBoxManage.sh -dhv [get|set|check] [ssid|channel|wpa-passphrase|hostname|staticsite|password|ui-config|client-ssid|client-wifipassword|client-wificountry|course-download|course-usb|openwell-download|openwell-usb|load-usb|brand] <value>"
+USAGE="Usage: ConnectBoxManage.sh -dhv [get|set|check] [ssid|channel|wpa-passphrase|hostname|staticsite|password|ui-config|client-ssid|client-wifipassword|client-wificountry|wifi-info|is-moodle|course-download|course-usb|openwell-download|openwell-usb|load-usb|brand] <value>"
 HOSTAPD_CONFIG="/etc/hostapd/hostapd.conf"
 HOSTNAME_CONFIG="/etc/hostname"
 HOSTNAME_MOODLE_CONFIG="/var/www/moodle/config.php"
@@ -24,8 +24,11 @@ DEBUG=0
 SUCCESS="SUCCESS"
 FAILURE="Unexpected Error"
 
-ACCESS_POINT_WLAN=`grep 'wpa-ssid' $WIFI_CONFIG | cut -d"=" -f2`
-CLIENT_WLAN=`grep 'wpa-ssid' $WIFI_CONFIG | cut -d"=" -f2`
+if [ -f $WIFI_CONFIG ]; then
+  ACCESS_POINT_WLAN=`grep 'AccessPointIF' $WIFI_CONFIG | cut -d"=" -f2` 
+  CLIENT_WLAN=`grep 'ClientIF' $WIFI_CONFIG | cut -d"=" -f2`
+fi
+
 # --- Options processing -------------------------------------------
 
 while getopts ":dvhg" optname
@@ -391,7 +394,7 @@ function restart_hostapd () {
     echo "Restarting hostapd"
   fi
 
-  ifdown wlan1  2>&1 | logger -t $(basename $0)
+  ifdown $ACCESS_POINT_WLAN  2>&1 | logger -t $(basename $0)
   if [ ${PIPESTATUS[0]} -ne 0 ]
   then
     failure
@@ -399,7 +402,7 @@ function restart_hostapd () {
 
   sleep 1
 
-  ifup wlan1  2>&1 | logger -t $(basename $0)
+  ifup $ACCESS_POINT_WLAN  2>&1 | logger -t $(basename $0)
 
   if [ ${PIPESTATUS[0]} -ne 0 ]
   then
@@ -703,8 +706,10 @@ function get_client_ssid () {
 
 function set_client_ssid () {
   sudo sed -i -e "/ssid=/ s/=.*/=\"${val}\"/" /etc/wpa_supplicant/wpa_supplicant.conf
-  sudo sed -i -e "/wpa-ssid / s/wpa-ssid .*/wpa-ssid \"${val}\"/" /etc/network/interfaces  ifdown wlan0 2>&1 
-  ifup wlan0  2>&1 
+  sudo sed -i -e "/wpa-ssid / s/wpa-ssid .*/wpa-ssid \"${val}\"/" /etc/network/interfaces
+  ifdown $CLIENT_WLAN 2>&1 
+  sleep 2
+  ifup $CLIENT_WLAN  2>&1 
   success
 }
 
@@ -716,8 +721,9 @@ function get_client_wifipassword () {
 function set_client_wifipassword () {
   sudo sed -i -e "/psk=/ s/=.*/=\"${val}\"/" /etc/wpa_supplicant/wpa_supplicant.conf
   sudo sed -i -e "/wpa-psk / s/wpa-psk .*/wpa-psk \"${val}\"/" /etc/network/interfaces
-  ifdown wlan0 2>&1 
-  ifup wlan0  2>&1 
+  ifdown $CLIENT_WLAN 2>&1 
+  sleep 2
+  ifup $CLIENT_WLAN  2>&1 
   success
 }
 
@@ -729,11 +735,36 @@ function get_client_wificountry () {
 function set_client_wificountry () {
   sudo sed -i -e "/country=/ s/=.*/=${val}/" /etc/wpa_supplicant/wpa_supplicant.conf
   sudo sed -i -e "/country_code=/ s/=.*/=${val}/" /etc/hostapd/hostapd.conf
-  ifdown wlan0 2>&1 
-  ifup wlan0  2>&1 
-  ifdown wlan1 2>&1 
-  ifup wlan1  2>&1 
+  ifdown $CLIENT_WLAN 2>&1 
+  sleep 2
+  ifup $CLIENT_WLAN  2>&1 
+  ifdown $ACCESS_POINT_WLAN 2>&1 
+  sleep 2
+  ifup $ACCESS_POINT_WLAN 2>&1 
   success
+}
+
+# Added by Derek Maxson 20220128
+function get_wifi_info() {
+  echo '========================================'
+  cat /etc/network/interfaces
+  echo '========================================'
+  cat /etc/hostapd/hostapd.conf
+  echo '========================================'
+  cat /etc/wpa_supplicant/wpa_supplicant.conf
+  echo '========================================'
+  ifconfig
+  echo '========================================'
+  iwconfig
+}
+
+# Added by Derek Maxson 20220128
+function get_is_moodle() {
+  if [ -f "/var/www/moodle/index.php" ]; then
+    echo '1'
+  else 
+    echo '0'
+  fi
 }
 
 # Added by Derek Maxson 20210616
@@ -910,8 +941,18 @@ if [ "$action" = "get" ]; then
       exit 0;
       ;;
 
+    "wifi-info")
+      get_wifi_info
+      exit 0;
+      ;;
+
     "brand")
       get_brand
+      exit 0;
+      ;;
+
+    "is-moodle")
+      get_is_moodle
       exit 0;
       ;;
 
