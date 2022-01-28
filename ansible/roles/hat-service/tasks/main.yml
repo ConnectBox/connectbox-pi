@@ -112,7 +112,7 @@
 
 - name: install packages to run OLED for NEO on armbian bullseye
   apt:
-    name: [ 'libjpeg62-turbo', 'python3-dev', 'libjpeg62-turbo-dev', 'libfreetype6', 'libfreetype6-dev', 'lib1g', 'zlib1g-dev', 'libopenjp2-7', 'libtiff5', 'lshw']
+    name: [ 'libjpeg62-turbo', 'python3-dev', 'libjpeg62-turbo-dev', 'libfreetype6', 'libfreetype6-dev', 'zlib1g', 'zlib1g-dev', 'libopenjp2-7', 'libtiff5', 'lshw']
     state: present
   when: connectbox_os != "raspbian" and OS_Version == 'bullseye'
 
