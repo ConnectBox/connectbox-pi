@@ -102,13 +102,19 @@
   apt:
     name: [ 'libjpeg-turbo8', 'python3-dev', 'libfreetype6', 'libfreetype6-dev','zlib1g-dev', 'libpng-dev', 'devmem2', 'lshw' ]
     state: present
-  when: connectbox_os != "raspbian" 
+  when: connectbox_os != "raspbian" and OS_Version != "bullseye"
 
 - name: Install packages to run OLED for Raspbian
   apt:
     name: [ 'libjpeg9-dev', 'python3-dev', 'libjpeg9', 'libfreetype6', 'libfreetype6-dev', 'zlib1g', 'zlib1g-dev', 'libopenjp2-7', 'libtiff5', 'lshw' ]
     state: present
-  when: connectbox_os == "raspbian" 
+  when: connectbox_os == 'raspbian'
+
+- name: install packages to run OLED for NEO on armbian bullseye
+  apt:
+    name: [ 'libjpeg62-turbo', 'python3-dev', 'libjpeg62-turbo-dev', 'libfreetype6', 'libfreetype6-dev', 'lib1g', 'zlib1g-dev', 'libopenjp2-7', 'libtiff5', 'lshw']
+    state: present
+  when: connectbox_os != "raspbian" ans OS_Version == 'bullseye'
 
 - name: Make neo battery shutdown virtualenv directo
   file:
@@ -198,14 +204,14 @@
   pip:
     name: ['Pillow==6.2.1', 'psutil']
     virtualenv: "{{ hat_service_virtualenv_dir }}"
-  when: connectbox_os == "raspbian"
+  when: connectbox_os == "raspbian" | OS_Version == 'bullseye'
   
 # Install RPi.GPIO_NP_CB as RPi.GPIO
 
 - name: Set path to RPi.GPIO_NP_CB (NEO)
   set_fact:
     RPi_GPIO_path: "{{ hat_service_virtualenv_dir }}/lib/{{ python_version }}/site-packages/RPi.GPIO_NP_CB"
-  when: connectbox_os != "raspbian"  
+  when: connectbox_os != "raspbian" and OS_Version != 'bullseye' 
 
 - name: Clone the RPi.GPIO_NP_CB repo to battery venv (NEO)
   git: 
@@ -214,7 +220,7 @@
     clone: yes
     update: yes
     force: yes
-  when: connectbox_os != "raspbian"  
+  when: connectbox_os != "raspbian"  and OS_Version != 'bullseye'
 
 - name: Install RPi.GPIO for Buster build
   command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.0"
@@ -222,7 +228,7 @@
 
 - name: Install RPi.GPIO for Bullseye build
   command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.1a4"
-  when: OS_Version == 'bullseye' and connectbox_os == 'raspbian'
+  when: OS_Version == 'bullseye'
   
 # new RPi_GPIO handles the pull down service for these pins where it did not in focal
 # The command must include the path to the virtual environment version of python3 or the resulting
@@ -232,7 +238,7 @@
   command: "{{ hat_service_virtualenv_dir }}/bin/python3 setup.py install"
   args:
     chdir: "{{ RPi_GPIO_path }}"
-  when: connectbox_os != "raspbian"  
+  when: connectbox_os != "raspbian"  and OS_Version != "bullseye"
 
 # With RPi.GPIO installed, we can now install the luma.core and luma.oled modules
 #  which will use the installed RPi.GPIO rather than trying to install RPi.GPIO 0.7.0
