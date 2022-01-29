@@ -158,25 +158,26 @@
 
 - name: If were bullseye on NEO then we need to compile devmem2
   command: wget https://bootlin.com/pub/mirror/devmem2.c
-  chdir: /home
+  args:
+    chdir: /home
   when: connectbox_os !~= "raspbian" and OS_Version == 'bullseye'
 
 - name: get the compiler we need
   apt:
     name: gcc
     state: present
-  when:: connectbox_os != "raspbian" and OS_Version == "bullseye"
+  when: connectbox_os != "raspbian" and OS_Version == "bullseye"
 
 - name: compile the devmem2 utility placing the output into /usr/bin
   command: gcc -0 /usr/bin/devmem2 /home/devmem2.c
   register: com_out
-  when:: connectbox_os != "raspbian" and OS_Version == "bullseye"
+  when: connectbox_os != "raspbian" and OS_Version == "bullseye"
 
 - name: Get rid of the extra tools we added
   apt:
     name: gcc
     state: absent
-  when:: connectbox_os != "raspbian" and OS_Version == "bullseye"
+  when: connectbox_os != "raspbian" and OS_Version == "bullseye"
 
 - name: Make sure there is no Pillow code already there
   ansible.builtin.file:
