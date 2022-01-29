@@ -825,7 +825,7 @@ function get_brand () {
   IFS='=' read -r -a array <<< "$val"
   if [ ${array[0]} == 'enable_mass_storage' ]; then
     jqString="jq '.[\"Enable_MassStorage\"]' $BRAND_CONFIG"
-  if [ ${array[0]} == 'usb0nomount' ]; then
+  elif [ ${array[0]} == 'usb0nomount' ]; then
     jqString="jq '.[\"usb0NoMount\"]' $BRAND_CONFIG"
   elif [ ${array[0]} == 'lcd_pages_stats' ]; then
     jqString="jq '.[\"lcd_pages_stats_hour_one\"]' $BRAND_CONFIG"
