@@ -845,6 +845,8 @@ function setBrand () {
   if [ ${array[0]} == 'lcd_pages_stats' ]; then
     # This has one input from the UI but writes several values in JSON -- special case
     jqString="jq -M '. + { \"lcd_pages_stats_hour_one\":${array[1]},\"lcd_pages_stats_hour_two\":${array[1]},\"lcd_pages_stats_day_one\":${array[1]},\"lcd_pages_stats_day_two\":${array[1]},\"lcd_pages_stats_week_one\":${array[1]},\"lcd_pages_stats_week_two\":${array[1]},\"lcd_pages_stats_month_one\":${array[1]},\"lcd_pages_stats_month_two\":${array[1]} }' $BRAND_CONFIG"
+  elif [ ${array[0]} == 'usb0nomount' ]; then
+    jqString="jq '.[\"usb0NoMount\"]=\"${array[1]}\"' $BRAND_CONFIG"
   elif [ ${array[0]} == 'enable_mass_storage' ]; then
     jqString="jq '.[\"Enable_MassStorage\"]=\"${array[1]}\"' $BRAND_CONFIG"
   elif [[ ${array[1]} =~ $re ]] ; then
