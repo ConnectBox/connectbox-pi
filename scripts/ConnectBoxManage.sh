@@ -6,7 +6,7 @@
 
 VERSION=0.1.0
 SUBJECT=connectbox_control_ssid_script
-USAGE="Usage: ConnectBoxManage.sh -dhv [get|set|check] [ssid|channel|wpa-passphrase|hostname|staticsite|password|ui-config|client-ssid|client-wifipassword|client-wificountry|wifi-info|is-moodle|course-download|course-usb|openwell-download|openwell-usb|load-usb|brand] <value>"
+USAGE="Usage: ConnectBoxManage.sh -dhv [get|set|check] [ssid|channel|wpa-passphrase|hostname|staticsite|password|ui-config|client-ssid|client-wifipassword|client-wificountry|wifi-info|is-moodle|course-download|courseusb|openwell-download|openwellusb|brand] <value>"
 HOSTAPD_CONFIG="/etc/hostapd/hostapd.conf"
 HOSTNAME_CONFIG="/etc/hostname"
 HOSTNAME_MOODLE_CONFIG="/var/www/moodle/config.php"
@@ -798,7 +798,7 @@ function openwell_usb () {
 	  sudo rm /tmp/openwell.zip >/dev/null 2>&1  
 	  success
 	else
-	  python /usr/local/connectbox/bin/enhancedInterfaceUSBLoader.py | logger -t $(basename $0)
+	  python /usr/local/connectbox/bin/enhancedInterfaceUSBLoader.py | logger -t $(basename $0) &
 	  success
 	fi
 }
@@ -1047,9 +1047,9 @@ elif [ "$action" = "set" ]; then
       ;;
 
   esac
-elif [ "$action" = "course-usb" ]; then
+elif [ "$action" = "courseusb" ]; then
   course_usb
-elif [ "$action" = "openwell-usb" ]; then
+elif [ "$action" = "openwellusb" ]; then
   openwell_usb
 elif [ "$action" = "unmountusb" ]; then
   unmountusb
