@@ -823,7 +823,9 @@ function wipeSDCard () {
 # Revised for lcd_pages to be done as keys not array 20220104
 function get_brand () {
   IFS='=' read -r -a array <<< "$val"
-  if [ ${array[0]} == 'lcd_pages_stats' ]; then
+  if [ ${array[0]} == 'enable_mass_storage' ]; then
+    jqString="jq '.[\"Enable_MassStorage\"]' $BRAND_CONFIG"
+  elif [ ${array[0]} == 'lcd_pages_stats' ]; then
     jqString="jq '.[\"lcd_pages_stats_hour_one\"]' $BRAND_CONFIG"
   else 
     jqString="jq '.[\"${array[0]}\"]' $BRAND_CONFIG"
@@ -841,6 +843,8 @@ function setBrand () {
   if [ ${array[0]} == 'lcd_pages_stats' ]; then
     # This has one input from the UI but writes several values in JSON -- special case
     jqString="jq -M '. + { \"lcd_pages_stats_hour_one\":${array[1]},\"lcd_pages_stats_hour_two\":${array[1]},\"lcd_pages_stats_day_one\":${array[1]},\"lcd_pages_stats_day_two\":${array[1]},\"lcd_pages_stats_week_one\":${array[1]},\"lcd_pages_stats_week_two\":${array[1]},\"lcd_pages_stats_month_one\":${array[1]},\"lcd_pages_stats_month_two\":${array[1]} }' $BRAND_CONFIG"
+  elif [ ${array[0]} == 'enable_mass_storage' ]; then
+    jqString="jq '.[\"Enable_MassStorage\"]=\"${array[1]}\"' $BRAND_CONFIG"
   elif [[ ${array[1]} =~ $re ]] ; then
     # If the value is a number, write the value as such in the JSON
     jqString="jq '.[\"${array[0]}\"]=${array[1]}' $BRAND_CONFIG"
