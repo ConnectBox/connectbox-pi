@@ -7,7 +7,7 @@ valid_properties = ["ssid", "brand", "client-ssid", "client-wifipassword", "clie
 valid_brand_properties = ["g_device", "server_url", "server_authorization", "server_sitename", 
                     "server_siteadmin_name", "server_siteadmin_email", "server_siteadmin_phone", "enable_mass_storage", 
                     "usb0NoMount", "enhanced","lcd_pages_main","lcd_pages_info","lcd_pages_battery","lcd_pages_multi_bat",
-                    "lcd_pages_memory","lcd_pages_stats","lcd_pages_admin"]
+                    "lcd_pages_memory","lcd_pages_stats","lcd_pages_admin","otg"]
 
 connectbox_version = 'dev'
 try:
