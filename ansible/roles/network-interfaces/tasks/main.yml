@@ -5,12 +5,17 @@
   register: nm_installed_check
   failed_when: nm_installed_check.rc > 1
 
+- name: Check if the command is running
+  command: service --status-all
+  register: nm_installed_test
+
 - name: Stop NetworkManager
   service:
     name: network-manager
     state: stopped
     enabled: no
-  when: nm_installed_check.rc == 0
+  when: nm_installed_test.stdout.find('network-manager') > 0
+
 
 - name: Remove NetworkManager
   apt:

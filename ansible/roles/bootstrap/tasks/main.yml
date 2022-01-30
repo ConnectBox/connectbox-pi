@@ -218,7 +218,7 @@
   file:
     path: /etc/cron.d/armbian-updates
     state: absent
-  when: ansible_facts['os_family'] == 'Ubuntu'
+  when: ansible_facts['os_family'] == 'Ubuntu' or connectbox_os == 'armbian'
 
 
 - name: Disable systemd-resolve to remove port conflicts
@@ -236,7 +236,7 @@
     path: /boot/armbianEnv.txt
     regexp: '(overlays=)'
     replace: 'i2c0 usbhost0 '
-  when: ansible_facts['os_family'] == 'Ubuntu' and not aws_instance
+  when: (ansible_facts['os_family'] == 'Ubuntu' or connectbox_os == 'armbian') and not aws_instance
 
 - name: Remove g_mass_storage device as default
   command: modprobe -r g_mass_storage
@@ -251,6 +251,7 @@
      path: /etc/systemd/system/serial-getty@ttyGS0.service.d
      state: directory
      mode: '0755'
+  when: connectbox_os != 'armbian'
 
 - name: copy service file over
   template:
@@ -264,7 +265,7 @@
      src: /lib/systemd/system/serial-getty@.service
      dest: /etc/systemd/system/getty.target.wants/serial-getty@ttyGS0.service
      state: link
-  when: connectbox_os == 'ubuntu' and (OS_Version == 'xenial' or OS_Version == 'focal')
+  when: (connectbox_os == 'ubuntu' and (OS_Version == 'xenial' or OS_Version == 'focal'))
      
 - name: add it to default load of modules
   command: echo 'g_serial' >> /etc/modules

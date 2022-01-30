@@ -100,13 +100,13 @@
 
 - name: Install packages to allow building of pillow and psutil, running of OLED and direct mem writes
   apt:
-    name: [ 'libjpeg-turbo8', 'python3-dev', 'libfreetype6', 'libfreetype6-dev','zlib1g-dev', 'libpng-dev', 'devmem2', 'lshw' ]
+    name: [ 'libjpeg-turbo8', 'python3-dev', 'libfreetype6', 'libfreetype6-dev','zlib1g-dev', 'libpng-dev', 'devmem2', 'lshw', 'libjpeg-dev' ]
     state: present
   when: connectbox_os != "raspbian" and OS_Version != "bullseye"
 
 - name: Install packages to run OLED for Raspbian
   apt:
-    name: [ 'libjpeg9-dev', 'python3-dev', 'libjpeg9', 'libfreetype6', 'libfreetype6-dev', 'zlib1g', 'zlib1g-dev', 'libopenjp2-7', 'libtiff5', 'lshw' ]
+    name: [ 'libjpeg9-dev', 'python3-dev', 'libjpeg9', 'libfreetype6', 'libfreetype6-dev', 'zlib1g', 'zlib1g-dev', 'libopenjp2-7', 'libtiff5', 'lshw', 'libjpeg-dev' ]
     state: present
   when: connectbox_os == 'raspbian'
 
@@ -116,7 +116,7 @@
     state: present
   when: connectbox_os != "raspbian" and OS_Version == 'bullseye'
 
-- name: Make neo battery shutdown virtualenv directo
+- name: Make neo battery shutdown virtualenv directory
   file:
     path: "{{ hat_service_virtualenv_dir }}"
     state: directory
@@ -158,25 +158,25 @@
 
 - name: If were bullseye on NEO then we need to compile devmem2
   command: wget https://bootlin.com/pub/mirror/devmem2.c
+  args:
   chdir: /home
-  when: connectbox_os !~= "raspbian" and OS_Version == 'bullseye'
+  when: connectbox_os != "raspbian" and OS_Version == 'bullseye'
 
 - name: get the compiler we need
   apt:
     name: gcc
     state: present
-  when:: connectbox_os != "raspbian" and OS_Version == "bullseye"
+  when: connectbox_os != "raspbian" and OS_Version == "bullseye"
 
 - name: compile the devmem2 utility placing the output into /usr/bin
-  command: gcc -0 /usr/bin/devmem2 /home/devmem2.c
-  register: com_out
-  when:: connectbox_os != "raspbian" and OS_Version == "bullseye"
+  command: gcc -o /usr/bin/devmem2 /home/devmem2.c
+  register: command_result
+  when: connectbox_os != "raspbian" and OS_Version == "bullseye"
 
-- name: Get rid of the extra tools we added
-  apt:
-    name: gcc
+- name: get rid of the c file
+  file:
+    path: /home/devmem2.c
     state: absent
-  when:: connectbox_os != "raspbian" and OS_Version == "bullseye"
 
 - name: Make sure there is no Pillow code already there
   ansible.builtin.file:
@@ -226,7 +226,7 @@
   pip:
     name: ['Pillow==6.2.1', 'psutil']
     virtualenv: "{{ hat_service_virtualenv_dir }}"
-  when: connectbox_os == "raspbian" | OS_Version == 'bullseye'
+  when: (connectbox_os == "raspbian") or (OS_Version == 'bullseye')
   
 # Install RPi.GPIO_NP_CB as RPi.GPIO
 
@@ -265,7 +265,7 @@
 # With RPi.GPIO installed, we can now install the luma.core and luma.oled modules
 #  which will use the installed RPi.GPIO rather than trying to install RPi.GPIO 0.7.0
 - name: Install luma.oled in hat service virtualenv
-  command: "{{ hat_service_virtualenv_dir }}/bin/pip install luma.oled==2.4.1"
+  command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install luma.oled==2.4.1"
 
 - name: Copy neo battery shutdown systemd service definition
   template:
@@ -281,16 +281,15 @@
     state: present
   notify:
      - "restart neo battery shutdown service"
+  when: OS_Version  != 'bullseye'
 
-# Startup has either already happened, or will happen in the handler
-#- name: Enable services pa_pulldown_enabler
-#  systemd:
-#    name: "{{ item }}"
-#    daemon_reload: yes
-#    enabled: yes
-#  with_items:
-#    - "{{ pa_pulldown_enabler_service_name }}"
-#  when: connectbox_os != "raspbian"
+- name: Load final elements libjpeg62-turbo-dev
+  apt:
+    name: "libjpeg62-turbo-dev"
+    state: present
+  notify:
+     - "restart neo battery shutdown service"
+  when: OS_Version == 'bullseye'
 
 - name: Enable and restart NEO_BatteryLevelShutdown
   systemd:
