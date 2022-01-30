@@ -30,21 +30,23 @@
     recurse: yes
 
 - name: find files in /tmp
-  shell: ls -l /tmp
+  find:
+    paths: "/tmp/files"
   register: contents
+  ignore_errors: true
 
 - name: clear space in the /tmp directory
   file:
-    path: /tmp/{{ item }}
+    path: "{{ item.path }}"
     state: absent
-    with_items: "{{ contents.stdout_lines }}"
+  with_items: "{{ contents.files }}"
+  ignore_erros: true
 
 # The chat and admin backend
 - name: Install packages for connectbox server process
   pip:
     virtualenv: "{{ connectbox_web_root }}/connectbox_virtualenv"  # XXX Could do better?
     virtualenv_python: python3
-
     name: ['flask>=2.0.2', 'ua-parser==0.10.0', 'gunicorn==20.1.0', 'requests>=2.25.1', 'six==1.16.0', 'sqlalchemy>=1.4.3']
     state: latest
   tags:
