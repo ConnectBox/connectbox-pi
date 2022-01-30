@@ -40,7 +40,7 @@
     path: "{{ item.path }}"
     state: absent
   with_items: "{{ contents.files }}"
-  ignore_erros: true
+  ignore_errors: true
 
 # The chat and admin backend
 - name: Install packages for connectbox server process
