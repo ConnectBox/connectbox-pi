@@ -6,7 +6,7 @@
 
 VERSION=0.1.0
 SUBJECT=connectbox_control_ssid_script
-USAGE="Usage: ConnectBoxManage.sh -dhv [get|set|check] [ssid|channel|wpa-passphrase|hostname|staticsite|password|ui-config|client-ssid|client-wifipassword|client-wificountry|wifi-info|is-moodle|course-download|course-usb|openwell-download|openwell-usb|load-usb|brand] <value>"
+USAGE="Usage: ConnectBoxManage.sh -dhv [get|set|check] [ssid|channel|wpa-passphrase|hostname|staticsite|password|ui-config|client-ssid|client-wifipassword|client-wificountry|wifi-info|is-moodle|course-download|courseusb|openwell-download|openwellusb|brand] <value>"
 HOSTAPD_CONFIG="/etc/hostapd/hostapd.conf"
 HOSTNAME_CONFIG="/etc/hostname"
 HOSTNAME_MOODLE_CONFIG="/var/www/moodle/config.php"
@@ -798,7 +798,7 @@ function openwell_usb () {
 	  sudo rm /tmp/openwell.zip >/dev/null 2>&1  
 	  success
 	else
-	  python /usr/local/connectbox/bin/enhancedInterfaceUSBLoader.py | logger -t $(basename $0)
+	  python /usr/local/connectbox/bin/enhancedInterfaceUSBLoader.py | logger -t $(basename $0) &
 	  success
 	fi
 }
@@ -823,7 +823,11 @@ function wipeSDCard () {
 # Revised for lcd_pages to be done as keys not array 20220104
 function get_brand () {
   IFS='=' read -r -a array <<< "$val"
-  if [ ${array[0]} == 'lcd_pages_stats' ]; then
+  if [ ${array[0]} == 'enable_mass_storage' ]; then
+    jqString="jq '.[\"Enable_MassStorage\"]' $BRAND_CONFIG"
+  elif [ ${array[0]} == 'usb0nomount' ]; then
+    jqString="jq '.[\"usb0NoMount\"]' $BRAND_CONFIG"
+  elif [ ${array[0]} == 'lcd_pages_stats' ]; then
     jqString="jq '.[\"lcd_pages_stats_hour_one\"]' $BRAND_CONFIG"
   else 
     jqString="jq '.[\"${array[0]}\"]' $BRAND_CONFIG"
@@ -841,6 +845,10 @@ function setBrand () {
   if [ ${array[0]} == 'lcd_pages_stats' ]; then
     # This has one input from the UI but writes several values in JSON -- special case
     jqString="jq -M '. + { \"lcd_pages_stats_hour_one\":${array[1]},\"lcd_pages_stats_hour_two\":${array[1]},\"lcd_pages_stats_day_one\":${array[1]},\"lcd_pages_stats_day_two\":${array[1]},\"lcd_pages_stats_week_one\":${array[1]},\"lcd_pages_stats_week_two\":${array[1]},\"lcd_pages_stats_month_one\":${array[1]},\"lcd_pages_stats_month_two\":${array[1]} }' $BRAND_CONFIG"
+  elif [ ${array[0]} == 'usb0nomount' ]; then
+    jqString="jq '.[\"usb0NoMount\"]=\"${array[1]}\"' $BRAND_CONFIG"
+  elif [ ${array[0]} == 'enable_mass_storage' ]; then
+    jqString="jq '.[\"Enable_MassStorage\"]=\"${array[1]}\"' $BRAND_CONFIG"
   elif [[ ${array[1]} =~ $re ]] ; then
     # If the value is a number, write the value as such in the JSON
     jqString="jq '.[\"${array[0]}\"]=${array[1]}' $BRAND_CONFIG"
@@ -1043,9 +1051,9 @@ elif [ "$action" = "set" ]; then
       ;;
 
   esac
-elif [ "$action" = "course-usb" ]; then
+elif [ "$action" = "courseusb" ]; then
   course_usb
-elif [ "$action" = "openwell-usb" ]; then
+elif [ "$action" = "openwellusb" ]; then
   openwell_usb
 elif [ "$action" = "unmountusb" ]; then
   unmountusb
