@@ -152,16 +152,15 @@
   
 - name: Install devmem2 in NEO
   apt:
-    name: ['devmem2']
+    name: devmem2
     state: present
   when: connectbox_os != "raspbian" and OS_Version != 'bullseye'
 
 - name: If were bullseye on NEO then we need to compile devmem2
   command: wget https://bootlin.com/pub/mirror/devmem2.c
   args:
-  chdir: /home
+    chdir: /home
   when: connectbox_os != "raspbian" and OS_Version == 'bullseye'
-
 
 - name: get the compiler we need
   apt:
@@ -172,14 +171,12 @@
 - name: compile the devmem2 utility placing the output into /usr/bin
   command: gcc -o /usr/bin/devmem2 /home/devmem2.c
   register: command_result
-
   when: connectbox_os != "raspbian" and OS_Version == "bullseye"
 
 - name: get rid of the c file
   file:
     path: /home/devmem2.c
     state: absent
-
   when: connectbox_os != "raspbian" and OS_Version == "bullseye"
 
 - name: Make sure there is no Pillow code already there
