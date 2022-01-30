@@ -37,7 +37,7 @@
   file:
     path: /tmp/{{ item }}
     state: absent
-    with_items: {{ contents.stdout_lines }}
+    with_items: "{{ contents.stdout_lines }}"
 
 # The chat and admin backend
 - name: Install packages for connectbox server process
