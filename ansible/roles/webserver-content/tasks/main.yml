@@ -42,6 +42,13 @@
   with_items: "{{ contents.files }}"
   ignore_errors: true
 
+- name: force a reinstallation of setuptools
+  pip:
+    virtualenv: "{{ connectbox_web_root }}/connectbox_virtualenv"  # XXX Could do better?
+    virtualenv_python: python3
+    name: setuptools
+    State: forcereinstall
+
 # The chat and admin backend
 - name: Install packages for connectbox server process
   pip:
