@@ -160,19 +160,19 @@
   apt:
     name: devmem2
     state: present
-  when: connectbox_os != "raspbian" and OS_Version != 'bullseye'
+  when: connectbox_os != "raspbian" and OS_Version != 'bullseye' and OS_Version != 'buster'
 
-- name: If were bullseye on NEO then we need to compile devmem2
+- name: If were bullseye/buster on NEO then we need to compile devmem2
   command: wget https://bootlin.com/pub/mirror/devmem2.c
   args:
     chdir: /home
-  when: connectbox_os != "raspbian" and OS_Version == 'bullseye'
+  when: connectbox_os != "raspbian" and (OS_Version == 'bullseye' or OS_Version == 'buster')
 
 - name: get the compiler we need
   apt:
     name: gcc
     state: present
-  when: connectbox_os != "raspbian" and OS_Version == "bullseye"
+  when: connectbox_os != "raspbian" and (OS_Version == "bullseye" or OS_Version == 'buster')
 
 - name: compile the devmem2 utility placing the output into /usr/bin
   command: gcc -o /usr/bin/devmem2 /home/devmem2.c
