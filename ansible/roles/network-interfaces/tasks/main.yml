@@ -79,7 +79,24 @@
       /usr/local/connectbox/bin/wlan0.pl &
   when: not aws_instance and connectbox_os != "armbian" and connectbox_os != 'ubuntu'
 
-  
+- name: communicate the release number
+  debug:
+     msg: "{{ ansible_kernel }}"
+
+- name: Check for drivers that already exsist and we compiled for this release
+  copy:
+    src: "{{ ansible_kernel }}/"
+    dest: /usr/lib/modules/"{{ ansible_kernel }}"/kernel/drivers/net/wirless/
+    owner: root
+    group: root
+    mode: '0644'
+  register: found_drivers
+  ignore_errors: true
+
+- name: Let the user know that we found the drivers
+  debug:
+    msg: "We found the drivers already compiled on the system"
+  when: not found_drivers.failed
 
 # Note we have already upgraded the OS to the lattest in role bootstrap
 # now we just install the current OS build tools
@@ -92,13 +109,14 @@
     - libelf-dev
     - libssl-dev
     state: present
+  when: found_drivers.failed
 
 - name: apt install raspberrypi-kernel-headers
   apt:
     pkg:
     - raspberrypi-kernel-headers
     state: present
-  when: connectbox_os == "raspbian"
+  when: connectbox_os == "raspbian" and found_drivers.failed
 
 # or apt-get install linux-headers-$(uname -r)
 - name: apt install linux-headers-current-sunxi
@@ -106,29 +124,33 @@
     pkg:
     - linux-headers-current-sunxi
     state: present
-  when: connectbox_os != "raspbian"
+  when: connectbox_os != "raspbian" and found_drivers.failed
 
 - name: Copy over 8812au-install script for Raspian
   copy:
     src: 8812au-install.sh
     dest: /tmp/8812au-install.sh
     mode: "+x"
+  when: found_drivers.failed
 
 - name: Compile the 8812au driver for Raspbian or NEO
   command:
      chdir: /tmp
      cmd: "sh 8812au-install.sh"
+  when: found_drivers.failed
 
 - name: Copy over 88x2bu-install script for Raspian
   copy:
     src: 88x2bu-install.sh
     dest: /tmp/88x2bu-install.sh
     mode: "+x"
+  when: found_drivers.failed
 
 - name: Compile the 88x2bu driver for Raspbian or NEO
   command:
      chdir: /tmp
      cmd: "sh 88x2bu-install.sh"
+  when: found_drivers.failed
 
 - name: remove build tools
   apt:
@@ -139,6 +161,23 @@
     - libssl-dev
     - raspbewrrypi-kernel-headers
     state: absent
+  when: found_drivers.failed
+
+- name: Make directory if it dosn't exsist t save a copy of the compiled drivers
+  file:
+    dest: /home/kernal_drivers/"{{ansible_kernel}}"
+    state: directory
+  when: found_drivers.failed
+
+
+- name: if we built the drivers then lets keep a copy on the build system
+  fetch:
+    src: /usr/lib/modules/"{{ ansible_kernel }}"/kernel/drivers/net/wirless/88*.ko
+    dest: /home/kernal_drivers/"{{ansible_kernel}}/"
+    fail_on_missing: no
+    flat: yes
+  when: found_drivers.failed
+
 
 # Note: this is not a handler because we need the network configuration in
 # effect before proceeding with the wifi-ap and firewall roles, which will

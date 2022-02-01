@@ -47,15 +47,21 @@
     virtualenv: "{{ connectbox_web_root }}/connectbox_virtualenv"  # XXX Could do better?
     virtualenv_python: python3
     name: setuptools
-    State: forcereinstall
+    State: absent
 
+- name: reinstall setuptools
+  pip:
+    virtualenv: "{{ connectbox_web_root }}/connectbox_virtualenv"  # XXX Could do better?
+    virtualenv_python: python3
+    name: setuptools
+    State: latest     
 
 # The chat and admin backend
 - name: Install packages for connectbox server process
   pip:
     virtualenv: "{{ connectbox_web_root }}/connectbox_virtualenv"  # XXX Could do better?
     virtualenv_python: python3
-    name: ['flask>=2.0.2', 'ua-parser==0.10.0', 'gunicorn==20.1.0', 'requests>=2.25.1', 'six==1.16.0', 'sqlalchemy>=1.4.3']
+    name: ['flask>=1.1.2', 'ua-parser==0.10.0', 'gunicorn==20.0.4', 'requests==2.25.1', 'six==1.15.0', 'sqlalchemy>=1.3.22']
     state: present
   tags:
     - captive_portal
