@@ -527,6 +527,102 @@
       /usr/bin/python3 /usr/local/connectbox/bin/PxUSBm.py &
   when: not aws_instance
 
+# Moved over from connectbox/tasks/main.yml by Derek Maxson 20220129
+#   So that we have access to the scripts during startup
+#
+
+- name: Configure hostname
+  hostname:
+    name: "{{ connectbox_default_hostname }}"
+
+- name: Add hosts entry
+  blockinfile:
+    dest: /etc/hosts
+    block: |
+      127.0.0.1  {{ connectbox_default_hostname }}
+
+- name: Create connectbox version file
+  copy:
+    content: "{{ connectbox_version }}\n"
+    dest: /etc/connectbox-release
+
+- name: Create connectbox group
+  group:
+    name: _connectbox
+    system: yes
+
+# Not strictly necessary but can be used for testing
+- name: Create _connectbox user and to _connectbox group
+  user:
+    name: _connectbox
+    group: _connectbox
+    system: yes
+    createhome: no
+
+- name: Add www-data to _connectbox group
+  user:
+    name: www-data
+    groups: _connectbox
+    append: yes
+
+- name: Make scripts directory
+  file:
+    state: directory
+    path: /usr/local/connectbox/bin
+    owner: _connectbox
+    group: _connectbox
+    recurse: yes
+    mode: 0755
+
+- name: Make etc directory
+  file:
+    state: directory
+    path: /usr/local/connectbox/etc
+    owner: _connectbox
+    group: _connectbox
+    mode: 0755
+
+- name: Make var directory
+  file:
+    state: directory
+    path: /usr/local/connectbox/var
+    owner: _connectbox
+    group: _connectbox
+    mode: 0775
+
+- name: Copy connectbox scripts
+  copy:
+    src: ../scripts/
+    dest: /usr/local/connectbox/bin/
+    owner: _connectbox
+    group: _connectbox
+    mode: 0755
+
+- name: Make connectbox config overrides
+  template:
+    src: connectbox.conf.j2
+    dest: /usr/local/connectbox/etc/connectbox.conf
+    backup: yes
+    owner: _connectbox
+    group: _connectbox
+    mode: 0644
+
+- name: Copy connectbox basic auth credentials
+  copy:
+    content: "{{ connectbox_admin_credentials }}"
+    dest: /usr/local/connectbox/etc/basicauth
+    owner: _connectbox
+    group: _connectbox
+    mode: 0660
+
+- name: allow connectbox group to execute connectbox scripts
+  blockinfile:
+    dest: /etc/sudoers
+    validate: /usr/sbin/visudo --check --file="%s"
+    block: |
+      %_connectbox ALL=(ALL) NOPASSWD: /usr/local/connectbox/bin/
+
+
 - name: Copy brand.txt template
   template:
     src: brand_txt.j2
