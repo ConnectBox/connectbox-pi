@@ -85,7 +85,7 @@
 
 - name: Check for drivers that already exsist and we compiled for this release
   copy:
-    src: "{{ ansible_kernel }}/"
+    src: "/{{ ansible_kernel }}/"
     dest: /usr/lib/modules/"{{ ansible_kernel }}"/kernel/drivers/net/wirless/
     owner: root
     group: root
@@ -94,7 +94,7 @@
   ignore_errors: true
 
 - name: Let the user know that we found the drivers
-  debug:
+ debug:
     msg: "We found the drivers already compiled on the system"
   when: not found_drivers.failed
 
