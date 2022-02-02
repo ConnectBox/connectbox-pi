@@ -43,3 +43,25 @@
     minute: "*/10"
     user: www-data
     job: "/usr/bin/python /usr/local/connectbox/bin/phonehome.py >/tmp/push_messages.log  2>&1"
+
+- name: Update enhanced template footer for Moodle if build_moodle
+  replace:
+    path: /var/www/enhanced/content/www/assets/templates/footer.html
+    regexp: 'ifMoodle hidden'
+    replace: 'ifMoodle'
+  when: build_moodle
+
+- name: Update enhanced content footer for Moodle if build_moodle
+  replace:
+    path: /var/www/enhanced/content/www/assets/content/footer.html
+    regexp: 'ifMoodle hidden'
+    replace: 'ifMoodle'
+  when: build_moodle
+
+- name: Update hostname in MMI
+  replace:
+    path: /var/www/enhanced/content/www/assets/content/en/data/interface.json
+    regexp: 'hostname'
+    replace: '{{ connectbox_default_hostname }}'
+
+  
