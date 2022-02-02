@@ -79,10 +79,11 @@
       /usr/local/connectbox/bin/wlan0.pl &
   when: not aws_instance and connectbox_os != "armbian" and connectbox_os != 'ubuntu'
 
-- name: communicate the release number
+- name: Register the release number
   shell:
     cmd: uname -r
   register: kernel_num
+
 
 - name: give the number
   debug:
