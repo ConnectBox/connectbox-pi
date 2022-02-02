@@ -6,7 +6,7 @@
 
 VERSION=0.1.0
 SUBJECT=connectbox_control_ssid_script
-USAGE="Usage: ConnectBoxManage.sh -dhv [get|set|check] [ssid|channel|wpa-passphrase|hostname|staticsite|password|ui-config|client-ssid|client-wifipassword|client-wificountry|course-download|course-usb|openwell-download|openwell-usb|brand] <value>"
+USAGE="Usage: ConnectBoxManage.sh -dhv [get|set|check] [ssid|channel|wpa-passphrase|hostname|staticsite|password|ui-config|client-ssid|client-wifipassword|client-wificountry|wifi-info|is-moodle|course-download|courseusb|openwell-download|openwellusb|brand] <value>"
 HOSTAPD_CONFIG="/etc/hostapd/hostapd.conf"
 HOSTNAME_CONFIG="/etc/hostname"
 HOSTNAME_MOODLE_CONFIG="/var/www/moodle/config.php"
@@ -16,12 +16,18 @@ BRAND_CONFIG="/usr/local/connectbox/brand.txt"
 NGINX_CONFIG="/etc/nginx/sites-enabled/vhosts.conf"
 PASSWORD_CONFIG="/usr/local/connectbox/etc/basicauth"
 WIFI_CONFIGURATOR="/usr/local/connectbox/wifi_configurator_venv/bin/wifi_configurator"
+WIFI_CONFIG="/usr/local/connectbox/wificonf.txt"
 CLIENTWIFI_CONFIG="/etc/network/interfaces"
 PASSWORD_SALT="CBOX2018"
 UI_CONFIG="/var/www/connectbox/connectbox_default/config/default.json"
 DEBUG=0
 SUCCESS="SUCCESS"
 FAILURE="Unexpected Error"
+
+if [ -f $WIFI_CONFIG ]; then
+  ACCESS_POINT_WLAN=`grep 'AccessPointIF' $WIFI_CONFIG | cut -d"=" -f2` 
+  CLIENT_WLAN=`grep 'ClientIF' $WIFI_CONFIG | cut -d"=" -f2`
+fi
 
 # --- Options processing -------------------------------------------
 
@@ -388,7 +394,7 @@ function restart_hostapd () {
     echo "Restarting hostapd"
   fi
 
-  ifdown wlan1  2>&1 | logger -t $(basename $0)
+  ifdown $ACCESS_POINT_WLAN  2>&1 | logger -t $(basename $0)
   if [ ${PIPESTATUS[0]} -ne 0 ]
   then
     failure
@@ -396,7 +402,7 @@ function restart_hostapd () {
 
   sleep 1
 
-  ifup wlan1  2>&1 | logger -t $(basename $0)
+  ifup $ACCESS_POINT_WLAN  2>&1 | logger -t $(basename $0)
 
   if [ ${PIPESTATUS[0]} -ne 0 ]
   then
@@ -700,8 +706,10 @@ function get_client_ssid () {
 
 function set_client_ssid () {
   sudo sed -i -e "/ssid=/ s/=.*/=\"${val}\"/" /etc/wpa_supplicant/wpa_supplicant.conf
-  sudo sed -i -e "/wpa-ssid / s/wpa-ssid .*/wpa-ssid \"${val}\"/" /etc/network/interfaces  ifdown wlan0 2>&1 
-  ifup wlan0  2>&1 
+  sudo sed -i -e "/wpa-ssid / s/wpa-ssid .*/wpa-ssid \"${val}\"/" /etc/network/interfaces
+  ifdown $CLIENT_WLAN 2>&1 
+  sleep 2
+  ifup $CLIENT_WLAN  2>&1 
   success
 }
 
@@ -713,8 +721,9 @@ function get_client_wifipassword () {
 function set_client_wifipassword () {
   sudo sed -i -e "/psk=/ s/=.*/=\"${val}\"/" /etc/wpa_supplicant/wpa_supplicant.conf
   sudo sed -i -e "/wpa-psk / s/wpa-psk .*/wpa-psk \"${val}\"/" /etc/network/interfaces
-  ifdown wlan0 2>&1 
-  ifup wlan0  2>&1 
+  ifdown $CLIENT_WLAN 2>&1 
+  sleep 2
+  ifup $CLIENT_WLAN  2>&1 
   success
 }
 
@@ -725,53 +734,73 @@ function get_client_wificountry () {
 
 function set_client_wificountry () {
   sudo sed -i -e "/country=/ s/=.*/=${val}/" /etc/wpa_supplicant/wpa_supplicant.conf
-  ifdown wlan0 2>&1 
-  ifup wlan0  2>&1 
+  sudo sed -i -e "/country_code=/ s/=.*/=${val}/" /etc/hostapd/hostapd.conf
+  ifdown $CLIENT_WLAN 2>&1 
+  sleep 2
+  ifup $CLIENT_WLAN  2>&1 
+  ifdown $ACCESS_POINT_WLAN 2>&1 
+  sleep 2
+  ifup $ACCESS_POINT_WLAN 2>&1 
   success
+}
+
+# Added by Derek Maxson 20220128
+function get_wifi_info() {
+  echo '========================================'
+  cat /etc/network/interfaces
+  echo '========================================'
+  cat /etc/hostapd/hostapd.conf
+  echo '========================================'
+  cat /etc/wpa_supplicant/wpa_supplicant.conf
+  echo '========================================'
+  ifconfig
+  echo '========================================'
+  iwconfig
+}
+
+# Added by Derek Maxson 20220128
+function get_is_moodle() {
+  if [ -f "/var/www/moodle/index.php" ]; then
+    echo '1'
+  else 
+    echo '0'
+  fi
 }
 
 # Added by Derek Maxson 20210616
 function set_course_download () {
-  local channel=`sudo -u www-data wget -O /tmp/download.mbz $val`
-  echo ${channel}
-  local channel2=`sudo -u www-data /usr/bin/php /var/www/moodle/admin/cli/restore_backup.php --file=/tmp/download.mbz --categoryid=1`
-  echo ${channel2}
+  wget -O /tmp/download.mbz $val >/tmp/course-download.log 2>&1
+  /usr/bin/php /var/www/moodle/admin/cli/restore_backup.php --file=/tmp/download.mbz --categoryid=1 | logger -t $(basename $0)
   success
 }
 
 # Added by Derek Maxson 20211108
-function set_course_usb () {
-  local channel2=`sudo -u www-data /usr/bin/php /var/www/moodle/admin/cli/restore_courses_directory.php /media/usb0/`
-  echo ${channel2}
+function course_usb () {
+  sudo /usr/bin/php /var/www/moodle/admin/cli/restore_courses_directory.php /media/usb0/ | logger -t $(basename $0)
   success
 }
 
 # Added by Derek Maxson 20211104
 function set_openwell_download () {
-  sudo -u www-data /usr/bin/python /usr/local/connectbox/bin/lazyLoader.py $val | logger -t $(basename $0)
-
-  if [ ${PIPESTATUS[0]} -eq 0 ]
-  then
-    sudo rm /tmp/openwell.zip
-    success
-  else
-    failure
-  fi
+  sudo /usr/bin/python /usr/local/connectbox/bin/lazyLoader.py $val | logger -t $(basename $0) 
+  #sudo rm /tmp/openwell.zip
+  success
 }
 
 # Added by Derek Maxson 20211108
-function set_openwell_usb () {
-  sudo -u cp /media/usb0/openwell.zip /tmp/openwell.zip $val >/dev/null
-  sudo -u www-data rm -rf /var/www/enhanced/content/www/assets/content >/dev/null 
-  sudo -u www-data unzip -o /tmp/openwell.zip -d /var/www/enhanced/content/www/assets/ | logger -t $(basename $0)
-
-  if [ ${PIPESTATUS[0]} -eq 0 ]
-  then
-    sudo rm /tmp/openwell.zip
-    success
-  else
-    failure
-  fi
+function openwell_usb () {
+	if [ -f "/media/usb0/openwell.zip" ]; then
+	  sudo cp /media/usb0/openwell.zip /tmp/openwell.zip $val >/dev/null 2>&1
+	  sudo rm -rf /var/www/enhanced/content/www/assets/content >/dev/null 2>&1
+	  sudo unzip -o /tmp/openwell.zip -d /var/www/enhanced/content/www/assets/ | logger -t $(basename $0)
+	  sudo chown -R www-data.www-data /var/www/enhanced/content/www/assets/content >/dev/null 2>&1  
+	  sudo chmod -R 777 /var/www/enhanced/content/www/assets/content >/dev/null 2>&1  
+	  sudo rm /tmp/openwell.zip >/dev/null 2>&1  
+	  success
+	else
+	  python /usr/local/connectbox/bin/enhancedInterfaceUSBLoader.py | logger -t $(basename $0) &
+	  success
+	fi
 }
 
 # Added by Derek Maxson 20210629
@@ -794,7 +823,11 @@ function wipeSDCard () {
 # Revised for lcd_pages to be done as keys not array 20220104
 function get_brand () {
   IFS='=' read -r -a array <<< "$val"
-  if [ ${array[0]} == 'lcd_pages_stats' ]; then
+  if [ ${array[0]} == 'enable_mass_storage' ]; then
+    jqString="jq '.[\"Enable_MassStorage\"]' $BRAND_CONFIG"
+  elif [ ${array[0]} == 'usb0nomount' ]; then
+    jqString="jq '.[\"usb0NoMount\"]' $BRAND_CONFIG"
+  elif [ ${array[0]} == 'lcd_pages_stats' ]; then
     jqString="jq '.[\"lcd_pages_stats_hour_one\"]' $BRAND_CONFIG"
   else 
     jqString="jq '.[\"${array[0]}\"]' $BRAND_CONFIG"
@@ -812,6 +845,10 @@ function setBrand () {
   if [ ${array[0]} == 'lcd_pages_stats' ]; then
     # This has one input from the UI but writes several values in JSON -- special case
     jqString="jq -M '. + { \"lcd_pages_stats_hour_one\":${array[1]},\"lcd_pages_stats_hour_two\":${array[1]},\"lcd_pages_stats_day_one\":${array[1]},\"lcd_pages_stats_day_two\":${array[1]},\"lcd_pages_stats_week_one\":${array[1]},\"lcd_pages_stats_week_two\":${array[1]},\"lcd_pages_stats_month_one\":${array[1]},\"lcd_pages_stats_month_two\":${array[1]} }' $BRAND_CONFIG"
+  elif [ ${array[0]} == 'usb0nomount' ]; then
+    jqString="jq '.[\"usb0NoMount\"]=\"${array[1]}\"' $BRAND_CONFIG"
+  elif [ ${array[0]} == 'enable_mass_storage' ]; then
+    jqString="jq '.[\"Enable_MassStorage\"]=\"${array[1]}\"' $BRAND_CONFIG"
   elif [[ ${array[1]} =~ $re ]] ; then
     # If the value is a number, write the value as such in the JSON
     jqString="jq '.[\"${array[0]}\"]=${array[1]}' $BRAND_CONFIG"
@@ -912,8 +949,18 @@ if [ "$action" = "get" ]; then
       exit 0;
       ;;
 
+    "wifi-info")
+      get_wifi_info
+      exit 0;
+      ;;
+
     "brand")
       get_brand
+      exit 0;
+      ;;
+
+    "is-moodle")
+      get_is_moodle
       exit 0;
       ;;
 
@@ -981,24 +1028,12 @@ elif [ "$action" = "set" ]; then
       exit 0;
       ;;
 
-    "course-usb")
-      # Added by Derek Maxson 20211108
-      set_course_usb
-      exit 0;
-      ;;
-
     "openwell-download")
       # Added by Derek Maxson 20211104
       set_openwell_download
       exit 0;
       ;;
 
-    "openwell-usb-zip")
-      # Added by Derek Maxson 20211108
-      set_openwell_usb_zip
-      exit 0;
-      ;;
-      
     "wipe")
       # Added by Derek Maxson 20210629
       wipeSDCard
@@ -1016,6 +1051,10 @@ elif [ "$action" = "set" ]; then
       ;;
 
   esac
+elif [ "$action" = "courseusb" ]; then
+  course_usb
+elif [ "$action" = "openwellusb" ]; then
+  openwell_usb
 elif [ "$action" = "unmountusb" ]; then
   unmountusb
 elif [ "$action" = "shutdown" ]; then

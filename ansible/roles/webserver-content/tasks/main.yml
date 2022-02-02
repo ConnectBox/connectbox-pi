@@ -29,14 +29,40 @@
     group: www-data
     recurse: yes
 
+- name: find files in /tmp
+  find:
+    paths: "/tmp/files"
+  register: contents
+  ignore_errors: true
+
+- name: clear space in the /tmp directory
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  with_items: "{{ contents.files }}"
+  ignore_errors: true
+
+- name: force a reinstallation of setuptools
+  pip:
+    virtualenv: "{{ connectbox_web_root }}/connectbox_virtualenv"  # XXX Could do better?
+    virtualenv_python: python3
+    name: setuptools
+    State: absent
+
+- name: reinstall setuptools
+  pip:
+    virtualenv: "{{ connectbox_web_root }}/connectbox_virtualenv"  # XXX Could do better?
+    virtualenv_python: python3
+    name: setuptools
+    State: latest     
+
 # The chat and admin backend
 - name: Install packages for connectbox server process
   pip:
     virtualenv: "{{ connectbox_web_root }}/connectbox_virtualenv"  # XXX Could do better?
     virtualenv_python: python3
-
-    name: ['flask>=1.0.0', 'ua-parser==0.10.0', 'gunicorn==20.1.0', 'requests==2.25.1', 'six==1.11.0', 'sqlalchemy==1.3.0']
-    state: latest
+    name: ['flask>=1.1.2', 'ua-parser==0.10.0', 'gunicorn==20.0.4', 'requests==2.25.1', 'six==1.15.0', 'sqlalchemy>=1.3.22']
+    state: present
   tags:
     - captive_portal
 

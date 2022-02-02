@@ -15,7 +15,6 @@
   ignore_errors: yes
 
 - debug:
-    msg: "Temp system output: {{tempoutput.stdout}}"
     msg: "Swap system output: {{swapoutput.stdout}}"
 
 
@@ -23,15 +22,17 @@
   vars:
      tmpvl: tempoutput.stdout | regex_search('[0-9]*[KMG]')
   set_fact:
-     Temp_Val: "{{ tmpvl }}"
+     Temp_Val: '{{ tmpvl }}'
      cacheable: yes
   ignore_errors: yes
 
+- debug:
+    msg: "Temp system output: {{tempoutput.stdout}}"
 - name: Set /Swap size value into variable
   vars:
      swpvl:  swapoutput.stdout | regex_search('[0-9]*[KMG]')
   set_fact:
-     Swap_Val: "{{ swpvl }}"
+     Swap_Val: '{{ swpvl }}'
      cacheable: yes
   ignore_errors: yes
  
@@ -99,17 +100,23 @@
 
 - name: Install packages to allow building of pillow and psutil, running of OLED and direct mem writes
   apt:
-    name: [ 'libjpeg-turbo8', 'python3-dev', 'libfreetype6', 'libfreetype6-dev','zlib1g-dev', 'libpng-dev', 'devmem2', 'lshw' ]
+    name: [ 'libjpeg-turbo8', 'python3-dev', 'libfreetype6', 'libfreetype6-dev','zlib1g-dev', 'libpng-dev', 'devmem2', 'lshw', 'libjpeg-dev' ]
     state: present
-  when: connectbox_os != "raspbian" 
+  when: connectbox_os != "raspbian" and OS_Version != "bullseye" and OS_Version != 'buster'
 
 - name: Install packages to run OLED for Raspbian
   apt:
-    name: [ 'libjpeg9-dev', 'python3-dev', 'libjpeg9', 'libfreetype6', 'libfreetype6-dev', 'zlib1g', 'zlib1g-dev', 'libopenjp2-7', 'libtiff5', 'lshw' ]
+    name: [ 'libjpeg9-dev', 'python3-dev', 'libjpeg9', 'libfreetype6', 'libfreetype6-dev', 'zlib1g', 'zlib1g-dev', 'libopenjp2-7', 'libtiff5', 'lshw', 'libjpeg-dev' ]
     state: present
-  when: connectbox_os == "raspbian" 
+  when: connectbox_os == 'raspbian' and OS_Version != 'bullseye' and OS_Version != 'buster'
 
-- name: Make neo battery shutdown virtualenv directo
+- name: install packages to run OLED for NEO on armbian bullseye
+  apt:
+    name: [ 'libjpeg62-turbo', 'python3-dev', 'libjpeg62-turbo-dev', 'libfreetype6', 'libfreetype6-dev', 'zlib1g', 'zlib1g-dev', 'libopenjp2-7', 'libtiff5', 'lshw']
+    state: present
+  when: OS_Version == 'bullseye' or OS_Version == 'buster'
+
+- name: Make neo battery shutdown virtualenv directory
   file:
     path: "{{ hat_service_virtualenv_dir }}"
     state: directory
@@ -122,34 +129,80 @@
 
 - name: Install prerequesitst for Pillow build
   apt:
-    name: [python3-dev, python3-setuptools, libtiff5-dev, libjpeg8-dev, libopenjp2-7-dev, zlib1g-dev, libfreetype6-dev, liblcms2-dev, libwebp-dev, tcl8.6-dev, tk8.6-dev, python3-tk, libharfbuzz-dev, libfribidi-dev, libxcb1-dev, libtiff5 ]
+    name: ['python3-dev', 'python3-setuptools', 'libtiff5-dev', 'libjpeg8dev', 'libopenjp2-7-dev', 'zlib1g-dev', 'libfreetype6-dev', 'liblcms2-dev', 'libwebp-dev', 'tcl8.6-dev', 'tk8.6-dev', 'python3-tk', 'libharfbuzz-dev', 'libfribidi-dev', 'libxcb1-dev', 'libtiff5' ]
     state: present 
-  when: connectbox_os != "raspbian"
+  when: connectbox_os != "raspbian" and OS_Version != 'bullseye' and OS_Version != 'buster'
 
+- name: Install prerequesitst for Pillow build bullseye or buster
+  apt:
+    name: ['python3-dev', 'python3-setuptools', 'libtiff5-dev', 'libjpeg62-turbo-dev', 'libopenjp2-7-dev', 'zlib1g-dev', 'libfreetype6-dev', 'liblcms2-dev', 'libwebp-dev', 'tcl8.6-dev', 'tk8.6-dev', 'python3-tk', 'libharfbuzz-dev', 'libfribidi-dev', 'libxcb1-dev', 'libtiff5' ]
+    state: present
+  when: connectbox_os != 'raspbian' and (OS_Version == 'bullseye' or OS_Version == "buster")
+
+- name: determine python version
+  command: python --version
+  register: python_version_raw
+
+- debug:
+    msg: "{{ python_version_raw.stdout }}"
+
+- name: parse the python version
+  vars:
+     pythonversion: "{{ python_version_raw.stdout | regex_replace('P[a-z]*\\s(\\d\\.\\d).*', 'python\\1') }}"
+  set_fact:
+     python_version: "{{ pythonversion }}"
+     cacheable: yes
+
+- debug:
+    msg: "Your running Python version: {{ python_version }}"
+  
 - name: Install devmem2 in NEO
   apt:
-    name: ['devmem2']
+    name: devmem2
     state: present
-  when: connectbox_os != "raspbian"
+  when: connectbox_os != "raspbian" and OS_Version != 'bullseye' and OS_Version != 'buster'
+
+- name: If were bullseye/buster on NEO then we need to compile devmem2
+  command: wget https://bootlin.com/pub/mirror/devmem2.c
+  args:
+    chdir: /home
+  when: connectbox_os != "raspbian" and (OS_Version == 'bullseye' or OS_Version == 'buster')
+
+- name: get the compiler we need
+  apt:
+    name: gcc
+    state: present
+  when: connectbox_os != "raspbian" and (OS_Version == "bullseye" or OS_Version == 'buster')
+
+- name: compile the devmem2 utility placing the output into /usr/bin
+  command: gcc -o /usr/bin/devmem2 /home/devmem2.c
+  register: command_result
+  when: connectbox_os != "raspbian" and OS_Version == "bullseye"
+
+- name: get rid of the c file
+  file:
+    path: /home/devmem2.c
+    state: absent
+  when: connectbox_os != "raspbian" and OS_Version == "bullseye"
 
 - name: Make sure there is no Pillow code already there
   ansible.builtin.file:
-    path: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/Pillow-6.2.1.tar.gz"
+    path: "{{ hat_service_virtualenv_dir }}/lib/{{ python_version }}/site-packages/Pillow-6.2.1.tar.gz"
     state: absent
   when: connectbox_os != "raspbian"
 
 - name: Get the code from the repository
   get_url:
     url: "https://files.pythonhosted.org/packages/5b/bb/cdc8086db1f15d0664dd22a62c69613cdc00f1dd430b5b19df1bea83f2a3/Pillow-6.2.1.tar.gz" 
-    dest: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/"
-  when: connectbox_os != "raspbian"
+    dest: "{{ hat_service_virtualenv_dir }}/lib/{{ python_version }}/site-packages/"
+  when: connectbox_os != "raspbian" and OS_Version != 'bullseye'
 
 - name: unzip Pillow in virtual environment (python3)
   ansible.builtin.unarchive:
-    src:  "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/Pillow-6.2.1.tar.gz"
-    dest: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/"
+    src:  "{{ hat_service_virtualenv_dir }}/lib/{{ python_version }}/site-packages/Pillow-6.2.1.tar.gz"
+    dest: "{{ hat_service_virtualenv_dir }}/lib/{{ python_version }}/site-packages/"
     remote_src: yes
-  when: connectbox_os != "raspbian"
+  when: connectbox_os != "raspbian" and OS_Version != 'bullseye'
 
 - name: Install lower level of docutils == 0.16 for now
   pip:
@@ -164,30 +217,30 @@
 
 - name: Install Pillow library requriements in virtual environment
   pip:
-    requirements: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/Pillow-6.2.1/requirements.txt"
+    requirements: "{{ hat_service_virtualenv_dir }}/lib/{{ python_version }}/site-packages/Pillow-6.2.1/requirements.txt"
     virtualenv: "{{ hat_service_virtualenv_dir }}"
-  when: connectbox_os != "raspbian"
+  when: connectbox_os != "raspbian" and OS_Version != 'bullseye'
   
 - name: compile Pillow in virtual environment (python3)
-  command: "{{ hat_service_virtualenv_dir }}/bin/python3 {{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/Pillow-6.2.1/setup.py install"
+  command: "{{ hat_service_virtualenv_dir }}/bin/python3 {{ hat_service_virtualenv_dir }}/lib/{{ python_version }}/site-packages/Pillow-6.2.1/setup.py install"
   args:
-    chdir: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/Pillow-6.2.1/"
+    chdir: "{{ hat_service_virtualenv_dir }}/lib/{{ python_version }}/site-packages/Pillow-6.2.1/"
   environment:
     MAX_CONCURRENCY: 1
-  when: connectbox_os != "raspbian"
+  when: connectbox_os != "raspbian" and OS_Version != 'bullseye'
 
 - name: Install Pillow in virtual environment
   pip:
     name: ['Pillow==6.2.1', 'psutil']
     virtualenv: "{{ hat_service_virtualenv_dir }}"
-  when: connectbox_os == "raspbian"
+  when: (connectbox_os == "raspbian") or (OS_Version == 'bullseye')
   
 # Install RPi.GPIO_NP_CB as RPi.GPIO
 
 - name: Set path to RPi.GPIO_NP_CB (NEO)
   set_fact:
-    RPi_GPIO_path: "{{ hat_service_virtualenv_dir }}/lib/python3.8/site-packages/RPi.GPIO_NP_CB"
-  when: connectbox_os != "raspbian"  
+    RPi_GPIO_path: "{{ hat_service_virtualenv_dir }}/lib/{{ python_version }}/site-packages/RPi.GPIO_NP_CB"
+  when: connectbox_os != "raspbian" and OS_Version != 'bullseye' 
 
 - name: Clone the RPi.GPIO_NP_CB repo to battery venv (NEO)
   git: 
@@ -196,8 +249,7 @@
     clone: yes
     update: yes
     force: yes
-    version: '{{ hat_service_repo }}'
-  when: connectbox_os != "raspbian"  
+  when: connectbox_os != "raspbian"  and OS_Version != 'bullseye'
 
 - name: Install RPi.GPIO for Buster build
   command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.0"
@@ -215,12 +267,12 @@
   command: "{{ hat_service_virtualenv_dir }}/bin/python3 setup.py install"
   args:
     chdir: "{{ RPi_GPIO_path }}"
-  when: connectbox_os != "raspbian"  
+  when: connectbox_os != "raspbian" 
 
 # With RPi.GPIO installed, we can now install the luma.core and luma.oled modules
 #  which will use the installed RPi.GPIO rather than trying to install RPi.GPIO 0.7.0
 - name: Install luma.oled in hat service virtualenv
-  command: "{{ hat_service_virtualenv_dir }}/bin/pip install luma.oled==2.4.1"
+  command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install luma.oled==2.4.1"
 
 - name: Copy neo battery shutdown systemd service definition
   template:
@@ -236,16 +288,15 @@
     state: present
   notify:
      - "restart neo battery shutdown service"
+  when: OS_Version  != 'bullseye'
 
-# Startup has either already happened, or will happen in the handler
-#- name: Enable services pa_pulldown_enabler
-#  systemd:
-#    name: "{{ item }}"
-#    daemon_reload: yes
-#    enabled: yes
-#  with_items:
-#    - "{{ pa_pulldown_enabler_service_name }}"
-#  when: connectbox_os != "raspbian"
+- name: Load final elements libjpeg62-turbo-dev
+  apt:
+    name: "libjpeg62-turbo-dev"
+    state: present
+  notify:
+     - "restart neo battery shutdown service"
+  when: OS_Version == 'bullseye'
 
 - name: Enable and restart NEO_BatteryLevelShutdown
   systemd:
@@ -254,3 +305,9 @@
     enabled: yes
   with_items:
   - "{{ hat_service_name }}"
+
+- name: Copy alternative logo from URL for LCD logo
+  get_url:
+    url: "{{ alternative_lcd_logo }}"
+    dest: "/usr/local/connectbox/battery_tool_venv/lib/{{ python_version }}/site-packages/neo_batterylevelshutdown/assets/lcdlogo.png"
+  when: alternative_lcd_logo

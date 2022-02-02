@@ -5,4 +5,4 @@
 # Assumes dhcp is being offered on the same network as the host WLAN ip
 dhcp_range_start: 10.129.0.2
 dhcp_range_end: 10.129.255.250
-dhcp_lease_time_secs: 86400
+dhcp_lease_time_secs: 14400

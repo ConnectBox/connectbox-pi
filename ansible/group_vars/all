@@ -39,7 +39,7 @@ aws_instance: False
 lan_dns_if: eth0
 wifi_configurator_virtualenv_dir: /usr/local/connectbox/wifi_configurator_venv
 
-wifi_data_check_turnoff: www.gowifi.com
+wifi_data_check_turnoff: www.gowifi.org
 
 connectbox_web_root: /var/www/connectbox
 connectbox_default_content_root: "{{ connectbox_web_root }}/connectbox_default"
@@ -55,6 +55,7 @@ connectbox_admin_credentials: admin:$apr1$CBOX2018$RlXBoHRRoiG3vMC7PS07q.
 connectbox_default_hostname: ConnectBox
 lcd_brand: connectbox_default_hostname
 connectbox_logo: connectbox_logo.png
+alternative_lcd_logo: False
 
 connectbox_log_dir: /var/log/connectbox
 connectbox_access_log: "{{ connectbox_log_dir }}/connectbox-access.log"
@@ -62,7 +63,7 @@ connectbox_error_log:  "{{ connectbox_log_dir }}/connectbox-error.log"
 
 # External Repo references
 access_log_analyzer_repo: https://github.com/ConnectBox/access-log-analyzer.git
-access_log_rev: "HEAD"
+access_log_repo_rev: "HEAD"
 connectbox_client_repo: https://github.com/ConnectBox/connectbox-react-icon-client.git
 connectbox_repo_rev: "HEAD"
 hat_services_repo: https://github.com/ConnectBox/Rpi.GPIO_NP_CB
@@ -78,9 +79,9 @@ build_moodle: False
 enhanced_interface: True
 php_version: 7.4
 
-client_ssid: ""
-client_wifipassword: ""
-client_country: ""
+client_ssid: "Default"
+client_wifipassword: "Default1"
+wireless_country_code: "US"
 
 
 nginx_log_dir: /var/log/nginx

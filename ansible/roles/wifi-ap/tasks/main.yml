@@ -33,17 +33,9 @@
 
 - name: Set hostapd to correct default wlan
   replace:
-    path: "{{ wifi_configurator_virtualenv_dir }}/lib/python3.7/site-packages/wifi_configurator/cli.py"
+    path: "{{ wifi_configurator_virtualenv_dir }}/lib/{{ python_version }}/site-packages/wifi_configurator/cli.py"
     regexp: 'default="wlan0"'
     replace: 'default="{{ client_facing_if }}"'
-  when: OS_Version == 'buster'
-
-- name: Set hostapd to corrtect default wlan0
-  replace:
-    path: "{{ wifi_configurator_virtualenv_dir }}/lib/python3.9/site-packages/wifi_configurator/cli.py"
-    regexp: 'default="wlan0"'
-    replace: 'default="{{ client_facing_if }}"'
-  when: OS_Version == 'bullseye'
 
 - name: Populate /etc/default/crda with regulatory domain override
   template:

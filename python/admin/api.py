@@ -2,12 +2,12 @@ import base64,logging,subprocess
 from flask import request,abort,jsonify,make_response
 
 valid_properties = ["ssid", "brand", "client-ssid", "client-wifipassword", "client-wificountry", "channel", "hostname", "staticsite", "password",
-                    "system", "ui-config", "wpa-passphrase", "openwell-download", "moodle_download"]
+                    "system", "ui-config", "wpa-passphrase", "openwell-download", "course-download","is-moodle","wifi-info"]
 
 valid_brand_properties = ["g_device", "server_url", "server_authorization", "server_sitename", 
                     "server_siteadmin_name", "server_siteadmin_email", "server_siteadmin_phone", "enable_mass_storage", 
-                    "usb0NoMount", "enhanced","lcd_pages_main","lcd_pages_info","lcd_pages_battery","lcd_pages_multi_bat",
-                    "lcd_pages_memory","lcd_pages_stats","lcd_pages_admin"]
+                    "usb0nomount", "enhanced","lcd_pages_main","lcd_pages_info","lcd_pages_battery","lcd_pages_multi_bat",
+                    "lcd_pages_memory","lcd_pages_stats","lcd_pages_admin","otg"]
 
 connectbox_version = 'dev'
 try:
@@ -24,9 +24,9 @@ def _abort_unauthorized():
 
 def _call_command(extra_args):
     cmd_args = ["sudo", "/usr/local/connectbox/bin/ConnectBoxManage.sh"]
+    logging.debug("_call_command" + " ".join(cmd_args))
     called_cmd = subprocess.run(
         cmd_args + extra_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    logging.debug("_call_command" + " ".join(cmd_args))
     result_string = called_cmd.stdout
     if called_cmd.returncode != 0:
         result_string = called_cmd.stderr
@@ -113,17 +113,15 @@ def set_property(prop):
 
     return _call_command(["set", prop_string, string_data.encode("utf-8")])
 
-def set_system_property():
-    logging.debug("set_system_property")
+def do_system_property(prop):
+    logging.debug("do_system_property")
     _authenticate(request)
 
-    if (not request.json) or ("value" not in request.json):
+    prop_string = prop
+    if prop_string not in ["shutdown", "reboot", "unmountusb", "reset","openwellusb","courseusb"]:
         _abort_bad_request() # bad request
 
-    if not request.json["value"] in ["shutdown", "reboot", "unmountusb", "reset"]:
-        _abort_bad_request() # bad request
-
-    return _call_command([request.json["value"]])
+    return _call_command([prop_string])
 
 def not_authorized():
     _abort_unauthorized()
@@ -148,10 +146,10 @@ def register(app):
         methods=['GET'],
         view_func=get_property)
     app.add_url_rule(
-        rule='/admin/api/system',
-        endpoint='set_system_property',
-        methods=['POST'],
-        view_func=set_system_property)
+        rule='/admin/api/do/<prop>',
+        endpoint='do_system_function',
+        methods=['GET'],
+        view_func=do_system_property)
     app.add_url_rule(
         rule='/admin/api/ui-config',
         defaults={'prop': 'ui-config'},

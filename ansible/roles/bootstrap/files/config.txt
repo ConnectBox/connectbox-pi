@@ -43,10 +43,10 @@
 #arm_freq=800
 
 # Uncomment some or all of these to enable the optional hardware interfaces
-dtparam=i2c_arm=on
+
 #dtparam=i2s=on
-#dtparam=spi=on
-dtparam=i2c_vc=on
+dtparam=spi=on
+dtparam=i2c_arm=on
 
 # Uncomment this to enable infrared communication.
 #dtoverlay=gpio-ir,gpio_pin=17
@@ -55,15 +55,23 @@ dtparam=i2c_vc=on
 # Additional overlays and parameters are documented /boot/overlays/README
 
 # Enable audio (loads snd_bcm2835)
-#dtparam=audio=on
+dtparam=audio=on
+
+# force use of XHCI USB 2 controller on USB-C connector
+otg_mode=1
+
+# force eeprom read set to 0 to dissable boot from trying to read Hat eeproms
+force_eeprom_read=0
 
 [pi4]
 # Enable DRM VC4 V3D driver on top of the dispmanx display stack
 dtoverlay=vc4-fkms-v3d
 max_framebuffers=2
 
+[cm4]
+dtoverlay=dwc2,dr_mode=host
+dtparam=i2c_vc=on
 
 
 [all]
 #dtoverlay=vc4-fkms-v3d
-dtoverlay=dwc2, dr_mode=host
