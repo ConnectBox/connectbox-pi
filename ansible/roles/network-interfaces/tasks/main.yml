@@ -95,7 +95,7 @@
 
 - name: Let the user know that we found the drivers
   debug:
-    msg: "We found the drivers already compiled on the system"
+     msg: "We found the drivers already compiled on the system"
   when: not found_drivers.failed
 
 # Note we have already upgraded the OS to the lattest in role bootstrap
