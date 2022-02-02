@@ -500,10 +500,30 @@
     state: present
   when: CM4_present
 
-- name: Change the config file for avrdude on CM4
-  lineinfile:
+#- name: Change the config file for avrdude on CM4
+#  lineinfile:
+#    path: /etc/avrdude.conf
+#    regexp: "reset = 25;\n.*?baudrate=40"
+#    line: 'reset = 22;\n  baudrate=20'
+#    state: present
+#  when: CM4_present
+
+- name: Change avrdude config for reset pin for CM4
+  replace:
     path: /etc/avrdude.conf
-    regexp: "reset = 25;\n.*?baudrate=40"
-    line: 'reset = 22;\n  baudrate=20'
-    state: present
+    regexp: "reset = 25"  
+    replace: "reset = 22"
+    after: 'type = "linuxspi"'
+    before: "# some ultra"
   when: CM4_present
+
+- name: Change avrdude config for baudrate for CM4
+  replace:
+    path: /etc/avrdude.conf
+    regexp: "baudrate=40"  
+    replace: "baudrate=20"
+    after: 'type = "linuxspi"'
+    before: "# some ultra"
+  when: CM4_present
+
+
