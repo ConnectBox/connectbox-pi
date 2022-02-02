@@ -80,13 +80,16 @@
   when: not aws_instance and connectbox_os != "armbian" and connectbox_os != 'ubuntu'
 
 - name: communicate the release number
+  shell:
+     cmd: uname -r
+  register: kernel_num
   debug:
-     msg: "{{ ansible_kernel }}"
+     msg: "{{ kernel_num.stdout }}"
 
 - name: Check for drivers that already exsist and we compiled for this release
   copy:
-    src: "/{{ ansible_kernel }}/"
-    dest: /usr/lib/modules/"{{ ansible_kernel }}"/kernel/drivers/net/wirless/
+    src: "/{{ kernel_num.stdout }}/"
+    dest: /usr/lib/modules/"{{ kernel_num.stdout }}"/kernel/drivers/net/wirless/
     owner: root
     group: root
     mode: '0644'
@@ -163,16 +166,9 @@
     state: absent
   when: found_drivers.failed
 
-- name: Make directory if it dosn't exsist t save a copy of the compiled drivers
-  file:
-    dest: /home/kernal_drivers/"{{ansible_kernel}}"
-    state: directory
-  when: found_drivers.failed
-
-
 - name: if we built the drivers then lets keep a copy on the build system
   fetch:
-    src: /usr/lib/modules/"{{ ansible_kernel }}"/kernel/drivers/net/wirless/88*.ko
+    src: /usr/lib/modules/"{{ kernel_num.stdout }}"/kernel/drivers/net/wirless/88*.ko
     dest: /home/kernal_drivers/"{{ansible_kernel}}/"
     fail_on_missing: no
     flat: yes
