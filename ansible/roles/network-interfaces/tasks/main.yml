@@ -81,8 +81,10 @@
 
 - name: communicate the release number
   shell:
-     cmd: uname -r
+    cmd: uname -r
   register: kernel_num
+
+- name: give the number
   debug:
      msg: "{{ kernel_num.stdout }}"
 
@@ -169,7 +171,7 @@
 - name: if we built the drivers then lets keep a copy on the build system
   fetch:
     src: /usr/lib/modules/"{{ kernel_num.stdout }}"/kernel/drivers/net/wirless/88*.ko
-    dest: /home/kernel_drivers/"{{ kernel_num }}/"
+    dest: /home/kernel_drivers/"{{ kernel_num }}"-
     fail_on_missing: no
     flat: yes
   when: found_drivers.failed
