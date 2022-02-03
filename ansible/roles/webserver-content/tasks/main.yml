@@ -61,7 +61,7 @@
   pip:
     virtualenv: "{{ connectbox_web_root }}/connectbox_virtualenv"  # XXX Could do better?
     virtualenv_python: python3
-    name: ['flask>=1.0.0', 'ua-parser==0.10.0', 'gunicorn==20.1.0', 'requests==2.25.1', 'six==1.11.0', 'sqlalchemy>=1.3.0']
+    name: ['flask>=1.0.0', 'ua-parser==0.10.0', 'gunicorn==20.1.0', 'requests==2.25.1', 'six==1.11.0', 'sqlalchemy==1.3.0']
     state: present
   tags:
     - captive_portal
