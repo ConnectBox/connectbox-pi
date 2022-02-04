@@ -57,11 +57,56 @@
     state: latest     
 
 # The chat and admin backend
-- name: Install packages for connectbox server process
+- name: Install packages for connectbox server process flask
   pip:
     virtualenv: "{{ connectbox_web_root }}/connectbox_virtualenv"  # XXX Could do better?
     virtualenv_python: python3
-    name: ['flask>=1.0.0', 'ua-parser==0.10.0', 'gunicorn==20.1.0', 'requests==2.25.1', 'six==1.11.0', 'sqlalchemy==1.3.0']
+    name: 'flask>=1.0.0'
+    state: present
+  tags:
+    - captive_portal
+
+- name: Install packages for connectbox server process ua-parser
+  pip:
+    virtualenv: "{{ connectbox_web_root }}/connectbox_virtualenv"  # XXX Could do better?
+    virtualenv_python: python3
+    name: 'ua-parser==0.10.0'
+    state: present
+  tags:
+    - captive_portal
+
+- name: Install packages for connectbox server process gunicorn   
+  pip:
+    virtualenv: "{{ connectbox_web_root }}/connectbox_virtualenv"  # XXX Could do better?
+    virtualenv_python: python3
+    name: 'gunicorn==20.1.0'
+    state: present
+  tags:
+    - captive_portal
+
+- name: Install packages for connectbox server process requests
+  pip:
+    virtualenv: "{{ connectbox_web_root }}/connectbox_virtualenv"  # XXX Could do better?
+    virtualenv_python: python3
+    name: 'requests==2.25.1'
+    state: present
+  tags:
+    - captive_portal
+
+- name: Install packages for connectbox server process six
+  pip:
+    virtualenv: "{{ connectbox_web_root }}/connectbox_virtualenv"  # XXX Could do better?
+    virtualenv_python: python3
+    name: six==1.11.0'
+    state: present
+  tags:
+    - captive_portal
+
+- name: Install packages for connectbox server process sqlalchemy
+  pip:
+    virtualenv: "{{ connectbox_web_root }}/connectbox_virtualenv"  # XXX Could do better?
+    virtualenv_python: python3
+    name: 'sqlalchemy==1.3.0'
     state: present
   tags:
     - captive_portal

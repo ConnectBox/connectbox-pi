@@ -281,7 +281,7 @@
 #  so let's wait 15 seconds before doing our first check
 #  Use newer ansible 2.7 function reboot
 - name: Reboot device for changes to take effect
-  reboot:
+  command: 'shutdown -r now'
   when: reboot_required
   tags: reboot1
 

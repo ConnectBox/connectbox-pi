@@ -245,7 +245,7 @@ def do_resize2fs(rpi_platform):
         f.write("resize2fs_done")
         f.close()
         os.sync()
-        os.system('reboot')
+        os.system('shutdown -r now')
 
 
 def do_fdisk(rpi_platform):
@@ -340,7 +340,7 @@ def do_fdisk(rpi_platform):
     f.write("fdisk_done")
     f.close()
     os.sync()
-    os.system('reboot')
+    os.system('shutdown -r now')
 
 
 if __name__ == "__main__":
