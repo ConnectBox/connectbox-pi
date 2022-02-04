@@ -1,6 +1,6 @@
 --- 
 - name: Find the /tmp  system paramaters
-  command: df -h /tmp
+  shell: df -h /tmp
   register: tempoutput
   ignore_errors: yes
 
@@ -10,7 +10,7 @@
      Temp_Val:  ""
 
 - name: Find the /swap system paramaters
-  command: df -h /swap
+  shell: df -h /swap
   register: swapoutput
   ignore_errors: yes
 
@@ -140,7 +140,7 @@
   when: connectbox_os != 'raspbian' and (OS_Version == 'bullseye' or OS_Version == "buster")
 
 - name: determine python version
-  command: python --version
+  shell: python --version
   register: python_version_raw
 
 - debug:
@@ -310,4 +310,4 @@
   get_url:
     url: "{{ alternative_lcd_logo }}"
     dest: "/usr/local/connectbox/battery_tool_venv/lib/{{ python_version }}/site-packages/neo_batterylevelshutdown/assets/lcdlogo.png"
-  when: alternative_lcd_logo
+  when: alternative_lcd_logo 

@@ -91,7 +91,7 @@
 
 - name: Check for drivers that already exsist and we compiled for this release
   copy:
-    src: "/{{ kernel_num.stdout }}/"
+    src: {{ kernel_num.stdout }}/
     dest: /usr/lib/modules/"{{ kernel_num.stdout }}"/kernel/drivers/net/wirless/
     owner: root
     group: root
@@ -171,8 +171,16 @@
 
 - name: if we built the drivers then lets keep a copy on the build system
   fetch:
-    src: /usr/lib/modules/"{{ kernel_num.stdout }}"/kernel/drivers/net/wirless/88*.ko
-    dest: /home/kernel_drivers/"{{ kernel_num }}"-
+    src: '/usr/lib/modules/"{{ kernel_num.stdout }}"/kernel/drivers/net/wirless/8812au.ko'
+    dest: '/home/kernel_drivers/"{{ kernel_num }}"-'
+    fail_on_missing: no
+    flat: yes
+  when: found_drivers.failed
+
+- name: if we built the drivers then lets keep a copy on the build system
+  fetch:
+    src: '/usr/lib/modules/"{{ kernel_num.stdout }}"/kernel/drivers/net/wirless/88x2bu.ko'
+    dest: '/home/kernel_drivers/"{{ kernel_num }}"-'
     fail_on_missing: no
     flat: yes
   when: found_drivers.failed
