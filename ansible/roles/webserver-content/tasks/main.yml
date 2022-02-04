@@ -97,7 +97,7 @@
   pip:
     virtualenv: "{{ connectbox_web_root }}/connectbox_virtualenv"  # XXX Could do better?
     virtualenv_python: python3
-    name: six==1.11.0'
+    name: 'six==1.11.0'
     state: present
   tags:
     - captive_portal
