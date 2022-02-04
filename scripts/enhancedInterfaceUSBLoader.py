@@ -203,6 +203,7 @@ for path,dirs,files in os.walk(mediaDirectory):
 			if ('collection' not in locals() and 'collection' not in globals()):
 				f = open (templatesDirectory + "/en/data/item.json");
 				collection = json.load(f);
+				collection["episodes"] = [];
 			f = open (templatesDirectory + "/en/data/episode.json");
 			content = json.load(f);
 		else:
