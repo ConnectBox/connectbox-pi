@@ -224,23 +224,16 @@
 - name: Disable systemd-resolve to remove port conflicts
   command: systemctl disable systemd-resolved
 
-- name: Remove i2c0 in /boot/armbianEnv.txt
-  replace:
-    path: /boot/armbianEnv.txt
-    regexp: 'overlays=i2c0 usbhost0 '
-    replace: 'overlays='
-  when: ansible_facts['os_family'] == 'Ubuntu' and not aws_instance
-
 - name: Add i2c0 to /boot/armbianEnv.txt
   replace:
     path: /boot/armbianEnv.txt
     regexp: '(overlays=)'
-    replace: 'i2c0 usbhost0 '
+    replace: 'i2c0 usbhost0  usbhost1'
   when: (ansible_facts['os_family'] == 'Ubuntu' or connectbox_os == 'armbian') and not aws_instance
 
 - name: Remove g_mass_storage device as default
   command: modprobe -r g_mass_storage
-  when: connectbox_os == 'ubuntu' and (OS_Version == 'xenial' or OS_Version == 'focal')
+  when: connectbox_os == 'armbian' and (OS_Version == 'xenial' or OS_Version == 'focal' )
 
 - name: Add g_serial device as default
   command: modprobe g_serial
@@ -258,18 +251,18 @@
      src: 10-switch-role.conf.j2
      dest: /etc/systemd/system/serial-getty@ttyGS0.service.d/10-switch-role.conf
      mode: '0666'
-  when: connectbox_os == 'ubuntu' and (OS_Version == 'xenial' or OS_Version == 'focal')
+  when: connectbox_os == 'armbian' and (OS_Version == 'xenial' or OS_Version == 'focal' or OS_Version == 'buster')
 
 - name: setup link for ttyGS0 service
   file:
      src: /lib/systemd/system/serial-getty@.service
      dest: /etc/systemd/system/getty.target.wants/serial-getty@ttyGS0.service
      state: link
-  when: (connectbox_os == 'ubuntu' and (OS_Version == 'xenial' or OS_Version == 'focal'))
+  when: (connectbox_os == 'armbian' and (OS_Version == 'xenial' or OS_Version == 'focal' or OS_Version == 'buster'))
      
 - name: add it to default load of modules
   command: echo 'g_serial' >> /etc/modules
-  when: connectbox_os == 'ubuntu' and (OS_Version == 'xenial' or OS_Version == 'focal')
+  when: connectbox_os == 'armbian' and (OS_Version == 'xenial' or OS_Version == 'focal' or OS_Version == 'buster')
 
 - name: make sure we  delete the g_mass_storage.conf if it exsists
   file:
@@ -298,7 +291,7 @@
 
 - name : Increase size of /tmp to handle upcoming installs
   command: mount -o remount, size=400M /tmp/
-  when: ansible_facts['os_family'] == 'ubuntu' and not aws_instance
+  when: (ansible_facts['os_family'] == 'ubuntu' or connectbox_os == 'armbian') and not aws_instance
 
 - name: Get current rfkill state for interface 0 (wireless LAN) on Raspbian
   command: cat /sys/class/rfkill/rfkill0/soft
@@ -320,7 +313,7 @@
   register: rfkill1_stateXray 
   ignore_errors: yes
   changed_when: False
-  when: ansible_facts['os_family'] == 'Debian'
+  when: connectbox_os == 'raspbian'
 
 
 # Raspbian-lite buster and onwards rfkill wlan1 by default, which causes
@@ -329,14 +322,14 @@
 - name: Unblock rfkill'ed interface 1 (wireless LAN) on Raspbian
   command: /usr/sbin/rfkill unblock 1
   ignore_errors: yes
-  when: ansible_facts['os_family'] == 'Debian'
+  when: connectbox_os == 'raspbian'
 
 - name: Set default locale
   lineinfile:
     path: /etc/default/locale
     line: LC_ALL=en_US.UTF-8
     state: present
-  when: ansible_facts['os_family'] == 'Ubuntu'
+  when: connectbox_os == 'armbian'
 
 #  Needed for package upgrades via ansible (aptitude safe-upgrade)
 - name: Install apt
@@ -353,14 +346,13 @@
   apt:
     name: usbutils
     state: present
-  when: ansible_facts['os_family'] == 'Debian'
-
+ap
 # mikegleasonjr.firewall assumes iptables but Armbian doesn't ship with it
 - name: Install iptables
   apt:
     name: iptables
     state: present
-  when: ansible_distribution|lower == 'ubuntu'
+  when: connectbox_os == 'armbian'
 
 # Only repopulate daily so we don't slow runs down unnecessarily
 - name: Populate apt cache
@@ -383,7 +375,7 @@
 
 - name: Pin kernel and dtb packages
   command: aptitude -q hold linux-dtb-current-sunxi linux-image-current-sunxi linux-u-boot-nanopineo-current linux-focal-root-current-nanopineo
-  when: ansible_distribution|lower == 'ubuntu' and ansible_os_family|lower != 'debian'
+  when: connectbox_os == 'armbian' 
 
 # If we ever allow updates of the linux-...-root device package, this will
 #  need to move into a service or some other method (noting the package
@@ -396,7 +388,7 @@
     path: /etc/default/cpufrequtils
     regexp: '^GOVERNOR='
     line: 'GOVERNOR=conservative'
-  when: ansible_distribution|lower == 'Ubuntu' and ansible_os_family|lower != 'debian'
+  when: connectbox_os == 'armbian'     
 
 # Needed by Debian Stretch
 - name: Install openresolv
@@ -457,7 +449,7 @@
     dest: /usr/lib/armbian-resize-filesystem
     remote_src: yes
     mode: preserve
-  when: ansible_facts['os_family'] == 'ubuntu'
+  when: connectbox_os == 'ansible'
 
 
 # See if we need to create a wlan0 interface when we're running in a sim
@@ -642,7 +634,7 @@
     path: /usr/local/connectbox/brand.txt
     regexp: 'lcd_pages_multi_bat": .*,'
     replace: 'lcd_pages_multi_bat": 0,'
-  when: (not CM4_present) or (ansible_facts['os_family'] == 'Ubuntu')
+  when: (not CM4_present)
  
 
 - name: Check for device_type PI
@@ -652,19 +644,51 @@
     replace: '"Device_type": "PI",'
   when: Pi_present and ansible_facts['os_family'] == 'Debian'
 
-- name: for CM4 install avrdude
+- name: for CM4 install requirements for avrdude
   apt:
-    name: avrdude
-    state: present
+    name: bison automake autoconf flex gcc-avr binutils-avr avr-libc git
+    state: present 
   when: CM4_present
 
-#- name: Change the config file for avrdude on CM4
-#  lineinfile:
-#    path: /etc/avrdude.conf
-#    regexp: "reset = 25;\n.*?baudrate=40"
-#    line: 'reset = 22;\n  baudrate=20'
-#    state: present
-#  when: CM4_present
+- name: get the code for compiling
+  command: git clone https://github.com/kcuzner/avrdude
+    chdir: /tmp
+  register: avrdude  
+  when: CM4_present
+
+- name: compile avrdude with bootstrap
+  shell: ./bootstrap
+  chdir: /tmp/avrdude/avrdude
+  when: CM4_present
+
+- name: compile avrdude with configure
+  shell: ./configure
+  chdir: /tmp/avrdude/avrdude
+  when: CM4_present
+
+- name: make avrdude
+  shell: make
+  chdir: /tmp/avdude/avrdude
+  when: CM4_present
+
+- name: make install
+  shell: make install 
+  chdir: /tmp/avrdude/avrdude
+  when: CM4_present
+
+- name: copy the config files
+  copy:
+    src: /tmp/avrdude/avrdude/avrdude.conf 
+    dest: /etc/avrdude.conf 
+  when: CM4_present
+
+- name: Change the config file for avrdude on CM4
+  lineinfile:
+    path: /etc/avrdude.conf
+    regexp: "reset = 25;\n.*?baudrate=40"
+    line: 'reset = 22;\n  baudrate=20'
+    state: present
+  when: CM4_present
 
 - name: Change avrdude config for reset pin for CM4
   replace:
