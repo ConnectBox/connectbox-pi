@@ -346,7 +346,7 @@
   apt:
     name: usbutils
     state: present
-ap
+
 # mikegleasonjr.firewall assumes iptables but Armbian doesn't ship with it
 - name: Install iptables
   apt:
