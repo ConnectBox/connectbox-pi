@@ -17,7 +17,7 @@ NGINX_CONFIG="/etc/nginx/sites-enabled/vhosts.conf"
 PASSWORD_CONFIG="/usr/local/connectbox/etc/basicauth"
 WIFI_CONFIGURATOR="/usr/local/connectbox/wifi_configurator_venv/bin/wifi_configurator"
 WIFI_CONFIG="/usr/local/connectbox/wificonf.txt"
-CLIENTWIFI_CONFIG="/etc/network/interfaces"
+CLIENTWIFI_CONFIG="/etc/wpa_supplicant/wpa_supplicant.conf"
 PASSWORD_SALT="CBOX2018"
 UI_CONFIG="/var/www/connectbox/connectbox_default/config/default.json"
 DEBUG=0
@@ -700,13 +700,12 @@ function set_wpa_passphrase () {
 
 # Added by Derek Maxson 20211102
 function get_client_ssid () {
-  local channel=`grep 'wpa-ssid' $CLIENTWIFI_CONFIG | cut -d"\"" -f2`
+  local channel=`grep 'ssid' $CLIENTWIFI_CONFIG | cut -d"\"" -f2`
   echo ${channel}
 }
 
 function set_client_ssid () {
-  sudo sed -i -e "/ssid=/ s/=.*/=\"${val}\"/" /etc/wpa_supplicant/wpa_supplicant.conf
-  sudo sed -i -e "/wpa-ssid / s/wpa-ssid .*/wpa-ssid \"${val}\"/" /etc/network/interfaces
+  sudo sed -i -e "/ssid=/ s/=.*/=\"${val}\"/" $CLIENTWIFI_CONFIG
   ifdown $CLIENT_WLAN 2>&1 
   sleep 2
   ifup $CLIENT_WLAN  2>&1 
@@ -714,13 +713,12 @@ function set_client_ssid () {
 }
 
 function get_client_wifipassword () {
-  local channel=`grep 'wpa-psk' $CLIENTWIFI_CONFIG | cut -d"\"" -f2`
+  local channel=`grep 'psk' $CLIENTWIFI_CONFIG | cut -d"\"" -f2`
   echo ${channel}
 }
 
 function set_client_wifipassword () {
-  sudo sed -i -e "/psk=/ s/=.*/=\"${val}\"/" /etc/wpa_supplicant/wpa_supplicant.conf
-  sudo sed -i -e "/wpa-psk / s/wpa-psk .*/wpa-psk \"${val}\"/" /etc/network/interfaces
+  sudo sed -i -e "/psk=/ s/=.*/=\"${val}\"/" $CLIENTWIFI_CONFIG
   ifdown $CLIENT_WLAN 2>&1 
   sleep 2
   ifup $CLIENT_WLAN  2>&1 
@@ -728,13 +726,13 @@ function set_client_wifipassword () {
 }
 
 function get_client_wificountry () {
-  local channel=`grep 'country' /etc/wpa_supplicant/wpa_supplicant.conf | cut -d"=" -f2`
+  local channel=`grep 'country' $CLIENTWIFI_CONFIG | cut -d"=" -f2`
   echo ${channel}
 }
 
 function set_client_wificountry () {
-  sudo sed -i -e "/country=/ s/=.*/=${val}/" /etc/wpa_supplicant/wpa_supplicant.conf
-  sudo sed -i -e "/country_code=/ s/=.*/=${val}/" /etc/hostapd/hostapd.conf
+  sudo sed -i -e "/country=/ s/=.*/=${val}/" $CLIENTWIFI_CONFIG
+  sudo sed -i -e "/country_code=/ s/=.*/=${val}/" $HOSTAPD_CONFIG
   ifdown $CLIENT_WLAN 2>&1 
   sleep 2
   ifup $CLIENT_WLAN  2>&1 
