@@ -310,4 +310,4 @@
   get_url:
     url: "{{ alternative_lcd_logo }}"
     dest: "/usr/local/connectbox/battery_tool_venv/lib/{{ python_version }}/site-packages/neo_batterylevelshutdown/assets/lcdlogo.png"
-  when: alternative_lcd_logo 
+  when: alternative_lcd_logo|bool == true
