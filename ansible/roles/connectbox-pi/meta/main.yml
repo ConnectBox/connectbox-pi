@@ -6,7 +6,6 @@ dependencies:
   - { role: network-interfaces, when: not aws_instance }
   - { role: wifi-ap, when: not aws_instance }
   - { role: mikegleasonjr.firewall, when: not aws_instance }
-  - mikegleasonjr.firewall
   - { role: php, when: build_moodle}
   - { role: ansible-postgresql, when: build_moodle}
   - { role: moodle, when: build_moodle}
