@@ -92,7 +92,7 @@
 - name: Check for drivers that already exsist and we compiled for this release
   copy:
     src: "{{ kernel_num.stdout }}/"
-    dest: /lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wirless/
+    dest: /lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/
     owner: root
     group: root
     mode: '0644'
@@ -103,6 +103,15 @@
   debug:
      msg: "We found the drivers already compiled on the system"
   when: not found_drivers.failed
+
+- name: Insert the driver into the kernel modules 8812au
+  command: insmod  /lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/8812au.ko
+
+- name: insert the driver into the kernel modules 88x2bu
+  command: insmod  /lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/88x2bu.ko
+
+- name: finish the module dependancies
+  command: depmod
 
 # Note we have already upgraded the OS to the lattest in role bootstrap
 # now we just install the current OS build tools

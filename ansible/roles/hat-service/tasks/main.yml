@@ -17,22 +17,19 @@
 - debug:
     msg: "Swap system output: {{swapoutput.stdout}}"
 
-
 - name: Set /TMP size value into variable
   vars:
-     tmpvl: tempoutput.stdout | regex_search('[0-9]*[KMG]')
+     tmpvl: "{{ tempoutput.stdout | regex_search('tmpfs\\s*([0-9]*[KMG])', '\\1') }}" 
   set_fact:
-     Temp_Val: '{{ tmpvl }}'
+     Temp_Val: "{{ tmpvl[0] }}"
      cacheable: yes
   ignore_errors: yes
 
-- debug:
-    msg: "Temp system output: {{tempoutput.stdout}}"
 - name: Set /Swap size value into variable
   vars:
-     swpvl:  swapoutput.stdout | regex_search('[0-9]*[KMG]')
+     swpvl:  "{{ swapoutput.stdout | regex_search('\\s*([0-9]*[KMG])', '\\1') }}" 
   set_fact:
-     Swap_Val: '{{ swpvl }}'
+     Swap_Val: "{{ swpvl[0] }}"
      cacheable: yes
   ignore_errors: yes
  
@@ -49,21 +46,24 @@
 - name: Expand Temp directory otherwise we will run out of space
   command: umount /tmp
   ignore_errors: yes
-  when: connectbox_os != "raspbian" and Temp_Val != "" and (Temp_Val < '400M' and Temp_Val.find('G') == 0)
+  when: connectbox_os != "raspbian" and Temp_Val != "" and Temp_Val < '400M'
 
 - name: recreate the Temp directory
   command: mount -t tmpfs -o size=400M tmpfs /tmp
   ignore_errors: yes
-  when: connectbox_os != "raspbian" and Temp_Val != "" and (Temp_Val < '400M' and Temp_Val.find('G') == 0)
+  when: connectbox_os != "raspbian" and Temp_Val != "" and Temp_Val < '400M'
 
 #original swapfile on NEO is /dev/zram0 if size 121968 and priority 5
 
 - name: Expand swapfile
   command: fallocate -l 400M /swapfile
-  register: command_result
+  register: swap_result
   ignore_errors: yes
-  when: connectbox_os != "raspbian" and Swap_Val != "" and (Swap_Val < '400M' and Swap_Val.find('G') == 0)
+  when: connectbox_os != "raspbian" and Swap_Val != "" and Swap_Val < '400M'
 
+- name: show swap_result
+  debug:
+   msg: "output of expand swapfile is {{ swap_result }}"
 
 - name: fill swapfile
   command: dd if=/dev/zero of=/swapfile bs=1024 count=409600
