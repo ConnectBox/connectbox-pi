@@ -104,14 +104,29 @@
      msg: "We found the drivers already compiled on the system"
   when: not found_drivers.failed
 
+- name: lets check for exsisting 8812au driver
+  shell: dmesg -k | grep 8812au
+  register: driver_a
+  ignore_errors: true
+
+- name: lset check for the 8812bu driver
+  shell: dmesg -k | grep 88x2bu
+  register: driver_b
+  ignore_errors: true
+
 - name: Insert the driver into the kernel modules 8812au
   command: insmod  /lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/8812au.ko
+  when: not found_drivers.failed and driver_a.stdout == ""
 
 - name: insert the driver into the kernel modules 88x2bu
   command: insmod  /lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/88x2bu.ko
+  ignore_errors: true
+  when: not found_drivers.failed and driver_b.stdout == ""
 
 - name: finish the module dependancies
   command: depmod
+  ignore_errors: true
+  when: not found_drivers.failed and driver_a.stdout == "" and driver_b.stdout == ""
 
 # Note we have already upgraded the OS to the lattest in role bootstrap
 # now we just install the current OS build tools
@@ -146,26 +161,26 @@
     src: 8812au-install.sh
     dest: /tmp/8812au-install.sh
     mode: "+x"
-  when: found_drivers.failed
+  when: found_drivers.failed and driver_a.stdout == ""
 
 - name: Compile the 8812au driver for Raspbian or NEO
   command:
      chdir: /tmp
      cmd: "sh 8812au-install.sh"
-  when: found_drivers.failed
+  when: found_drivers.failed and driver_a.stdout == ""
 
 - name: Copy over 88x2bu-install script for Raspian
   copy:
     src: 88x2bu-install.sh
     dest: /tmp/88x2bu-install.sh
     mode: "+x"
-  when: found_drivers.failed
+  when: found_drivers.failed and driver_b.stdout == ""
 
 - name: Compile the 88x2bu driver for Raspbian or NEO
   command:
      chdir: /tmp
      cmd: "sh 88x2bu-install.sh"
-  when: found_drivers.failed
+  when: found_drivers.failed and driver_b.stdout == ""
 
 - name: remove build tools
   apt:
@@ -180,19 +195,19 @@
 
 - name: if we built the drivers then lets keep a copy on the build system
   fetch:
-    src: '/usr/lib/modules/"{{ kernel_num.stdout }}"/kernel/drivers/net/wirless/8812au.ko'
+    src: '/usr/lib/modules/"{{ kernel_num.stdout }}"/kernel/drivers/net/wireless/8812au.ko'
     dest: '/home/kernel_drivers/"{{ kernel_num }}"-'
     fail_on_missing: no
     flat: yes
-  when: found_drivers.failed
+  when: found_drivers.failed and driver_a.stdout == ""
 
 - name: if we built the drivers then lets keep a copy on the build system
   fetch:
-    src: '/usr/lib/modules/"{{ kernel_num.stdout }}"/kernel/drivers/net/wirless/88x2bu.ko'
+    src: '/usr/lib/modules/"{{ kernel_num.stdout }}"/kernel/drivers/net/wireless/88x2bu.ko'
     dest: '/home/kernel_drivers/"{{ kernel_num }}"-'
     fail_on_missing: no
     flat: yes
-  when: found_drivers.failed
+  when: found_drivers.failed and driver_b.stdout == ""
 
 
 # Note: this is not a handler because we need the network configuration in

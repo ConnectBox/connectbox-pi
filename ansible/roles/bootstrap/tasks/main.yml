@@ -233,7 +233,7 @@
 
 - name: Remove g_mass_storage device as default
   command: modprobe -r g_mass_storage
-  when: connectbox_os == 'armbian' and (OS_Version == 'xenial' or OS_Version == 'focal' )
+  when: connectbox_os == 'armbian' and (OS_Version == 'xenial' or OS_Version == 'focal')
 
 - name: Add g_serial device as default
   command: modprobe g_serial
@@ -251,18 +251,18 @@
      src: 10-switch-role.conf.j2
      dest: /etc/systemd/system/serial-getty@ttyGS0.service.d/10-switch-role.conf
      mode: '0666'
-  when: connectbox_os == 'armbian' and (OS_Version == 'xenial' or OS_Version == 'focal' or OS_Version == 'buster')
+  when: connectbox_os == 'armbian' and (OS_Version == 'xenial' or OS_Version == 'focal')
 
 - name: setup link for ttyGS0 service
   file:
      src: /lib/systemd/system/serial-getty@.service
      dest: /etc/systemd/system/getty.target.wants/serial-getty@ttyGS0.service
      state: link
-  when: (connectbox_os == 'armbian' and (OS_Version == 'xenial' or OS_Version == 'focal' or OS_Version == 'buster'))
+  when: (connectbox_os == 'armbian' and (OS_Version == 'xenial' or OS_Version == 'focal'))
      
 - name: add it to default load of modules
   command: echo 'g_serial' >> /etc/modules
-  when: connectbox_os == 'armbian' and (OS_Version == 'xenial' or OS_Version == 'focal' or OS_Version == 'buster')
+  when: connectbox_os == 'armbian' and (OS_Version == 'xenial' or OS_Version == 'focal')
 
 - name: make sure we  delete the g_mass_storage.conf if it exsists
   file:
