@@ -339,12 +339,7 @@
 
 - name: Install jq so that ConnectBoxManage.sh can edit brand.txt easily
   apt:
-    name: jq
-    state: present
-
-- name: Install usb utilities
-  apt:
-    name: usbutils
+    name: ['jq', 'usbutils']
     state: present
 
 # mikegleasonjr.firewall assumes iptables but Armbian doesn't ship with it
@@ -633,8 +628,8 @@
   replace:
     path: /usr/local/connectbox/brand.txt
     regexp: 'lcd_pages_multi_bat": .*,'
-    replace: 'lcd_pages_multi_bat": 0,'
-  when: (not CM4_present)
+    replace: 'lcd_pages_multi_bat": 1,'
+  when: CM4_present
  
 
 - name: Check for device_type PI
@@ -646,48 +641,56 @@
 
 - name: for CM4 install requirements for avrdude
   apt:
-    name: bison automake autoconf flex gcc-avr binutils-avr avr-libc git
+    name: ['bison', 'automake', 'autoconf', 'flex', 'gcc-avr', 'binutils-avr', 'avr-libc', 'git']
     state: present 
   when: CM4_present
 
+- name: make sure we don't have old code lying around
+  file:
+    path: /tmp/avrdude
+    state: absent
+
 - name: get the code for compiling
-  command: git clone https://github.com/kcuzner/avrdude
+  command:
+    cmd: git clone https://github.com/kcuzner/avrdude
     chdir: /tmp
-  register: avrdude  
+  register: avrdude 
   when: CM4_present
 
 - name: compile avrdude with bootstrap
-  shell: ./bootstrap
-  chdir: /tmp/avrdude/avrdude
+  shell: 
+  args:
+    cmd: ./bootstrap
+    chdir: /tmp/avrdude/avrdude
   when: CM4_present
 
 - name: compile avrdude with configure
-  shell: ./configure
-  chdir: /tmp/avrdude/avrdude
+  shell:
+  args:
+    cmd: ./configure
+    chdir: /tmp/avrdude/avrdude
   when: CM4_present
 
 - name: make avrdude
-  shell: make
-  chdir: /tmp/avdude/avrdude
+  shell:
+  args:
+    cmd: make
+    chdir: /tmp/avrdude/avrdude
   when: CM4_present
 
 - name: make install
-  shell: make install 
-  chdir: /tmp/avrdude/avrdude
+  shell:
+  args:
+    cmd: make install 
+    chdir: /tmp/avrdude/avrdude
   when: CM4_present
 
 - name: copy the config files
   copy:
     src: /tmp/avrdude/avrdude/avrdude.conf 
     dest: /etc/avrdude.conf 
-  when: CM4_present
-
-- name: Change the config file for avrdude on CM4
-  lineinfile:
-    path: /etc/avrdude.conf
-    regexp: "reset = 25;\n.*?baudrate=40"
-    line: 'reset = 22;\n  baudrate=20'
-    state: present
+    remote_src: yes
+    mode: preserve
   when: CM4_present
 
 - name: Change avrdude config for reset pin for CM4
@@ -707,5 +710,16 @@
     after: 'type = "linuxspi"'
     before: "# some ultra"
   when: CM4_present
+
+- name: Remove build tools
+  apt:
+    name: ['bison', 'automake', 'autoconf', 'flex', 'gcc-avr', 'binutils-avr', 'avr-libc']
+    state: absent 
+  when: CM4_present
+
+- name: remove build data
+  file:
+    path: /tmp/avrdude
+    state: absent
 
 

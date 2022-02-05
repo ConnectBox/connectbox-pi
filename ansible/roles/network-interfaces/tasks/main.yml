@@ -92,7 +92,7 @@
 - name: Check for drivers that already exsist and we compiled for this release
   copy:
     src: "{{ kernel_num.stdout }}/"
-    dest: /usr/lib/modules/"{{ kernel_num.stdout }}"/kernel/drivers/net/wirless/
+    dest: /lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wirless/
     owner: root
     group: root
     mode: '0644'
