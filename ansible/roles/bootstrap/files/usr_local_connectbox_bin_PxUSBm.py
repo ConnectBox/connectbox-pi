@@ -45,6 +45,7 @@ this code will quickly test the expand_progress.txt file an finding the process 
 
 import pexpect
 import time
+import logging
 import re
 import os
 
@@ -63,6 +64,7 @@ loc=[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]
 global mnt
 mnt=[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]
 d=["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""]
+global net_stat
 
 def mountCheck():
     global mnt
@@ -245,6 +247,7 @@ def do_resize2fs(rpi_platform):
         f.write("resize2fs_done")
         f.close()
         os.sync()
+        logging.info("doing a reboot after the resize")
         os.system('shutdown -r now')
 
 
@@ -340,7 +343,65 @@ def do_fdisk(rpi_platform):
     f.write("fdisk_done")
     f.close()
     os.sync()
+    logging.info( "PxUSBm is rebooting after fdisk changed")
     os.system('shutdown -r now')
+
+
+def NetworkCheck():
+
+  global net_stat
+  
+  if net_status >= 1:
+    SysNetworks = popen("ls /sys/class/net").read()
+    while netx in SysNetworks:
+      net_stat = popen("cat /sys/class/net/"+netx+"/operstate").read()
+      if net_stat == 'down' or net_stat == "unknown":
+        res = popen("ifup "+netx, stdout=PIPE).read()
+        net_stat = popen("cat /sys/class/net/"+next+"/operstate", stdout=PIPE)
+        ex_stat == net_stat
+        if ex_state == 'up':
+          logging.info("raised interface "+netx)
+        else:
+          if netx == "lo" and ex_state == "unknown":
+            if res.find("already configured") >0:
+              pass
+            else:
+              logging.info("raised interface lo")
+          else:
+            logging.info("had issues raising interface "+netx)
+            net_status += 1;
+    if net_status >= 10:
+      logging.info("Network startup issues.  Will try to restart services")
+      while netx in SysNetworks.stdout:
+        net_stat = popen("cat /sys/class/net/"+next+"/operstate").read()
+        if net_stat == "up":
+          ex_stat = popen("ifdown "+netx).read()
+          net_stat = popen("cat /sys/class/net/"+next+"/operstate").read()
+          ex_stat == net_stat
+          if ex_state == 'up':
+            logging.info("couldn't take down "+netx)
+      logging.info("stopped all interfaces as much as possible")   
+      res = popen("systemctl resart networking.service").read()
+      if res != "":
+        logging.info("networking.service has configuration issues")
+      res = popen("systemctl status networking.service").read()
+      if res.find("active (exited)") <= 0:
+        logging.info("networking.service failed to start")
+      res = popen("systemctl restart dnsmasq").read()
+      if res != "":
+        logging.info("dnsmasqd has configuration issues")
+      res = popen("systemctl status dnsmasq").read()
+      if res.find("active (running)") <= 0:
+        logging.info("dnsmasq service failed to start")
+      res = popen("systemctl restart hostapd").read()
+      if res != "":
+        logging.info("hostapd service has configuration issues")
+      res = popen("systemctl status hostapd").read()
+      if res.find("active (exited)") <0:
+        logging.info("hostapd service failed to start")
+      net_status = 0
+
+
 
 
 if __name__ == "__main__":
@@ -357,7 +418,7 @@ if __name__ == "__main__":
         rpi_platform = True
     if "PI" in brand:
         rpi_platform = True
-
+    net_status = 0
     # Sort out how far we are in the partition expansion process
     file_exists = os.path.exists(progress_file)
     if file_exists == False:
@@ -376,5 +437,6 @@ if __name__ == "__main__":
         loop_time = 3
         if not os.path.exists("/usr/local/connectbox/PauseMount"):
           mountCheck()
+        NetworkCheck()
         time.sleep(loop_time)
 
