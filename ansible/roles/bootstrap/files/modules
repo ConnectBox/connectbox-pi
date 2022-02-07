@@ -4,3 +4,4 @@
 # at boot time, one per line.  Lines beginning with "#" are ignored
 
 i2c-dev
+g_serial

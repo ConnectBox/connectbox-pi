@@ -153,6 +153,23 @@
      python_version: "{{ pythonversion }}"
      cacheable: yes
 
+- name: Check for an empty python python_version
+  shell: python --version
+  register: python_version_raw
+  when: "{{ pythonversion }}" == ""
+
+- name: reparse the python version if we didn't get it the first time
+  vars:
+    pythonversion: "{{ python_version_raw.stdout | regex_replace('P[a-z]*\\s(\\d\\.\\d).*', 'python\\1') }}"
+  set_fact:
+     python_version: "{{ pythonversion }}"
+     cacheable: yes
+  when: "{{ pythonversion }}" == ""
+
+- name: python version is now 
+  debug:
+    msg: "python version is now: {{ pythonversion }}" 
+
 - debug:
     msg: "Your running Python version: {{ python_version }}"
   
@@ -160,7 +177,7 @@
   apt:
     name: devmem2
     state: present
-  when: connectbox_os != "raspbian" and OS_Version != 'bullseye' and OS_Version != 'buster'
+  when: connectbox_os != "raspbian" and OS_Version == 'bullseye' and OS_Version == 'buster'
 
 - name: If were bullseye/buster on NEO then we need to compile devmem2
   command: wget https://bootlin.com/pub/mirror/devmem2.c
@@ -177,13 +194,13 @@
 - name: compile the devmem2 utility placing the output into /usr/bin
   command: gcc -o /usr/bin/devmem2 /home/devmem2.c
   register: command_result
-  when: connectbox_os != "raspbian" and OS_Version == "bullseye"
+  when: connectbox_os != "raspbian" and (OS_Version == "bullseye" or OS_Version == 'buster')
 
 - name: get rid of the c file
   file:
     path: /home/devmem2.c
     state: absent
-  when: connectbox_os != "raspbian" and OS_Version == "bullseye"
+  when: connectbox_os != "raspbian" and (OS_Version == "bullseye" or OS_Version == 'buster')
 
 - name: Make sure there is no Pillow code already there
   ansible.builtin.file:
