@@ -156,7 +156,7 @@
 - name: Check for an empty python python_version
   shell: python --version
   register: python_version_raw
-  when: "{{ pythonversion }}" == ""
+  when: "{{ python_version }}" == ""
 
 - name: reparse the python version if we didn't get it the first time
   vars:
@@ -164,7 +164,7 @@
   set_fact:
      python_version: "{{ pythonversion }}"
      cacheable: yes
-  when: "{{ pythonversion }}" == ""
+  when: "{{ python_version }}" == ""
 
 - name: python version is now 
   debug:
