@@ -126,7 +126,7 @@
 - name: finish the module dependancies
   command: depmod
   ignore_errors: true
-  when: not found_drivers.failed and driver_a.stdout == "" and driver_b.stdout == ""
+  when: not found_drivers.failed and (driver_a.stdout == "" or driver_b.stdout == "")
 
 # Note we have already upgraded the OS to the lattest in role bootstrap
 # now we just install the current OS build tools
@@ -139,14 +139,14 @@
     - libelf-dev
     - libssl-dev
     state: present
-  when: found_drivers.failed
+  when: (found_drivers.failed or driver_a_stdout == "" or driver_b.stdout == "" )
 
 - name: apt install raspberrypi-kernel-headers
   apt:
     pkg:
     - raspberrypi-kernel-headers
     state: present
-  when: connectbox_os == "raspbian" and found_drivers.failed
+  when: connectbox_os == "raspbian" and (found_drivers.failed or driver_a_stdout == "" or driver_b.stdout == "" )
 
 # or apt-get install linux-headers-$(uname -r)
 - name: apt install linux-headers-current-sunxi
@@ -154,7 +154,7 @@
     pkg:
     - linux-headers-current-sunxi
     state: present
-  when: connectbox_os != "raspbian" and found_drivers.failed
+  when: connectbox_os != "raspbian" and (found_drivers.failed or driver_a_stdout == "" or driver_b.stdout == "" )
 
 - name: Copy over 8812au-install script for Raspian
   copy:
@@ -191,12 +191,12 @@
     - libssl-dev
     - raspbewrrypi-kernel-headers
     state: absent
-  when: found_drivers.failed
+  when: (found_drivers.failed or driver_a_stdout == "" or driver_b.stdout == "" )
 
 - name: if we built the drivers then lets keep a copy on the build system
   fetch:
     src: '/usr/lib/modules/"{{ kernel_num.stdout }}"/kernel/drivers/net/wireless/8812au.ko'
-    dest: '/home/kernel_drivers/"{{ kernel_num }}"-'
+    dest: '/home/kernel_drivers/"{{ kernel_num }}"-8812au.ko'
     fail_on_missing: no
     flat: yes
   when: found_drivers.failed and driver_a.stdout == ""
@@ -204,7 +204,7 @@
 - name: if we built the drivers then lets keep a copy on the build system
   fetch:
     src: '/usr/lib/modules/"{{ kernel_num.stdout }}"/kernel/drivers/net/wireless/88x2bu.ko'
-    dest: '/home/kernel_drivers/"{{ kernel_num }}"-'
+    dest: '/home/kernel_drivers/"{{ kernel_num }}"-88x2bu.ko'
     fail_on_missing: no
     flat: yes
   when: found_drivers.failed and driver_b.stdout == ""
