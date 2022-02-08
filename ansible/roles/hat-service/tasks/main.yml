@@ -180,6 +180,7 @@
 - name: check for devmem2 install
   shell: 'find / -name devmem2'
   register: devmem_check
+  ignore_errors: yes
 
 - name: Showing if devmem2 is valid or if we need to compiler
   debug:
