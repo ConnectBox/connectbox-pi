@@ -195,7 +195,7 @@
 
 - name: create a directgory for the fetch of the commpiled files
   file:
-    path: /home/kernel_drivers/"{{ kernal-num }}"
+    path: "/home/kernel_drivers/{{ kernal-num }}"
     state: directory
 
 - name: if we built the drivers then lets keep a copy on the build system
