@@ -193,19 +193,24 @@
     state: absent
   when: (found_drivers.failed or driver_a.stdout == "" or driver_b.stdout == "" )
 
+- name: create a directgory for the fetch of the commpiled files
+  files:
+    path: /home/kernel_drivers/"{{ kernal-num }}"
+    state: directory
+
 - name: if we built the drivers then lets keep a copy on the build system
   fetch:
     src: '/usr/lib/modules/"{{ kernel_num.stdout }}"/kernel/drivers/net/wireless/8812au.ko'
-    dest: '/home/kernel_drivers/"{{ kernel_num }}"-8812au.ko'
-    fail_on_missing: no
+    dest: '/home/kernel_drivers/{{ kernel_num }}'
+    fail_on_missing: yes
     flat: yes
   when: found_drivers.failed and driver_a.stdout == ""
 
 - name: if we built the drivers then lets keep a copy on the build system
   fetch:
     src: '/usr/lib/modules/"{{ kernel_num.stdout }}"/kernel/drivers/net/wireless/88x2bu.ko'
-    dest: '/home/kernel_drivers/"{{ kernel_num }}"-88x2bu.ko'
-    fail_on_missing: no
+    dest: '/home/kernel_drivers/{{ kernel_num }}'
+    fail_on_missing: yes
     flat: yes
   when: found_drivers.failed and driver_b.stdout == ""
 

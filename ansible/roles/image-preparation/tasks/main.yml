@@ -17,16 +17,16 @@
      pythonx_dev: "{{ python_vers }}-dev"
      libpythonx:  "lib{{ python_vers }}"
 
-- debug:
-    msg: "the version of python is: {{ python_vers }}"
-
-- debug:
+- name: display the libpythonx_dev direcotry
+  debug:
     msg: "the libpythonx.x_dev is: {{ libpythonx_dev }}"
  
-- debug:
+- name: display the pythonx_dev directory
+  debug:
     msg: "the pythonx_dev is: {{ pythonx_dev }}"
  
-- debug:
+- name: display the libpythonx direcotry
+debug:
     msg: "the libpythonx is: {{ libpythonx }}"
   
 # In preparation for purging packages in the next step...
