@@ -139,14 +139,14 @@
     - libelf-dev
     - libssl-dev
     state: present
-  when: (found_drivers.failed or driver_a_stdout == "" or driver_b.stdout == "" )
+  when: (found_drivers.failed or driver_a.stdout == "" or driver_b.stdout == "" )
 
 - name: apt install raspberrypi-kernel-headers
   apt:
     pkg:
     - raspberrypi-kernel-headers
     state: present
-  when: connectbox_os == "raspbian" and (found_drivers.failed or driver_a_stdout == "" or driver_b.stdout == "" )
+  when: connectbox_os == "raspbian" and (found_drivers.failed or driver_a.stdout == "" or driver_b.stdout == "" )
 
 # or apt-get install linux-headers-$(uname -r)
 - name: apt install linux-headers-current-sunxi
@@ -154,7 +154,7 @@
     pkg:
     - linux-headers-current-sunxi
     state: present
-  when: connectbox_os != "raspbian" and (found_drivers.failed or driver_a_stdout == "" or driver_b.stdout == "" )
+  when: connectbox_os != "raspbian" and (found_drivers.failed or driver_a.stdout == "" or driver_b.stdout == "" )
 
 - name: Copy over 8812au-install script for Raspian
   copy:
@@ -191,7 +191,7 @@
     - libssl-dev
     - raspbewrrypi-kernel-headers
     state: absent
-  when: (found_drivers.failed or driver_a_stdout == "" or driver_b.stdout == "" )
+  when: (found_drivers.failed or driver_a.stdout == "" or driver_b.stdout == "" )
 
 - name: if we built the drivers then lets keep a copy on the build system
   fetch:
