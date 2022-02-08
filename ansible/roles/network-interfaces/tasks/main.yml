@@ -194,7 +194,7 @@
   when: (found_drivers.failed or driver_a.stdout == "" or driver_b.stdout == "" )
 
 - name: create a directgory for the fetch of the commpiled files
-  files:
+  file:
     path: /home/kernel_drivers/"{{ kernal-num }}"
     state: directory
 
