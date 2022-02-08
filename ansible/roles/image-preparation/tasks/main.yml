@@ -26,7 +26,7 @@
     msg: "the pythonx_dev is: {{ pythonx_dev }}"
  
 - name: display the libpythonx direcotry
-debug:
+  debug:
     msg: "the libpythonx is: {{ libpythonx }}"
   
 # In preparation for purging packages in the next step...
