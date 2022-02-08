@@ -18,7 +18,7 @@
      libpythonx:  "lib{{ python_vers }}"
 
 - debug:
-   msg: "the version of python is: {{ python_version }}"
+   msg: "the version of python is: {{ python_vers }}"
 
 - debug:
    msg: "the libpythonx.x_dev is: {{ libpythonx_dev }}"
