@@ -193,10 +193,11 @@
     state: absent
   when: (found_drivers.failed or driver_a.stdout == "" or driver_b.stdout == "" )
 
-- name: create a directgory for the fetch of the commpiled files
+- name: create a directgory for the fetch of the commpiled files 
   file:
-    path: "/home/kernel_drivers/{{ kernal-num }}"
+    path: "/home/kernel_drivers/{{ kernel_num.stdout }}"
     state: directory
+  ignore_errors: yes
 
 - name: if we built the drivers then lets keep a copy on the build system
   fetch:
