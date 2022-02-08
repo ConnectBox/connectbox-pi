@@ -168,7 +168,7 @@
 
 - name: python version is now 
   debug:
-    msg: "python version is now: {{ python_vers }}" 
+    msg: "python version is now: {{ python_ver }}" 
 
 - name: Install devmem2 in NEO
   apt:
@@ -338,7 +338,7 @@
 - name: Copy alternative logo from URL for LCD logo
   get_url:
     url: "{{ alternative_lcd_logo }}"
-    dest: "/usr/local/connectbox/battery_tool_venv/lib/{{ python_vers }}/site-packages/neo_batterylevelshutdown/assets/lcdwell_logo.png"
+    dest: "/usr/local/connectbox/battery_tool_venv/lib/{{ python_ver }}/site-packages/neo_batterylevelshutdown/assets/lcdwell_logo.png"
   when: alternative_lcd_logo == 'True'
 
 - name: Reset the logo
