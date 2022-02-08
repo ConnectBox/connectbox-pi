@@ -174,10 +174,10 @@
   apt:
     name: devmem2
     state: present
-  when: connectbox_os != "raspbian" and OS_Version == 'bullseye' and OS_Version == 'buster'
+  when: connectbox_os != "raspbian" and OS_Version != 'bullseye' and OS_Version != 'buster'
 
 - name: check for devmem2 install
-  shell: 'find / -nmae devmem2'
+  shell: 'find / -name devmem2'
   register: devmem_check
 
 - name: Showing if devmem2 is valid or if we need to compiler
