@@ -150,28 +150,25 @@
   vars:
      pythonversion: "{{ python_version_raw.stdout | regex_replace('P[a-z]*\\s(\\d\\.\\d).*', 'python\\1') }}"
   set_fact:
-     python_version: "{{ pythonversion }}"
+     python_ver: "{{ pythonversion }}"
      cacheable: yes
 
 #- name: Check for an empty python python_version
 #  shell: python --version
 #  register: python_version_raw
-#  when: "{{ python_version }}" == ""
+#  when: "{{ python_ver }}" == ""
 
 #- name: reparse the python version if we didn't get it the first time
 #  vars:
 #    pythonversion: "{{ python_version_raw.stdout | regex_replace('P[a-z]*\\s(\\d\\.\\d).*', 'python\\1') }}"
 #  set_fact:
-#     python_version: "{{ pythonversion }}"
+#     python_ver: "{{ pythonversion }}"
 #     cacheable: yes
-#  when: "{{ python_version }}" == ""
+#  when: "{{ python_ver }}" == ""
 
 - name: python version is now 
   debug:
-    msg: "python version is now: {{ pythonversion }}" 
-
-- debug:
-    msg: "Your running Python version: {{ python_version }}"
+    msg: "python version is now: {{ python_vers }}" 
 
 - name: Install devmem2 in NEO
   apt:
@@ -219,20 +216,20 @@
 
 - name: Make sure there is no Pillow code already there
   ansible.builtin.file:
-    path: "{{ hat_service_virtualenv_dir }}/lib/{{ python_version }}/site-packages/Pillow-6.2.1.tar.gz"
+    path: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/Pillow-6.2.1.tar.gz"
     state: absent
   when: connectbox_os != "raspbian"
 
 - name: Get the code from the repository
   get_url:
     url: "https://files.pythonhosted.org/packages/5b/bb/cdc8086db1f15d0664dd22a62c69613cdc00f1dd430b5b19df1bea83f2a3/Pillow-6.2.1.tar.gz" 
-    dest: "{{ hat_service_virtualenv_dir }}/lib/{{ python_version }}/site-packages/"
+    dest: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/"
   when: connectbox_os != "raspbian" and OS_Version != 'bullseye'
 
 - name: unzip Pillow in virtual environment (python3)
   ansible.builtin.unarchive:
-    src:  "{{ hat_service_virtualenv_dir }}/lib/{{ python_version }}/site-packages/Pillow-6.2.1.tar.gz"
-    dest: "{{ hat_service_virtualenv_dir }}/lib/{{ python_version }}/site-packages/"
+    src:  "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/Pillow-6.2.1.tar.gz"
+    dest: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/"
     remote_src: yes
   when: connectbox_os != "raspbian" and OS_Version != 'bullseye'
 
@@ -249,14 +246,14 @@
 
 - name: Install Pillow library requriements in virtual environment
   pip:
-    requirements: "{{ hat_service_virtualenv_dir }}/lib/{{ python_version }}/site-packages/Pillow-6.2.1/requirements.txt"
+    requirements: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/Pillow-6.2.1/requirements.txt"
     virtualenv: "{{ hat_service_virtualenv_dir }}"
   when: connectbox_os != "raspbian" and OS_Version != 'bullseye'
   
 - name: compile Pillow in virtual environment (python3)
-  command: "{{ hat_service_virtualenv_dir }}/bin/python3 {{ hat_service_virtualenv_dir }}/lib/{{ python_version }}/site-packages/Pillow-6.2.1/setup.py install"
+  command: "{{ hat_service_virtualenv_dir }}/bin/python3 {{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/Pillow-6.2.1/setup.py install"
   args:
-    chdir: "{{ hat_service_virtualenv_dir }}/lib/{{ python_version }}/site-packages/Pillow-6.2.1/"
+    chdir: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/Pillow-6.2.1/"
   environment:
     MAX_CONCURRENCY: 1
   when: connectbox_os != "raspbian" and OS_Version != 'bullseye'
@@ -271,7 +268,7 @@
 
 - name: Set path to RPi.GPIO_NP_CB (NEO)
   set_fact:
-    RPi_GPIO_path: "{{ hat_service_virtualenv_dir }}/lib/{{ python_version }}/site-packages/RPi.GPIO_NP_CB"
+    RPi_GPIO_path: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/RPi.GPIO_NP_CB"
   when: connectbox_os != "raspbian" and OS_Version != 'bullseye' 
 
 - name: Clone the RPi.GPIO_NP_CB repo to battery venv (NEO)
@@ -341,7 +338,7 @@
 - name: Copy alternative logo from URL for LCD logo
   get_url:
     url: "{{ alternative_lcd_logo }}"
-    dest: "/usr/local/connectbox/battery_tool_venv/lib/{{ python_version }}/site-packages/neo_batterylevelshutdown/assets/lcdwell_logo.png"
+    dest: "/usr/local/connectbox/battery_tool_venv/lib/{{ python_vers }}/site-packages/neo_batterylevelshutdown/assets/lcdwell_logo.png"
   when: alternative_lcd_logo == 'True'
 
 - name: Reset the logo
