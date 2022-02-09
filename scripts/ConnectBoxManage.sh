@@ -6,7 +6,7 @@
 
 VERSION=0.1.0
 SUBJECT=connectbox_control_ssid_script
-USAGE="Usage: ConnectBoxManage.sh -dhv [get|set|check] [ssid|channel|wpa-passphrase|hostname|staticsite|password|ui-config|client-ssid|client-wifipassword|client-wificountry|wifi-info|is-moodle|course-download|courseusb|openwell-download|openwellusb|brand] <value>"
+USAGE="Usage: ConnectBoxManage.sh -dhv [get|set|check] [ssid|channel|wpa-passphrase|hostname|staticsite|password|ui-config|client-ssid|client-wifipassword|client-wificountry|wifi-info|wifi-restart|is-moodle|course-download|courseusb|openwell-download|openwellusb|brand] <value>"
 HOSTAPD_CONFIG="/etc/hostapd/hostapd.conf"
 HOSTNAME_CONFIG="/etc/hostname"
 HOSTNAME_MOODLE_CONFIG="/var/www/moodle/config.php"
@@ -664,7 +664,6 @@ function set_channel () {
 
   if [ ${PIPESTATUS[0]} -eq 0 ]
   then
-    restart_hostapd
     success
   else
     failure
@@ -691,7 +690,6 @@ function set_wpa_passphrase () {
 
   if [ ${PIPESTATUS[0]} -eq 0 ]
   then
-    restart_hostapd
     success
   else
     failure
@@ -706,9 +704,6 @@ function get_client_ssid () {
 
 function set_client_ssid () {
   sudo sed -i -e "/ssid=/ s/=.*/=\"${val}\"/" $CLIENTWIFI_CONFIG
-  ifdown $CLIENT_WLAN 2>&1 
-  sleep 2
-  ifup $CLIENT_WLAN  2>&1 
   success
 }
 
@@ -719,9 +714,6 @@ function get_client_wifipassword () {
 
 function set_client_wifipassword () {
   sudo sed -i -e "/psk=/ s/=.*/=\"${val}\"/" $CLIENTWIFI_CONFIG
-  ifdown $CLIENT_WLAN 2>&1 
-  sleep 2
-  ifup $CLIENT_WLAN  2>&1 
   success
 }
 
@@ -733,13 +725,23 @@ function get_client_wificountry () {
 function set_client_wificountry () {
   sudo sed -i -e "/country=/ s/=.*/=${val}/" $CLIENTWIFI_CONFIG
   sudo sed -i -e "/country_code=/ s/=.*/=${val}/" $HOSTAPD_CONFIG
-  ifdown $CLIENT_WLAN 2>&1 
-  sleep 2
-  ifup $CLIENT_WLAN  2>&1 
-  ifdown $ACCESS_POINT_WLAN 2>&1 
-  sleep 2
-  ifup $ACCESS_POINT_WLAN 2>&1 
   success
+}
+
+function set_wifi_restart() {
+	if [[ "$val" == "accesspoint" ]]; then
+		ifdown $ACCESS_POINT_WLAN 2>&1 
+		sleep 2
+		ifup $ACCESS_POINT_WLAN  2>&1 
+		success
+	elif [[ "$val" == "client" ]]; then
+		ifdown $CLIENT_WLAN 2>&1 
+		sleep 2
+		ifup $CLIENT_WLAN  2>&1 
+		success
+	else
+		failure
+	fi
 }
 
 # Added by Derek Maxson 20220128
@@ -889,7 +891,6 @@ function set_ssid () {
 
   if [ ${PIPESTATUS[0]} -eq 0 ]
   then
-    restart_hostapd
     success
   else
     failure
@@ -1017,6 +1018,11 @@ elif [ "$action" = "set" ]; then
 
     "client-wificountry")
       set_client_wificountry
+      exit 0;
+      ;;
+
+    "wifi-restart")
+      set_wifi_restart
       exit 0;
       ;;
 

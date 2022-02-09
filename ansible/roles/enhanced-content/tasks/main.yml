@@ -21,6 +21,12 @@
     name: wget
     state: present
 
+# Install ffmpeg to handle mpeg 
+- name: Install ffmpeg to handle thumbnails for interface
+  apt:
+    pkg:
+    - ffmpeg
+
 - name: Get media interface latest release
   ansible.builtin.unarchive:
     src: https://github.com/RT-coding-team/mediainterface/releases/download/latest/latest.zip
