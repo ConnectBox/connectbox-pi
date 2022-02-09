@@ -664,7 +664,6 @@ function set_channel () {
 
   if [ ${PIPESTATUS[0]} -eq 0 ]
   then
-    restart_hostapd
     success
   else
     failure
@@ -691,7 +690,6 @@ function set_wpa_passphrase () {
 
   if [ ${PIPESTATUS[0]} -eq 0 ]
   then
-    restart_hostapd
     success
   else
     failure
@@ -893,7 +891,6 @@ function set_ssid () {
 
   if [ ${PIPESTATUS[0]} -eq 0 ]
   then
-    restart_hostapd
     success
   else
     failure
