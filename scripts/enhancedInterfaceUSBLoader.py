@@ -256,7 +256,7 @@ for path,dirs,files in os.walk(mediaDirectory):
 		# If this is a video, we can probably make a thumbnail
 		if (content["mediaType"] == 'video' and not content["image"]):
 			print ("	Attempting to make a thumbnail for the video")
-			os.system("ffmpeg -i -y '" + fullFilename + "' -ss 00:00:05.000 -vframes 1 " + mediaDirectory + "/.thumbnail-" + slug + ".png >/dev/null 2>&1")
+			os.system("ffmpeg -y -i '" + fullFilename + "' -ss 00:00:05 -vframes 1 " + mediaDirectory + "/.thumbnail-" + slug + ".png >/dev/null 2>&1")
 			content["image"] = slug + ".png"
 			print ("	Thumbnail is created at: " + content["image"])
 

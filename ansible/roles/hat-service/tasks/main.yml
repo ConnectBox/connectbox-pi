@@ -185,36 +185,36 @@
 - name: Showing if devmem2 is valid or if we need to compiler
   debug:
     msg: "Were loading to compile devmem2 as its absent"
-  when: (connectbox_os != "raspbian" and OS_Version == 'bullseye' and OS_Version == 'buster') or devmem_check.stdout.find("devmem") == ""
+  when: (connectbox_os != "raspbian" and (OS_Version == 'bullseye' or OS_Version == 'buster')) or devmem_check.stdout.find("devmem2") <= 0
 
 - name: If were bullseye/buster on NEO then we need to compile devmem2
   command: wget https://bootlin.com/pub/mirror/devmem2.c
   args:
     chdir: /home
-  when: (connectbox_os != "raspbian" and OS_Version == 'bullseye' and OS_Version == 'buster') or devmem_check.stdout.find("devmem") == ""
+  when: (connectbox_os != "raspbian" and OS_Version == 'bullseye' and OS_Version == 'buster') or devmem_check.stdout.find("devmem2") <= 0
 
 - name: get the compiler we need
   apt:
     name: gcc
     state: present
-  when: (connectbox_os != "raspbian" and OS_Version == 'bullseye' and OS_Version == 'buster') or devmem_check.stdout.find("devmem") == ""
+  when: (connectbox_os != "raspbian" and (OS_Version == 'bullseye' or OS_Version == 'buster')) or devmem_check.stdout.find("devmem2") <= 0
 
 - name: compile the devmem2 utility placing the output into /usr/bin
   command: gcc -o /usr/bin/devmem2 /home/devmem2.c
   register: command_result
-  when: (connectbox_os != "raspbian" and OS_Version == 'bullseye' and OS_Version == 'buster') or devmem_check.stdout.find("devmem") == ""
+  when: (connectbox_os != "raspbian" and (OS_Version == 'bullseye' or OS_Version == 'buster')) or devmem_check.stdout.find("devmem2") <= 0
 
 - name: get rid of the directory
   file:
     path: /home/*
     state: absent
-  when: (connectbox_os != "raspbian" and OS_Version == 'bullseye' and OS_Version == 'buster') or devmem_check.stdout.find("devmem") == ""
+  when: (connectbox_os != "raspbian" and (OS_Version == 'bullseye' or OS_Version == 'buster')) or devmem_check.stdout.find("devmem2") <= 0
 
 - name: get rid of the c compiler
   apt:
     name: gcc
     state: absent
-  when: (connectbox_os != "raspbian" and OS_Version == 'bullseye' and OS_Version == 'buster') or devmem_check.stdout.find("devmem") == ""    
+  when: (connectbox_os != "raspbian" and (OS_Version == 'bullseye' or OS_Version == 'buster')) or devmem_check.stdout.find("devmem2") <= 0
 
 - name: Make sure there is no Pillow code already there
   ansible.builtin.file:
