@@ -45,8 +45,10 @@ this code will quickly test the expand_progress.txt file an finding the process 
 
 import pexpect
 import time
+import logging
 import re
 import os
+
 
 
 # globals for Partion expansion
@@ -63,6 +65,8 @@ loc=[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]
 global mnt
 mnt=[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]
 d=["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""]
+global net_stat
+net_stat = 1
 
 def mountCheck():
     global mnt
@@ -80,7 +84,9 @@ def mountCheck():
       return
     total = 0
     j = 0                   #mount iterator looking for unmounted devices
-    b = os.popen('lsblk').read()
+    process = os.popen('lsblk')
+    b = process.read()
+    process.close()
     while (j < 11):
       if DEBUG: print("loop 1, unmount",j)
       if (mnt[j] >= 0):
@@ -93,7 +99,8 @@ def mountCheck():
           if DEBUG: print("completed "+c)
           if res == 0:
             if loc[j] > ord('0'):
-               os.popen('rmdir /media/usb'+chr(loc[j]))
+               process = os.popen('rmdir /media/usb'+chr(loc[j]))
+               process.close()
                if DEBUG: print("Deleted the directory /media/usb",chr(loc[j]))
             else:     #We just unmounted usb0 so we need to rerun the enhanced interfaceUSB loader
                       # Run these functions on mount -- added 20211111
@@ -240,11 +247,12 @@ def do_resize2fs(rpi_platform):
     out = pexpect.run(cmd, timeout=600)  # 10 minutes should be enough for the resize
     out = out.decode('utf-8')
     if "blocks long" in out:
-        print("resize2fs complete... now reboot")
+        if DEBUG: print("resize2fs complete... now reboot")
         f = open(progress_file, "w")
         f.write("resize2fs_done")
         f.close()
         os.sync()
+        logging.info("doing a reboot after the resize")
         os.system('shutdown -r now')
 
 
@@ -254,16 +262,16 @@ def do_fdisk(rpi_platform):
     try:
       i = child.expect(['Command (m for help)*', 'No such file or directory']) # the match is looking for the LAST thing that came up so we need the *
     except:
-      print("Exception thrown")
-      print("debug info:")
-      print (str(child))
+      if DEBUG: print("Exception thrown")
+      if DEBUG: print("debug info:")
+      if DEBUG: print(str(child))
 
   # the value of i is the reference to which of the [] arguments was found
     if i==1:
-        print("There is no /dev/mmcblk0 partition... exiting")
+        if DEBUG: print("There is no /dev/mmcblk0 partition... exiting")
         child.kill(0)
     if i==0:
-        print("Found it!")  
+        if DEBUG: print("Found it!")  
   # continuing
 
   # "p" get partition info and search out the starting sector of mmcblk0p1
@@ -289,7 +297,7 @@ def do_fdisk(rpi_platform):
     p = re.compile('\s[0-9]+')    # a new regex to find just the number from the match above
     m = p.search(match)
     startSector = m.group()
-    print("starting sector = ", startSector )
+    if DEBUG: print("starting sector = ", startSector )
 
   # "d" for delete the partition
     child.sendline('d')
@@ -310,8 +318,7 @@ def do_fdisk(rpi_platform):
     child.sendline('p')
     if rpi_platform == True:    # CM4 has 2 partitions... select partition 2
         i = child.expect('default 2*')
-        child.sendline('2')                 # "2" for partition number 2
-        i = child.expect('default 2048*')
+        child.sendline('2')                 # "2" for partition number 2         i = child.expect('default 2048*')
     else:
         i = child.expect('default 1*')      # "1" for partition number 1
         child.sendline('1')
@@ -340,7 +347,147 @@ def do_fdisk(rpi_platform):
     f.write("fdisk_done")
     f.close()
     os.sync()
+    logging.info( "PxUSBm is rebooting after fdisk changed")
     os.system('shutdown -r now')
+
+
+def NetworkCheck():
+
+  global net_stat
+
+  if net_stat >= 1:
+    process = os.popen("ls /sys/class/net")
+    SysNetworks = process.read().split("\n")
+    process.close()
+    if DEBUG: print("lenght of list: ",len(SysNetworks))
+    if DEBUG: print("list is: ", SysNetworks)
+
+    for netx in SysNetworks:
+      if netx != "":
+          process = os.popen("cat /sys/class/net/"+netx+"/operstate")
+          net_stats = process.read()
+          process.close()
+          if net_stats == 'down' or net_stat == "unknown":
+            res = os.popen("ifup "+netx)
+            res.close()
+            process = os.popen("cat /sys/class/net/"+next+"/operstate")
+            net_stats = process.read()
+            process.close()
+            ex_stat == net_stats
+            if ex_stat == 'up':
+                logging.info("raised interface "+netx)
+            else:
+                if netx == "lo" and ex_stat == "unknown":
+                    if net_stat.find("already configured") >0:
+                        pass
+                    else:
+                        logging.info("raised interface lo")
+                else:
+                    logging.info("had issues raising interface "+netx)
+                    net_stat += 1;
+    process = os.popen("systemctl status hostapd")
+    net_stats = process.read()
+    process.close()
+    if net_stats.find("Loaded: masked")>= 0:
+        process = os.popen("systemctl unmask hostapd.service")
+        net_stats = process.read()
+        process.close()
+        if net_stats.find("Removed")>=0:
+          process = 0s.popen("systemctl enable hostapd.service")
+          net_stats = process.read()
+          process.close()
+          if net_stats.find("enabled hostapd"):
+            process = os.popen("systemctl start hostapd.service")
+            net_stats = process.read()
+            process.close()
+            if net_stats.find("failed"):
+              logging.info("failed to start hostapd error code is"+net_stats)
+              if DEBUG print("failed to start hostapd must be configuration error")
+            else:
+              logging.info("Succeeded in umasking, enabling and starting hostapd")
+              if DEBUG: print ("succeeded in unmasking, enabling and starting hostapd")
+          else:
+            logging.info("Failed to enable hostapd after unmasking")
+        else:
+          logging.info("Failed to unmask hostapd")
+     process = os.popen("systemctl status networking.service") 
+     net_stats = process.read()
+     process.close()
+     if net_stats.find("Active: active") < 0:
+        process = os.popen("systemctl start networking.service")
+        net_stats = process.read()
+        process.close()
+        if net_stats == "":
+          process = os.popen("systemctl status networking.service")
+          net_stats = process.read()
+          process.close()
+          if net_stats.find("Active: active") >= 0:
+            logging.info("We were able to restart a stalled networking service")
+          else:
+            logging.info("We were unable to start a stalled networking service")
+        else:
+          logging.info("Attempt to restart networking.service failed with an error")
+    process = os.popen("systemctl status dnsmasq")
+    net_stats = process.read()
+    process.close()
+    if net_stats.find("Active: active") < 0:
+      process = os.popen("systemctl restart dnsmasq")
+      net_stats = process.read()
+      process.close()
+      if net_stats.find("Active: active"):
+        logging.info("we were able to start a stalled dnsmasq")
+      else:
+        logging.info("We were unable to start the dnsmasq service")
+    if net_stat >= 10:
+        logging.info("Network startup issues.  Will try to restart services")
+        for netx in SysNetworks:
+          if nextx != "":
+              process = os.popen("cat /sys/class/net/"+next+"/operstate")
+              net_stats = process.read()
+              process.close()
+              if net_stats == "up":
+                process = os.popen("ifdown "+netx)
+                ex_stat = process.read()
+                process.close()
+                process = os.popen("cat /sys/class/net/"+next+"/operstate")
+                net_stats = process.read()
+                process.close()
+                ex_stat == net_stats
+                if ex_state == 'up':
+                  logging.info("couldn't take down "+netx)
+        logging.info("stopped all interfaces as much as possible")   
+        res = os.popen("systemctl resart networking.service")
+        res.close()
+        if res != "":
+          logging.info("networking.service has configuration issues")
+        proess = os.popen("systemctl status networking.service")
+        res = process.read()
+        process.close()
+        if res.find("active (exited)") <= 0:
+          logging.info("networking.service failed to start")
+        process = os.popen("systemctl restart dnsmasq")
+        res = process.read()
+        process.close()
+        if res != "":
+          logging.info("dnsmasqd has configuration issues")
+        process = os.popen("systemctl status dnsmasq")
+        res = process.read()
+        process.close()
+        if res.find("active (running)") <= 0:
+          logging.info("dnsmasq service failed to start")
+        process = os.popen("systemctl restart hostapd")
+        res = process.read()
+        process.close()
+        if res != "":
+          logging.info("hostapd service has configuration issues")
+        rocess = os.popen("systemctl status hostapd")
+        res = process.read()
+        process.close()
+        if res.find("active (exited)") <0:
+          logging.info("hostapd service failed to start")
+        net_stat = 0
+
+
 
 
 if __name__ == "__main__":
@@ -357,7 +504,8 @@ if __name__ == "__main__":
         rpi_platform = True
     if "PI" in brand:
         rpi_platform = True
-
+    net_stat = 1
+    x = 0
     # Sort out how far we are in the partition expansion process
     file_exists = os.path.exists(progress_file)
     if file_exists == False:
@@ -376,5 +524,10 @@ if __name__ == "__main__":
         loop_time = 3
         if not os.path.exists("/usr/local/connectbox/PauseMount"):
           mountCheck()
+        NetworkCheck()
         time.sleep(loop_time)
+        x =+1 
+        if x > 2500:
+          net_stat +=1
+
 

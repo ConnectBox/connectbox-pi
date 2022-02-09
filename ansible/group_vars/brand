@@ -7,7 +7,7 @@ lcd_x_position: 6
 lcd_y_position: 0
 
 device_type: "NEO"
-enable_mass_storage: ""           #OTG module extention if g_mass_storage needing a directory
+
 usbNoMount: 0
 
 lcd_pages_main: 1
@@ -25,9 +25,9 @@ lcd_pages_stats_month_one: 1
 lcd_pages_stats_month_two: 1
 lcd_pages_admin: 1
 
-lcd_g_device: "g_serial"           # module to load by default for OTG enable
-otg_enable: 1                      # 0, 1 or "none" with 0 being logic invert on the signal line
-
+otg_enable: "both"                 # 0, 1 or "none" with 0 being logic invert on the signal line or "both" for full time otg mode
+g_device: "g_serial"               # module to load by default for OTG enable
+enable_mass_storage: ""            #OTG module extention if g_mass_storage needing a directory
 
 server_url: ""
 server_authorization: ""

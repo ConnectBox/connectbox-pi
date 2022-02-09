@@ -9,7 +9,7 @@ connectbox_version: "{{ 'dev-%y%m%d' | strftime }}"
 #  test some client-facing capabilities but do not have a wifi interface
 client_facing_if: "wlan0"
 eth_facing_if: "wlan1"
-SSID_Box: "ConnectBox - Free WiFi!"
+SSID_Box: "Connectbox - Free WiFi!"
 root_partition_size: "1GB"
 
 # Client facing if stuff is defined here because we have a circular dependency
@@ -52,7 +52,7 @@ connectbox_config_root: /etc/connectbox
 connectbox_usb_files_root: /media/usb0
 connectbox_admin_credentials: admin:$apr1$CBOX2018$RlXBoHRRoiG3vMC7PS07q.
 
-connectbox_default_hostname: ConnectBox
+connectbox_default_hostname: Connectbox
 lcd_brand: connectbox_default_hostname
 connectbox_logo: connectbox_logo.png
 alternative_lcd_logo: False
@@ -77,7 +77,9 @@ connectbox_client_path: published/
 connectbox_system_password: "connectbox"
 build_moodle: False
 enhanced_interface: True
+# Note: for Bullseye use 7.4, for Buster use 7.3 for Stretch use 7.0
 php_version: 7.4
+
 
 client_ssid: "Default"
 client_wifipassword: "Default1"
