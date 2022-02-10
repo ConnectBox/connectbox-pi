@@ -161,26 +161,26 @@
     src: 8812au-install.sh
     dest: /tmp/8812au-install.sh
     mode: "+x"
-  when: found_drivers.failed and driver_a.stdout == ""
+  when: found_drivers.failed or driver_a.stdout == ""
 
 - name: Compile the 8812au driver for Raspbian or NEO
   command:
      chdir: /tmp
      cmd: "sh 8812au-install.sh"
-  when: found_drivers.failed and driver_a.stdout == ""
+  when: found_drivers.failed or driver_a.stdout == ""
 
 - name: Copy over 88x2bu-install script for Raspian
   copy:
     src: 88x2bu-install.sh
     dest: /tmp/88x2bu-install.sh
     mode: "+x"
-  when: found_drivers.failed and driver_b.stdout == ""
+  when: found_drivers.failed or driver_b.stdout == ""
 
 - name: Compile the 88x2bu driver for Raspbian or NEO
   command:
      chdir: /tmp
      cmd: "sh 88x2bu-install.sh"
-  when: found_drivers.failed and driver_b.stdout == ""
+  when: found_drivers.failed or driver_b.stdout == ""
 
 - name: remove build tools
   apt:
@@ -201,19 +201,19 @@
 
 - name: if we built the drivers then lets keep a copy on the build system
   fetch:
-    src: '/usr/lib/modules/"{{ kernel_num.stdout }}"/kernel/drivers/net/wireless/8812au.ko'
+    src: '/usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/8812au.ko'
     dest: '/home/kernel_drivers/{{ kernel_num }}'
     fail_on_missing: yes
     flat: yes
-  when: found_drivers.failed and driver_a.stdout == ""
+  when: found_drivers.failed or driver_a.stdout == ""
 
 - name: if we built the drivers then lets keep a copy on the build system
   fetch:
-    src: '/usr/lib/modules/"{{ kernel_num.stdout }}"/kernel/drivers/net/wireless/88x2bu.ko'
+    src: '/usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/88x2bu.ko'
     dest: '/home/kernel_drivers/{{ kernel_num }}'
     fail_on_missing: yes
     flat: yes
-  when: found_drivers.failed and driver_b.stdout == ""
+  when: found_drivers.failed or driver_b.stdout == ""
 
 
 # Note: this is not a handler because we need the network configuration in

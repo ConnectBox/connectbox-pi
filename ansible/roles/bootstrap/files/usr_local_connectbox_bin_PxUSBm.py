@@ -572,6 +572,14 @@ if __name__ == "__main__":
             do_resize2fs(rpi_platform)     # this ends in reboot() so won't return
 
 # Once partition expansion is complete, handle the ongoing monitor of USBs
+
+        proc = os.popen("systemctl status neo-battery-shutdown").read()
+        while (proc.find("Active: inactive") or proc.find("Active: failed"):
+            # we found the neo-battery-shutdown not running lets try to restarat
+            proc = os.popen("systemctl restart neo-battery-shutdown").read()
+            proc = os.popen("systemctl status neo-battery-shutdown").read()
+        # we get through when neo-battery-shutdown is running
+
         if "rewrite_netfiles_done" in progress:
             f = open("/usr/local/connectbox/wificonf.txt", "r")
             wifi = f.read()
