@@ -283,6 +283,10 @@
   when: reboot_required
   tags: reboot1
 
+- name: wait for host to come backup
+  wiat_for:
+    port: 22
+    delay: 30
 
 - name: Copy over a new dnsmasq file if were on ubuntu debian focal
   copy: 
