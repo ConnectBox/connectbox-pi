@@ -48,6 +48,7 @@ import time
 import logging
 import re
 import os
+from subprocess import Popen, PIPE
 
 
 
@@ -67,6 +68,7 @@ mnt=[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]
 d=["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""]
 global net_stat
 net_stat = 1
+
 
 def mountCheck():
     global mnt
@@ -292,9 +294,9 @@ def do_fdisk(rpi_platform):
         p = re.compile('mmcblk[0-9]p[0-9]\s*[0-9]+')    # create a regexp to get close to the sector info - NEO
 
     m = p.search(respString)    # should find "mmcblk0p1   8192" or similar, saving as object m (NEO)
-                                    #  or "mmcblk0p2   532480" or similar for CM4
-    match = m.group()       # get the text of the find
-    p = re.compile('\s[0-9]+')    # a new regex to find just the number from the match above
+                                #  or "mmcblk0p2   532480" or similar for CM4
+    match = m.group()           # get the text of the find
+    p = re.compile('\s[0-9]+')  # a new regex to find just the number from the match above
     m = p.search(match)
     startSector = m.group()
     if DEBUG: print("starting sector = ", startSector )
@@ -354,138 +356,187 @@ def do_fdisk(rpi_platform):
 def NetworkCheck():
 
   global net_stat
+  global areadyconf
 
-  if net_stat >= 1:
-    process = os.popen("ls /sys/class/net")
-    SysNetworks = process.read().split("\n")
-    process.close()
-    if DEBUG: print("lenght of list: ",len(SysNetworks))
-    if DEBUG: print("list is: ", SysNetworks)
-
-    for netx in SysNetworks:
-      if netx != "":
-          process = os.popen("cat /sys/class/net/"+netx+"/operstate")
-          net_stats = process.read()
-          process.close()
-          if net_stats == 'down' or net_stat == "unknown":
-            res = os.popen("ifup "+netx)
-            res.close()
-            process = os.popen("cat /sys/class/net/"+next+"/operstate")
-            net_stats = process.read()
-            process.close()
-            ex_stat == net_stats
-            if ex_stat == 'up':
-                logging.info("raised interface "+netx)
-            else:
-                if netx == "lo" and ex_stat == "unknown":
-                    if net_stat.find("already configured") >0:
-                        pass
-                    else:
-                        logging.info("raised interface lo")
-                else:
-                    logging.info("had issues raising interface "+netx)
-                    net_stat += 1;
-    process = os.popen("systemctl status hostapd")
+  process = os.popen("systemctl status hostapd")
+  net_stats = process.read()
+  process.close()
+  if net_stats.find("Loaded: masked")>= 0:
+    process = os.popen("systemctl unmask hostapd.service")
     net_stats = process.read()
     process.close()
-    if net_stats.find("Loaded: masked")>= 0:
-        process = os.popen("systemctl unmask hostapd.service")
+    if net_stats.find("Removed")>=0:
+        process = os.popen("systemctl enable hostapd.service")
         net_stats = process.read()
         process.close()
-        if net_stats.find("Removed")>=0:
-          process = 0s.popen("systemctl enable hostapd.service")
-          net_stats = process.read()
-          process.close()
-          if net_stats.find("enabled hostapd"):
+        if net_stats.find("enabled hostapd")>=0:
             process = os.popen("systemctl start hostapd.service")
             net_stats = process.read()
             process.close()
-            if net_stats.find("failed"):
-              logging.info("failed to start hostapd error code is"+net_stats)
-              if DEBUG print("failed to start hostapd must be configuration error")
+            if net_stats.find("failed")>=0:
+                logging.info("failed to start hostapd error code is"+net_stats)
+                if DEBUG: print("failed to start hostapd must be configuration error")
             else:
-              logging.info("Succeeded in umasking, enabling and starting hostapd")
-              if DEBUG: print ("succeeded in unmasking, enabling and starting hostapd")
-          else:
-            logging.info("Failed to enable hostapd after unmasking")
+                logging.info("Succeeded in umasking, enabling and starting hostapd")
+                if DEBUG: print ("succeeded in unmasking, enabling and starting hostapd")
         else:
-          logging.info("Failed to unmask hostapd")
-     process = os.popen("systemctl status networking.service") 
-     net_stats = process.read()
-     process.close()
-     if net_stats.find("Active: active") < 0:
-        process = os.popen("systemctl start networking.service")
-        net_stats = process.read()
-        process.close()
-        if net_stats == "":
-          process = os.popen("systemctl status networking.service")
-          net_stats = process.read()
+              logging.info("Failed to enable hostapd after unmasking")
+    else:
+        logging.info("Failed to unmask hostapd")
+  else:
+    if net_stats.find("Loaded loaded") >= 0:
+      if net_stats.find("Active: active") <0:
+        if net_stats.find("Failed to start") >0:
+          # likely we can't start becasue of an old run file.
+          process = os.popen("rm /var/run/hostapd/"+apwifi)
+          res = process.read()
           process.close()
-          if net_stats.find("Active: active") >= 0:
-            logging.info("We were able to restart a stalled networking service")
+          if res.find("cannot remove") >0:
+            logging.info("could not remove the run/hostapd/"+apwifi)
           else:
-            logging.info("We were unable to start a stalled networking service")
+            res = os.popen("systemctl start hostapd")
+            net_stats = res.read()
+            res.close()
+            if net_stats.find("Active: active") >= 0:
+              logging.info("Restarted hostapd and its running")
+            else:
+              logging.info("couldn't get hostapd running")
         else:
-          logging.info("Attempt to restart networking.service failed with an error")
-    process = os.popen("systemctl status dnsmasq")
+          logging.info("hostapd is not active but still failed to start???")
+      else:
+        pass    #were running and were fine
+    else:
+      if net_stats.find("Active: active") < 0:
+        res = os.popen("systemctl start hostapd")
+        net_stats = res.read()
+        res.close()
+        if net_stats.find("Active: active") >= 0:
+          logging.info("Restarted hostapd and its running")
+        else:
+          logging.info("couldn't get hostapd running")
+      else:
+        pass    # were running and were fine
+
+  process = os.popen("systemctl status networking.service")
+  net_stats = process.read()
+  process.close()
+  if net_stats.find("Active: active") < 0:
+    process = os.popen("systemctl start networking.service")
     net_stats = process.read()
     process.close()
-    if net_stats.find("Active: active") < 0:
-      process = os.popen("systemctl restart dnsmasq")
-      net_stats = process.read()
-      process.close()
-      if net_stats.find("Active: active"):
+    if net_stats == "":
+        process = os.popen("systemctl status networking.service")
+        net_stats = process.read()
+        process.close()
+        if net_stats.find("Active: active") >= 0:
+            logging.info("We were able to restart a stalled networking service")
+        else:
+            logging.info("We were unable to start a stalled networking service")
+    else:
+        logging.info("Attempt to restart networking.service failed with an error")
+
+  process = os.popen("systemctl status dnsmasq")
+  net_stats = process.read()
+  process.close()
+  if net_stats.find("Active: active") < 0:
+    process = os.popen("systemctl restart dnsmasq")
+    net_stats = process.read()
+    process.close()
+    if net_stats.find("Active: active") >= 0:
         logging.info("we were able to start a stalled dnsmasq")
-      else:
+    else:
         logging.info("We were unable to start the dnsmasq service")
-    if net_stat >= 10:
-        logging.info("Network startup issues.  Will try to restart services")
-        for netx in SysNetworks:
-          if nextx != "":
-              process = os.popen("cat /sys/class/net/"+next+"/operstate")
-              net_stats = process.read()
-              process.close()
-              if net_stats == "up":
-                process = os.popen("ifdown "+netx)
-                ex_stat = process.read()
-                process.close()
+
+
+  res = os.popen("ls /sys/class/net")
+  SysNetworks = res.read().split()
+  res.close()
+  for netx in SysNetworks:
+    if netx != "":
+      try:
+          process = os.popen("cat /sys/class/net/"+netx+"/operstate")          
+          net_stats = process.read()
+          process.close()
+          if net_stats.find("down") >= 0 :
+            if areadyconf.find(netx) < 0 :        # Were checking to see if we should leave this network alone
+                cmd = "ifup "+netx
+                process = Popen([cmd],shell=True, stdout=PIPE, stderr=PIPE)
+                (output, error) = process.communicate()
+                process.terminate()
+                if str(error).find("already configured")>=0:
+                  areadyconf =  netx + "," + areadyconf
+                  logging.info("Interface "+netx+" is already configured")
+                else:
+                  process = os.popen("cat /sys/class/net/"+netx+"/operstate")
+                  net_stats = process.read()
+                  process.close()
+                  if net_stats.find("up") >= 0:
+                      logging.info("raised interface "+netx)
+                  else:
+                    if netx != clientwifi:  #eg: its not client so it mus be AP
+                        net_stat += 1
+      except:
+          logging.info("Interface "+netx+"is not yet configured for up/down")
+  if net_stat >= 10:
+    logging.info("Network startup issues.  Will try to restart services")
+    for netx in SysNetworks:
+        if netx != "":
+            try:
                 process = os.popen("cat /sys/class/net/"+next+"/operstate")
                 net_stats = process.read()
                 process.close()
-                ex_stat == net_stats
-                if ex_state == 'up':
-                  logging.info("couldn't take down "+netx)
-        logging.info("stopped all interfaces as much as possible")   
+                if net_stats == "up":
+                    process = os.popen("ifdown "+netx)
+                    ex_stat = process.read()
+                    process.close()
+                    process = os.popen("cat /sys/class/net/"+next+"/operstate")
+                    net_stats = process.read()
+                    process.close()
+                    ex_stat == net_stats
+                    if ex_state == 'up':
+                    logging.info("couldn't take down "+netx)
+            except:
+                  logging.info("Interface "+netx+" needs to be configured")
+    logging.info("stopped all interfaces as much as possible")   
+#restart networking
+    try:
         res = os.popen("systemctl resart networking.service")
         res.close()
-        if res != "":
-          logging.info("networking.service has configuration issues")
-        proess = os.popen("systemctl status networking.service")
-        res = process.read()
-        process.close()
-        if res.find("active (exited)") <= 0:
-          logging.info("networking.service failed to start")
+    except:
+        logging.info("networking.service has configuration issues")
+    proess = os.popen("systemctl status networking.service")
+    res = process.read()
+    process.close()
+    if res.find("active (exited)") <= 0:
+      logging.info("networking.service failed to start")
+# restart dnsmasq
+    try:
         process = os.popen("systemctl restart dnsmasq")
         res = process.read()
         process.close()
-        if res != "":
-          logging.info("dnsmasqd has configuration issues")
+    except:
+        logging.info("dnsmasq has configuration issues")
+# restart dnsmasq
+    try:
         process = os.popen("systemctl status dnsmasq")
         res = process.read()
         process.close()
-        if res.find("active (running)") <= 0:
-          logging.info("dnsmasq service failed to start")
+    except:
+        logging.info("dnsmasq service failed to start")
+# restart hostapd
+    try:
         process = os.popen("systemctl restart hostapd")
         res = process.read()
         process.close()
-        if res != "":
-          logging.info("hostapd service has configuration issues")
-        rocess = os.popen("systemctl status hostapd")
-        res = process.read()
-        process.close()
-        if res.find("active (exited)") <0:
-          logging.info("hostapd service failed to start")
-        net_stat = 0
+    except:
+        logging.info("hostapd service has configuration issues")
+    process = os.popen("systemctl status hostapd")
+    res = process.read()
+    process.close()
+    if res.find("active (exited)") <0:
+      logging.info("hostapd service failed to start")
+    net_stat = 0
+    areadyconf = ""
 
 
 
@@ -496,6 +547,9 @@ if __name__ == "__main__":
 # Determine if we are on NEO or CM
     brand_file = '/usr/local/connectbox/brand.txt'
     rpi_platform = False
+    global areadyconf
+    areadyconf= ""
+
     # see if we are NEO or CM
     f = open(brand_file,"r")
     brand = f.read()
@@ -510,24 +564,30 @@ if __name__ == "__main__":
     file_exists = os.path.exists(progress_file)
     if file_exists == False:
         do_fdisk(rpi_platform)             # this ends in reboot() so won't return
-
     else: 
         f = open(progress_file, "r")
         progress = f.read()
         f.close()
-        if "resize2fs_done" not in progress:
+        if "fdisk_done" in progress:
             do_resize2fs(rpi_platform)     # this ends in reboot() so won't return
 
 # Once partition expansion is complete, handle the ongoing monitor of USBs
+        if "rewrite_netfiles_done" in progress:
+            f = open("/usr/local/connectbox/wificonf.txt", "r")
+            wifi = f.read()
+            f.close()
+            clientwifi =  wifi.partition("ClientIF=")[2].split("\n")[0]
+            apwifi = wifi.partition("AccessPointIF=")[2].split("\n")[0]
+            print("Client interface is ", clientwifi)
+            print("AP interface is ", apwifi)
 
-    while True:
-        loop_time = 3
-        if not os.path.exists("/usr/local/connectbox/PauseMount"):
-          mountCheck()
-        NetworkCheck()
-        time.sleep(loop_time)
-        x =+1 
-        if x > 2500:
-          net_stat +=1
+            while True:
+                if not os.path.exists("/usr/local/connectbox/PauseMount"):
+                    mountCheck()
+                    NetworkCheck()
+                    time.sleep(3)
+                    x =+1 
+                    if x > 2500:
+                      net_stat +=1
 
 
