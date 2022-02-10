@@ -286,7 +286,7 @@
 
 - name: Copy over a new dnsmasq file if were on ubuntu debian focal
   copy: 
-    src: etc_dnsmasq.conf
+    src: dnsmasq.conf
     dest: /etc/dnsmasq.conf
   when: (OS_Version == 'focal') and  (ansible_os_family|lower == 'debian') and (connectbox_os == 'ubuntu') 
 
