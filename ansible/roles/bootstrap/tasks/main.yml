@@ -284,7 +284,7 @@
   tags: reboot1
 
 - name: wait for host to come backup
-  wiat_for:
+  wait_for:
     port: 22
     delay: 30
 
