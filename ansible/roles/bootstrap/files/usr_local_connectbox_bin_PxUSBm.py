@@ -494,7 +494,7 @@ def NetworkCheck():
                     process.close()
                     ex_stat == net_stats
                     if ex_state == 'up':
-                    logging.info("couldn't take down "+netx)
+                      logging.info("couldn't take down "+netx)
             except:
                   logging.info("Interface "+netx+" needs to be configured")
     logging.info("stopped all interfaces as much as possible")   
@@ -571,16 +571,11 @@ if __name__ == "__main__":
         if "fdisk_done" in progress:
             do_resize2fs(rpi_platform)     # this ends in reboot() so won't return
 
-# Once partition expansion is complete, handle the ongoing monitor of USBs
+# Once partition expansion is complete, handle the ongoing monitor of USB
 
-        proc = os.popen("systemctl status neo-battery-shutdown").read()
-        while (proc.find("Active: inactive") or proc.find("Active: failed"):
-            # we found the neo-battery-shutdown not running lets try to restarat
-            proc = os.popen("systemctl restart neo-battery-shutdown").read()
-            proc = os.popen("systemctl status neo-battery-shutdown").read()
         # we get through when neo-battery-shutdown is running
-
-        if "rewrite_netfiles_done" in progress:
+        logging.info("got through the neo-battery-shutdown running test")
+        if ("rewrite_netfiles_done" in progress or "running" in progress):
             f = open("/usr/local/connectbox/wificonf.txt", "r")
             wifi = f.read()
             f.close()
@@ -592,10 +587,17 @@ if __name__ == "__main__":
             while True:
                 if not os.path.exists("/usr/local/connectbox/PauseMount"):
                     mountCheck()
-                    NetworkCheck()
-                    time.sleep(3)
-                    x =+1 
-                    if x > 2500:
-                      net_stat +=1
-
-
+                NetworkCheck()
+                time.sleep(3)
+                y = 0
+                x =+1 
+                if x > 2500:
+                    net_stat +=1
+                    proc = os.popen("systemctl status neo-battery-shutdown").read()
+                    while (proc.find("Active: inactive") or proc.find("Active: failed")) and y<5:
+                    # we found the neo-battery-shutdown not running lets try to restarat
+                        proc = os.popen("systemctl restart neo-battery-shutdown").read()
+                        time.sleep(10)
+                        proc = os.popen("systemctl status neo-battery-shutdown").read()                      
+                        Y =+1
+                    
