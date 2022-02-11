@@ -70,4 +70,10 @@
     regexp: 'hostname'
     replace: '{{ connectbox_default_hostname }}'
 
-  
+- name: Copy MMI loader to /usr/local/connectbox/bin
+  get_url:
+    url: https://raw.githubusercontent.com/RT-coding-team/mediainterface/main/mmiloader.py
+    dest: /usr/local/connectbox/bin/enhancedInterfaceUSBLoader.py
+    owner: _connectbox
+    group: _connectbox
+    mode: '0755'
