@@ -41,6 +41,12 @@
     dest: /etc/hosts
     line: "{{ client_facing_if_ip_address }} {{ connectbox_default_hostname }}"
 
+- name: Add /etc/hosts entry for Moodle at learn.<hostname>
+  lineinfile:
+    dest: /etc/hosts
+    line: "{{ client_facing_if_ip_address }} learn.{{ connectbox_default_hostname }}"
+  when: build_moodle
+
 # Install dnsmasq after the config files are in place.
 # Installation of dnsmasq starts the service, and if the config files aren't
 #  correct when the service starts, it removes the upstream resolver from
