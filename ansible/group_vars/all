@@ -29,6 +29,7 @@ hosts_requiring_non_private_captive_portal_ip:
 - connectivitycheck.android.com
 
 captiveportal_listen_port: 5001
+connectbox_manage_port: 5002
 
 # Used to serve dns on LAN in developer mode, principally for testing.
 # In situations where there are multiple wired ethernet interfaces, this is
@@ -93,7 +94,7 @@ nginx_admin_block: |
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header Host $http_host;
         proxy_redirect off;
-        proxy_pass http://127.0.0.1:{{ gunicorn_listen_port }}/admin/api;
+        proxy_pass http://127.0.0.1:{{ connectbox_manage_port }}/admin/api;
         # Never cache
         expires -1;
       }
@@ -110,7 +111,7 @@ nginx_chat_block: |
       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
       proxy_set_header Host $http_host;
       proxy_redirect off;
-      proxy_pass http://127.0.0.1:{{ gunicorn_listen_port }}/chat;
+      proxy_pass http://127.0.0.1:{{ connectbox_manage_port }}/chat;
       # Never cache
       expires -1;
     }
