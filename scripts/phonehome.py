@@ -51,16 +51,18 @@ def processSettings(settings):
   for setting in settings:
     command = "set " + setting["key"] + " " + setting["value"];
     if setting["key"] == 'authorization':
-      command = "set brand server_" + setting["key"] + " " + setting["value"];
+      command = "set brand server " + setting["key"] + "=" + setting["value"];
+    if setting["key"] == 'moodle-security-key':
+      command = "set securitykey " + setting["value"]; 
     print ("Handling Setting: " + command)
 	try:
-      results = subprocess.check_output("sudo /usr/local/connectbox/bin/ConnectBoxManage.sh " + command, shell=True)
+      results = subprocess.check_output("sudo connectboxmanage " + command, shell=True)
       results = results.decode('utf-8')
     except:
       print ("Could not process the setting: " + command)
-      results = "Null (ConnectBoxManage.sh returned fatal)"
+      results = "Null (connectboxmanage returned fatal)"
     print("ConnectBoxManage.sh returned: " + results)
-    if results == "SUCCESS\n":
+    if results.strip() in command and len(results) > 0:
       print ("Setting For " + command + " was successful! Now inform server to delete setting") 
       response = requests.delete(brand["server_url"] + "/chathost/settings/" + setting["deleteId"],headers=headers)
       if response.status_code == 200: 	
