@@ -57,6 +57,9 @@ lcd_brand: connectbox_default_hostname
 connectbox_logo: connectbox_logo.png
 alternative_lcd_logo: False
 
+moodle_blockcontent: |
+    <h1>Welcome To {{ connectbox_default_hostname }}</h1>This content may be changed in Moodle or changed in the build by updating the value in group_vars/all
+
 connectbox_log_dir: /var/log/connectbox
 connectbox_access_log: "{{ connectbox_log_dir }}/connectbox-access.log"
 connectbox_error_log:  "{{ connectbox_log_dir }}/connectbox-error.log"

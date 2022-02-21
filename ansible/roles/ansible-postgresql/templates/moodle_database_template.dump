@@ -24301,7 +24301,7 @@ COPY public.mdl_block_instances (id, blockname, parentcontextid, showinsubcontex
 25	calendar_upcoming	25	0	0	my-index	4	side-post	5		1613080110	1613080110
 27	recentlyaccessedcourses	25	0	0	my-index	4	content	1		1613080110	1613080110
 28	myoverview	25	0	0	my-index	4	content	2		1613080110	1613080110
-29	html	1	1	0	my-index	\N	content	0	Tzo4OiJzdGRDbGFzcyI6Mzp7czo0OiJ0ZXh0IjtzOjU1OiI8cCBkaXI9Imx0ciIgc3R5bGU9InRleHQtYWxpZ246IGxlZnQ7Ij5ibG9ja2NvbnRlbnQ8L3A+IjtzOjU6InRpdGxlIjtzOjEwOiJibG9ja3RpdGxlIjtzOjY6ImZvcm1hdCI7czoxOiIxIjt9	1622670350	1622670378
+29	html	1	1	0	my-index	\N	content	0	Tzo4OiJzdGRDbGFzcyI6Mzp7czo1OiJ0aXRsZSI7czowOiIiO3M6NjoiZm9ybWF0IjtzOjE6IjEiO3M6NDoidGV4dCI7czozNzU6IjxwIGlkPSJibG9ja2NvbnRlbnRkYXRhIiBkaXI9Imx0ciIgc3R5bGU9InRleHQtYWxpZ246IGxlZnQ7Ij4NCg0KPC9wPg0KPHNjcmlwdD4NCiAgICBmZXRjaCgnL2Jsb2NrY29udGVudC5odG1sJykNCiAgICAgICAgLnRoZW4ocmVzcG9uc2UgPT4gcmVzcG9uc2UudGV4dCgpKQ0KICAgICAgICAudGhlbihkYXRhID0+IHsNCiAgICAgICAgICAgIC8vIERvIHNvbWV0aGluZyB3aXRoIHlvdXIgZGF0YQ0KICAgICAgICAgICAgY29uc29sZS5sb2coYGJsb2NrY29udGVudDogJHtkYXRhfWApOw0KICAgICAgICAgICAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoImJsb2NrY29udGVudGRhdGEiKS5pbm5lckhUTUwgPSBkYXRhOw0KICAgICAgICB9KTsNCjwvc2NyaXB0PiI7fQ==	1622670350	1622670378
 \.
 -- TO UPDATE THE blocktitle and blockcontent, copy the content into https://www.base64decode.org/, then change the text and re-encode (DM 20210602)
 
@@ -28062,7 +28062,7 @@ COPY public.mdl_context_temp (id, path, depth, locked) FROM stdin;
 --
 
 COPY public.mdl_course (id, category, sortorder, fullname, shortname, idnumber, summary, summaryformat, format, showgrades, newsitems, startdate, enddate, relativedatesmode, marker, maxbytes, legacyfiles, showreports, visible, visibleold, downloadcontent, groupmode, groupmodeforce, defaultgroupingid, lang, calendartype, theme, timecreated, timemodified, requested, enablecompletion, completionnotify, cacherev, originalcourseid) FROM stdin;
-1	0	0	The Well	The Well			0	site	1	3	0	0	0	0	0	0	0	1	1	\N	0	0	0				1612889052	1612889167	0	0	0	1622640268	\N
+1	0	0	{{ connectbox_default_hostname }}	{{ connectbox_default_hostname }}			0	site	1	3	0	0	0	0	0	0	0	1	1	\N	0	0	0				1612889052	1612889167	0	0	0	1622640268	\N
 \.
 
 
