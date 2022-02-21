@@ -115,3 +115,11 @@
     name: "{{ postgresql_service_name }}"
     enabled: yes
     state: started
+
+- name: Copy blockcontent_content to /var/www/moodle/blockcontent.html
+  template:
+    src: "blockcontent_content.j2"
+    dest: "/var/www/moodle/blockcontent.html"
+    mode: 0666
+    owner: www-data
+    group: www-data
