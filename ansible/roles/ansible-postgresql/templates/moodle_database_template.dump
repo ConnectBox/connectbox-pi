@@ -24325,6 +24325,7 @@ COPY public.mdl_block_positions (id, blockinstanceid, contextid, pagetype, subpa
 6       15      5       my-index        3       0       side-post       3
 7       19      5       my-index        3       0       side-post       3
 8       11      5       my-index        3       0       side-post       3
+9       12      5       my-index        3       0       side-post       3
 \.
 
 
