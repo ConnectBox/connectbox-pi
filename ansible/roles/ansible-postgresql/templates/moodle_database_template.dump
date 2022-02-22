@@ -24286,24 +24286,25 @@ SELECT pg_catalog.setval('public.mdl_block_id_seq', 43, true);
 
 COPY public.mdl_block_instances (id, blockname, parentcontextid, showinsubcontexts, requiredbytheme, pagetypepattern, subpagepattern, defaultregion, defaultweight, configdata, timecreated, timemodified) FROM stdin;
 1	admin_bookmarks	1	0	0	admin-*	\N	side-pre	2		1612889086	1612889086
-2	timeline	1	0	0	my-index	2	side-post	0		1612889086	1612889086
-6	calendar_month	1	0	0	my-index	2	side-post	4		1612889086	1612889086
-7	calendar_upcoming	1	0	0	my-index	2	side-post	5		1612889086	1612889086
-9	recentlyaccessedcourses	1	0	0	my-index	2	content	1		1612889086	1612889086
+2	timeline	1	0	0	disabled-my-index	2	side-post	0		1612889086	1612889086
+6	calendar_month	1	0	0	disabled-my-index	2	side-post	4		1612889086	1612889086
+7	calendar_upcoming	1	0	0	disabled-my-index	2	side-post	5		1612889086	1612889086
+9	recentlyaccessedcourses	1	0	0	disabled-my-index	2	content	1		1612889086	1612889086
 10	myoverview	1	0	0	my-index	2	content	2		1612889086	1612889086
 11	myoverview	5	0	0	my-index	3	content	2		1612889167	1612889167
-12	recentlyaccessedcourses	5	0	0	my-index	3	content	1		1612889167	1612889167
-14	calendar_upcoming	5	0	0	my-index	3	side-post	5		1612889167	1612889167
-15	calendar_month	5	0	0	my-index	3	side-post	4		1612889167	1612889167
-19	timeline	5	0	0	my-index	3	side-post	0		1612889167	1612889167
-20	timeline	25	0	0	my-index	4	side-post	0		1613080109	1613080109
-24	calendar_month	25	0	0	my-index	4	side-post	4		1613080110	1613080110
-25	calendar_upcoming	25	0	0	my-index	4	side-post	5		1613080110	1613080110
-27	recentlyaccessedcourses	25	0	0	my-index	4	content	1		1613080110	1613080110
+12	recentlyaccessedcourses	5	0	0	disabled-my-index	3	content	1		1612889167	1612889167
+14	calendar_upcoming	5	0	0	disabled-my-index	3	side-post	5		1612889167	1612889167
+15	calendar_month	5	0	0	disabled-my-index	3	side-post	4		1612889167	1612889167
+19	timeline	5	0	0	disabled-my-index	3	side-post	0		1612889167	1612889167
+20	timeline	25	0	0	disabled-my-index	4	side-post	0		1613080109	1613080109
+24	calendar_month	25	0	0	disabled-my-index	4	side-post	4		1613080110	1613080110
+25	calendar_upcoming	25	0	0	disabled-my-index	4	side-post	5		1613080110	1613080110
+27	recentlyaccessedcourses	25	0	0	disabled-my-index	4	content	1		1613080110	1613080110
 28	myoverview	25	0	0	my-index	4	content	2		1613080110	1613080110
-29	html	1	1	0	my-index	\N	content	0	Tzo4OiJzdGRDbGFzcyI6Mzp7czo1OiJ0aXRsZSI7czowOiIiO3M6NjoiZm9ybWF0IjtzOjE6IjEiO3M6NDoidGV4dCI7czozNzU6IjxwIGlkPSJibG9ja2NvbnRlbnRkYXRhIiBkaXI9Imx0ciIgc3R5bGU9InRleHQtYWxpZ246IGxlZnQ7Ij4NCg0KPC9wPg0KPHNjcmlwdD4NCiAgICBmZXRjaCgnL2Jsb2NrY29udGVudC5odG1sJykNCiAgICAgICAgLnRoZW4ocmVzcG9uc2UgPT4gcmVzcG9uc2UudGV4dCgpKQ0KICAgICAgICAudGhlbihkYXRhID0+IHsNCiAgICAgICAgICAgIC8vIERvIHNvbWV0aGluZyB3aXRoIHlvdXIgZGF0YQ0KICAgICAgICAgICAgY29uc29sZS5sb2coYGJsb2NrY29udGVudDogJHtkYXRhfWApOw0KICAgICAgICAgICAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoImJsb2NrY29udGVudGRhdGEiKS5pbm5lckhUTUwgPSBkYXRhOw0KICAgICAgICB9KTsNCjwvc2NyaXB0PiI7fQ==	1622670350	1622670378
+29	html	1	1	0	disabledmy-index	\N	content	0	Tzo4OiJzdGRDbGFzcyI6Mzp7czo1OiJ0aXRsZSI7czowOiIiO3M6NjoiZm9ybWF0IjtzOjE6IjEiO3M6NDoidGV4dCI7czozNzU6IjxwIGlkPSJibG9ja2NvbnRlbnRkYXRhIiBkaXI9Imx0ciIgc3R5bGU9InRleHQtYWxpZ246IGxlZnQ7Ij4NCg0KPC9wPg0KPHNjcmlwdD4NCiAgICBmZXRjaCgnL2Jsb2NrY29udGVudC5odG1sJykNCiAgICAgICAgLnRoZW4ocmVzcG9uc2UgPT4gcmVzcG9uc2UudGV4dCgpKQ0KICAgICAgICAudGhlbihkYXRhID0+IHsNCiAgICAgICAgICAgIC8vIERvIHNvbWV0aGluZyB3aXRoIHlvdXIgZGF0YQ0KICAgICAgICAgICAgY29uc29sZS5sb2coYGJsb2NrY29udGVudDogJHtkYXRhfWApOw0KICAgICAgICAgICAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoImJsb2NrY29udGVudGRhdGEiKS5pbm5lckhUTUwgPSBkYXRhOw0KICAgICAgICB9KTsNCjwvc2NyaXB0PiI7fQ==	1622670350	1622670378
+30	html	1	1	0	my-index	\N	content	0	Tzo4OiJzdGRDbGFzcyI6Mzp7czo1OiJ0aXRsZSI7czowOiIiO3M6NjoiZm9ybWF0IjtzOjE6IjEiO3M6NDoidGV4dCI7czo1NDQ6Ijx2aWRlbyBsb29wPSJ0cnVlIiBhdXRvcGxheT0idHJ1ZSI+PHNvdXJjZSBzcmM9Ii90aGV3ZWxsL1RoZS1XZWxsLWZsdWlkLWxvZ28tdGV4dC1jcm9wcGVkLW91dC5tcDQiPi90aGV3ZWxsL1RoZS1XZWxsLWZsdWlkLWxvZ28tdGV4dC1jcm9wcGVkLW91dC5tcDQ8L3ZpZGVvPg0KPCEtLQ0KPHAgaWQ9ImJsb2NrY29udGVudGRhdGEiIGRpcj0ibHRyIiBzdHlsZT0idGV4dC1hbGlnbjogbGVmdDsiPg0KDQo8L3A+DQo8c2NyaXB0Pg0KICAgIGZldGNoKCcvYmxvY2tjb250ZW50Lmh0bWwnKQ0KICAgICAgICAudGhlbihyZXNwb25zZSA9PiByZXNwb25zZS50ZXh0KCkpDQogICAgICAgIC50aGVuKGRhdGEgPT4gew0KICAgICAgICAgICAgLy8gRG8gc29tZXRoaW5nIHdpdGggeW91ciBkYXRhDQogICAgICAgICAgICBjb25zb2xlLmxvZyhgYmxvY2tjb250ZW50OiAke2RhdGF9YCk7DQogICAgICAgICAgICBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgiYmxvY2tjb250ZW50ZGF0YSIpLmlubmVySFRNTCA9IGRhdGE7DQogICAgICAgIH0pOw0KPC9zY3JpcHQ+DQotLT4iO30=	1622670350	1622670378
 \.
--- TO UPDATE THE blocktitle and blockcontent, copy the content into https://www.base64decode.org/, then change the text and re-encode (DM 20210602)
+-- TO UPDATE THE Block Text, copy the content into https://www.base64decode.org/, then change the text and re-encode (DM 20210602)
 
 --
 -- Name: mdl_block_instances_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
@@ -24317,15 +24318,6 @@ SELECT pg_catalog.setval('public.mdl_block_instances_id_seq', 100, true);
 --
 
 COPY public.mdl_block_positions (id, blockinstanceid, contextid, pagetype, subpage, visible, region, weight) FROM stdin;
-1       13      5       my-index        3       0       content 0
-2       18      5       my-index        3       0       side-post       1
-3       17      5       my-index        3       0       side-post       2
-4       16      5       my-index        3       0       side-post       3
-5       14      5       my-index        3       0       side-post       3
-6       15      5       my-index        3       0       side-post       3
-7       19      5       my-index        3       0       side-post       3
-8       11      5       my-index        3       0       side-post       3
-9       12      5       my-index        3       0       side-post       3
 \.
 
 
@@ -24333,7 +24325,7 @@ COPY public.mdl_block_positions (id, blockinstanceid, contextid, pagetype, subpa
 -- Name: mdl_block_positions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.mdl_block_positions_id_seq', 100, false);
+SELECT pg_catalog.setval('public.mdl_block_positions_id_seq', 4, false);
 
 
 --
@@ -28062,7 +28054,7 @@ COPY public.mdl_context_temp (id, path, depth, locked) FROM stdin;
 --
 
 COPY public.mdl_course (id, category, sortorder, fullname, shortname, idnumber, summary, summaryformat, format, showgrades, newsitems, startdate, enddate, relativedatesmode, marker, maxbytes, legacyfiles, showreports, visible, visibleold, downloadcontent, groupmode, groupmodeforce, defaultgroupingid, lang, calendartype, theme, timecreated, timemodified, requested, enablecompletion, completionnotify, cacherev, originalcourseid) FROM stdin;
-1	0	0	{{ connectbox_default_hostname }}	{{ connectbox_default_hostname }}			0	site	1	3	0	0	0	0	0	0	0	1	1	\N	0	0	0				1612889052	1612889167	0	0	0	1622640268	\N
+1	0	0	The Well	The Well			0	site	1	3	0	0	0	0	0	0	0	1	1	\N	0	0	0				1612889052	1612889167	0	0	0	1622640268	\N
 \.
 
 
