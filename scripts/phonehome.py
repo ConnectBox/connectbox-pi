@@ -61,15 +61,14 @@ def processSettings(settings):
     except:
       print ("Could not process the setting: " + command)
       results = "Null (connectboxmanage returned fatal)"
-    print("ConnectBoxManage.sh returned: " + results)
-    if results.strip() in command and len(results) > 0:
+    print("connectboxmanage returned: " + results)
+    if len(results) > 0:
       print ("Setting For " + command + " was successful! Now inform server to delete setting") 
       response = requests.delete(brand["server_url"] + "/chathost/settings/" + setting["deleteId"],headers=headers)
       if response.status_code == 200: 	
         print ("phonehome: Successful delete of setting")
       else:
-        print ("FATAL: Can't Delete Setting " + brand["server_url"])
-        exit(1)
+        print ("ERROR: Can't Delete Setting " + brand["server_url"])
 
 
 # Main Operation Here
