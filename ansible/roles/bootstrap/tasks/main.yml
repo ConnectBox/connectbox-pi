@@ -562,6 +562,11 @@
     groups: _connectbox
     append: yes
 
+- name: Empty scripts directory
+  file:
+    path: /usr/local/connectbox/bin
+    state: absent  
+
 - name: Make scripts directory
   file:
     state: directory
