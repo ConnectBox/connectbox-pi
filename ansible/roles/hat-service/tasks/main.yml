@@ -304,10 +304,9 @@
      - "restart neo battery shutdown service"
   when: OS_Version == 'bullseye'
 
-- name remove extra files
-  notify:
-     - "remove build and files"
-     - "get rigd of gcc"
+- name: Remove Extra files
+  debug: 
+    msg: "remove build and files and get rigd of gcc"
 
 - name: Enable and restart NEO_BatteryLevelShutdown
   systemd:
