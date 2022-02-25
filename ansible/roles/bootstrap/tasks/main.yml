@@ -622,6 +622,7 @@
     dest: /etc/sudoers
     validate: /usr/sbin/visudo --check --file="%s"
     block: |
+      %_connectbox ALL=(ALL) NOPASSWD: /bin/connectboxmanage
       %_connectbox ALL=(ALL) NOPASSWD: /usr/local/connectbox/bin/
 
 
