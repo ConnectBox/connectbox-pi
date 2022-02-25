@@ -153,19 +153,6 @@
      python_ver: "{{ pythonversion }}"
      cacheable: yes
 
-#- name: Check for an empty python python_version
-#  shell: python --version
-#  register: python_version_raw
-#  when: "{{ python_ver }}" == ""
-
-#- name: reparse the python version if we didn't get it the first time
-#  vars:
-#    pythonversion: "{{ python_version_raw.stdout | regex_replace('P[a-z]*\\s(\\d\\.\\d).*', 'python\\1') }}"
-#  set_fact:
-#     python_ver: "{{ pythonversion }}"
-#     cacheable: yes
-#  when: "{{ python_ver }}" == ""
-
 - name: python version is now 
   debug:
     msg: "python version is now: {{ python_ver }}" 
@@ -203,18 +190,6 @@
   command: gcc -o /usr/bin/devmem2 /home/devmem2.c
   register: command_result
   when: (connectbox_os != "raspbian" and (OS_Version == 'bullseye' or OS_Version == 'buster')) or devmem_check.stdout.find("devmem2") <= 0
-
-#- name: get rid of the directory
-#  file:
-#    path: /home/*
-#    state: absent
-#  when: (connectbox_os != "raspbian" and (OS_Version == 'bullseye' or OS_Version == 'buster')) or devmem_check.stdout.find("devmem2") <= 0
-
-#- name: get rid of the c compiler
-#  apt:
-#    name: gcc
-#    state: absent
-#  when: (connectbox_os != "raspbian" and (OS_Version == 'bullseye' or OS_Version == 'buster')) or devmem_check.stdout.find("devmem2") <= 0
 
 - name: Make sure there is no Pillow code already there
   ansible.builtin.file:
@@ -328,6 +303,11 @@
   notify:
      - "restart neo battery shutdown service"
   when: OS_Version == 'bullseye'
+
+- name remove extra files
+  notify:
+     - "remove build and files"
+     - "get rigd of gcc"
 
 - name: Enable and restart NEO_BatteryLevelShutdown
   systemd:

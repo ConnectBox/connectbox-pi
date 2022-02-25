@@ -199,13 +199,13 @@
     state: directory
   ignore_errors: yes
 
-- name: if we built the drivers then lets keep a copy on the build system
-  fetch:
-    src: '/usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/8812au.ko'
-    dest: '/home/kernel_drivers/{{ kernel_num }}'
-    fail_on_missing: yes
-    flat: yes
-  when: found_drivers.failed or driver_a.stdout == ""
+#- name: if we built the drivers then lets keep a copy on the build system
+#  fetch:
+#    src: '/usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/8812au.ko'
+#    dest: '/home/kernel_drivers/{{ kernel_num }}'
+#    fail_on_missing: yes
+#    flat: yes
+#  when: found_drivers.failed or driver_a.stdout == ""
 
 #- name: if we built the drivers then lets keep a copy on the build system
 #  fetch:

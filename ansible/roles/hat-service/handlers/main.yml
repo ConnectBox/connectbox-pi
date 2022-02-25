@@ -6,3 +6,13 @@
     daemon_reload: yes
     state: restarted
 
+- name: remove build and files
+  file:
+    path: /home/*
+    state: absent
+
+
+- name: get rigd of gcc
+  apt:
+    name: gcc
+    state: absent
