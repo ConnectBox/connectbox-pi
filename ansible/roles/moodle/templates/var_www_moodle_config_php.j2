@@ -17,7 +17,7 @@ $CFG->dboptions = array (
   'dbsocket' => '',
 );
 
-$CFG->wwwroot   = 'http://learn.{{connectbox_default_hostname}}';
+$CFG->wwwroot   = 'http://learn.{{ connectbox_default_hostname | lower }}';
 $CFG->dataroot  = '/var/www/moodledata';
 $CFG->admin     = 'admin';
 
