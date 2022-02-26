@@ -53,7 +53,21 @@
   ignore_errors: yes
   when: connectbox_os != "raspbian" and Temp_Val != "" and Temp_Val < '400M'
 
-#original swapfile on NEO is /dev/zram0 if size 121968 and priority 5
+#original swapfile on NEO is /dev/zram0 if size 121968 and priority 5 but not for Buster
+
+- name: create swapfile if it dosn't exist
+  file:
+    path: /swapfile
+    mode: 0600
+    owner: "root:root"
+    state: file
+    register: swapcreate
+  when: connectbox_os != 'raspbian' and swap_val == "" 
+
+- name: fix variables if we created the swapfile
+  set_fact:
+    Swap_val: 0M
+  when: swapcreate
 
 - name: Expand swapfile
   command: fallocate -l 400M /swapfile
