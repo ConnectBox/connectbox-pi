@@ -60,7 +60,9 @@
     - nodejs
 
 - name: Install pm2 -- node process manager for connectbox-manage
-  command: "npm install -g pm2"
+  community.general.npm:
+    name: pm2
+    global: yes
   become: true
 
 - name: Get connectbox-manage repo from https://github.com/RT-coding-team/connectbox-manage.git
@@ -78,8 +80,24 @@
   command: "pm2 delete all"
   ignore_errors: yes
 
+- name: Pause for pm2
+  pause:
+    seconds: 2
+
 - name: Start pm2 for connectbox-manage
   command: "pm2 start /var/www/enhanced/connectbox-manage/src/index.js"
+  become: true
+
+- name: Pause for pm2
+  pause:
+    seconds: 2
+
+- name: Get pm2 status and check for process online
+  shell:
+    cmd: "pm2 status |grep index |grep online"
+  become: true
+  register: pm2status
+  failed_when: pm2status.stdout == ""
 
 - name: Cause phonehome.py to execute every 10 minutes via cron IF not a Moodle box  (We have different process for Moodle)
   ansible.builtin.cron:
