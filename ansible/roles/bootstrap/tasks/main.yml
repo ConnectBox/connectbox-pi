@@ -479,6 +479,10 @@
     src: usr_local_connectbox_bin_CreateLogFiles.sh
     dest: /usr/local/connectbox/bin/CreateLogFiles.sh
 
+- name: Install PxUSBm.py 
+  copy:
+    src: usr_local_connectbox_bin_PxUSBm.py 
+    dest: /usr/local/connectbox/bin/PxUSBm.py
 
 # Moved from 
 - name: Make connectbox directory

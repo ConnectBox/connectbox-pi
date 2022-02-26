@@ -70,7 +70,7 @@
     Swap_Val: 0M
     cacheable: yes
   ignore_errors: yes
-  when: swapcreate.stdout != ""
+  when: swapcreate != ""
 
 - name: Expand swapfile
   command: fallocate -l 400M /swapfile
