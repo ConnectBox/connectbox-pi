@@ -57,11 +57,11 @@
 
 - name: create swapfile if it dosn't exist
   file:
-    path: /swapfile
+    path: "/swapfile"
     mode: 0600
     owner: "root:root"
-    state: file
-    register: swapcreate
+    state: touch
+  register: swapcreate
   when: connectbox_os != 'raspbian' and Swap_Val == "" 
 
 - name: fix variables if we created the swapfile

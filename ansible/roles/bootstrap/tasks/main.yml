@@ -704,7 +704,7 @@
 - name: install avrdude
   apt:
     name: avrdude
-    state: CM4_present
+    state: present
   when: CM4_present
 
 #- name: copy the config files
