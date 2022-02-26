@@ -666,48 +666,54 @@
     path: /tmp/avrdude
     state: absent
 
-- name: get the code for compiling
-  command:
-    cmd: git clone https://github.com/kcuzner/avrdude
-    chdir: /tmp
-  register: avrdude 
+#- name: get the code for compiling
+#  command:
+#    cmd: git clone https://github.com/kcuzner/avrdude
+#    chdir: /tmp
+#  register: avrdude 
+#  when: CM4_present
+
+#- name: compile avrdude with bootstrap
+#  shell: 
+#  args:
+#    cmd: ./bootstrap
+#    chdir: /tmp/avrdude/avrdude
+#  when: CM4_present
+
+#- name: compile avrdude with configure
+#  shell:
+#  args:
+#    cmd: ./configure
+#    chdir: /tmp/avrdude/avrdude
+#  when: CM4_present
+
+#- name: make avrdude
+#  shell:
+#  args:
+#    cmd: make
+#    chdir: /tmp/avrdude/avrdude
+#  when: CM4_present
+
+#- name: make install
+#  shell:
+#  args:
+#    cmd: make install 
+#    chdir: /tmp/avrdude/avrdude
+#  when: CM4_present
+
+- name: install avrdude
+  apt:
+    name: avrdude
+    state: CM4_present
   when: CM4_present
 
-- name: compile avrdude with bootstrap
-  shell: 
-  args:
-    cmd: ./bootstrap
-    chdir: /tmp/avrdude/avrdude
-  when: CM4_present
-
-- name: compile avrdude with configure
-  shell:
-  args:
-    cmd: ./configure
-    chdir: /tmp/avrdude/avrdude
-  when: CM4_present
-
-- name: make avrdude
-  shell:
-  args:
-    cmd: make
-    chdir: /tmp/avrdude/avrdude
-  when: CM4_present
-
-- name: make install
-  shell:
-  args:
-    cmd: make install 
-    chdir: /tmp/avrdude/avrdude
-  when: CM4_present
-
-- name: copy the config files
-  copy:
-    src: /tmp/avrdude/avrdude/avrdude.conf 
-    dest: /etc/avrdude.conf 
-    remote_src: yes
-    mode: preserve
-  when: CM4_present
+#- name: copy the config files
+#  copy:
+#    src: /tmp/avrdude/avrdude/avrdude.conf 
+#    dest: /etc/avrdude.conf 
+#    remote_src: yes
+#    mode: preserve
+#  when: CM4_present
 
 - name: Change avrdude config for reset pin for CM4
   replace:

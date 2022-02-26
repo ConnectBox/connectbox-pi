@@ -62,12 +62,14 @@
     owner: "root:root"
     state: file
     register: swapcreate
-  when: connectbox_os != 'raspbian' and swap_val == "" 
+  when: connectbox_os != 'raspbian' and Swap_Val == "" 
 
 - name: fix variables if we created the swapfile
   set_fact:
-    Swap_val: 0M
-  when: swapcreate
+    Swap_Val: 0M
+    cacheable: yes
+  ignore_errors: yes
+  when: swapcreate.stdout != ""
 
 - name: Expand swapfile
   command: fallocate -l 400M /swapfile
