@@ -104,9 +104,9 @@
     cmd: "pm2 save"
   become: true
 
-- name: Set +i on pm2 dump file to retain pm2 config on reboot
+- name: Run pm2 startup to retain pm2 config on reboot
   shell:
-    cmd: "chattr +i /root/.pm2/dump.pm2"
+    cmd: "pm2 startup"
   become: true
 
 - name: Cause phonehome.py to execute every 10 minutes via cron IF not a Moodle box  (We have different process for Moodle)
