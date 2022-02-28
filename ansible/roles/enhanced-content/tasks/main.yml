@@ -108,6 +108,16 @@
   register: pm2status
   failed_when: pm2status.stdout == ""
 
+- name: Save pm2 config
+  shell:
+    cmd: "pm2 save"
+  become: true
+
+- name: Set +i on pm2 dump file to retain pm2 config on reboot
+  shell:
+    cmd: "chattr +i /root/.pm2/dump.pm2"
+  become: true
+
 - name: Cause phonehome.py to execute every 10 minutes via cron IF not a Moodle box  (We have different process for Moodle)
   ansible.builtin.cron:
     name: "phonehome.py"
