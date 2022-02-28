@@ -1,4 +1,9 @@
 ---
+- name: check for and create the media mount point
+  file:
+    dest: "{{ connectbox_usb_files_root }}"
+    state: directory
+
 - block:
   - name: Checkout sample content
     git:
@@ -43,8 +48,7 @@
         This file will be hidden when a USB stick is inserted.
         The original of this file can be found at https://github.com/ConnectBox/connectbox-pi/blob/master/docs/administration.md
 
-  when: ("'/media/usb0' not in ansible_mounts|map(attribute='mount')") and (connectbox_os != "raspbian")
-
+  when: ("'/media/usb0' not in ansible_mounts | map(attribute='mount')") and (connectbox_os != "raspbian")
 
 - block:
   - name: Create instructions in web root for RPi based CB
