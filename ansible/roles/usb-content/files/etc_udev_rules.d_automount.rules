@@ -1,2 +1,0 @@
-ACTION=='add',KERNEL=="sda1",RUN+/bin/sh -c '/usr/bin/test -f /media/usb0/.connectbox/upgrade/upgrade.py && (cp -r /media/usb0/.connectbox/upgrade /tmp ) && /usr/bin/python3 /tmp/upgrade.py
-
