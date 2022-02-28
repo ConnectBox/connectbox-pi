@@ -28,7 +28,6 @@
     pkg:
     - ffmpeg
 
-
 - name: Get media interface latest release
   ansible.builtin.unarchive:
     src: https://github.com/RT-coding-team/mediainterface/releases/download/latest/latest.zip
@@ -92,14 +91,6 @@
 - name: Pause for pm2
   pause:
     seconds: 2
-
-- name: Copy pm2 systemd service definition to auto start on boot
-  template:
-    src: "etc_systemd_system_pm2.service.j2"
-    dest: "/etc/systemd/system/pm2.service"
-    mode: 0644
-    owner: root
-    group: root
 
 - name: Get pm2 status and check for process online
   shell:
