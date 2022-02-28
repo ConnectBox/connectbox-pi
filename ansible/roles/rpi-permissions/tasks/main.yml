@@ -2,6 +2,12 @@
 # This sets up permissions on certain folders in RPi so that any required
 #  wifi edits can be done at the Home Screen rather than via terminal
 
+- name: Make the direcotry for /media/usb0
+  file:
+    path: /media/usb0
+    state: directory
+
+
 # The usb0 directory is where content will be stored for ConnectBox
 #  so this allows drag / drop of content to that folder
 - name: Changing permissions of "/media/usb0", adding a+w
