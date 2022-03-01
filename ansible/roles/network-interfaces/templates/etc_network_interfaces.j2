@@ -44,5 +44,5 @@ allow-hotplug {{ eth_facing_if }}
 iface {{ eth_facing_if }} inet dhcp
 wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf
 iface default inet dhcp
-
+    pre-up rm /var/run/wpa_supplicant/{{ eth_facing_if }}
 

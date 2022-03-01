@@ -360,6 +360,10 @@ def NetworkCheck():
   global net_stat
   global areadyconf
 
+  process = ospopen("ls var/network/*.pid")
+  net_stats = process.read()
+  if (ïfdown in net_stats) or (ifup in net_stats):
+    return;
   process = os.popen("systemctl status hostapd")
   net_stats = process.read()
   process.close()
