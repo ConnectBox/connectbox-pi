@@ -101,14 +101,13 @@
     src: var_www_moodle_info_php.j2
     dest: /var/www/moodle/info.php
 
-- name: Copy blockcontent_content to /var/www/moodle/blockcontent.html
+- name: Copy blockcontent_content 
   template:
     src: "blockcontent_content.j2"
-    dest: "/var/www/moodle/blockcontent.html"
+    dest: '/var/www/moodle/blockcontent.html'
     mode: 0666
     owner: www-data
     group: www-data
-
 # Setup Moodle's Cron 
 - name: Setup Moodle's Cron To Run Every 15 Minutes as Per Moodle
   ansible.builtin.cron:
