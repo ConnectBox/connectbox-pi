@@ -53,7 +53,7 @@ from subprocess import Popen, PIPE
 
 
 # globals for Partion expansion
-progress_file = '/usr/local/connectbox/bin/expand_progress.txt'
+progress_file = '/usr/local/connectbox/expand_progress.txt'
 
 # globals for USB monitoring
 DEBUG = 0
