@@ -360,7 +360,10 @@ def NetworkCheck():
   global net_stat
   global areadyconf
 
-  file_exists = os.path.exists("/var/run/network/*.pid")
+  try:
+    file_exists = os.path.exists("/var/run/network/*.pid")
+  except:
+    file_exists = False
   if file_exists == True:
     process = os.popen("ls /var/run/netowrk/*.pid")
     net_stats = process.read()
