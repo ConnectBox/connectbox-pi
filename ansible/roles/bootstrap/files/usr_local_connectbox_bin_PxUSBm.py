@@ -360,25 +360,31 @@ def NetworkCheck():
   global net_stat
   global areadyconf
 
-  process = ospopen("ls var/network/*.pid")
-  net_stats = process.read()
-  if (ïfdown in net_stats) or (ifup in net_stats):
-    return;
+  file_exists = os.path.exists("/var/run/network/*.pid")
+  if file_exists == True:
+    process = os.popen("ls /var/run/netowrk/*.pid")
+    net_stats = process.read()
+    process.close9()
+    if ("ïfdown" in net_stats) or ("ifup" in net_stats):
+      return;
   process = os.popen("systemctl status hostapd")
   net_stats = process.read()
   process.close()
   if net_stats.find("Loaded: masked")>= 0:
     process = os.popen("systemctl unmask hostapd.service")
     net_stats = process.read()
+    time.sleep(5)
     process.close()
     if net_stats.find("Removed")>=0:
         process = os.popen("systemctl enable hostapd.service")
         net_stats = process.read()
+        time.sleep(5)
         process.close()
         if net_stats.find("enabled hostapd")>=0:
             process = os.popen("systemctl start hostapd.service")
             net_stats = process.read()
             process.close()
+            time.sleep(5)
             if net_stats.find("failed")>=0:
                 logging.info("failed to start hostapd error code is"+net_stats)
                 if DEBUG: print("failed to start hostapd must be configuration error")
@@ -430,6 +436,7 @@ def NetworkCheck():
     process = os.popen("systemctl start networking.service")
     net_stats = process.read()
     process.close()
+    time.sleep(5)
     if net_stats == "":
         process = os.popen("systemctl status networking.service")
         net_stats = process.read()
@@ -493,6 +500,7 @@ def NetworkCheck():
                 process.close()
                 if net_stats == "up":
                     process = os.popen("ifdown "+netx)
+                    time.sleep(5)
                     ex_stat = process.read()
                     process.close()
                     process = os.popen("cat /sys/class/net/"+next+"/operstate")
@@ -520,6 +528,7 @@ def NetworkCheck():
         process = os.popen("systemctl restart dnsmasq")
         res = process.read()
         process.close()
+        time.sleep(5)
     except:
         logging.info("dnsmasq has configuration issues")
 # restart dnsmasq
@@ -534,6 +543,7 @@ def NetworkCheck():
         process = os.popen("systemctl restart hostapd")
         res = process.read()
         process.close()
+        time.sleep(5)
     except:
         logging.info("hostapd service has configuration issues")
     process = os.popen("systemctl status hostapd")
@@ -579,7 +589,7 @@ if __name__ == "__main__":
 
 # Once partition expansion is complete, handle the ongoing monitor of USB
 
-        # we get through when neo-battery-shutdown is running
+        # we get through when neo-battery-shutdown is runningps
         logging.info("got through the neo-battery-shutdown running test")
         if ("rewrite_netfiles_done" in progress or "running" in progress):
             f = open("/usr/local/connectbox/wificonf.txt", "r")
@@ -593,7 +603,8 @@ if __name__ == "__main__":
             while True:
                 if not os.path.exists("/usr/local/connectbox/PauseMount"):
                     mountCheck()
-                NetworkCheck()
+                if (x mod 100) = 0:
+                  NetworkCheck()
                 time.sleep(3)
                 y = 0
                 x =+1 
