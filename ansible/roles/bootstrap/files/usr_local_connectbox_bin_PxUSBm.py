@@ -606,7 +606,7 @@ if __name__ == "__main__":
             while True:
                 if not os.path.exists("/usr/local/connectbox/PauseMount"):
                     mountCheck()
-                if (x mod 500) = 0:
+                if (x % 500) == 0:
                   NetworkCheck()
                 time.sleep(3)
                 y = 0

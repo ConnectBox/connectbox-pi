@@ -1,7 +1,4 @@
 ---
-- name: Update lcd_logo when using alternative logo 
-  set_fact: lcd_logo="lcdlogo.png"
-  when: alternative_lcd_logo
 
 - name: Make connectbox directory
   file:
@@ -293,6 +290,12 @@
     src: dnsmasq.conf
     dest: /etc/dnsmasq.conf
   when: (OS_Version == 'focal') and  (ansible_os_family|lower == 'debian') and (connectbox_os == 'ubuntu') 
+
+- name: Copy over the default hostapd if were on ubuntu debian
+  copy:
+    src: etc_default_hostapd
+    dest: /etc/default/hostapd
+  when: (ansible_os_family|lower == 'debian') and (connectbox_os == "ubuntu")
 
 - name: Restart dns services if were on Ubuntu Debian focal
   command: systemctl restart dnsmasq

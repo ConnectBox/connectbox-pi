@@ -59,5 +59,8 @@ slaac private
 #fallback static_eth0
 
 interface {{ client_facing_if }}
-nohook wpa_supplicant
+static ip_address=10.129.0.1
+denyinterfaces eth0
+denyinterfaces {{ eth_facing_if }}
+
 

@@ -333,15 +333,3 @@
   with_items:
   - "{{ hat_service_name }}"
 
-- name: Copy alternative logo from URL for LCD logo
-  get_url:
-    url: "{{ alternative_lcd_logo }}"
-    dest: "/usr/local/connectbox/battery_tool_venv/lib/{{ python_ver }}/site-packages/neo_batterylevelshutdown/assets/lcdwell_logo.png"
-  when: alternative_lcd_logo == 'True'
-
-- name: Reset the logo
-  debug:
-    msg: "changing the connectbox_logo"
-    vars:
-      connectbox_logo: lcdwell_logo.png
-  when: alternative_lcd_logo == 'True'
