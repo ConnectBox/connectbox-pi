@@ -80,7 +80,7 @@ def mountCheck():
          f.close()
     except:
          a =  ""
-    c = a.split('usb0NoMount": ')
+    c = a.split('usb0NoMount":')
     a = str(c[1])
     if a[1] == "1":
       return

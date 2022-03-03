@@ -112,6 +112,14 @@
      msg: "We found the drivers already compiled on the system"
   when: not found_drivers.failed
 
+- name: lets create a local directory to store the compiled images in 
+  local_action:
+    module: file
+    path: "~/connectbox/connectbox-tools/{{ kernel_num.stdout }}"
+    state: directory
+  ignore_erros: yes
+  when: found_drivers.failed
+
 - name: lets check for exsisting 8812au driver
   shell: dmesg -k | grep 8812au
   register: driver_a
@@ -184,11 +192,26 @@
     mode: "+x"
   when: found_drivers.failed or driver_b.stdout == ""
 
+- name: Fetch the compiled 8812au driver to control machine
+  fetch:
+    src: /tmp/rtl8812au*/88x12au.ko 
+    dest: "~/connectbox/connectbox-tools/{{ kernel_num.stdout }}/8812au.ko"
+  ignore_errors: yes
+  when: found_drivers.failed or driver_a.stdout == ""
+
 - name: Compile the 88x2bu driver for Raspbian or NEO
   command:
      chdir: /tmp
      cmd: "sh 88x2bu-install.sh"
   when: found_drivers.failed or driver_b.stdout == ""
+
+ name: Fetch the compiled 8812au driver to control machine
+  fetch:
+    src: /tmp/rtl88x2bu*/88x12au.ko 
+    dest: "~/connectbox/connectbox-tools/{{ kernel_num.stdout }}/8812au.ko"
+  ignore_errors: yes
+  when: found_drivers.failed or driver_b.stdout == ""
+
 
 - name: remove build tools
   apt:
@@ -201,11 +224,6 @@
     state: absent
   when: (found_drivers.failed or driver_a.stdout == "" or driver_b.stdout == "" )
 
-- name: create a directgory for the fetch of the commpiled files 
-  file:
-    path: "/home/kernel_drivers/{{ kernel_num.stdout }}"
-    state: directory
-  ignore_errors: yes
 
 #- name: if we built the drivers then lets keep a copy on the build system
 #  fetch:
