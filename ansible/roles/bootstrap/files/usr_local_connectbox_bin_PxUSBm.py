@@ -68,18 +68,23 @@ mnt=[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]
 d=["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""]
 global net_stat
 net_stat = 1
+global Brand
+Brand = ""
 
 
 def mountCheck():
     global mnt
     global loc
     global total
+    global Brnad
     try:
          f = open("/usr/local/connectbox/brand.txt", "r")
          a = f.read()
          f.close()
     except:
          a =  ""
+    d = a.split('"')
+    Brand = str(d[3])
     c = a.split('usb0NoMount":')
     a = str(c[1])
     if a[1] == "1":
@@ -359,6 +364,7 @@ def NetworkCheck():
 
   global net_stat
   global areadyconf
+  global Brand
 
   try:
     file_exists = os.path.exists("/var/run/network/*.pid")
@@ -463,6 +469,18 @@ def NetworkCheck():
     else:
         logging.info("We were unable to start the dnsmasq service")
 
+# if we don't find the AP name in AP then lets try to restart the hostapd service
+
+  process = Popen("iwconfig", shell=True, stdout=PIPE, stderr=PIPE)
+  stdout,stderr = process.communicate()
+  net_stat1 = str(stdout).split("wlan")
+  b = apwifi[(len(apwifi)-1):]
+  e = net_stat1[int(b)+1].split('"')
+  if (len(e) == 0) or ("ESSID:" not in e[0]):
+    logging.info("restarted hostapd due to not finding valid ESSID name in "+apwifi)
+    process = os.popen("systemctl restart hostapd")
+    process.close()
+    time.sleep(10)
 
   res = os.popen("ls /sys/class/net")
   SysNetworks = res.read().split()
@@ -470,7 +488,7 @@ def NetworkCheck():
   for netx in SysNetworks:
     if netx != "":
       try:
-          process = os.popen("cat /sys/class/net/"+netx+"/operstate")          
+          process = os.popen("cat /sys/class/net/"+netx+"/operstate")
           net_stats = process.read()
           process.close()
           if net_stats.find("down") >= 0 :
@@ -618,6 +636,6 @@ if __name__ == "__main__":
                     # we found the neo-battery-shutdown not running lets try to restarat
                         proc = os.popen("systemctl restart neo-battery-shutdown").read()
                         time.sleep(10)
-                        proc = os.popen("systemctl status neo-battery-shutdown").read()                      
+                        proc = os.popen("systemctl status neo-battery-shutdown").read()
                         Y =+1
-                    
+
