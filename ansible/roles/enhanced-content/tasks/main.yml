@@ -123,11 +123,18 @@
     replace: 'ifMoodle'
   when: build_moodle
 
-- name: Update enhanced content footer for Moodle if build_moodle
+- name: Update enhanced template footer for Moodle if build_moodle
   replace:
-    path: /var/www/enhanced/content/www/assets/content/footer.html
-    regexp: 'ifMoodle hidden'
-    replace: 'ifMoodle'
+    path: /var/www/enhanced/content/www/assets/templates/footer.html
+    regexp: 'DOMAIN'
+    replace: '{{ connectbox_default_hostname }}'
+  when: build_moodle
+
+- name: Copy footer from template to content for live
+  ansible.builtin.copy:
+    src: /var/www/enhanced/content/www/assets/templates/footer.html
+    dest: /var/www/enhanced/content/www/assets/content/footer.html
+    remote_src: yes
   when: build_moodle
 
 - name: Update hostname in MMI
