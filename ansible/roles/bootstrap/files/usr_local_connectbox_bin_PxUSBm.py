@@ -616,7 +616,7 @@ if __name__ == "__main__":
     if "PI" in brand:
         rpi_platform = True
     net_stat = 1
-    x = 0
+    x = 97
     # Sort out how far we are in the partition expansion process
     file_exists = os.path.exists(progress_file)
     if file_exists == False:
@@ -644,12 +644,13 @@ if __name__ == "__main__":
             while True:
                 if not os.path.exists("/usr/local/connectbox/PauseMount"):
                     mountCheck()
-                if (x % 500) == 0:
+                if (x % 100) == 0:
                   NetworkCheck()
                 time.sleep(3)
                 y = 0
-                x =+1 
+                x += 1 
                 if x > 2500:
+                    x = 0
                     net_stat +=1
                     proc = os.popen("systemctl status neo-battery-shutdown").read()
                     while (proc.find("Active: inactive") or proc.find("Active: failed")) and y<5:
@@ -657,5 +658,5 @@ if __name__ == "__main__":
                         proc = os.popen("systemctl restart neo-battery-shutdown").read()
                         time.sleep(10)
                         proc = os.popen("systemctl status neo-battery-shutdown").read()
-                        Y =+1
+                        y += 1
 
