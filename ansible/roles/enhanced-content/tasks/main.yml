@@ -56,8 +56,8 @@
 
 - name: Install nodejs for connectbox-manage
   apt:
-    pkg:
-    - nodejs
+    name: nodejs
+    state: present
 
 - name: Install pm2 -- node process manager for connectbox-manage
   community.general.npm:
