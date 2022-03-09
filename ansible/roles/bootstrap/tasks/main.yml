@@ -348,11 +348,19 @@
 # Remove some systrem services for NEO
 - name: Remove armbian-filesystem=resize since we do it in PxUSBm.py 
   shell: systemctl disable armbian-filesystem-resize
+  ignore_errors: yes
   when: connectbox_os != 'raspbian'
 
 # Remove the smart.service for NEO
 - name: Remove smart.service for NEO 
   shell: systemctl disable smartd.service
+  ignore_errors: yes
+  when: connectbox_os != 'raspbian'
+
+# Remove the smartmontools.service
+- name: remove the smartmontools.service 
+  shell: systemctl disable smartmontools.service 
+  ignore_errors: yes
   when: connectbox_os != 'raspbian'
 
 #  Needed for package upgrades via ansible (aptitude safe-upgrade)
