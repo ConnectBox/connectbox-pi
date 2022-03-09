@@ -263,7 +263,7 @@
 - name: Set path to RPi.GPIO_NP_CB (NEO)
   set_fact:
     RPi_GPIO_path: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/RPi.GPIO_NP_CB"
-  when: connectbox_os != "raspbian" and OS_Version != 'bullseye' 
+  when: connectbox_os != "raspbian"  
 
 - name: Clone the RPi.GPIO_NP_CB repo to battery venv (NEO)
   git: 
@@ -272,7 +272,7 @@
     clone: yes
     update: yes
     force: yes
-  when: connectbox_os != "raspbian"  and OS_Version != 'bullseye'
+  when: connectbox_os != "raspbian"  
 
 - name: Install RPi.GPIO for Buster build
   command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.0"
