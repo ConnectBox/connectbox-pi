@@ -73,8 +73,8 @@
 - name: Copy over the new dhcpcd.conf files
   template:
     src: etc_dhcpcd.conf.j2
-    dest: /etc/dhcpcdnf 
-    owner: root
+    dest: /etc/dhcpcd.conf 
+    owner: rootr
     group: root
     mode: 0644
 

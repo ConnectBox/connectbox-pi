@@ -263,7 +263,7 @@
 - name: Set path to RPi.GPIO_NP_CB (NEO)
   set_fact:
     RPi_GPIO_path: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/RPi.GPIO_NP_CB"
-  when: connectbox_os != "raspbian" and OS_Version != 'bullseye' 
+  when: connectbox_os != "raspbian"  and OS_Version != 'bullseye'
 
 - name: Clone the RPi.GPIO_NP_CB repo to battery venv (NEO)
   git: 
@@ -272,7 +272,7 @@
     clone: yes
     update: yes
     force: yes
-  when: connectbox_os != "raspbian"  and OS_Version != 'bullseye'
+  when: connectbox_os != "raspbian"  and OS_Version != "bullseye"
 
 - name: Install RPi.GPIO for Buster build
   command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.0"
@@ -290,7 +290,7 @@
   command: "{{ hat_service_virtualenv_dir }}/bin/python3 setup.py install"
   args:
     chdir: "{{ RPi_GPIO_path }}"
-  when: connectbox_os != "raspbian" 
+  when: connectbox_os != "raspbian" and OS_Version != "bullseye"
 
 # With RPi.GPIO installed, we can now install the luma.core and luma.oled modules
 #  which will use the installed RPi.GPIO rather than trying to install RPi.GPIO 0.7.0

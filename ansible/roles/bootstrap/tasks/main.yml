@@ -276,7 +276,8 @@
 #  so let's wait 15 seconds before doing our first check
 #  Use newer ansible 2.7 function reboot
 - name: Reboot device for changes to take effect
-  command: 'shutdown -r now'
+  shell: 'shutdown -r now'
+  async: 10  #do not care for 10 seconds
   when: reboot_required
   tags: reboot1
 
@@ -284,6 +285,7 @@
   wait_for:
     port: 22
     delay: 30
+  connection: local
 
 - name: Copy over a new dnsmasq file if were on ubuntu debian focal
   copy: 
@@ -342,6 +344,24 @@
     line: LC_ALL=en_US.UTF-8
     state: present
   when: connectbox_os == 'armbian'
+
+# Remove some systrem services for NEO
+- name: Remove armbian-filesystem=resize since we do it in PxUSBm.py 
+  shell: systemctl disable armbian-filesystem-resize
+  ignore_errors: yes
+  when: connectbox_os != 'raspbian'
+
+# Remove the smart.service for NEO
+- name: Remove smart.service for NEO 
+  shell: systemctl disable smartd.service
+  ignore_errors: yes
+  when: connectbox_os != 'raspbian'
+
+# Remove the smartmontools.service
+- name: remove the smartmontools.service 
+  shell: systemctl disable smartmontools.service 
+  ignore_errors: yes
+  when: connectbox_os != 'raspbian'
 
 #  Needed for package upgrades via ansible (aptitude safe-upgrade)
 - name: Install apt
