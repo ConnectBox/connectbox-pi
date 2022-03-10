@@ -55,7 +55,7 @@ def processSettings(settings):
     if setting["key"] == 'moodle-security-key':
       command = "set securitykey " + setting["value"]; 
     print ("Handling Setting: " + command)
-	try:
+    try:
       results = subprocess.check_output("sudo connectboxmanage " + command, shell=True)
       results = results.decode('utf-8')
     except:
