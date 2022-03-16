@@ -12,6 +12,11 @@
     - "/var/www/enhanced/admin"
     - "/var/www/enhanced/connectbox-manage"
 
+- name: Install zip 
+  apt:
+    name: zip
+    state: present
+
 - name: Install unzip 
   apt:
     name: unzip
