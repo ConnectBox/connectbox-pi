@@ -380,6 +380,8 @@ def NetworkCheck():
   global PI_stat
   global stop_hostapd
 
+  file_exists=True
+
   try:
     file_exists = os.path.exists("/var/run/network/*.pid")
   except:
@@ -450,7 +452,7 @@ def NetworkCheck():
         else:
           logging.info("couldn't get hostapd running")
       else:
-        pass    # were running and were fine
+        print("hostapd ok running")    # were running and were fine
 
   process = os.popen("systemctl status networking.service")     
         # we move on since hostapd should be running and if not theres nothging we can do.  So we check networking.services
@@ -483,7 +485,7 @@ def NetworkCheck():
         logging.info("we were able to start a stalled dnsmasq")
     else:
         logging.info("We were unable to start the dnsmasq service")
-
+# We have finished the individual tests for networking.services, hostapd and dnsmasq and all are working to the best of our ability
 # if we don't find the AP name in AP then lets try to restart the hostapd service
 
   process = Popen("iwconfig", shell=True, stdout=PIPE, stderr=PIPE)     # now we look at the AP side to see if  it is transmitting an SSID
@@ -495,66 +497,68 @@ def NetworkCheck():
   if clientwifi=="":
     c = chr(int(b)+1+ord("0"))
   else:
-    c = net_stat1[(len(clientwifi)-1):]                                 # e contains the client wifi character (0, 1, 2, ...) if there was none then its one higher than AP
-  if (len(net_stat1) == 1) or ("ESSID:" not in net_stat1[1]) and not PI_stat:   # if were not a RPi and ESSID missing or no AP
+    c = net_stat1[(len(clientwifi)-1):]                                 # c contains the client wifi character (0, 1, 2, ...) if there was none then its one higher than AP
+  if (len(net_stat1) == 1) or ("ESSID:" not in net_stat1[1]) and (not PI_stat and clientwifi==""):   # if were not a RPi and ESSID missing or no AP
     logging.info("restarted hostapd due to not finding valid ESSID name in "+apwifi)
     process = os.popen("systemctl restart hostapd")                     # try restarting hostapd
     process.close()
     time.sleep(15)                                                      # wait 15 seconds for hostapd to come up
-  process = Popen("iwconfig", shell=True, stdout=PIPE, stderr=PIPE)     # now well check for an ip address on the AP
-  stdout, stderr = process.communicate()
-  net_stat1 = str(stdout).split("wlan")                                 #split up iwconfig by wlan so the first wlan status is in net_stat[1]
-  if ((len(net_stat1) ==1) or ("ESSID:" not in net_stat1[int(b)+1])) and (not stop_hostapd): #if we didn't find a " or no ESSID then we will try a down/up sequence for the wlan
-    logging.info("going to do an ifdow/ifup sequencee to raise the AP")
-    process = Popen(ifdownap, shell=True, stdout=PIPE, stderr=PIPE)
+    process = Popen("iwconfig", shell=True, stdout=PIPE, stderr=PIPE)     # now well check for an ip address on the AP
     stdout, stderr = process.communicate()
-    time.sleep(5)
-    process = Popen(ifupap, shell=True, stdout=PIPE, stderr=PIPE)
-    stdout,stderr = process.communicate()
-    time.sleep(20)                                                       #we wait 15 seconds to try to bring the interface up.
-    process = Popen("ifconfig", shell = True, stdout=PIPE, stderr=PIPE)  # now we will see if our interface has an IP address.
-    stdout, stderr = process.communicate()
-    net_stat1 = str(stdout).split("wlan")
-    if len(net_stat1) > (int(b)+1) :                                    # if length is zero then we don't have wlans.
-      if (len(net_stat1)==1) or ("inet " not in net_stat1[int(b)+1]):                           # check the second line to see if we have an inet or IP4 address
-        logging.info("when we broght up the interface we didn't get an ip address we'll try again")
-        time.sleep(10)                                                   # after we wait we try down/up again
-        process = Popen(ifdownap, shell=True, stdout=PIPE, stderr=PIPE)
-        stdout, stderr = process.communicate()
-        time.sleep(5)
-        process = Popen(ifupap, shell=True, stdout=PIPE, stderr=PIPE)
-        stdout, stderr = process.communicate()
-        time.sleep(20)
-        process = Popen("ifconfig", shell = True, stdout=PIPE, stderr=PIPE) #back to checking for an IP4 addresss
-        stdout, stderr = process.communicate()
-        net_stat1 = str(stdout).split("wlan")
-        if len(net_stat1)> (int(b)+1):
-          if (len(net_stat)==1) or ("inet " not in net_stat[int(b)+1]): 
-            logging.info("after the second if up/down we still didn't get an address - what to do??")   
-          else:
-            process = Popen("systemctl restart hostapd")                   # after second time we have IP4 address so restart hostapd
-            stdout, stderr = process.communicate()
-            process = Popen("systemctl restart dnsmasq")
-            stdout, stderr = process.communicate()
-            logging.info("we got an IP address after the ifup so we restarted hostapd")
-            time.sleep(15)
-            if PI_state: stop_hostapd =True
-      else:   # we got the ip address now so lets try and restart hostapd
-        process = os.popen("systemctl restart hostapd")                   # we got an IP4 address after the first down/up so just restart the hostapd.
-        process.close()
-        process = os.popen("systemctl restart dnsmasq")
-        process.close()
-        if PI_state: stop_hosapd =True
-        time.sleep(15)
+    net_stat1 = str(stdout).split("wlan")                                 #split up iwconfig by wlan so the first wlan status is in net_stat[1]
+    if ((len(net_stat1) ==1) or ("ESSID:" not in net_stat1[int(b)+1])) and (not stop_hostapd): #if we didn't find a " or no ESSID then we will try a down/up sequence for the wlan
+      logging.info("going to do an ifdow/ifup sequencee to raise the AP")
+      process = Popen(ifdownap, shell=True, stdout=PIPE, stderr=PIPE)
+      stdout, stderr = process.communicate()
+      time.sleep(5)
+      process = Popen(ifupap, shell=True, stdout=PIPE, stderr=PIPE)
+      stdout,stderr = process.communicate()
+      time.sleep(20)                                                       #we wait 15 seconds to try to bring the interface up.
+      process = Popen("ifconfig", shell = True, stdout=PIPE, stderr=PIPE)  # now we will see if our interface has an IP address.
+      stdout, stderr = process.communicate()
+      net_stat1 = str(stdout).split("wlan")
+      if (len(net_stat1) > (int(b)+1)) and (not stop_hostapd):                                    # if length is zero then we don't have wlans.
+        if (len(net_stat1)==1) or ("inet " not in net_stat1[int(b)+1]):                           # check the second line to see if we have an inet or IP4 address
+          logging.info("when we broght up the interface we didn't get an ip address we'll try again")
+          time.sleep(10)                                                   # after we wait we try down/up again
+          process = Popen(ifdownap, shell=True, stdout=PIPE, stderr=PIPE)
+          stdout, stderr = process.communicate()
+          time.sleep(5)
+          process = Popen(ifupap, shell=True, stdout=PIPE, stderr=PIPE)
+          stdout, stderr = process.communicate()
+          time.sleep(20)
+          process = Popen("ifconfig", shell = True, stdout=PIPE, stderr=PIPE) #back to checking for an IP4 addresss
+          stdout, stderr = process.communicate()
+          net_stat1 = str(stdout).split("wlan")
+          if len(net_stat1)> (int(b)+1):
+            if (len(net_stat)==1) or ("inet " not in net_stat[int(b)+1]): 
+              logging.info("after the second if up/down we still didn't get an address - what to do??")   
+            else:
+              print("did ifdown/ifup twoice and got inet address")
+              process = Popen("systemctl restart hostapd")                   # after second time we have IP4 address so restart hostapd
+              stdout, stderr = process.communicate()
+              process = Popen("systemctl restart dnsmasq")
+              stdout, stderr = process.communicate()
+              logging.info("we got an IP address after the ifup so we restarted hostapd")
+              time.sleep(15)
+              if PI_stat: stop_hostapd =True
+        else:   # we got the ip address now so lets try and restart hostapd
+          print("did ifdown/ifup and got inet address")
+          process = os.popen("systemctl restart hostapd")                   # we got an IP4 address after the first down/up so just restart the hostapd.
+          process.close()
+          process = os.popen("systemctl restart dnsmasq")
+          process.close()
+          if PI_stat: stop_hosapd =True
+          time.sleep(15)
       process = Popen("iwconfig", shell=True, stdout=PIPE, stderr=PIPE)
       stdout, stderr = process.communicate()
       net_stat1 = str(stdout).split("wlan")
-      if (len(net_stat1)==1) or ("ESSID:" not in net_stat1[1]) and not PI_stat:
+      if (len(net_stat1)==1) or ("ESSID:" not in net_stat1[1]) and (not PI_stat and clientwifi==""):
         logging.info("did up/down of "+apwifi+" and now again restarted hostapd after not getting a valid ESSID name")
         stop_nohostapd = True
         logging.info("Ok we have done the best we can set stop_hostapd=True")
     else:                                                             # We never got to the if down/up to see if we could get the AP up
-      if (len(net_stat1)==1) or ("inet " not in net_stat1[1]):                           # check the second line to see if we have an inet or IP4 address
+      if ((len(net_stat1)==1) or ("inet " not in net_stat1[1])) and (not stop_hostapd):                           # check the second line to see if we have an inet or IP4 address
         logging.info("when we broght up the interface we didn't get an ip address we'll try again")
         time.sleep(10)                                                   # after we wait we try down/up again
         process = Popen(ifdownap, shell=True, stdout=PIPE, stderr=PIPE)
@@ -578,25 +582,26 @@ def NetworkCheck():
             time.sleep(15)
             stop_hostapd=True                                             #We got hostapd up so just leave it alone from now on
       else:   # we got the ip address now so lets try and restart hostapd
-        process = os.popen("systemctl restart hostapd")                   # we got an IP4 address after the first down/up so just restart the hostapd.
-        process.close()
-        process = os.popen("systemctl restart dnsmasq")
-        process.close()
-        time.sleep(15)
-        stop_hostapd=True
-      process = Popen("iwconfig", shell=True, stdout=PIPE, stderr=PIPE)
-      stdout, stderr = process.communicate()
-      net_stat1 = str(stdout).split("wlan")
-      if (len(net_stat1)==1) or ("ESSID:" not in net_stat1[1]) and not PI_stat and not stop_hostapd:
-        logging.info("did up/down of "+apwifi+" and now again restarted hostapd after not getting a valid ESSID name")
-        process = os.popen("systemctl restart hostapd")
-        process.close()
-        process = os.popen("systemctl restart dnsmasq")
-        process.close()
-        time.sleep(15)
-        logging.info("Ok we have done the best we can")
-        stop_hostapd=True      
-      #ifconfig didn't show any wlans
+        if not stop_hostapd:
+          process = os.popen("systemctl restart hostapd")                   # we got an IP4 address after the first down/up so just restart the hostapd.
+          process.close()
+          process = os.popen("systemctl restart dnsmasq")
+          process.close()
+          time.sleep(15)
+          stop_hostapd=True
+        process = Popen("iwconfig", shell=True, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = process.communicate()
+        net_stat1 = str(stdout).split("wlan")
+        if ((len(net_stat1)==1) or ("ESSID:" not in net_stat1[1])) and (not PI_stat and clientwifi=="") and not stop_hostapd:
+          logging.info("did up/down of "+apwifi+" and now again restarted hostapd after not getting a valid ESSID name")
+          process = os.popen("systemctl restart hostapd")
+          process.close()
+          process = os.popen("systemctl restart dnsmasq")
+          process.close()
+          time.sleep(15)
+          logging.info("Ok we have done the best we can")
+          stop_hostapd=True      
+      #ifconfig didn't show any wlans for ap
       if not stop_hostapd:
         logging.info("when we broght up the interface we didn't get an ip address we'll try again")
         time.sleep(10)                                                   # after we wait we try down/up again
@@ -609,18 +614,18 @@ def NetworkCheck():
         process = Popen("ïfconfig", shell = True, stdout=PIPE, stderr=PIPE) #back to checking for an IP4 addresss
         stdout, stderr = process.communicate()
         net_stat1 = str(stdout).split("wlan")
-        if len(net_stat1) < (len(b)+1):
+        if len(net_stat1) > (len(b)+1):
           if (len(net_stat1)==1) or ("inet " not in net_stat1[int(b)+1]): 
             logging.info("after the second if up/down we still didn't get an address - what to do??")   
-            stop_hostapd=True
+            if PI_stat: stop_hostapd=True
           else:
-          process = Popen("systemctl restart hostapd")                   # after second time we have IP4 address so restart hostapd
-          stdout, stderr = process.communicate()
-          process = Popen("systemctl restart dnsmasq")
-          stdout, stderr = process.communicate()          
-          logging.ifno("we got an IP address after the ifup so we restarted hostapd")
-          time.sleep(15)
-          stop_hostapd=True
+           process = Popen("systemctl restart hostapd")                   # after second time we have IP4 address so restart hostapd
+           stdout, stderr = process.communicate()
+           process = Popen("systemctl restart dnsmasq")
+           stdout, stderr = process.communicate()          
+           logging.ifno("we got an IP address after the ifup so we restarted hostapd")
+           time.sleep(15)
+           stop_hostapd=True
       else: 
         pass                                                            #we did the best we could and didn't get there.
   res = os.popen("ls /sys/class/net")
@@ -633,7 +638,7 @@ def NetworkCheck():
           net_stats = process.read()
           process.close()
           if net_stats.find("down") >= 0 :                                # if its down lets try to raise it
-            if areadyconf.find(netx) < 0 :        # Were checking to see if we should leave this network alone
+            if areadyconf.find(netx) < 0 :                                # Were checking to see if we should leave this network alone
                 cmd = "ifup "+netx
                 process = Popen([cmd],shell=True, stdout=PIPE, stderr=PIPE)
                 (output, error) = process.communicate()
@@ -726,63 +731,63 @@ def Revision():
     f = open('/proc/cpuinfo','r')
     for line in f:
       if "Revision" in line:
+        print(line)
         x = line.find(":")
         y = len(line)-1
         revision = line[(x+2):y]
     f.close()
   
-  if revision[0:0] == "0":
-    revision = revision[0:3]
-  if revision== '0002':  version='PI B  256MB 1.0'
-  elif revision == '0003':  version="Pi B  256MB 1.0"
-  elif revision== '0004':  version="PI B  256MB 2.0"
-  elif revision== '0005':  version="Pi B  256MB 2.0"
-  elif revision== '0006':  version="Pi B  256MB 2.0"
-  elif revision== "0007":  version="PI A  256MB 2.0"
-  elif revision== "0008":  version="PI A  256MB 2.0"
-  elif revision== "0009":  version="PI A  256MB 2.0"
-  elif revision== "000d":  version="PI B  512MB 2.0"
-  elif revision== "000e":  version="PI B  512MB 2.0"
-  elif revision== "000f":  version="PI B  512MB 2.0"
-  elif revision== "0010":  version="PI B+ 512MB 1.0"
-  elif revision== "0011":  version="CM1   512MB 1.0"
-  elif revision== "0012":  version="PI A+ 256MB 1.1"
-  elif revision== "0013":  version="PI B+ 512MB 1.2"
-  elif revision== "0014":  version="CM1   512MB 1.0"
-  elif revision== "0015":  version="PI A+ 512MB 1.1"
-  elif revision== "a01040": version="PI 2B 1GB 1.0"
-  elif revision== "a01041": version="PI 2B 1GB 1.1"
-  elif revision== "a21041": version="PI 2B 1GB 1.1"
-  elif revision== "a22042":  version="PI 2B 1GB 1.2"
-  elif revision== "900021": version="PI A+ 512MB 1.1"
-  elif revision== "900032": version='PI B+ 512MB 1.2'
-  elif revision== "900092": version="PI Z  512MB 1.2"
-  elif revision== "900093": version="PI Z  512MB 1.3"
-  elif revision== "9000c1": version="PI ZW 512MB 1.1"
-  elif revision== "a02082": version="PI 3B 1GB 1.2"
-  elif revision== "a020a0": version="CM 3+ 1GB 1.0"
-  elif revision== "a22082": version="PI 3B 1GB 1.2"
-  elif revision== "a32082": version="PI 3B 1GB 1.2"
-  elif revision== "a020d3": version="PI 3B+ 1GB 1.3"
-  elif revision== "9020e0": version="PI 3A+ 512MB 1.0"
-  elif revision== "a02100": version="CM 3+ 1GB 1.0"
-  elif revision== "a03111": version="PI 4B 1GB 1.1"
-  elif revision== "b03111": version="PI 4B 2GB 1.1"
-  elif revision== "b03112": version="PI 4B 2GB 1.2"
-  elif revision== "b03114": version="PI 4B 2GB 1.4"
-  elif revision== "c03111": version="PI 4B 4GB 1.1"
-  elif revision== "c03112": version="PI 4B 4GB 1.2"
-  elif revision== "c03114": version="PI 4B 4GB 1.4"
-  elif revision== "d03114": version="PI 4B 8GB 1.4"
-  elif revision== "902120": version="PI Z2W 512MB 1.0-"
-  elif revision== "b03140": version="CM 4 2GB 1.0"
-  elif revision== "d03140": version="CM 4 8GB 1.0"
-  elif revision== "0000": version="NEO NANOPI 1GB 1.1"
-  else:
+    if str(revision)[0:0] == "0":
+      revision = revision[0:3]
+    elif revision == '0003':  version="Pi B  256MB 1.0"
+    elif revision== '0004':  version="PI B  256MB 2.0"
+    elif revision== '0005':  version="Pi B  256MB 2.0"
+    elif revision== '0006':  version="Pi B  256MB 2.0"
+    elif revision== "0007":  version="PI A  256MB 2.0"
+    elif revision== "0008":  version="PI A  256MB 2.0"
+    elif revision== "0009":  version="PI A  256MB 2.0"
+    elif revision== "000d":  version="PI B  512MB 2.0"
+    elif revision== "000e":  version="PI B  512MB 2.0"
+    elif revision== "000f":  version="PI B  512MB 2.0"
+    elif revision== "0010":  version="PI B+ 512MB 1.0"
+    elif revision== "0011":  version="CM1   512MB 1.0"
+    elif revision== "0012":  version="PI A+ 256MB 1.1"
+    elif revision== "0013":  version="PI B+ 512MB 1.2"
+    elif revision== "0014":  version="CM1   512MB 1.0"
+    elif revision== "0015":  version="PI A+ 512MB 1.1"
+    elif revision== "a01040": version="PI 2B 1GB 1.0"
+    elif revision== "a01041": version="PI 2B 1GB 1.1"
+    elif revision== "a21041": version="PI 2B 1GB 1.1"
+    elif revision== "a22042":  version="PI 2B 1GB 1.2"
+    elif revision== "900021": version="PI A+ 512MB 1.1"
+    elif revision== "900032": version='PI B+ 512MB 1.2'
+    elif revision== "900092": version="PI Z  512MB 1.2"
+    elif revision== "900093": version="PI Z  512MB 1.3"
+    elif revision== "9000c1": version="PI ZW 512MB 1.1"
+    elif revision== "a02082": version="PI 3B 1GB 1.2"
+    elif revision== "a020a0": version="CM 3+ 1GB 1.0"
+    elif revision== "a22082": version="PI 3B 1GB 1.2"
+    elif revision== "a32082": version="PI 3B 1GB 1.2"
+    elif revision== "a020d3": version="PI 3B+ 1GB 1.3"
+    elif revision== "9020e0": version="PI 3A+ 512MB 1.0"
+    elif revision== "a02100": version="CM 3+ 1GB 1.0"
+    elif revision== "a03111": version="PI 4B 1GB 1.1"
+    elif revision== "b03111": version="PI 4B 2GB 1.1"
+    elif revision== "b03112": version="PI 4B 2GB 1.2"
+    elif revision== "b03114": version="PI 4B 2GB 1.4"
+    elif revision== "c03111": version="PI 4B 4GB 1.1"
+    elif revision== "c03112": version="PI 4B 4GB 1.2"
+    elif revision== "c03114": version="PI 4B 4GB 1.4"
+    elif revision== "d03114": version="PI 4B 8GB 1.4"
+    elif revision== "902120": version="PI Z2W 512MB 1.0-"
+    elif revision== "b03140": version="CM 4 2GB 1.0"
+    elif revision== "d03140": version="CM 4 8GB 1.0"
+    elif revision== "0000": version="NEO NANOPI 1GB 1.1"
+    else:
       version="Unknown" 
-  return version
-except:
-  return "Error"
+    return version
+  except:
+    return "Error"
 
 
 
@@ -823,7 +828,6 @@ if __name__ == "__main__":
     if "PI" in brand:
         rpi_platform = True
         PI_stat= True
-        if version[[0:2]!="PI ":
 
     if "NEO" in brand:
        rpi_platform = False
