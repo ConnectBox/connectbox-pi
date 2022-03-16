@@ -6,7 +6,7 @@ lcd_font_size: 27
 lcd_x_position: 6
 lcd_y_position: 0
 
-device_type: "NEO"
+device_type: "NEO"				  # PI for RPi, CM for CM4, NEO for nanoPi Neo, OP for Orange Pi
 
 usbNoMount: 0
 
