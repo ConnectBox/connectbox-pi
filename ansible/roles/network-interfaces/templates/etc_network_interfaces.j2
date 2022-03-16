@@ -12,9 +12,9 @@ iface eth0 inet dhcp
 
 allow-hotplug {{ client_facing_if }}
 iface {{ client_facing_if }} inet static
+    hostapd /etc/hostapd/hostapd.conf
     address {{ client_facing_if_ip_address }}
     netmask {{ client_facing_if_netmask }}
-    hostapd /etc/hostapd/hostapd.conf
     # Need to set locale because our standard locale settings cause problems with
     #  click, and I don't want to fix that right now. See:
     #  https://click.palletsprojects.com/en/7.x/python3/

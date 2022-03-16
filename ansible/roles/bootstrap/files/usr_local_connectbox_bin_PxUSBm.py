@@ -76,7 +76,13 @@ def mountCheck():
     global mnt
     global loc
     global total
-    global Brnad
+    global Brand
+
+    # mnt is the matrix of /dev/sdx1 element
+    # loc is the USBx element
+    #total is the toal number of mounts currently
+    #Brand is thee name of the host branding eg: ConnectBox
+
     try:
          f = open("/usr/local/connectbox/brand.txt", "r")
          a = f.read()
@@ -362,9 +368,17 @@ def do_fdisk(rpi_platform):
 
 def NetworkCheck():
 
+  # the ap is the access point wlan in the form of wlan0 or wlan1
+  # the cl is the client access point wlan in the form of wlan0 or wlan1
+  # the PI is ture if its a RPi (eg zero, 2, 3, 3a, 4) and false otherwise.
+
   global net_stat
   global areadyconf
   global Brand
+  global apwifi
+  global clientwifi
+  global PI_stat
+  global stop_hostapd
 
   try:
     file_exists = os.path.exists("/var/run/network/*.pid")
@@ -374,27 +388,27 @@ def NetworkCheck():
     process = os.popen("ls /var/run/netowrk/*.pid")
     net_stats = process.read()
     process.close9()
-    if ("ïfdown" in net_stats) or ("ifup" in net_stats):
+    if ("ïfdown" in net_stats) or ("ifup" in net_stats):                  # if we are in the process of bring up or down wait.
       return;
-  process = os.popen("systemctl status hostapd")
+  process = os.popen("systemctl status hostapd")                          # we move on as were not in the process of bringing an interface up or down.
   net_stats = process.read()
   process.close()
-  if net_stats.find("Loaded: masked")>= 0:
+  if net_stats.find("Loaded: masked")>= 0:                                # if for some reason hostapd is masked unmask it
     process = os.popen("systemctl unmask hostapd.service")
     net_stats = process.read()
     time.sleep(5)
     process.close()
-    if net_stats.find("Removed")>=0:
+    if net_stats.find("Removed")>=0:                                      # if for some reason hostapd is removed enable it
         process = os.popen("systemctl enable hostapd.service")
         net_stats = process.read()
         time.sleep(5)
         process.close()
-        if net_stats.find("enabled hostapd")>=0:
+        if net_stats.find("enabled hostapd")>=0:                          # if hostapd is enabled make sure it  is started
             process = os.popen("systemctl start hostapd.service")
             net_stats = process.read()
             process.close()
             time.sleep(5)
-            if net_stats.find("failed")>=0:
+            if net_stats.find("failed")>=0:                               # if we failed to start hostapd not much we can do
                 logging.info("failed to start hostapd error code is"+net_stats)
                 if DEBUG: print("failed to start hostapd must be configuration error")
             else:
@@ -405,9 +419,9 @@ def NetworkCheck():
     else:
         logging.info("Failed to unmask hostapd")
   else:
-    if net_stats.find("Loaded loaded") >= 0:
-      if net_stats.find("Active: active") <0:
-        if net_stats.find("Failed to start") >0:
+    if net_stats.find("Loaded loaded") >= 0:                            #if hostapd is loaded: loaded it may not be running
+      if net_stats.find("Active: active") <0:                   
+        if net_stats.find("Failed to start") >0:                        # we found that hostapd is not running and failed to start.  likely due to a leftover run file on an improper shutdown
           # likely we can't start becasue of an old run file.
           process = os.popen("rm /var/run/hostapd/"+apwifi)
           res = process.read()
@@ -415,7 +429,7 @@ def NetworkCheck():
           if res.find("cannot remove") >0:
             logging.info("could not remove the run/hostapd/"+apwifi)
           else:
-            res = os.popen("systemctl start hostapd")
+            res = os.popen("systemctl start hostapd")                   # we found and removed an old run file on hostapd so lets restart it.
             net_stats = res.read()
             res.close()
             if net_stats.find("Active: active") >= 0:
@@ -425,10 +439,10 @@ def NetworkCheck():
         else:
           logging.info("hostapd is not active but still failed to start???")
       else:
-        pass    #were running and were fine
+        pass    #were running and were fine                            # hostapd was runnning find so lets move on
     else:
-      if net_stats.find("Active: active") < 0:
-        res = os.popen("systemctl start hostapd")
+      if net_stats.find("Active: active") < 0:                         # hostapd was not loaded loaded so lets look and see if it is active active
+        res = os.popen("systemctl start hostapd")                      # hostapd wasn't active active so we start it up
         net_stats = res.read()
         res.close()
         if net_stats.find("Active: active") >= 0:
@@ -438,11 +452,12 @@ def NetworkCheck():
       else:
         pass    # were running and were fine
 
-  process = os.popen("systemctl status networking.service")
+  process = os.popen("systemctl status networking.service")     
+        # we move on since hostapd should be running and if not theres nothging we can do.  So we check networking.services
   net_stats = process.read()
   process.close()
   if net_stats.find("Active: active") < 0:
-    process = os.popen("systemctl start networking.service")
+    process = os.popen("systemctl start networking.service")          # networking services arn't running so lets restart them
     net_stats = process.read()
     process.close()
     time.sleep(5)
@@ -457,11 +472,11 @@ def NetworkCheck():
     else:
         logging.info("Attempt to restart networking.service failed with an error")
 
-  process = os.popen("systemctl status dnsmasq")
+  process = os.popen("systemctl status dnsmasq")                       # moving on check dnsmasq
   net_stats = process.read()
   process.close()
   if net_stats.find("Active: active") < 0:
-    process = os.popen("systemctl restart dnsmasq")
+    process = os.popen("systemctl restart dnsmasq")                    # dnsmasq wasn't running so start it up
     net_stats = process.read()
     process.close()
     if net_stats.find("Active: active") >= 0:
@@ -471,47 +486,153 @@ def NetworkCheck():
 
 # if we don't find the AP name in AP then lets try to restart the hostapd service
 
-  process = Popen("iwconfig", shell=True, stdout=PIPE, stderr=PIPE)
+  process = Popen("iwconfig", shell=True, stdout=PIPE, stderr=PIPE)     # now we look at the AP side to see if  it is transmitting an SSID
   stdout,stderr = process.communicate()
   net_stat1 = str(stdout).split("wlan")
-  b = apwifi[(len(apwifi)-1):]
-  e = net_stat1[int(b)+1].split('"')
-  if (len(e) == 0) or ("ESSID:" not in e[0]):
+  b = apwifi[(len(apwifi)-1):]                                          # b contains the AP wifi character (0, 1, 2, .....)
+  ifdownap = "ifdown "+apwifi
+  ifupap = "ifup "+apwifi
+  if clientwifi=="":
+    c = chr(int(b)+1+ord("0"))
+  else:
+    c = net_stat1[(len(clientwifi)-1):]                                 # e contains the client wifi character (0, 1, 2, ...) if there was none then its one higher than AP
+  if (len(net_stat1) == 1) or ("ESSID:" not in net_stat1[1]) and not PI_stat:   # if were not a RPi and ESSID missing or no AP
     logging.info("restarted hostapd due to not finding valid ESSID name in "+apwifi)
-    process = os.popen("systemctl restart hostapd")
+    process = os.popen("systemctl restart hostapd")                     # try restarting hostapd
     process.close()
-    time.sleep(10)
-  process = Popen("iwconfig", shell=True, stdout=PIPE, stderr=PIPE)
+    time.sleep(15)                                                      # wait 15 seconds for hostapd to come up
+  process = Popen("iwconfig", shell=True, stdout=PIPE, stderr=PIPE)     # now well check for an ip address on the AP
   stdout, stderr = process.communicate()
-  net_stat1 = str(stdout).split("wlan")
-  e = net_stat1[int(b)+1].split('"')
-  if (len(e) ==0) or ("ESSID:" not in e[0]):
-    process = os.popen("ifdown "+apwifi)
-    process.close()
+  net_stat1 = str(stdout).split("wlan")                                 #split up iwconfig by wlan so the first wlan status is in net_stat[1]
+  if ((len(net_stat1) ==1) or ("ESSID:" not in net_stat1[int(b)+1])) and (not stop_hostapd): #if we didn't find a " or no ESSID then we will try a down/up sequence for the wlan
+    logging.info("going to do an ifdow/ifup sequencee to raise the AP")
+    process = Popen(ifdownap, shell=True, stdout=PIPE, stderr=PIPE)
+    stdout, stderr = process.communicate()
     time.sleep(5)
-    process = os.popen("ifup "+apwifi)
-    process.close()
-    time.sleep(15)
-    process = Popen("iwconfig", shell=True, stdout=PIPE, stderr=PIPE)
+    process = Popen(ifupap, shell=True, stdout=PIPE, stderr=PIPE)
+    stdout,stderr = process.communicate()
+    time.sleep(20)                                                       #we wait 15 seconds to try to bring the interface up.
+    process = Popen("ifconfig", shell = True, stdout=PIPE, stderr=PIPE)  # now we will see if our interface has an IP address.
     stdout, stderr = process.communicate()
     net_stat1 = str(stdout).split("wlan")
-    e = net_stat1[int(b)+1].split('"')
-    if (len(e)==0) or ("ESSID:" not in e[0]):
-      logging.info("did up/down of "+apwifi+" and now again restarted hostapd after not getting a valid ESSID name")
-      process = os.popen("systemctl restart hostapd")
-      process.close()
-      time.sleep(10)
-      logging.info("Ok we have done the best we can")
+    if len(net_stat1) > (int(b)+1) :                                    # if length is zero then we don't have wlans.
+      if (len(net_stat1)==1) or ("inet " not in net_stat1[int(b)+1]):                           # check the second line to see if we have an inet or IP4 address
+        logging.info("when we broght up the interface we didn't get an ip address we'll try again")
+        time.sleep(10)                                                   # after we wait we try down/up again
+        process = Popen(ifdownap, shell=True, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = process.communicate()
+        time.sleep(5)
+        process = Popen(ifupap, shell=True, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = process.communicate()
+        time.sleep(20)
+        process = Popen("ifconfig", shell = True, stdout=PIPE, stderr=PIPE) #back to checking for an IP4 addresss
+        stdout, stderr = process.communicate()
+        net_stat1 = str(stdout).split("wlan")
+        if len(net_stat1)> (int(b)+1):
+          if (len(net_stat)==1) or ("inet " not in net_stat[int(b)+1]): 
+            logging.info("after the second if up/down we still didn't get an address - what to do??")   
+          else:
+            process = Popen("systemctl restart hostapd")                   # after second time we have IP4 address so restart hostapd
+            stdout, stderr = process.communicate()
+            process = Popen("systemctl restart dnsmasq")
+            stdout, stderr = process.communicate()
+            logging.info("we got an IP address after the ifup so we restarted hostapd")
+            time.sleep(15)
+            if PI_state: stop_hostapd =True
+      else:   # we got the ip address now so lets try and restart hostapd
+        process = os.popen("systemctl restart hostapd")                   # we got an IP4 address after the first down/up so just restart the hostapd.
+        process.close()
+        process = os.popen("systemctl restart dnsmasq")
+        process.close()
+        if PI_state: stop_hosapd =True
+        time.sleep(15)
+      process = Popen("iwconfig", shell=True, stdout=PIPE, stderr=PIPE)
+      stdout, stderr = process.communicate()
+      net_stat1 = str(stdout).split("wlan")
+      if (len(net_stat1)==1) or ("ESSID:" not in net_stat1[1]) and not PI_stat:
+        logging.info("did up/down of "+apwifi+" and now again restarted hostapd after not getting a valid ESSID name")
+        stop_nohostapd = True
+        logging.info("Ok we have done the best we can set stop_hostapd=True")
+    else:                                                             # We never got to the if down/up to see if we could get the AP up
+      if (len(net_stat1)==1) or ("inet " not in net_stat1[1]):                           # check the second line to see if we have an inet or IP4 address
+        logging.info("when we broght up the interface we didn't get an ip address we'll try again")
+        time.sleep(10)                                                   # after we wait we try down/up again
+        process = Popen(ifdownap, shell=True, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = process.communicate()
+        time.sleep(5)
+        process = Popen(ifupap, shell=True, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = process.communicate()
+        time.sleep(20)
+        process = Popen("ifconfig", shell = True, stdout=PIPE, stderr=PIPE) #back to checking for an IP4 addresss
+        stdout, stderr = process.communicate()
+        net_stat1 = str(stdout).split("wlan")
+        if len(net_stat1)>(int(b)+1):
+          if (len(net_stat1)==1) or ("inet " not in net_stat1[1]): 
+            logging.info("after the second if up/down we still didn't get an address - what to do??")   
+          else:
+            process = Popen("systemctl restart hostapd")                   # after second time we have IP4 address so restart hostapd
+            stdout, stderr = process.communicate()
+            process = Popen("systemctl restart dnsmasq")
+            stdout, stderr = process.communicate()
+            logging.info("we got an IP address after the ifup so we restarted hostapd")
+            time.sleep(15)
+            stop_hostapd=True                                             #We got hostapd up so just leave it alone from now on
+      else:   # we got the ip address now so lets try and restart hostapd
+        process = os.popen("systemctl restart hostapd")                   # we got an IP4 address after the first down/up so just restart the hostapd.
+        process.close()
+        process = os.popen("systemctl restart dnsmasq")
+        process.close()
+        time.sleep(15)
+        stop_hostapd=True
+      process = Popen("iwconfig", shell=True, stdout=PIPE, stderr=PIPE)
+      stdout, stderr = process.communicate()
+      net_stat1 = str(stdout).split("wlan")
+      if (len(net_stat1)==1) or ("ESSID:" not in net_stat1[1]) and not PI_stat and not stop_hostapd:
+        logging.info("did up/down of "+apwifi+" and now again restarted hostapd after not getting a valid ESSID name")
+        process = os.popen("systemctl restart hostapd")
+        process.close()
+        process = os.popen("systemctl restart dnsmasq")
+        process.close()
+        time.sleep(15)
+        logging.info("Ok we have done the best we can")
+        stop_hostapd=True      
+      #ifconfig didn't show any wlans
+      if not stop_hostapd:
+        logging.info("when we broght up the interface we didn't get an ip address we'll try again")
+        time.sleep(10)                                                   # after we wait we try down/up again
+        process = Popen(ifdownap, shell=True, stdout=PIPE, stderr=PIPE)
+        stdout,stderr = process.communicate()
+        time.sleep(5)
+        process = Popen(ifupap, shell=True, stdout=PIPE, stderr=PIPE)
+        stdoout, stderr = process.communicate()
+        time.sleep(20)
+        process = Popen("ïfconfig", shell = True, stdout=PIPE, stderr=PIPE) #back to checking for an IP4 addresss
+        stdout, stderr = process.communicate()
+        net_stat1 = str(stdout).split("wlan")
+        if len(net_stat1) < (len(b)+1):
+          if (len(net_stat1)==1) or ("inet " not in net_stat1[int(b)+1]): 
+            logging.info("after the second if up/down we still didn't get an address - what to do??")   
+            stop_hostapd=True
+          else:
+          process = Popen("systemctl restart hostapd")                   # after second time we have IP4 address so restart hostapd
+          stdout, stderr = process.communicate()
+          process = Popen("systemctl restart dnsmasq")
+          stdout, stderr = process.communicate()          
+          logging.ifno("we got an IP address after the ifup so we restarted hostapd")
+          time.sleep(15)
+          stop_hostapd=True
+      else: 
+        pass                                                            #we did the best we could and didn't get there.
   res = os.popen("ls /sys/class/net")
   SysNetworks = res.read().split()
   res.close()
-  for netx in SysNetworks:
+  for netx in SysNetworks:                                                # Look at each interface
     if netx != "":
       try:
-          process = os.popen("cat /sys/class/net/"+netx+"/operstate")
+          process = os.popen("cat /sys/class/net/"+netx+"/operstate")     #check the operational state of all interfaces
           net_stats = process.read()
           process.close()
-          if net_stats.find("down") >= 0 :
+          if net_stats.find("down") >= 0 :                                # if its down lets try to raise it
             if areadyconf.find(netx) < 0 :        # Were checking to see if we should leave this network alone
                 cmd = "ifup "+netx
                 process = Popen([cmd],shell=True, stdout=PIPE, stderr=PIPE)
@@ -525,13 +646,13 @@ def NetworkCheck():
                   net_stats = process.read()
                   process.close()
                   if net_stats.find("up") >= 0:
-                      logging.info("raised interface "+netx)
+                      logging.info("raised interface "+netx)              #We were successful at rasing the interface
                   else:
                     if netx != clientwifi:  #eg: its not client so it mus be AP
                         net_stat += 1
       except:
           logging.info("Interface "+netx+"is not yet configured for up/down")
-  if net_stat >= 10:
+  if (net_stat >= 10) and (not stop_hostapd):
     logging.info("Network startup issues.  Will try to restart services")
     for netx in SysNetworks:
         if netx != "":
@@ -580,12 +701,15 @@ def NetworkCheck():
     except:
         logging.info("dnsmasq service failed to start")
 # restart hostapd
-    try:
+    if not stop_hostapd:
+      try:
         process = os.popen("systemctl restart hostapd")
         res = process.read()
         process.close()
+        process = os.popen("systemctl restart dnsmasq")
+        process.close()
         time.sleep(5)
-    except:
+      except:
         logging.info("hostapd service has configuration issues")
     process = os.popen("systemctl status hostapd")
     res = process.read()
@@ -597,6 +721,70 @@ def NetworkCheck():
 
 
 
+def Revision():
+  try:
+    f = open('/proc/cpuinfo','r')
+    for line in f:
+      if "Revision" in line:
+        x = line.find(":")
+        y = len(line)-1
+        revision = line[(x+2):y]
+    f.close()
+  
+  if revision[0:0] == "0":
+    revision = revision[0:3]
+  if revision== '0002':  version='PI B  256MB 1.0'
+  elif revision == '0003':  version="Pi B  256MB 1.0"
+  elif revision== '0004':  version="PI B  256MB 2.0"
+  elif revision== '0005':  version="Pi B  256MB 2.0"
+  elif revision== '0006':  version="Pi B  256MB 2.0"
+  elif revision== "0007":  version="PI A  256MB 2.0"
+  elif revision== "0008":  version="PI A  256MB 2.0"
+  elif revision== "0009":  version="PI A  256MB 2.0"
+  elif revision== "000d":  version="PI B  512MB 2.0"
+  elif revision== "000e":  version="PI B  512MB 2.0"
+  elif revision== "000f":  version="PI B  512MB 2.0"
+  elif revision== "0010":  version="PI B+ 512MB 1.0"
+  elif revision== "0011":  version="CM1   512MB 1.0"
+  elif revision== "0012":  version="PI A+ 256MB 1.1"
+  elif revision== "0013":  version="PI B+ 512MB 1.2"
+  elif revision== "0014":  version="CM1   512MB 1.0"
+  elif revision== "0015":  version="PI A+ 512MB 1.1"
+  elif revision== "a01040": version="PI 2B 1GB 1.0"
+  elif revision== "a01041": version="PI 2B 1GB 1.1"
+  elif revision== "a21041": version="PI 2B 1GB 1.1"
+  elif revision== "a22042":  version="PI 2B 1GB 1.2"
+  elif revision== "900021": version="PI A+ 512MB 1.1"
+  elif revision== "900032": version='PI B+ 512MB 1.2'
+  elif revision== "900092": version="PI Z  512MB 1.2"
+  elif revision== "900093": version="PI Z  512MB 1.3"
+  elif revision== "9000c1": version="PI ZW 512MB 1.1"
+  elif revision== "a02082": version="PI 3B 1GB 1.2"
+  elif revision== "a020a0": version="CM 3+ 1GB 1.0"
+  elif revision== "a22082": version="PI 3B 1GB 1.2"
+  elif revision== "a32082": version="PI 3B 1GB 1.2"
+  elif revision== "a020d3": version="PI 3B+ 1GB 1.3"
+  elif revision== "9020e0": version="PI 3A+ 512MB 1.0"
+  elif revision== "a02100": version="CM 3+ 1GB 1.0"
+  elif revision== "a03111": version="PI 4B 1GB 1.1"
+  elif revision== "b03111": version="PI 4B 2GB 1.1"
+  elif revision== "b03112": version="PI 4B 2GB 1.2"
+  elif revision== "b03114": version="PI 4B 2GB 1.4"
+  elif revision== "c03111": version="PI 4B 4GB 1.1"
+  elif revision== "c03112": version="PI 4B 4GB 1.2"
+  elif revision== "c03114": version="PI 4B 4GB 1.4"
+  elif revision== "d03114": version="PI 4B 8GB 1.4"
+  elif revision== "902120": version="PI Z2W 512MB 1.0-"
+  elif revision== "b03140": version="CM 4 2GB 1.0"
+  elif revision== "d03140": version="CM 4 8GB 1.0"
+  elif revision== "0000": version="NEO NANOPI 1GB 1.1"
+  else:
+      version="Unknown" 
+  return version
+except:
+  return "Error"
+
+
 
 if __name__ == "__main__":
 
@@ -605,16 +793,42 @@ if __name__ == "__main__":
     brand_file = '/usr/local/connectbox/brand.txt'
     rpi_platform = False
     global areadyconf
+    global apwifi
+    global clientwifi
+    global PI_stat
+    global stop_hostapd
+    stop_hostapd=False
     areadyconf= ""
 
+    version = Revision()                    # Get the version of hardware were running on
+    print("revision is "+version)
+    if (version != "Unknown") and (version != "Error"):
     # see if we are NEO or CM
-    f = open(brand_file,"r")
-    brand = f.read()
-    f.close()
-    if 'CM' in brand:
+      f = open(brand_file,"r")
+      brand = f.read()
+      f.close()
+      a = version[0:2].rstrip()
+      if brand.find(a)<=0:                    # Make sure the brand file is what we expect as were on this hardware.
+        f = open(brand_file, "w")
+        x = brand.find('"Device_type":')
+        y = brand[(x+15):].find('"')
+        a = brand[0:(x+14)]+'"'+a+'"'+brand[(x+16+y):]
+        f.write(brand)
+        f.close()      
+
+    if 'CM' in brand:                       #Now we determine what brand to work with
         rpi_platform = True
+        PI_stat = False
+
     if "PI" in brand:
         rpi_platform = True
+        PI_stat= True
+        if version[[0:2]!="PI ":
+
+    if "NEO" in brand:
+       rpi_platform = False
+       PI_stat= False
+       
     net_stat = 1
     x = 97
     # Sort out how far we are in the partition expansion process
@@ -640,6 +854,7 @@ if __name__ == "__main__":
             apwifi = wifi.partition("AccessPointIF=")[2].split("\n")[0]
             print("Client interface is ", clientwifi)
             print("AP interface is ", apwifi)
+
 
             while True:
                 if not os.path.exists("/usr/local/connectbox/PauseMount"):
