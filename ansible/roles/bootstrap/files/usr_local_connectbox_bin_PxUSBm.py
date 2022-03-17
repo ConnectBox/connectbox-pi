@@ -668,7 +668,6 @@ def NetworkCheck():
                 if net_stats == "up":
                     process = os.popen("ifdown "+netx)
                     time.sleep(5)
-                    ex_stat = process.read()
                     process.close()
                     process = os.popen("cat /sys/class/net/"+next+"/operstate")
                     net_stats = process.read()
@@ -693,7 +692,6 @@ def NetworkCheck():
 # restart dnsmasq
     try:
         process = os.popen("systemctl restart dnsmasq")
-        res = process.read()
         process.close()
         time.sleep(5)
     except:
@@ -701,7 +699,6 @@ def NetworkCheck():
 # restart dnsmasq
     try:
         process = os.popen("systemctl status dnsmasq")
-        res = process.read()
         process.close()
     except:
         logging.info("dnsmasq service failed to start")
@@ -709,7 +706,6 @@ def NetworkCheck():
     if not stop_hostapd:
       try:
         process = os.popen("systemctl restart hostapd")
-        res = process.read()
         process.close()
         process = os.popen("systemctl restart dnsmasq")
         process.close()
