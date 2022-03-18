@@ -56,7 +56,7 @@ from subprocess import Popen, PIPE
 progress_file = '/usr/local/connectbox/expand_progress.txt'
 
 # globals for USB monitoring
-DEBUG = 0
+DEBUG = 0					#Debug 1 for netowrking, 2 for summary of mounts, 3 for detail of mounts
 global total
 total = 0
 c=["","",""]
@@ -101,20 +101,20 @@ def mountCheck():
     b = process.read()
     process.close()
     while (j < 11):
-      if DEBUG: print("loop 1, unmount",j)
+      if DEBUG > 2: print("loop 1, unmount",j)
       if (mnt[j] >= 0):
         if not ('sd'+chr(mnt[j])+'1' in b):
           c = '/dev/sd' + chr(mnt[j])+'1'
           c = 'umount '+c
-          if DEBUG: print("No longer present sd"+chr(mnt[j])+"1  so well "+c)
-          if DEBUG: print("the value of b is"+b)
+          if DEBUG > 2: print("No longer present sd"+chr(mnt[j])+"1  so well "+c)
+          if DEBUG > 2: print("the value of b is"+b)
           res = os.system(c)
-          if DEBUG: print("completed "+c)
+          if DEBUG > 2: print("completed "+c)
           if res == 0:
             if loc[j] > ord('0'):
                process = os.popen('rmdir /media/usb'+chr(loc[j]))
                process.close()
-               if DEBUG: print("Deleted the directory /media/usb",chr(loc[j]))
+               if DEBUG > 2: print("Deleted the directory /media/usb",chr(loc[j]))
             else:     #We just unmounted usb0 so we need to rerun the enhanced interfaceUSB loader
                       # Run these functions on mount -- added 20211111
               # Enhanced Content Load
@@ -123,7 +123,7 @@ def mountCheck():
             mnt[j] = -1
             j += 1
           else:
-            if DEBUG: print("Failed to " + c)
+            if DEBUG > 2: print("Failed to " + c)
             mnt[j] = -1
             loc[j] = -1
             j += 1
@@ -133,7 +133,7 @@ def mountCheck():
           total += 1
       else:
         #were here because there was no mount device detected
-        if DEBUG: print("device not mounted usb", j)
+        if DEBUG > 2: print("device not mounted usb", j)
         j += 1
     i=0                       #line iterator
     j=0                       #used for finding sdx1's
@@ -141,7 +141,7 @@ def mountCheck():
     c = b.partition("\n")
 # while we have lines to parse we check each line for an sdx1 device and mount it if not already
     while ((c[0] != "") and (i<35)):
-      if DEBUG: print("Loop 2, iterate:",i, c[0])
+      if DEBUG > 2: print("Loop 2, iterate:",i, c[0])
       d[i] = c[0]
       e=re.search('sd[a-z]1', d[i])
       if e:
@@ -155,20 +155,20 @@ def mountCheck():
               j = k
             if loc[k] > 0:
               f[loc[k]-ord('0')]=loc[k]
-            if DEBUG: print("loop 3, iterate:",k)
+            if DEBUG > 2: print("loop 3, iterate:",k)
             k += 1
           k=0;
           while (k <10) and (f[k] != -1):
             k += 1
           a = ord('0')+k
-          if DEBUG: print("end of loop were going to use location "+str(j)+" and ord "+chr(a))
+          if DEBUG > 2: print("end of loop were going to use location "+str(j)+" and ord "+chr(a))
 # Now e know we need to do a mount and have found the lowest mount point to use in (a)
           if not (os.path.exists("/media/usb"+chr(a))):  #if the /mount/usbx isn't there create it
             res = os.system("mkdir /media/usb"+chr(a))
-            if DEBUG: print("created new direcotry %s","/media/usb"+chr(a))
+            if DEBUG > 2: print("created new direcotry %s","/media/usb"+chr(a))
           b = "mount /dev/" + e.group() + " /media/usb" + chr(a)+ " -o noatime,nodev,nosuid,sync,iocharset=utf8"
           res = os.system(b)
-          if DEBUG: print("completed mount /dev/",e.group)
+          if DEBUG > 2: print("completed mount /dev/",e.group)
           mnt[j]=ord(e.group()[len(e.group())-2])
           loc[j]=a
           total += 1
@@ -201,32 +201,32 @@ def mountCheck():
                 if k == 10 and j < 10:                          #mount was not in table to so add it
                   loc[j] = l                                  #set loc to usb(l) at j sice we didn't find it
                   mnt[j] = ord(e.group()[len(e.group())-2])   #set mnt to sd(?)1 finish the mount registration
-                  if DEBUG: print("/dev/"+e.group()+" is already mounted as usb"+chr(l)+"but we added it to the table")
+                  if DEBUG > 2: print("/dev/"+e.group()+" is already mounted as usb"+chr(l)+"but we added it to the table")
                 else:
-                  if DEBUG: print("/dev/"+e.group()+" was mounted and in the table at ",k)
+                  if DEBUG > 2: print("/dev/"+e.group()+" was mounted and in the table at ",k)
               else:
-                if DEBUG: print("USB number >= 10 ", a[2], " We will unmount it")
+                if DEBUG > 2: print("USB number >= 10 ", a[2], " We will unmount it")
                 b = 'unmount /media/usb'+a[2]
                 res = os.system(b)
             else:
-              if DEBUG: print("Error parsing usb# in line", i)
+              if DEBUG > 2: print("Error parsing usb# in line", i)
           else:
-              if DEBUG: print("/dev/sdx1 is already mounted but not as usb", d[i])
+              if DEBUG > 2: print("/dev/sdx1 is already mounted but not as usb", d[i])
       c = c[2].partition("\n")
       i += 1
 # now that we have looked at all lines in the current lsblk we need to count up the mounts
     j = -1
     i = 0
     while (i < 10):            # we will check a maximum of 10 mounts
-      if DEBUG: print("loop 4, iterate:",i)
+      if DEBUG > 2: print("loop 4, iterate:",i)
       if (mnt[i] != -1):      # if mounted we move on
-        if DEBUG: print("Found a mount",i)
+        if DEBUG > 2: print("Found a mount",i)
         i +=1
         j +=1
       else:                   # we have a hole or are done but need to validate
         k = i+1
         while (k < 11) and (mnt[i] == -1):  #checking next mount to see if it is valid
-          if DEBUG: print("loop 5, iterate:",k,i)
+          if DEBUG > 2: print("loop 5, iterate:",k,i)
           if (mnt[k] != -1):
             mnt[i] = mnt[k]   # move the mount into this hole and clear the other point
             loc[i] = loc[k]   # move the location into this hole as well.
@@ -235,14 +235,14 @@ def mountCheck():
             j += 1
             i += 1
             k += 1
-            if DEBUG: print("had to move mount to new location",k," from ",i)
+            if DEBUG > 1: print("had to move mount to new location",k," from ",i)
           else:     # we have no mount here
             i += 1
             k += 1
     total = j+1
-    if DEBUG: print("total of devices mounted is", total)
-    if DEBUG: print("located sdX1 of", mnt)
-    if DEBUG: print("located ustX of", loc)
+    if DEBUG > 1: print("total of devices mounted is", total)
+    if DEBUG > 1: print("located sdX1 of", mnt)
+    if DEBUG > 1: print("located ustX of", loc)
     return()
 
 
@@ -277,7 +277,7 @@ def do_fdisk(rpi_platform):
     try:
       i = child.expect(['Command (m for help)*', 'No such file or directory']) # the match is looking for the LAST thing that came up so we need the *
     except:
-      if DEBUG: print("Exception thrown")
+      if DEBUG: print("Exception thrown during fdisk")
       if DEBUG: print("debug info:")
       if DEBUG: print(str(child))
 
@@ -301,9 +301,9 @@ def do_fdisk(rpi_platform):
 
 #   for CM4, we get one line beginning /dev/mmcblk0p1, 
 #   and one line beginning /dev/mmcblk0p2 ... this is the line that we are looking for 
-    if rpi_platform == True:  
+    if rpi_platform == True:
         p = re.compile('mmcblk[0-9]p2\s*[0-9]+')        # create a regexp to get close to the sector info - CM4
-    else:    
+    else:
         p = re.compile('mmcblk[0-9]p[0-9]\s*[0-9]+')    # create a regexp to get close to the sector info - NEO
 
     m = p.search(respString)    # should find "mmcblk0p1   8192" or similar, saving as object m (NEO)
@@ -318,10 +318,10 @@ def do_fdisk(rpi_platform):
     child.sendline('d')
 
     if rpi_platform == True:    # CM4 has 2 partitions... select partition 2
-        i = child.expect('Partition number (1,2, default 2)*')  
-        child.sendline('2')  
+        i = child.expect('Partition number (1,2, default 2)*')
+        child.sendline('2')
 
-    i = child.expect('Command (m for help)*')  
+    i = child.expect('Command (m for help)*')
 # print("after delete ",child.before)
 
   # "n" for new partition
@@ -351,11 +351,11 @@ def do_fdisk(rpi_platform):
 
   # "N" don't remove the signature
     child.sendline('N')
-    i = child.expect('Command (m for help)*')  
+    i = child.expect('Command (m for help)*')
 
   # "w" for write and exit
     child.sendline('w')
-    i = child.expect('Syncing disks*')  
+    i = child.expect('Syncing disks*')
 
     print("exiting the fdisk program... now reboot")
     f = open(progress_file, "w")
@@ -364,6 +364,76 @@ def do_fdisk(rpi_platform):
     os.sync()
     logging.info( "PxUSBm is rebooting after fdisk changed")
     os.system('shutdown -r now')
+
+
+def IP_Check(b, restart):
+# IP_Check will check for an IP address on the AP and optionally try an ifdown/ifup if restart = True
+# this routine returns 1 if the ip address is found.
+
+     global ifupap
+     global ifdownap
+
+     process = Popen("ifconfig", shell = True, stdout=PIPE, stderr=PIPE)       #back to checking for an IP4 addresss
+     stdout, stderr = process.communicate()
+     net_stat = str(stdout).split("wlan")
+     if len(net_stat)> (int(b)+1):
+        if (len(net_stat)==1) or (not "inet" in net_stat[int(b)+1]):
+            if restart:
+               process = Popen(ifdownap, shell=True, stdout=PIPE, stderr=PIPE)
+               stdout, stderr = process.communicate()
+               time.sleep(5)
+               process = Popen(ifupap, shell=True, stdout=PIPE, stderr=PIPE)
+               stdout, stderr = process.communicate()
+               time.sleep(20)
+               process = Popen("ifconfig", shell = True, stdout=PIPE, stderr=PIPE)       #back to checking for an IP4 addresss
+               stdout, stderr = process.communicate()
+               net_stat = str(stdout).split("wlan")
+               if len(net_stat)> (int(b)+1):
+                 if (len(net_stat)==1) or (not "inet" in net_stat[int(b)+1]):
+                   if DEBUG: print("did ifdown/ifup and still don't have an IP address "+net_stat[int(b)+1])
+                   return(0)
+                 else:
+                   if len(net_stat) != 1:
+                     return(1)
+                   else: return(0)
+               else: return(0)
+            return(0)
+        elif len(net_stat) != 1:
+          return(1)
+        else:
+          return(0)
+     else:
+       return(0)
+
+
+
+def ESSID_Check(b, restart):
+# this routine ESSID_check will look to see if there is an ESSID assigned to the AP
+# you pass this routine the wlan character and  if you want to attempt a restart of hostapd if no ESSID a restart value of True
+# it will return a 1 if the ESSID is present and 0 otherwise
+
+    process = Popen("iwconfig", shell=True, stdout=PIPE, stderr=PIPE)          # now well check for an ip address on the AP
+    stdout, stderr = process.communicate()
+    net_stat = str(stdout).split("wlan")                                       #split up iwconfig by wlan so the first wlan status is in net_stat[1]
+    if ((len(net_stat) ==1) or (not "ESSID:" in net_stat[int(b)+1])):          #if we didn't find a " or no ESSID then we will try a down/up sequence for the wlan
+      if DEBUG: print("did iwconfig but no ESSID present "+net_stat[int(b)+1])
+      if restart:
+          process = Popen("systemctl restart hostapd.service", shell=True, stdout=PIPE, stderr=PIPE) # lets restart hostapd and see if we can get our ESSID
+          stdout, stderr = process.communicate()
+          process = Popen("systemctl restart dnsmasq", shell=True, stdout=PIPE, stderr=PIPE)
+          stdout, stderr = process.communicate()
+          time.sleep(15)
+          process = Popen("iwconfig", shell=True, stdout=PIPE, stderr=PIPE)	# we will check after the restart if we have an ESSID
+          stdout, stderr = process.communicate()
+          net_stat = str(stdout).split("wlan")
+          if (len(net_stat) ==1 or (not "ESSID:" in net_stat[int(b)+1])):
+            if DEBUG: print("Restarted hostapd and still didn't get the ESSID "+net_stat[int(b)+1])
+            return(0)
+          elif len(net_stat) != 1: return(1)
+          else: return(0)
+      else: return(0)
+    elif(len(net_stat) != 1): return(1)
+    else: return(0)
 
 
 def NetworkCheck():
@@ -379,6 +449,8 @@ def NetworkCheck():
   global clientwifi
   global PI_stat
   global stop_hostapd
+  global ifupap
+  global ifdownap
 
   file_exists=True
 
@@ -392,7 +464,7 @@ def NetworkCheck():
     process.close9()
     if ("ïfdown" in net_stats) or ("ifup" in net_stats):                  # if we are in the process of bring up or down wait.
       return;
-  process = os.popen("systemctl status hostapd")                          # we move on as were not in the process of bringing an interface up or down.
+  process = os.popen("systemctl status hostapd.service")                  # we move on as were not in the process of bringing an interface up or down.
   net_stats = process.read()
   process.close()
   if net_stats.find("Loaded: masked")>= 0:                                # if for some reason hostapd is masked unmask it
@@ -412,17 +484,21 @@ def NetworkCheck():
             time.sleep(5)
             if net_stats.find("failed")>=0:                               # if we failed to start hostapd not much we can do
                 logging.info("failed to start hostapd error code is"+net_stats)
+                hostapd_running=False
                 if DEBUG: print("failed to start hostapd must be configuration error")
             else:
                 logging.info("Succeeded in umasking, enabling and starting hostapd")
+                hostapd_running=True
                 if DEBUG: print ("succeeded in unmasking, enabling and starting hostapd")
         else:
               logging.info("Failed to enable hostapd after unmasking")
+              hostapd_running=False
     else:
         logging.info("Failed to unmask hostapd")
+        hostapd_running=False
   else:
     if net_stats.find("Loaded loaded") >= 0:                            #if hostapd is loaded: loaded it may not be running
-      if net_stats.find("Active: active") <0:                   
+      if net_stats.find("Active: active") <0:
         if net_stats.find("Failed to start") >0:                        # we found that hostapd is not running and failed to start.  likely due to a leftover run file on an improper shutdown
           # likely we can't start becasue of an old run file.
           process = os.popen("rm /var/run/hostapd/"+apwifi)
@@ -430,36 +506,41 @@ def NetworkCheck():
           process.close()
           if res.find("cannot remove") >0:
             logging.info("could not remove the run/hostapd/"+apwifi)
+            hostapd_running=False
           else:
-            res = os.popen("systemctl start hostapd")                   # we found and removed an old run file on hostapd so lets restart it.
+            res = os.popen("systemctl start hostapd.service")            # we found and removed an old run file on hostapd so lets restart it.
             net_stats = res.read()
             res.close()
             if net_stats.find("Active: active") >= 0:
               logging.info("Restarted hostapd and its running")
+              hostapd_running=True
             else:
               logging.info("couldn't get hostapd running")
+              hostapd_running=False
         else:
           logging.info("hostapd is not active but still failed to start???")
+          hostapd_running=False
       else:
-        pass    #were running and were fine                            # hostapd was runnning find so lets move on
+        hostapd_running=True                                           # hostapd was runnning find so lets move on
     else:
       if net_stats.find("Active: active") < 0:                         # hostapd was not loaded loaded so lets look and see if it is active active
-        res = os.popen("systemctl start hostapd")                      # hostapd wasn't active active so we start it up
+        res = os.popen("systemctl start hostapd.service")              # hostapd wasn't active active so we start it up
         net_stats = res.read()
         res.close()
         if net_stats.find("Active: active") >= 0:
           logging.info("Restarted hostapd and its running")
+          hostapd_running=True
         else:
           logging.info("couldn't get hostapd running")
+          hostapd_running=False
       else:
-        print("hostapd ok running")    # were running and were fine
+        hostapd_running=True					       # were running and were fine
 
-  process = os.popen("systemctl status networking.service")     
-        # we move on since hostapd should be running and if not theres nothging we can do.  So we check networking.services
+  process = os.popen("systemctl status networking.service")            # we move on since hostapd should be running and if not theres nothging we can do.  So we check networking.services
   net_stats = process.read()
   process.close()
   if net_stats.find("Active: active") < 0:
-    process = os.popen("systemctl start networking.service")          # networking services arn't running so lets restart them
+    process = os.popen("systemctl start networking.service")           # networking services arn't running so lets restart them
     net_stats = process.read()
     process.close()
     time.sleep(5)
@@ -469,11 +550,15 @@ def NetworkCheck():
         process.close()
         if net_stats.find("Active: active") >= 0:
             logging.info("We were able to restart a stalled networking service")
+            network_running=True
         else:
             logging.info("We were unable to start a stalled networking service")
+            network_running=False
     else:
         logging.info("Attempt to restart networking.service failed with an error")
-
+        network_running=False
+  else:
+    network_running=True
   process = os.popen("systemctl status dnsmasq")                       # moving on check dnsmasq
   net_stats = process.read()
   process.close()
@@ -485,149 +570,78 @@ def NetworkCheck():
         logging.info("we were able to start a stalled dnsmasq")
     else:
         logging.info("We were unable to start the dnsmasq service")
+
 # We have finished the individual tests for networking.services, hostapd and dnsmasq and all are working to the best of our ability
 # if we don't find the AP name in AP then lets try to restart the hostapd service
 
-  process = Popen("iwconfig", shell=True, stdout=PIPE, stderr=PIPE)     # now we look at the AP side to see if  it is transmitting an SSID
-  stdout,stderr = process.communicate()
-  net_stat1 = str(stdout).split("wlan")
   b = apwifi[(len(apwifi)-1):]                                          # b contains the AP wifi character (0, 1, 2, .....)
   ifdownap = "ifdown "+apwifi
   ifupap = "ifup "+apwifi
   if clientwifi=="":
     c = chr(int(b)+1+ord("0"))
   else:
-    c = net_stat1[(len(clientwifi)-1):]                                 # c contains the client wifi character (0, 1, 2, ...) if there was none then its one higher than AP
-  if (len(net_stat1) == 1) or ("ESSID:" not in net_stat1[1]) and (not PI_stat and clientwifi==""):   # if were not a RPi and ESSID missing or no AP
-    logging.info("restarted hostapd due to not finding valid ESSID name in "+apwifi)
-    process = os.popen("systemctl restart hostapd")                     # try restarting hostapd
-    process.close()
-    time.sleep(15)                                                      # wait 15 seconds for hostapd to come up
-    process = Popen("iwconfig", shell=True, stdout=PIPE, stderr=PIPE)     # now well check for an ip address on the AP
-    stdout, stderr = process.communicate()
-    net_stat1 = str(stdout).split("wlan")                                 #split up iwconfig by wlan so the first wlan status is in net_stat[1]
-    if ((len(net_stat1) ==1) or ("ESSID:" not in net_stat1[int(b)+1])) and (not stop_hostapd): #if we didn't find a " or no ESSID then we will try a down/up sequence for the wlan
-      logging.info("going to do an ifdow/ifup sequencee to raise the AP")
-      process = Popen(ifdownap, shell=True, stdout=PIPE, stderr=PIPE)
-      stdout, stderr = process.communicate()
-      time.sleep(5)
-      process = Popen(ifupap, shell=True, stdout=PIPE, stderr=PIPE)
-      stdout,stderr = process.communicate()
-      time.sleep(20)                                                       #we wait 15 seconds to try to bring the interface up.
-      process = Popen("ifconfig", shell = True, stdout=PIPE, stderr=PIPE)  # now we will see if our interface has an IP address.
-      stdout, stderr = process.communicate()
-      net_stat1 = str(stdout).split("wlan")
-      if (len(net_stat1) > (int(b)+1)) and (not stop_hostapd):                                    # if length is zero then we don't have wlans.
-        if (len(net_stat1)==1) or ("inet " not in net_stat1[int(b)+1]):                           # check the second line to see if we have an inet or IP4 address
-          logging.info("when we broght up the interface we didn't get an ip address we'll try again")
-          time.sleep(10)                                                   # after we wait we try down/up again
-          process = Popen(ifdownap, shell=True, stdout=PIPE, stderr=PIPE)
-          stdout, stderr = process.communicate()
-          time.sleep(5)
-          process = Popen(ifupap, shell=True, stdout=PIPE, stderr=PIPE)
-          stdout, stderr = process.communicate()
-          time.sleep(20)
-          process = Popen("ifconfig", shell = True, stdout=PIPE, stderr=PIPE) #back to checking for an IP4 addresss
-          stdout, stderr = process.communicate()
-          net_stat1 = str(stdout).split("wlan")
-          if len(net_stat1)> (int(b)+1):
-            if (len(net_stat)==1) or ("inet " not in net_stat[int(b)+1]): 
-              logging.info("after the second if up/down we still didn't get an address - what to do??")   
+    c = clientwifi[(len(clientwifi)-1):]                                 # c contains the client wifi character (0, 1, 2, ...) if there was none then its one higher than AP
+
+  #check the ESSID and if its not there try to restart the hostapd/dnsmasq
+
+  if not stop_hostapd:
+    if (not ESSID_Check(b, True)): 					# if were not a RPi and ESSID missing or no AP
+      valid_ESSID=False
+      if (PI_stat and clientwifi==""):
+         stop_hostapd=True
+         if (not IP_Check(b,True)):
+           valid_IP=False
+           if DEBUG: print("have a PI version with no extra WIFI modules cant get IP address")
+           logging.info("have PI version with no extra WIFI modules can't get an IP address for AP")
+         else:
+           valid_IP=True
+           if (not ESSID_Check(b, True)):
+             valid_ESSID=False
+             if DEBUG: print("weve done our best to bring up the AP since this is a PI with no other WIFI modules")
+             logging.info("weve done our best to bring up the AP since this is  a PI with no other WIFI modules")
+           else:
+             valid_ESSID=True
+      else:
+        if (not IP_Check(b, True)):					# now well check for an ip address on the AP
+          valid_IP=False
+          if (not ESSID_Check(b, True)):				# Ok so we couldn't get the interface up but now we reset hostapd so lets try an up/downn again
+            valid_ESSID=False 
+            if DEBUG: print("We cant get an ESSID and we didn't get an IP.... what to do?")
+            logging.info("We can't get an ESSID and we didn't get and IP..... what to do?")
+          else:								#this time we got an IP but still don't have an ESSID so try an up/down again
+            valid_ESSID=True
+            if (not IP_Check(b, True)):					#We check for an IP address now that we have an  ESSID
+              valid_IP=False
+              if DEBUG: print("Well we got an ESSID but failed at getting the IP... what to do?")
+              logging.info("We got the ESSID on the second ifdown/ifup but still couldn't get an IP")
             else:
-              print("did ifdown/ifup twoice and got inet address")
-              process = Popen("systemctl restart hostapd")                   # after second time we have IP4 address so restart hostapd
-              stdout, stderr = process.communicate()
-              process = Popen("systemctl restart dnsmasq")
-              stdout, stderr = process.communicate()
-              logging.info("we got an IP address after the ifup so we restarted hostapd")
-              time.sleep(15)
-              if PI_stat: stop_hostapd =True
-        else:   # we got the ip address now so lets try and restart hostapd
-          print("did ifdown/ifup and got inet address")
-          process = os.popen("systemctl restart hostapd")                   # we got an IP4 address after the first down/up so just restart the hostapd.
-          process.close()
-          process = os.popen("systemctl restart dnsmasq")
-          process.close()
-          if PI_stat: stop_hosapd =True
-          time.sleep(15)
-      process = Popen("iwconfig", shell=True, stdout=PIPE, stderr=PIPE)
-      stdout, stderr = process.communicate()
-      net_stat1 = str(stdout).split("wlan")
-      if (len(net_stat1)==1) or ("ESSID:" not in net_stat1[1]) and (not PI_stat and clientwifi==""):
-        logging.info("did up/down of "+apwifi+" and now again restarted hostapd after not getting a valid ESSID name")
-        stop_nohostapd = True
-        logging.info("Ok we have done the best we can set stop_hostapd=True")
-    else:                                                             # We never got to the if down/up to see if we could get the AP up
-      if ((len(net_stat1)==1) or ("inet " not in net_stat1[1])) and (not stop_hostapd):                           # check the second line to see if we have an inet or IP4 address
-        logging.info("when we broght up the interface we didn't get an ip address we'll try again")
-        time.sleep(10)                                                   # after we wait we try down/up again
-        process = Popen(ifdownap, shell=True, stdout=PIPE, stderr=PIPE)
-        stdout, stderr = process.communicate()
-        time.sleep(5)
-        process = Popen(ifupap, shell=True, stdout=PIPE, stderr=PIPE)
-        stdout, stderr = process.communicate()
-        time.sleep(20)
-        process = Popen("ifconfig", shell = True, stdout=PIPE, stderr=PIPE) #back to checking for an IP4 addresss
-        stdout, stderr = process.communicate()
-        net_stat1 = str(stdout).split("wlan")
-        if len(net_stat1)>(int(b)+1):
-          if (len(net_stat1)==1) or ("inet " not in net_stat1[1]): 
-            logging.info("after the second if up/down we still didn't get an address - what to do??")   
-          else:
-            process = Popen("systemctl restart hostapd")                   # after second time we have IP4 address so restart hostapd
-            stdout, stderr = process.communicate()
-            process = Popen("systemctl restart dnsmasq")
-            stdout, stderr = process.communicate()
-            logging.info("we got an IP address after the ifup so we restarted hostapd")
-            time.sleep(15)
-            stop_hostapd=True                                             #We got hostapd up so just leave it alone from now on
-      else:   # we got the ip address now so lets try and restart hostapd
-        if not stop_hostapd:
-          process = os.popen("systemctl restart hostapd")                   # we got an IP4 address after the first down/up so just restart the hostapd.
-          process.close()
-          process = os.popen("systemctl restart dnsmasq")
-          process.close()
-          time.sleep(15)
-          stop_hostapd=True
-        process = Popen("iwconfig", shell=True, stdout=PIPE, stderr=PIPE)
-        stdout, stderr = process.communicate()
-        net_stat1 = str(stdout).split("wlan")
-        if ((len(net_stat1)==1) or ("ESSID:" not in net_stat1[1])) and (not PI_stat and clientwifi=="") and not stop_hostapd:
-          logging.info("did up/down of "+apwifi+" and now again restarted hostapd after not getting a valid ESSID name")
-          process = os.popen("systemctl restart hostapd")
-          process.close()
-          process = os.popen("systemctl restart dnsmasq")
-          process.close()
-          time.sleep(15)
-          logging.info("Ok we have done the best we can")
-          stop_hostapd=True      
-      #ifconfig didn't show any wlans for ap
-      if not stop_hostapd:
-        logging.info("when we broght up the interface we didn't get an ip address we'll try again")
-        time.sleep(10)                                                   # after we wait we try down/up again
-        process = Popen(ifdownap, shell=True, stdout=PIPE, stderr=PIPE)
-        stdout,stderr = process.communicate()
-        time.sleep(5)
-        process = Popen(ifupap, shell=True, stdout=PIPE, stderr=PIPE)
-        stdoout, stderr = process.communicate()
-        time.sleep(20)
-        process = Popen("ïfconfig", shell = True, stdout=PIPE, stderr=PIPE) #back to checking for an IP4 addresss
-        stdout, stderr = process.communicate()
-        net_stat1 = str(stdout).split("wlan")
-        if len(net_stat1) > (len(b)+1):
-          if (len(net_stat1)==1) or ("inet " not in net_stat1[int(b)+1]): 
-            logging.info("after the second if up/down we still didn't get an address - what to do??")   
-            if PI_stat: stop_hostapd=True
-          else:
-           process = Popen("systemctl restart hostapd")                   # after second time we have IP4 address so restart hostapd
-           stdout, stderr = process.communicate()
-           process = Popen("systemctl restart dnsmasq")
-           stdout, stderr = process.communicate()          
-           logging.ifno("we got an IP address after the ifup so we restarted hostapd")
-           time.sleep(15)
-           stop_hostapd=True
-      else: 
-        pass                                                            #we did the best we could and didn't get there.
+              valid_IP=True
+        else:
+          valid_IP=True
+          if valid_ESSID==False:
+            if (not ESSID_Check(b, True)):
+              valid_ESSID=False
+              stop_hostapd=True						#we have tried three times so were going to  hope were up.
+            else: valid_ESSID=True
+    else:
+      valid_ESSID=True 
+      if (not IP_Check(b, True)):					#Check to make sure we have an ip now that we have an ESSID
+         valid_IP=False
+         if DEBUG: print("We have an essid but can't get an IP....")
+         logging.info("We have an ESSID but we couldn't get an IP address... what to do?")
+      else: valid_IP=True						#We got a valid ESSID the first time and got a valid IP
+  else:
+    if (not ESSID_Check(b,False)):
+      valid_ESSID=False
+    else:
+      valid_ESSID=True									#were here because were a PI and have not other WIFI's so just check the IP address
+    if (not IP_Check(b,True)):
+      valid_IP=False
+    else:
+      valid_IP=True
+
+  if valid_IP and valid_ESSID and hostapd_running and network_running: print("AP up and running ok")
+  else: print("Not everything is clean: IP, ESSID, hostapd, network, stop_hostapd ",valid_IP, valid_ESSID, hostapd_running, network_running, stop_hostapd)
   res = os.popen("ls /sys/class/net")
   SysNetworks = res.read().split()
   res.close()
@@ -668,6 +682,7 @@ def NetworkCheck():
                 if net_stats == "up":
                     process = os.popen("ifdown "+netx)
                     time.sleep(5)
+                    ex_stat = process.read()
                     process.close()
                     process = os.popen("cat /sys/class/net/"+next+"/operstate")
                     net_stats = process.read()
@@ -798,6 +813,9 @@ if __name__ == "__main__":
     global clientwifi
     global PI_stat
     global stop_hostapd
+    global ifupap
+    global ifdownap
+
     stop_hostapd=False
     areadyconf= ""
 
@@ -809,28 +827,33 @@ if __name__ == "__main__":
       brand = f.read()
       f.close()
       a = version[0:2].rstrip()
+      print("Major type: "+a)
       if brand.find(a)<=0:                    # Make sure the brand file is what we expect as were on this hardware.
         f = open(brand_file, "w")
         x = brand.find('"Device_type":')
-        y = brand[(x+15):].find('"')
-        a = brand[0:(x+14)]+'"'+a+'"'+brand[(x+16+y):]
-        f.write(brand)
-        f.close()      
+        y = brand[(x+14):].find(',')
+        print("Writing new brand file entry at:",x,y)
+        a = brand[0:(x+14)]+' "'+a+'"'+brand[(x+14+y):]
+        print("final text is: "+a)
+        f.write(a)
+        f.close()
+        os.sync()
 
     if 'CM' in brand:                       #Now we determine what brand to work with
-        rpi_platform = True
-        PI_stat = False
+        rpi_platform=True
+        PI_stat=True
 
     if "PI" in brand:
-        rpi_platform = True
-        PI_stat= True
+        rpi_platform=True
+        PI_stat=True
 
     if "NEO" in brand:
-       rpi_platform = False
-       PI_stat= False
-       
+        rpi_platform=False
+        PI_stat=False
+
+
     net_stat = 1
-    x = 97
+    x = 98
     # Sort out how far we are in the partition expansion process
     file_exists = os.path.exists(progress_file)
     if file_exists == False:
@@ -855,23 +878,34 @@ if __name__ == "__main__":
             print("Client interface is ", clientwifi)
             print("AP interface is ", apwifi)
 
+        if PI_stat:
+          process = Popen("lshw -C Network", shell=True, stdout=PIPE, stderr=PIPE)
+          stdout, stderr = process.communicate()
+          b =apwifi[(len(apwifi)-1):]
+          wifi = str(stdout).split("wlan")
+          wifid= str(wifi[int(b)+1]).split("driver=")
+          if DEBUG: print(wifid[1])
+          if "brcfmac" in wifid[1]:
+            PI_stat = False
+            print("cancled the PI_status")
 
-            while True:
-                if not os.path.exists("/usr/local/connectbox/PauseMount"):
-                    mountCheck()
-                if (x % 100) == 0:
-                  NetworkCheck()
-                time.sleep(3)
-                y = 0
-                x += 1 
-                if x > 2500:
-                    x = 0
-                    net_stat +=1
-                    proc = os.popen("systemctl status neo-battery-shutdown").read()
-                    while (proc.find("Active: inactive") or proc.find("Active: failed")) and y<5:
-                    # we found the neo-battery-shutdown not running lets try to restarat
-                        proc = os.popen("systemctl restart neo-battery-shutdown").read()
-                        time.sleep(10)
-                        proc = os.popen("systemctl status neo-battery-shutdown").read()
-                        y += 1
+
+        while True:
+          if not os.path.exists("/usr/local/connectbox/PauseMount"):
+             mountCheck()
+          if (x % 100) == 0:
+             NetworkCheck()
+          time.sleep(3)
+          y = 0
+          x += 1 
+          if x > 2500:
+             x = 0
+             net_stat +=1
+             proc = os.popen("systemctl status neo-battery-shutdown").read()
+             while (proc.find("Active: inactive") or proc.find("Active: failed")) and y<5:
+             # we found the neo-battery-shutdown not running lets try to restarat
+                proc = os.popen("systemctl restart neo-battery-shutdown").read()
+                time.sleep(10)
+                proc = os.popen("systemctl status neo-battery-shutdown").read()
+                y += 1
 
