@@ -464,6 +464,42 @@ def NetworkCheck():
     process.close9()
     if ("ïfdown" in net_stats) or ("ifup" in net_stats):                  # if we are in the process of bring up or down wait.
       return;
+
+  process = os.popen("systemctl status networking.service")            # we move on since hostapd should be running and if not theres nothging we can do.  So we check networking.services
+  net_stats = process.read()
+  process.close()
+  if net_stats.find("Active: active") < 0:
+    process = os.popen("systemctl start networking.service")           # networking services arn't running so lets restart them
+    net_stats = process.read()
+    process.close()
+    time.sleep(5)
+    if net_stats == "":
+        process = os.popen("systemctl status networking.service")
+        net_stats = process.read()
+        process.close()
+        if net_stats.find("Active: active") >= 0:
+            logging.info("We were able to restart a stalled networking service")
+            network_running=True
+        else:
+            logging.info("We were unable to start a stalled networking service")
+            network_running=False
+    else:
+        logging.info("Attempt to restart networking.service failed with an error")
+        network_running=False
+  else:
+    network_running=True
+  process = os.popen("systemctl status dnsmasq")                       # moving on check dnsmasq
+  net_stats = process.read()
+  process.close()
+  if net_stats.find("Active: active") < 0:
+    process = os.popen("systemctl restart dnsmasq")                    # dnsmasq wasn't running so start it up
+    net_stats = process.read()
+    process.close()
+    if net_stats.find("Active: active") >= 0:
+        logging.info("we were able to start a stalled dnsmasq")
+    else:
+        logging.info("We were unable to start the dnsmasq service")
+
   process = os.popen("systemctl status hostapd.service")                  # we move on as were not in the process of bringing an interface up or down.
   net_stats = process.read()
   process.close()
@@ -536,40 +572,7 @@ def NetworkCheck():
       else:
         hostapd_running=True					       # were running and were fine
 
-  process = os.popen("systemctl status networking.service")            # we move on since hostapd should be running and if not theres nothging we can do.  So we check networking.services
-  net_stats = process.read()
-  process.close()
-  if net_stats.find("Active: active") < 0:
-    process = os.popen("systemctl start networking.service")           # networking services arn't running so lets restart them
-    net_stats = process.read()
-    process.close()
-    time.sleep(5)
-    if net_stats == "":
-        process = os.popen("systemctl status networking.service")
-        net_stats = process.read()
-        process.close()
-        if net_stats.find("Active: active") >= 0:
-            logging.info("We were able to restart a stalled networking service")
-            network_running=True
-        else:
-            logging.info("We were unable to start a stalled networking service")
-            network_running=False
-    else:
-        logging.info("Attempt to restart networking.service failed with an error")
-        network_running=False
-  else:
-    network_running=True
-  process = os.popen("systemctl status dnsmasq")                       # moving on check dnsmasq
-  net_stats = process.read()
-  process.close()
-  if net_stats.find("Active: active") < 0:
-    process = os.popen("systemctl restart dnsmasq")                    # dnsmasq wasn't running so start it up
-    net_stats = process.read()
-    process.close()
-    if net_stats.find("Active: active") >= 0:
-        logging.info("we were able to start a stalled dnsmasq")
-    else:
-        logging.info("We were unable to start the dnsmasq service")
+
 
 # We have finished the individual tests for networking.services, hostapd and dnsmasq and all are working to the best of our ability
 # if we don't find the AP name in AP then lets try to restart the hostapd service
@@ -589,7 +592,7 @@ def NetworkCheck():
     if not(ESSID_Check(b, True)):
       logging.info("still couldn't get ESSID on retaRT OF Hostapd")
       if DEBUG: print("Couldn't get hostapd upd and running in startup and now even with ifdownap")
-    res = 0s.popen("systemctl status hostapd")
+    res = os.popen("systemctl status hostapd")
     net_stats1 = res.read()
     res.close()
     if net_stats1.find("Active: active")>=0:
