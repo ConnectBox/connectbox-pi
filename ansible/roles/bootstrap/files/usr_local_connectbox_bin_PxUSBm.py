@@ -583,6 +583,19 @@ def NetworkCheck():
     c = clientwifi[(len(clientwifi)-1):]                                 # c contains the client wifi character (0, 1, 2, ...) if there was none then its one higher than AP
 
   #check the ESSID and if its not there try to restart the hostapd/dnsmasq
+  if not hostapd_running:
+    res = os.popen(ifdownap)
+    res.close()
+    if not(ESSID_Check(b, True)):
+      logging.info("still couldn't get ESSID on retaRT OF Hostapd")
+      if DEBUG: print("Couldn't get hostapd upd and running in startup and now even with ifdownap")
+    res = 0s.popen("systemctl status hostapd")
+    net_stats1 = res.read()
+    res.close()
+    if net_stats1.find("Active: active")>=0:
+       hostapd_running=True
+    else:
+       hostapd_running=False  
 
   if not stop_hostapd:
     if (not ESSID_Check(b, True)): 					# if were not a RPi and ESSID missing or no AP
