@@ -850,6 +850,12 @@ if __name__ == "__main__":
         y = brand[(x+14):].find(',')
         print("Writing new brand file entry at:",x,y)
         a = brand[0:(x+14)]+' "'+a+'"'+brand[(x+14+y):]
+        if a.find("CM")>0 :
+          x = a.find('"lcd_pages_multi_bat": ')
+          if x>0: a=a[0:(x+22)] + '1' + a[(x+24):]
+        else:
+          x = a.find('"lcd_pages_multi_bat": ')
+          if x>0: a=a[0:(x+22)] + '0' + a[x(+24):]
         print("final text is: "+a)
         f.write(a)
         f.close()
