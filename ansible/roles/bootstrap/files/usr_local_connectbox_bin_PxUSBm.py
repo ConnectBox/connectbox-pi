@@ -891,37 +891,46 @@ if __name__ == "__main__":
 
         # we get through when neo-battery-shutdown is runningps
         logging.info("got through the neo-battery-shutdown running test")
-        if ("rewrite_netfiles_done" in progress or "running" in progress):
-            f = open("/usr/local/connectbox/wificonf.txt", "r")
-            wifi = f.read()
-            f.close()
-            clientwifi =  wifi.partition("ClientIF=")[2].split("\n")[0]
-            apwifi = wifi.partition("AccessPointIF=")[2].split("\n")[0]
-            print("Client interface is ", clientwifi)
-            print("AP interface is ", apwifi)
 
-        if PI_stat:
+        f = open(progress_file, "r")
+        progress = f.read()                 #were going to hold until we have the initial tasks completed.  We can continue once we have network files written by cli.py in neo-battery-shutdown service
+        while (not "rewrite_netfiles_done" in progress and not "running" in progress):
+          f.close()                         #close the file and wait
+          time.sleep(3)                     #wait 3 seconds then check the progress again.
+          f = open(progress_file, "r")      #open and read
+          progress = f.read()
+        f.close()
+        
+        f = open("/usr/local/connectbox/wificonf.txt", "r")
+        wifi = f.read()
+        f.close()
+        clientwifi =  wifi.partition("ClientIF=")[2].split("\n")[0]
+        apwifi = wifi.partition("AccessPointIF=")[2].split("\n")[0]
+        print("Client interface is ", clientwifi)
+        print("AP interface is ", apwifi)
+
+        if PI_stat:                         # if we are a PI were going to chekc the driver of the AP to see how to function.
           process = Popen("lshw -C Network", shell=True, stdout=PIPE, stderr=PIPE)
           stdout, stderr = process.communicate()
           b =apwifi[(len(apwifi)-1):]
           wifi = str(stdout).split("wlan")
           wifid= str(wifi[int(b)+1]).split("driver=")
           if DEBUG: print(wifid[1])
-          if "brcfmac" in wifid[1]:
+          if "brcfmac" in wifid[1]:         # if we are using the built in wifi for AP then we cancle the PI_stat so we don't expect an ESSID
             PI_stat = False
             print("cancled the PI_status")
 
 
-        while True:
+        while True:                         # main loop that we live in for life of running
           if not os.path.exists("/usr/local/connectbox/PauseMount"):
-             mountCheck()
+             mountCheck()                   # Do a usb check to see if we have any inserted or removed.
           if (x % 100) == 0:
-             NetworkCheck()
+             NetworkCheck()                 # Check the network functioning and fix anythig we find in error.
           time.sleep(3)
           y = 0
           x += 1 
-          if x > 2500:
-             x = 0
+          if x > 250:                      # every 12 minuts make sure that neo-battery-shutdown is still running.
+             x = 0                          # retry up to 5 times to get it started.
              net_stat +=1
              proc = os.popen("systemctl status neo-battery-shutdown").read()
              while (proc.find("Active: inactive") or proc.find("Active: failed")) and y<5:

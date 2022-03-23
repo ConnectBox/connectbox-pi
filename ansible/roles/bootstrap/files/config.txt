@@ -7,7 +7,7 @@
 
 # uncomment this if your display has a black border of unused pixels visible
 # and your display can output without overscan
-#disable_overscan=1
+disable_overscan=1
 
 # uncomment the following to adjust overscan. Use positive numbers if console
 # goes off screen, and negative if there is too much border
@@ -30,11 +30,11 @@
 
 # uncomment to force a HDMI mode rather than DVI. This can make audio work in
 # DMT (computer monitor) modes
-#hdmi_drive=2
+hdmi_drive=2
 
 # uncomment to increase signal to HDMI, if you have interference, blanking, or
 # no display
-#config_hdmi_boost=4
+config_hdmi_boost=4
 
 # uncomment for composite PAL
 #sdtv_mode=2
@@ -63,15 +63,26 @@ otg_mode=1
 # force eeprom read set to 0 to dissable boot from trying to read Hat eeproms
 force_eeprom_read=0
 
+
 [pi4]
 # Enable DRM VC4 V3D driver on top of the dispmanx display stack
 dtoverlay=vc4-fkms-v3d
 max_framebuffers=2
+# Overclock the uSD card from 50 to 100 MHz (must use UHS Class 1 cards or better)
+dtoverlay=sdtweak,overclock_50=100
+# set boloader delay to 0 seconds
+boot_delay=0
+
 
 [cm4]
 dtoverlay=dwc2,dr_mode=host
 dtparam=i2c_vc=on
-
+# Overclock the uSD card from 50 to 100 MHz (must use UHS Class 1 cards or better)
+dtoverlay=sdtweak,overclock_50=100
+# set boloader delay to 0 seconds
+boot_delay=0
 
 [all]
 #dtoverlay=vc4-fkms-v3d
+#dissable bluetooth on all systems
+dtoverlay=disable-bt

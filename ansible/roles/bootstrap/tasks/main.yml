@@ -204,6 +204,10 @@
   apt:
     autoclean: yes
 
+- name: setup the system to ust only multi-user.target if its a PI
+  command: systemctl set-default multi-user.target
+  when: Pi_present
+
 - name: Setup reboot if Upgrade actually occured
   set_fact:
     reboot_required: True
