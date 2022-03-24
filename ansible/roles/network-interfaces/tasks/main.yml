@@ -93,11 +93,12 @@
   register: kernel_num
 
 
-- name: give the number
+- name: give the current kernel number
   debug:
-     msg: "{{ kernel_num.stdout }}"
+    msg: "Current Kernel # is: {{ kernel_num.stdout }}"
 
-- name: Check for drivers that already exsist and we compiled for this release
+
+- name: Check for drivers that already exisist and we compiled for this release
   copy:
     src: "{{ kernel_num.stdout }}/"
     dest: /lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/
@@ -107,10 +108,36 @@
   register: found_drivers
   ignore_errors: true
 
+#- name: look for alternate kernel drivers that may need to be loaded
+#  shell:
+#    cmd: ls /lib/modules
+#  register: module_ver
+
+#- name: double check the list
+#  set_fact:
+#    file_list: "{{ module_ver.stdout.split() | map('regex_replace', '.*$', '/') | list }}"
+#  debug:
+#    msg: "the list is {{ file_list }}"
+
+#- name: Check for drivers that already exsist and we compiled for this release
+#  copy:
+#    src:  "{{ item }}"
+#    dest: /lib/modules/"{{ item }}"/kernel/drivers/net/wireless/
+#    owner: root
+#    group: root
+#    mode: '0644'
+#  with_items: "{{ file_list|flatten(levels=1) }}"
+#  register: Copy_output
+#  ignore_errors: true
+
+#- name: register if we found the drivers for our current kernels
+#  register: found_drivers
+#  when: Copy_output.stdout.find("8812au") or Copy_output.stdout.find("88x2bu") 
+
 - name: Let the user know that we found the drivers
   debug:
-     msg: "We found the drivers already compiled on the system"
-  when: not found_drivers.failed
+    msg: We found the drivers already compiled on the system for some kernels
+  when: found_drivers is succeeded
 
 - name: lets check for exsisting 8812au driver
   shell: dmesg -k | grep 8812au
@@ -124,17 +151,35 @@
 
 - name: Insert the driver into the kernel modules 8812au
   command: insmod  /lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/8812au.ko
-  when: not found_drivers.failed and driver_a.stdout == ""
+  when:
+    - found_drivers is succeeded
+    - driver_a.stdout.find("8812au") == -1
 
 - name: insert the driver into the kernel modules 88x2bu
   command: insmod  /lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/88x2bu.ko
   ignore_errors: true
-  when: not found_drivers.failed and driver_b.stdout == ""
+  when:
+    - found_drivers is succeeded
+    - driver_b.stdout.find("88x2bu") == -1
 
 - name: finish the module dependancies
   command: depmod
   ignore_errors: true
-  when: not found_drivers.failed and (driver_a.stdout == "" or driver_b.stdout == "")
+  when:
+    - found_drivers is succeeded
+    - (driver_a.stdout.find("8812au") == -1 or driver_b.stdout.find("88x2bu") == -1)
+
+- name: Copy over the script to test for drivers in realtime.  We may need them for the alternate kernel
+  copy:
+    src: loadwifi.sh 
+    dest: /urs/local/connectbox/bin/
+    owner: root
+    group: root
+    mode: '0777'
+
+- name: Add running of loadwifi.sh to the end of boot with rc.local  
+  command: echo "sh /usr/local/connectbox/bin/loadwifi.sh" >> /etc/rc.local
+
 
 # Note we have already upgraded the OS to the lattest in role bootstrap
 # now we just install the current OS build tools
@@ -217,21 +262,21 @@
   when: (found_drivers.failed or driver_a.stdout == "" or driver_b.stdout == "" )
 
 
-#- name: if we built the drivers then lets keep a copy on the build system
-#  fetch:
-#    src: '/usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/8812au.ko'
-#    dest: '/home/kernel_drivers/{{ kernel_num }}'
-#    fail_on_missing: yes
-#    flat: yes
-#  when: found_drivers.failed or driver_a.stdout == ""
+- name: if we built the drivers then lets keep a copy on the build system
+  fetch:
+    src: '/usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/8812au.ko'
+    dest: '/home/kernel_drivers/{{ kernel_num }}\'
+    fail_on_missing: yes
+    flat: yes
+  when: found_drivers.failed or driver_a.stdout == ""
 
-#- name: if we built the drivers then lets keep a copy on the build system
-#  fetch:
-#    src: '/usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/88x2bu.ko'
-#    dest: '/home/kernel_drivers/{{ kernel_num }}'
-#    fail_on_missing: yes
-#    flat: yes
-#  when: found_drivers.failed or driver_b.stdout == ""
+- name: if we built the drivers then lets keep a copy on the build system
+  fetch:
+    src: '/usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/88x2bu.ko'
+    dest: '/home/kernel_drivers/{{ kernel_num }}\'
+    fail_on_missing: yes
+    flat: yes
+  when: found_drivers.failed or driver_b.stdout == ""
 
 
 # Note: this is not a handler because we need the network configuration in
