@@ -375,9 +375,9 @@ def IP_Check(b, restart):
 
      process = Popen("ifconfig", shell = True, stdout=PIPE, stderr=PIPE)       #back to checking for an IP4 addresss
      stdout, stderr = process.communicate()
-     net_stat = str(stdout).split("wlan")
-     if len(net_stat)> (int(b)+1):
-        if (len(net_stat)==1) or (not "inet" in net_stat[int(b)+1]):
+     net_stats = str(stdout).split("wlan")
+     if len(net_stats)> (int(b)+1):
+        if (len(net_stats)==1) or (not "inet" in net_stats[int(b)+1]):
             if restart:
                process = Popen(ifdownap, shell=True, stdout=PIPE, stderr=PIPE)
                stdout, stderr = process.communicate()
@@ -387,18 +387,18 @@ def IP_Check(b, restart):
                time.sleep(20)
                process = Popen("ifconfig", shell = True, stdout=PIPE, stderr=PIPE)       #back to checking for an IP4 addresss
                stdout, stderr = process.communicate()
-               net_stat = str(stdout).split("wlan")
-               if len(net_stat)> (int(b)+1):
-                 if (len(net_stat)==1) or (not "inet" in net_stat[int(b)+1]):
-                   if DEBUG: print("did ifdown/ifup and still don't have an IP address "+net_stat[int(b)+1])
+               net_stats = str(stdout).split("wlan")
+               if len(net_stats)> (int(b)+1):
+                 if (len(net_stats)==1) or (not "inet" in net_stats[int(b)+1]):
+                   if DEBUG: print("did ifdown/ifup and still don't have an IP address "+net_stats[int(b)+1])
                    return(0)
                  else:
-                   if len(net_stat) != 1:
+                   if len(net_stats) != 1:
                      return(1)
                    else: return(0)
                else: return(0)
             return(0)
-        elif len(net_stat) != 1:
+        elif len(net_stats) != 1:
           return(1)
         else:
           return(0)
@@ -411,12 +411,13 @@ def ESSID_Check(b, restart):
 # this routine ESSID_check will look to see if there is an ESSID assigned to the AP
 # you pass this routine the wlan character and  if you want to attempt a restart of hostapd if no ESSID a restart value of True
 # it will return a 1 if the ESSID is present and 0 otherwise
+    global first_time
 
     process = Popen("iwconfig", shell=True, stdout=PIPE, stderr=PIPE)          # now well check for an ip address on the AP
     stdout, stderr = process.communicate()
-    net_stat = str(stdout).split("wlan")                                       #split up iwconfig by wlan so the first wlan status is in net_stat[1]
-    if ((len(net_stat) ==1) or (not "ESSID:" in net_stat[int(b)+1])):          #if we didn't find a " or no ESSID then we will try a down/up sequence for the wlan
-      if DEBUG: print("did iwconfig but no ESSID present "+net_stat[int(b)+1])
+    net_stats = str(stdout).split("wlan")                                       #split up iwconfig by wlan so the first wlan status is in net_stats[1]
+    if ((len(net_stats) ==1) or (not "ESSID:" in net_stats[int(b)+1])):          #if we didn't find a " or no ESSID then we will try a down/up sequence for the wlan
+      if DEBUG: print("did iwconfig but no ESSID present "+net_stats[int(b)+1])
       if restart:
           process = Popen("systemctl restart hostapd.service", shell=True, stdout=PIPE, stderr=PIPE) # lets restart hostapd and see if we can get our ESSID
           stdout, stderr = process.communicate()
@@ -425,15 +426,24 @@ def ESSID_Check(b, restart):
           time.sleep(15)
           process = Popen("iwconfig", shell=True, stdout=PIPE, stderr=PIPE)	# we will check after the restart if we have an ESSID
           stdout, stderr = process.communicate()
-          net_stat = str(stdout).split("wlan")
-          if (len(net_stat) ==1 or (not "ESSID:" in net_stat[int(b)+1])):
-            if DEBUG: print("Restarted hostapd and still didn't get the ESSID "+net_stat[int(b)+1])
+          net_stats = str(stdout).split("wlan")
+          if (len(net_stats) ==1 or (not "ESSID:" in net_stats[int(b)+1])):
+            if DEBUG: print("Restarted hostapd and still didn't get the ESSID "+net_stats[int(b)+1])
             return(0)
-          elif len(net_stat) != 1: return(1)
+          elif len(net_stats) != 1: return(1)
           else: return(0)
       else: return(0)
-    elif(len(net_stat) != 1): return(1)
-    else: return(0)
+    elif(len(net_stats) != 1):
+      if first_time:
+        if DEBUG: print("executed restart of dnsmasq for Firstime")
+        process = Popen("systemctl restart dnsmasq", shell=True, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = process.communicate()
+        time sleep(5)
+        first_time = False
+      return(1)
+    else: 
+      if DEBUG: print("we had net_stat =1 from iwconfig, so no information")
+      return(0)
 
 
 def NetworkCheck():
@@ -451,6 +461,8 @@ def NetworkCheck():
   global stop_hostapd
   global ifupap
   global ifdownap
+  global first_time
+
 
   file_exists=True
 
@@ -711,7 +723,7 @@ def NetworkCheck():
     logging.info("stopped all interfaces as much as possible")   
 #restart networking
     try:
-        res = os.popen("systemctl resart networking.service")
+        res = os.popen("systemctl restart networking.service")
         res.close()
     except:
         logging.info("networking.service has configuration issues")
@@ -831,7 +843,9 @@ if __name__ == "__main__":
     global stop_hostapd
     global ifupap
     global ifdownap
+    global first_time
 
+    first_time=True
     stop_hostapd=False
     areadyconf= ""
 
@@ -931,7 +945,6 @@ if __name__ == "__main__":
           x += 1 
           if x > 250:                      # every 12 minuts make sure that neo-battery-shutdown is still running.
              x = 0                          # retry up to 5 times to get it started.
-             net_stat +=1
              proc = os.popen("systemctl status neo-battery-shutdown").read()
              while (proc.find("Active: inactive") or proc.find("Active: failed")) and y<5:
              # we found the neo-battery-shutdown not running lets try to restarat

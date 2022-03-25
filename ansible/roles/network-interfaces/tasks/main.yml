@@ -16,11 +16,31 @@
     enabled: no
   when: nm_installed_test.stdout.find('network-manager') > 0
 
-
 - name: Remove NetworkManager
   apt:
     pkg: network-manager
     state: absent
+
+- name: Install loadwifi.sh
+  copy:
+    src: loadwifi.sh 
+    dest: /usr/local/connectbox/bin/loadwifi.sh
+
+- name: change permissions on loadwifi.sh
+  file:
+    path:  /usr/local/connectbox/bin/loadwifi.sh
+    owner: _connectbox
+    group: _connectbox
+    mode: u+x, g+x, o+x
+
+- name: Add items to rc.local
+  blockinfile:
+    path: /etc/rc.local
+    insertafter: "# BEGIN ANSIBLE MANAGED BLOCK"
+    block: |
+      # Run shell script to load Wifi drivers into kernel if they are no 
+      # already loaded (alternate kernels on some devices)
+      sh /usr/local/connectbox/bin/loadwifi.sh   
 
 - name: Make sure systemd-resolved is not running
   service:
