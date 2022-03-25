@@ -31,7 +31,7 @@
     path:  /usr/local/connectbox/bin/loadwifi.sh
     owner: _connectbox
     group: _connectbox
-    mode: u+x, g+x, o+x
+    mode: 0755
 
 - name: Add items to rc.local
   blockinfile:
