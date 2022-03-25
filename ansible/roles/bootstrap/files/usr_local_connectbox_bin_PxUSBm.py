@@ -715,7 +715,7 @@ def NetworkCheck():
         res.close()
     except:
         logging.info("networking.service has configuration issues")
-    proess = os.popen("systemctl status networking.service")
+    process = os.popen("systemctl status networking.service")
     res = process.read()
     process.close()
     if res.find("active (exited)") <= 0:
