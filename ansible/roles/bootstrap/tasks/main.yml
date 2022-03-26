@@ -281,14 +281,14 @@
 #  Use newer ansible 2.7 function reboot
 - name: Reboot device for changes to take effect
   shell: 'shutdown -r now'
-  async: 10  #do not care for 10 seconds
+  async: 20  #do not care for 20 seconds
   when: reboot_required
   tags: reboot1
 
 - name: wait for host to come backup
   wait_for:
     port: 22
-    delay: 30
+    delay: 45
   connection: local
 
 - name: Copy over a new dnsmasq file if were on ubuntu debian focal
