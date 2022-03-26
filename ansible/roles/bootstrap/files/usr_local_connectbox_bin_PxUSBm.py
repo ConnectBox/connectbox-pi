@@ -438,7 +438,7 @@ def ESSID_Check(b, restart):
         if DEBUG: print("executed restart of dnsmasq for Firstime")
         process = Popen("systemctl restart dnsmasq", shell=True, stdout=PIPE, stderr=PIPE)
         stdout, stderr = process.communicate()
-        time sleep(5)
+        time.sleep(5)
         first_time = False
       return(1)
     else: 

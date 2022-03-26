@@ -31,6 +31,7 @@
     path:  /usr/local/connectbox/bin/loadwifi.sh
     owner: _connectbox
     group: _connectbox
+
     mode: 0755
 
 - name: Add items to rc.local
@@ -212,14 +213,14 @@
     - libelf-dev
     - libssl-dev
     state: present
-  when: (found_drivers.failed or driver_a.stdout == "" or driver_b.stdout == "" )
+  when: (found_drivers.failed or driver_a.stdout.find("8812au") <= -1 or driver_b.stdout.find("8812bu") <= -1 )
 
 - name: apt install raspberrypi-kernel-headers
   apt:
     pkg:
     - raspberrypi-kernel-headers
     state: present
-  when: connectbox_os == "raspbian" and (found_drivers.failed or driver_a.stdout == "" or driver_b.stdout == "" )
+  when: connectbox_os == "raspbian" and  (found_drivers.failed and (driver_a.stdout.find("8812au") <= -1 or driver_b.stdout.find("8812bu") <= -1 ))
 
 # or apt-get install linux-headers-$(uname -r)
 - name: apt install linux-headers-current-sunxi
@@ -227,48 +228,64 @@
     pkg:
     - linux-headers-current-sunxi
     state: present
-  when: connectbox_os != "raspbian" and (found_drivers.failed or driver_a.stdout == "" or driver_b.stdout == "" )
+  when: connectbox_os != "raspbian" and  (found_drivers.failed and (driver_a.stdout.find("8812au") <= -1 or driver_b.stdout.find("8812bu") <= -1 ))
 
 - name: Copy over 8812au-install script for Raspian
   copy:
     src: 8812au-install.sh
     dest: /tmp/8812au-install.sh
     mode: "+x"
-  when: found_drivers.failed or driver_a.stdout == ""
+  when: found_drivers.failed and driver_a.stdout.find("8812au") <= -1
 
 - name: Compile the 8812au driver for Raspbian or NEO
   command:
      chdir: /tmp
      cmd: "sh 8812au-install.sh"
-  when: found_drivers.failed or driver_a.stdout == ""
+  when: found_drivers.failed and driver_a.stdout.find("8812au") <= -1
 
 - name: Copy over 88x2bu-install script for Raspian
   copy:
     src: 88x2bu-install.sh
     dest: /tmp/88x2bu-install.sh
     mode: "+x"
-  when: found_drivers.failed or driver_b.stdout == ""
+  when: found_drivers.failed and driver_b.stdout.find("8812bu") <= -1
 
 - name: Fetch the compiled 8812au driver to control machine
   fetch:
     src: /tmp/rtl8812au*/88x12au.ko 
     dest: "~/connectbox/connectbox-tools/{{ kernel_num.stdout }}_8812au.ko"
   ignore_errors: yes
-  when: found_drivers.failed or driver_a.stdout == ""
+  when: found_drivers.failed and driver_a.stdout.find("8812au") <= -1
 
 - name: Compile the 88x2bu driver for Raspbian or NEO
   command:
      chdir: /tmp
      cmd: "sh 88x2bu-install.sh"
-  when: found_drivers.failed or driver_b.stdout == ""
+  when: found_drivers.failed and driver_b.stdout.find("8812bu") <= -1
 
-- name: Fetch the compiled 8812au driver to control machine
+- name: Fetch the compiled 8812bu driver to control machine
   fetch:
-    src: /tmp/rtl88x2bu*/88x12au.ko 
-    dest: "~/connectbox/connectbox-tools/{{ kernel_num.stdout }}_8812au.ko"
+    src: /tmp/rtl88x2bu*/88x12bu.ko 
+    dest: "~/connectbox/connectbox-tools/{{ kernel_num.stdout }}_8812bu.ko"
+    fail_on_missing: yes
+    flat: yes
   ignore_errors: yes
-  when: found_drivers.failed or driver_b.stdout == ""
+  when: found_drivers.failed and driver_b.stdout.find("8812bu") <= -1
 
+- name: Remove headers for raspbian
+  apt:
+    pkg:
+    - raspberrypi-kernel-headers
+    state: absent
+  when: connectbox_os == "raspbian" and  (found_drivers.failed and (driver_a.stdout.find("8812au") <= -1 or driver_b.stdout.find("8812bu") <= -1 ))
+
+# or remove linux-headers-$(uname -r)
+- name: apt install linux-headers-current-sunxi
+  apt:
+    pkg:
+    - linux-headers-current-sunxi
+    state: absent
+  when: connectbox_os != "raspbian" and  (found_drivers.failed and (driver_a.stdout.find("8812au") <= -1 or driver_b.stdout.find("8812bu") <= -1 ))
 
 - name: remove build tools
   apt:
@@ -279,24 +296,11 @@
     - libssl-dev
     - raspbewrrypi-kernel-headers
     state: absent
-  when: (found_drivers.failed or driver_a.stdout == "" or driver_b.stdout == "" )
+  when:  (found_drivers.failed or driver_a.stdout.find("8812au") <= -1 or driver_b.stdout.find("8812bu") <= -1 )
+
+- name: remove headers for raspbian
 
 
-- name: if we built the drivers then lets keep a copy on the build system
-  fetch:
-    src: '/usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/8812au.ko'
-    dest: '/home/kernel_drivers/{{ kernel_num }}\'
-    fail_on_missing: yes
-    flat: yes
-  when: found_drivers.failed or driver_a.stdout == ""
-
-- name: if we built the drivers then lets keep a copy on the build system
-  fetch:
-    src: '/usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/88x2bu.ko'
-    dest: '/home/kernel_drivers/{{ kernel_num }}\'
-    fail_on_missing: yes
-    flat: yes
-  when: found_drivers.failed or driver_b.stdout == ""
 
 
 # Note: this is not a handler because we need the network configuration in
