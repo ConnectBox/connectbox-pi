@@ -287,6 +287,13 @@
     state: absent
   when: connectbox_os != "raspbian" and  (found_drivers.failed and (driver_a.stdout.find("8812au") <= -1 or driver_b.stdout.find("8812bu") <= -1 ))
 
+- name: remove headers for raspbian
+  apt:
+    pkg:
+    - raspberrypi-kernel-headerst
+    state: absent
+  when: connectbox_os == "raspbian" and  (found_drivers.failed and (driver_a.stdout.find("8812au") <= -1 or driver_b.stdout.find("8812bu") <= -1 ))  
+
 - name: remove build tools
   apt:
     pkg:
@@ -297,11 +304,6 @@
     - raspbewrrypi-kernel-headers
     state: absent
   when:  (found_drivers.failed or driver_a.stdout.find("8812au") <= -1 or driver_b.stdout.find("8812bu") <= -1 )
-
-- name: remove headers for raspbian
-
-
-
 
 # Note: this is not a handler because we need the network configuration in
 # effect before proceeding with the wifi-ap and firewall roles, which will
