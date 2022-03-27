@@ -527,7 +527,17 @@
     group: _connectbox
     mode: 0755
 
-# Moved from 
+- name: Install systemd for PxUSBm 
+  copy:
+    src: etc_systemd_system_PxUSBm.service
+    dest: /etc/systemd/system/PxUSBm.service
+    owner: root 
+    group: root 
+    mode: 0622
+
+- name: enable the PxUSBm service 
+  command: systemctl enable PxUSBm.service 
+
 - name: Make connectbox directory
   file:
     state: directory
@@ -564,10 +574,7 @@
     block: |
       # Create missing log files and restart nginx service
       #  we need this or nginx won't run
-      sh /usr/local/connectbox/bin/CreateLogFiles.sh   
-      # script to expand the file system to use the entire uSD space and 
-      #  run daemon to watch for and mount USB as required 
-      sh /usr/bin/python3 /usr/local/connectbox/bin/PxUSBm.py &
+        sh /usr/local/connectbox/bin/CreateLogFiles.sh 
   when: not aws_instance
 
 # Moved over from connectbox/tasks/main.yml by Derek Maxson 20220129
