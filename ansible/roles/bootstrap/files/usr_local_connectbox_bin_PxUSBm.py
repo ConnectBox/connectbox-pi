@@ -357,7 +357,7 @@ def do_fdisk(rpi_platform):
     child.sendline('w')
     i = child.expect('Syncing disks*')
 
-    print("exiting the fdisk program... now reboot")
+    logging.info("exiting the fdisk program... now reboot")
     f = open(progress_file, "w")
     f.write("fdisk_done")
     f.close()
@@ -668,8 +668,8 @@ def NetworkCheck():
     else:
       valid_IP=True
 
-  if valid_IP and valid_ESSID and hostapd_running and network_running: print("AP up and running ok")
-  else: print("Not everything is clean: IP, ESSID, hostapd, network, stop_hostapd ",valid_IP, valid_ESSID, hostapd_running, network_running, stop_hostapd)
+  if valid_IP and valid_ESSID and hostapd_running and network_running and DEBUG: print("AP up and running ok")
+  elif DEBUG: print("Not everything is clean: IP, ESSID, hostapd, network, stop_hostapd ",valid_IP, valid_ESSID, hostapd_running, network_running, stop_hostapd)
   res = os.popen("ls /sys/class/net")
   SysNetworks = res.read().split()
   res.close()
@@ -770,7 +770,7 @@ def Revision():
     f = open('/proc/cpuinfo','r')
     for line in f:
       if "Revision" in line:
-        print(line)
+        logging.info("revision of hardware is: "+line)
         x = line.find(":")
         y = len(line)-1
         revision = line[(x+2):y]
@@ -850,19 +850,19 @@ if __name__ == "__main__":
     areadyconf= ""
 
     version = Revision()                    # Get the version of hardware were running on
-    print("revision is "+version)
+    logging.info("revision is "+version)
     if (version != "Unknown") and (version != "Error"):
     # see if we are NEO or CM
       f = open(brand_file,"r")
       brand = f.read()
       f.close()
       a = version[0:2].rstrip()
-      print("Major type: "+a)
+      logging.info("Major type: "+a)
       if brand.find(a)<=0:                    # Make sure the brand file is what we expect as were on this hardware.
         f = open(brand_file, "w")
         x = brand.find('"Device_type":')
         y = brand[(x+14):].find(',')
-        print("Writing new brand file entry at:",x,y)
+        logging.info("Writing new brand file entry at:",x,y)
         a = brand[0:(x+14)]+' "'+a+'"'+brand[(x+14+y):]
         if a.find("CM")>0 :
           x = a.find('"lcd_pages_multi_bat": ')
@@ -870,7 +870,7 @@ if __name__ == "__main__":
         else:
           x = a.find('"lcd_pages_multi_bat": ')
           if x>0: a=a[0:(x+22)] + '0' + a[x(+24):]
-        print("final text is: "+a)
+        logging.info("final text is: "+a)
         f.write(a)
         f.close()
         os.sync()
@@ -920,8 +920,8 @@ if __name__ == "__main__":
         f.close()
         clientwifi =  wifi.partition("ClientIF=")[2].split("\n")[0]
         apwifi = wifi.partition("AccessPointIF=")[2].split("\n")[0]
-        print("Client interface is ", clientwifi)
-        print("AP interface is ", apwifi)
+        logging.info("Client interface is "+clientwifi)
+        logging.info("AP interface is "+apwifi)
 
         if PI_stat:                         # if we are a PI were going to chekc the driver of the AP to see how to function.
           process = Popen("lshw -C Network", shell=True, stdout=PIPE, stderr=PIPE)
@@ -932,7 +932,7 @@ if __name__ == "__main__":
           if DEBUG: print(wifid[1])
           if "brcfmac" in wifid[1]:         # if we are using the built in wifi for AP then we cancle the PI_stat so we don't expect an ESSID
             PI_stat = False
-            print("cancled the PI_status")
+            logging.info("cancled the PI_status")
 
 
         while True:                         # main loop that we live in for life of running
