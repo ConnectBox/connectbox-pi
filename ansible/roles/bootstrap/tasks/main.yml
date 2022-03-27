@@ -567,7 +567,7 @@
       sh /usr/local/connectbox/bin/CreateLogFiles.sh   
       # script to expand the file system to use the entire uSD space and 
       #  run daemon to watch for and mount USB as required 
-      /usr/bin/python3 /usr/local/connectbox/bin/PxUSBm.py &
+      sh /usr/bin/python3 /usr/local/connectbox/bin/PxUSBm.py &
   when: not aws_instance
 
 # Moved over from connectbox/tasks/main.yml by Derek Maxson 20220129
