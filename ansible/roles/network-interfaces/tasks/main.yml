@@ -37,7 +37,7 @@
 - name: Add items to rc.local
   blockinfile:
     path: /etc/rc.local
-    insertbefore: "#END ANSIBLE MANAGED BLOCK"
+    insertafter: "#BEGIN ANSIBLE MANAGED BLOCK"
     marker: <!--- {~} load wifi script -->
     block: |
       # Run shell script to load Wifi drivers into kernel if they are no 
