@@ -150,7 +150,7 @@
   copy:
     src: config.txt 
     dest: /boot/config.txt
-  when: CM4_present
+
 
 - name: Install i2c modules
   copy:
