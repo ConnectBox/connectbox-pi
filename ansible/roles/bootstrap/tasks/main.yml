@@ -146,11 +146,11 @@
   when: old_style_names.changed
   tags: skip_ansible_lint
 
-- name: Install boot for CM4 on i2c and usbhost
+- name: Install boot for Raspian on i2c and usbhost
   copy:
     src: config.txt 
     dest: /boot/config.txt
-
+  when: connectbox_os == 'raspbian'
 
 - name: Install i2c modules
   copy:
