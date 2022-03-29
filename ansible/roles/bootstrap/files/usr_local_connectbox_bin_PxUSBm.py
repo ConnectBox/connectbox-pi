@@ -766,6 +766,7 @@ def NetworkCheck():
 
 
 def Revision():
+  revision = ""
   try:
     f = open('/proc/cpuinfo','r')
     for line in f:
@@ -775,56 +776,66 @@ def Revision():
         y = len(line)-1
         revision = line[(x+2):y]
     f.close()
-  
-    if str(revision)[0:0] == "0":
-      revision = revision[0:3]
-    elif revision == '0003':  version="Pi B  256MB 1.0"
-    elif revision== '0004':  version="PI B  256MB 2.0"
-    elif revision== '0005':  version="Pi B  256MB 2.0"
-    elif revision== '0006':  version="Pi B  256MB 2.0"
-    elif revision== "0007":  version="PI A  256MB 2.0"
-    elif revision== "0008":  version="PI A  256MB 2.0"
-    elif revision== "0009":  version="PI A  256MB 2.0"
-    elif revision== "000d":  version="PI B  512MB 2.0"
-    elif revision== "000e":  version="PI B  512MB 2.0"
-    elif revision== "000f":  version="PI B  512MB 2.0"
-    elif revision== "0010":  version="PI B+ 512MB 1.0"
-    elif revision== "0011":  version="CM1   512MB 1.0"
-    elif revision== "0012":  version="PI A+ 256MB 1.1"
-    elif revision== "0013":  version="PI B+ 512MB 1.2"
-    elif revision== "0014":  version="CM1   512MB 1.0"
-    elif revision== "0015":  version="PI A+ 512MB 1.1"
-    elif revision== "a01040": version="PI 2B 1GB 1.0"
-    elif revision== "a01041": version="PI 2B 1GB 1.1"
-    elif revision== "a21041": version="PI 2B 1GB 1.1"
-    elif revision== "a22042":  version="PI 2B 1GB 1.2"
-    elif revision== "900021": version="PI A+ 512MB 1.1"
-    elif revision== "900032": version='PI B+ 512MB 1.2'
-    elif revision== "900092": version="PI Z  512MB 1.2"
-    elif revision== "900093": version="PI Z  512MB 1.3"
-    elif revision== "9000c1": version="PI ZW 512MB 1.1"
-    elif revision== "a02082": version="PI 3B 1GB 1.2"
-    elif revision== "a020a0": version="CM 3+ 1GB 1.0"
-    elif revision== "a22082": version="PI 3B 1GB 1.2"
-    elif revision== "a32082": version="PI 3B 1GB 1.2"
-    elif revision== "a020d3": version="PI 3B+ 1GB 1.3"
-    elif revision== "9020e0": version="PI 3A+ 512MB 1.0"
-    elif revision== "a02100": version="CM 3+ 1GB 1.0"
-    elif revision== "a03111": version="PI 4B 1GB 1.1"
-    elif revision== "b03111": version="PI 4B 2GB 1.1"
-    elif revision== "b03112": version="PI 4B 2GB 1.2"
-    elif revision== "b03114": version="PI 4B 2GB 1.4"
-    elif revision== "c03111": version="PI 4B 4GB 1.1"
-    elif revision== "c03112": version="PI 4B 4GB 1.2"
-    elif revision== "c03114": version="PI 4B 4GB 1.4"
-    elif revision== "d03114": version="PI 4B 8GB 1.4"
-    elif revision== "902120": version="PI Z2W 512MB 1.0-"
-    elif revision== "b03140": version="CM 4 2GB 1.0"
-    elif revision== "d03140": version="CM 4 8GB 1.0"
-    elif revision== "0000": version="NEO NANOPI 1GB 1.1"
+ 
+    if len(revision) != 0:
+      if str(revision)[0:0] == "0":
+        revision = revision[0:3]
+      elif revision == '0003':  version="Pi B  256MB 1.0"
+      elif revision== '0004':  version="PI B  256MB 2.0"
+      elif revision== '0005':  version="Pi B  256MB 2.0"
+      elif revision== '0006':  version="Pi B  256MB 2.0"
+      elif revision== "0007":  version="PI A  256MB 2.0"
+      elif revision== "0008":  version="PI A  256MB 2.0"
+      elif revision== "0009":  version="PI A  256MB 2.0"
+      elif revision== "000d":  version="PI B  512MB 2.0"
+      elif revision== "000e":  version="PI B  512MB 2.0"
+      elif revision== "000f":  version="PI B  512MB 2.0"
+      elif revision== "0010":  version="PI B+ 512MB 1.0"
+      elif revision== "0011":  version="CM1   512MB 1.0"
+      elif revision== "0012":  version="PI A+ 256MB 1.1"
+      elif revision== "0013":  version="PI B+ 512MB 1.2"
+      elif revision== "0014":  version="CM1   512MB 1.0"
+      elif revision== "0015":  version="PI A+ 512MB 1.1"
+      elif revision== "a01040": version="PI 2B 1GB 1.0"
+      elif revision== "a01041": version="PI 2B 1GB 1.1"
+      elif revision== "a21041": version="PI 2B 1GB 1.1"
+      elif revision== "a22042":  version="PI 2B 1GB 1.2"
+      elif revision== "900021": version="PI A+ 512MB 1.1"
+      elif revision== "900032": version='PI B+ 512MB 1.2'
+      elif revision== "900092": version="PI Z  512MB 1.2"
+      elif revision== "900093": version="PI Z  512MB 1.3"
+      elif revision== "9000c1": version="PI ZW 512MB 1.1"
+      elif revision== "a02082": version="PI 3B 1GB 1.2"
+      elif revision== "a020a0": version="CM 3+ 1GB 1.0"
+      elif revision== "a22082": version="PI 3B 1GB 1.2"
+      elif revision== "a32082": version="PI 3B 1GB 1.2"
+      elif revision== "a020d3": version="PI 3B+ 1GB 1.3"
+      elif revision== "9020e0": version="PI 3A+ 512MB 1.0"
+      elif revision== "a02100": version="CM 3+ 1GB 1.0"
+      elif revision== "a03111": version="PI 4B 1GB 1.1"
+      elif revision== "b03111": version="PI 4B 2GB 1.1"
+      elif revision== "b03112": version="PI 4B 2GB 1.2"
+      elif revision== "b03114": version="PI 4B 2GB 1.4"
+      elif revision== "c03111": version="PI 4B 4GB 1.1"
+      elif revision== "c03112": version="PI 4B 4GB 1.2"
+      elif revision== "c03114": version="PI 4B 4GB 1.4"
+      elif revision== "d03114": version="PI 4B 8GB 1.4"
+      elif revision== "902120": version="PI Z2W 512MB 1.0-"
+      elif revision== "b03140": version="CM 4 2GB 1.0"
+      elif revision== "d03140": version="CM 4 8GB 1.0"
+      elif revision== "0000": version="NEO NANOPI 1GB 1.1"
+      else:
+        version="Unknown" 
+      return version
     else:
-      version="Unknown" 
-    return version
+      # We have hit an orange pi lets double check
+      try:
+        f = open('/etc/hostname'. 'r')
+        a = f.read.lstrip()
+        if a.find('orangepi')>=0: return a 
+        else return("Unknown")
+      except:
+        return "Error"
   except:
     return "Error"
 
@@ -852,6 +863,8 @@ if __name__ == "__main__":
     version = Revision()                    # Get the version of hardware were running on
     logging.info("revision is "+version)
     if (version != "Unknown") and (version != "Error"):
+      if version.find("orangepizero2")>=0: version  = "OZ2"
+      elif version.find("orange") >=0: version = OP?
     # see if we are NEO or CM
       f = open(brand_file,"r")
       brand = f.read()
@@ -878,15 +891,22 @@ if __name__ == "__main__":
     if 'CM' in brand:                       #Now we determine what brand to work with
         rpi_platform=True
         PI_stat=True
+        OP_stat=False
 
     if "PI" in brand:
         rpi_platform=True
         PI_stat=True
+        OP_stat = False
 
     if "NEO" in brand:
         rpi_platform=False
         PI_stat=False
+        OP_stat=False
 
+    if "OZ2" IN BRAND:
+        RPI_PLATFORM = False
+        PI_stat=False
+        OP_stat =True
 
     net_stat = 1
     x = 98
