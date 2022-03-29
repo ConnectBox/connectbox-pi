@@ -166,7 +166,7 @@
   copy:
     src: modules
     dest: /etc/modules
-  when:  '{{ ansible_os_family }}' == 'Debian'
+  when: ansible_os_family == 'Debian'
 
 
 # Check early on to see whether the OS needs to be
@@ -199,7 +199,7 @@
     state: stopped
     enabled: no
   with_items: '{{ apt_services }}'
-  when: '{{ ansible_os_family }}' == 'Ubuntu'
+  when: ansible_os_family == 'Ubuntu'
 
 - name: stop automated apt services Debian
   service:
@@ -210,7 +210,7 @@
     - 'apt-daily.timer'
     - 'packagekit.service'
   ignore_errors: True
-  when: '{{ ansible_os_family }}' == 'Debian'
+  when: ansible_os_family == 'Debian'
 
 
 # We are putting the update early in the build so that we reduce the number of reboots.  This update will
@@ -267,7 +267,7 @@
     regexp: '(overlays=)'
     replace: 'overlays=i2c0 usbhost0  usbhost1 cpu-clock-1.368Hz-1.3V'
   register: regxreplace
-  when: ('{{ ansible_os_family }}' == 'Ubuntu' or connectbox_os == 'armbian') and not aws_instance
+  when: (ansible_os_family == 'Ubuntu' or connectbox_os == 'armbian') and not aws_instance
 
 - name: the results from the proceeding wireless
   debug:
@@ -310,49 +310,54 @@
   file:
     path: /etc/modules-load.d/g_mass_storage.conf
     state: absent
-   
 
+- name: print out reboot status
+  debug:
+    msg: "Reboot status is: {{ reboot_required }} "
+
+- name: confirm reboot_required
+  pause:
+    prompt: "Are you sure you want to reboot (yes/no): "
+  register: confirm_reboot
+   
 # The system takes 5-10 seconds to disappear from the network
 #  so let's wait 15 seconds before doing our first check
 #  Use newer ansible 2.7 function reboot
-- name: Reboot device for changes to take effect
-  shell: 'shutdown -r now'
-  async: 45  #do not care for 45 seconds
-  when: reboot_required
-  tags: reboot1
 
-- name: wait for host to come backup
-  wait_for:
-    port: 22
-    delay: 10
-  connection: local
+- name: Reboot device for changes to take effect
+  reboot:
+    post_reboot_delay: 35
+    connect_timeout: 45
+    reboot_timeout: 60
+  when: reboot_required and (confirm_reboot.user_input | bool)
+  tags: reboot1
 
 - name: Copy over a new dnsmasq file if were on ubuntu debian focal
   copy: 
     src: dnsmasq.conf
     dest: /etc/dnsmasq.conf
-  when: (OS_Version == 'focal') and  ('{{ ansible_os_family|lower }}' == 'debian') and (connectbox_os == 'ubuntu') 
+  when: (OS_Version == 'focal') and  ( ansible_os_family|lower == 'debian') and (connectbox_os == 'ubuntu') 
 
 - name: Copy over the default hostapd if were on ubuntu Debian
   copy:
     src: etc_default_hostapd
     dest: /etc/default/hostapd
-  when: ('{{ ansible_os_family|lower }}' == 'debian') and (connectbox_os == "ubuntu")
+  when: (ansible_os_family|lower == 'debian') and (connectbox_os == "ubuntu")
 
 - name: Restart dns services if were on Ubuntu Debian focal
   command: systemctl restart dnsmasq
-  when: (OS_Version == 'focal') and  ('{{ ansible_os_family|lower }}' == 'debian') and (connectbox_os == 'ubuntu') 
+  when: (OS_Version == 'focal') and  (ansible_os_family|lower == 'debian') and (connectbox_os == 'ubuntu') 
 
 - name : Increase size of /tmp to handle upcoming installs
   command: mount -o remount, size=400M /tmp/
-  when: ('{{ ansible_os_family }}' == 'Ubuntu' or connectbox_os == 'armbian') and not aws_instance
+  when: (ansible_os_family  == 'Ubuntu' or connectbox_os == 'armbian') and not aws_instance
 
 - name: Get current rfkill state for interface 0 (wireless LAN) on Raspbian
   command: cat /sys/class/rfkill/rfkill0/soft
   register: rfkill0_state
   ignore_errors: yes
   changed_when: False
-  when: '{{ ansible_os_family }}' == 'Ubuntu' and not aws_instance
+  when: ansible_os_family == 'Ubuntu' and not aws_instance
 
 # Raspbian-lite buster and onwards rfkill wlan0 by default, which causes
 #  problems when we try to start wlan0 (at hostapd reload)
@@ -360,7 +365,7 @@
 - name: Unblock rfkill'ed interface 0 (wireless LAN) on Raspbian
   command: /usr/sbin/rfkill unblock 0
   ignore_errors: yes
-  when: '{{ ansible_os_family }}' == 'Debian'
+  when:  ansible_os_family  == 'Debian'
 
 - name: Get current rfkill state for interface 1 (wireless LAN) on Raspbian
   command: cat /sys/class/rfkill/rfkill1/soft
@@ -467,7 +472,7 @@
   apt:
     name: openresolv
     state: present
-  when: '{{ ansible_os_family }}' == 'Debian'
+  when: ansible_os_family == 'Debian'
 
 - name: check that we have a valid file for resolve.conf
   ansible.builtin.stat:
@@ -489,7 +494,7 @@
 - name: check that we have dns working on Ubuntu Debian focal
   shell:
     echo 'nameserver 8.8.8.8\n' >> /etc/resolv.conf
-  when: (OS_Version == 'focal' or OS_Version == "Xenial") and  ('{{ ansible_os_family }}' == 'Dabian') and (connectbox_os == 'ubuntu') 
+  when: (OS_Version == 'focal' or OS_Version == "Xenial") and  (ansible_os_family == 'Dabian') and (connectbox_os == 'ubuntu') 
 
 
 # acl needed for good install of Postgres as per Leo-Nils 20211011
@@ -521,7 +526,7 @@
     dest: /usr/lib/armbian-resize-filesystem
     remote_src: yes
     mode: preserve
-    when: connectbox_os == 'ubuntu'
+  when: connectbox_os == 'ubuntu'
 
 
 # See if we need to create a wlan0 interface when we're running in a sim
@@ -735,14 +740,14 @@
     path: /usr/local/connectbox/brand.txt
     regexp: '"Device_type": .*,'
     replace: '"Device_type": "PI",'
-  when: Pi_present and '{{ ansible_os_family }}' == 'Debian'
+  when: Pi_present and  ansible_os_family  == 'Debian'
 
 - name: Check for device_type OrangePI Zero2
   replace:
-    path: /usr/local/connectbox/brand.brand_txt
+    path: /usr/local/connectbox/brand.txt
     regexp: '"Device_type": .*,'
     replace: '"Device_type": "OZ2",'
-  when: OZ2_present and '{{ ansible_os_family }}' == 'Debian'
+  when: OZ2_present and ansible_os_family == 'Debian'
 
 - name: for CM4 install requirements for avrdude
   apt:
