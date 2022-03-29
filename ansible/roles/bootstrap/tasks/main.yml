@@ -166,7 +166,7 @@
   copy:
     src: modules
     dest: /etc/modules
-  when: ansible_facts['os_family'] == 'Debian'
+  when:  '{{ ansible_os_family }}' == 'Debian'
 
 
 # Check early on to see whether the OS needs to be
@@ -176,7 +176,7 @@
   stat:
     path: /var/run/resize2fs-reboot
   register: resize2fs_reboot
-  when: Pi_present`or CM4_present
+  when: Pi_present or CM4_present
 
 - name: Check on OZ2 resize files system
   stat:
@@ -199,7 +199,7 @@
     state: stopped
     enabled: no
   with_items: '{{ apt_services }}'
-  when: ansible_facts['os_family'] == 'Ubuntu'
+  when: '{{ ansible_os_family }}' == 'Ubuntu'
 
 - name: stop automated apt services Debian
   service:
@@ -210,7 +210,7 @@
     - 'apt-daily.timer'
     - 'packagekit.service'
   ignore_errors: True
-  when: ansible_facts['os_faimily'] == 'Debian'
+  when: '{{ ansible_os_family }}' == 'Debian'
 
 
 # We are putting the update early in the build so that we reduce the number of reboots.  This update will
@@ -267,7 +267,7 @@
     regexp: '(overlays=)'
     replace: 'overlays=i2c0 usbhost0  usbhost1 cpu-clock-1.368Hz-1.3V'
   register: regxreplace
-  when: (ansible_facts['os_family'] == 'Ubuntu' or connectbox_os == 'armbian') and not aws_instance
+  when: ('{{ ansible_os_family }}' == 'Ubuntu' or connectbox_os == 'armbian') and not aws_instance
 
 - name: the results from the proceeding wireless
   debug:
@@ -331,28 +331,28 @@
   copy: 
     src: dnsmasq.conf
     dest: /etc/dnsmasq.conf
-  when: (OS_Version == 'focal') and  (ansible_os_family|lower == 'debian') and (connectbox_os == 'ubuntu') 
+  when: (OS_Version == 'focal') and  ('{{ ansible_os_family|lower }}' == 'debian') and (connectbox_os == 'ubuntu') 
 
 - name: Copy over the default hostapd if were on ubuntu Debian
   copy:
     src: etc_default_hostapd
     dest: /etc/default/hostapd
-  when: (ansible_os_family|lower == 'debian') and (connectbox_os == "ubuntu")
+  when: ('{{ ansible_os_family|lower }}' == 'debian') and (connectbox_os == "ubuntu")
 
 - name: Restart dns services if were on Ubuntu Debian focal
   command: systemctl restart dnsmasq
-  when: (OS_Version == 'focal') and  (ansible_os_family|lower == 'debian') and (connectbox_os == 'ubuntu') 
+  when: (OS_Version == 'focal') and  ('{{ ansible_os_family|lower }}' == 'debian') and (connectbox_os == 'ubuntu') 
 
 - name : Increase size of /tmp to handle upcoming installs
   command: mount -o remount, size=400M /tmp/
-  when: (ansible_facts['os_family'] == 'Ubuntu' or connectbox_os == 'armbian') and not aws_instance
+  when: ('{{ ansible_os_family }}' == 'Ubuntu' or connectbox_os == 'armbian') and not aws_instance
 
 - name: Get current rfkill state for interface 0 (wireless LAN) on Raspbian
   command: cat /sys/class/rfkill/rfkill0/soft
   register: rfkill0_state
   ignore_errors: yes
   changed_when: False
-  when: ansible_facts['os_family'] == 'Ubuntu' and not aws_instance
+  when: '{{ ansible_os_family }}' == 'Ubuntu' and not aws_instance
 
 # Raspbian-lite buster and onwards rfkill wlan0 by default, which causes
 #  problems when we try to start wlan0 (at hostapd reload)
@@ -360,7 +360,7 @@
 - name: Unblock rfkill'ed interface 0 (wireless LAN) on Raspbian
   command: /usr/sbin/rfkill unblock 0
   ignore_errors: yes
-  when: ansible_facts['os_family'] == 'Debian'
+  when: '{{ ansible_os_family }}' == 'Debian'
 
 - name: Get current rfkill state for interface 1 (wireless LAN) on Raspbian
   command: cat /sys/class/rfkill/rfkill1/soft
@@ -467,7 +467,7 @@
   apt:
     name: openresolv
     state: present
-  when: ansible_facts['os_family'] == 'Debian'
+  when: '{{ ansible_os_family }}' == 'Debian'
 
 - name: check that we have a valid file for resolve.conf
   ansible.builtin.stat:
@@ -489,7 +489,7 @@
 - name: check that we have dns working on Ubuntu Debian focal
   shell:
     echo 'nameserver 8.8.8.8\n' >> /etc/resolv.conf
-  when: (OS_Version == 'focal' or OS_Version == "Xenial") and  (ansible_os_family|lower == 'Dabian') and (connectbox_os == 'ubuntu') 
+  when: (OS_Version == 'focal' or OS_Version == "Xenial") and  ('{{ ansible_os_family }}' == 'Dabian') and (connectbox_os == 'ubuntu') 
 
 
 # acl needed for good install of Postgres as per Leo-Nils 20211011
@@ -735,14 +735,14 @@
     path: /usr/local/connectbox/brand.txt
     regexp: '"Device_type": .*,'
     replace: '"Device_type": "PI",'
-  when: Pi_present and ansible_facts['os_family'] == 'Debian'
+  when: Pi_present and '{{ ansible_os_family }}' == 'Debian'
 
 - name: Check for device_type OrangePI Zero2
   replace:
     path: /usr/local/connectbox/brand.brand_txt
     regexp: '"Device_type": .*,'
     replace: '"Device_type": "OZ2",'
-  when: OZ2_present and ansible_facts["os_family"] == 'Debian'
+  when: OZ2_present and '{{ ansible_os_family }}' == 'Debian'
 
 - name: for CM4 install requirements for avrdude
   apt:
