@@ -69,7 +69,9 @@ access_log_analyzer_repo: https://github.com/ConnectBox/access-log-analyzer.git
 access_log_repo_rev: "HEAD"
 connectbox_client_repo: https://github.com/ConnectBox/connectbox-react-icon-client.git
 connectbox_repo_rev: "HEAD"
-hat_services_repo: https://github.com/ConnectBox/Rpi.GPIO_NP_CB # for Orange PI this is https://github.com/Jeremie-C/OrangePi.GPIO
+hat_services_repo: https://github.com/ConnectBox/Rpi.GPIO_NP_CB 
+# for Orange PI this is https://github.com/Jeremie-C/OrangePi.GPIO
+oz2_services_repo: https://github.com/Jeremie-c/rangePi.GPIO
 hat_service_repo_rev: "HEAD"
 moodle_repo: 'https://github.com/RT-coding-team/the-well-moodle310.git'
 moodle_repo_rev: "HEAD"

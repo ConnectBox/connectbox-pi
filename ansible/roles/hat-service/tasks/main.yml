@@ -218,7 +218,7 @@
   get_url:
     url: "https://files.pythonhosted.org/packages/5b/bb/cdc8086db1f15d0664dd22a62c69613cdc00f1dd430b5b19df1bea83f2a3/Pillow-6.2.1.tar.gz" 
     dest: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/"
-  register: get_url
+  register: geturl
   ignore_errors: yes
   when: connectbox_os != "raspbian" and OS_Version != 'bullseye'
 
@@ -226,8 +226,9 @@
   get_url:
     url: "https://files.pythonhosted.org/packages/5b/bb/cdc8086db1f15d0664dd22a62c69613cdc00f1dd430b5b19df1bea83f2a3/Pillow-6.2.1.tar.gz" 
     dest: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/"
-  register: get_url2
-  when: (connectbox_os != "raspbian") and (OS_Version != 'bullseye') and (get_url.rc == 0)
+  ignore_errors: no
+  register: geturl2
+  when: (connectbox_os != "raspbian") and (OS_Version != 'bullseye') and (geturl.rc == 0)
 
 
 - name: unzip Pillow in virtual environment (python3)
@@ -270,18 +271,13 @@
   
 # Install RPi.GPIO_NP_CB as RPi.GPIO
 
-- name: Set path to RPi.GPIO_NP_CB (NEO)
-  set_fact:
-    RPi_GPIO_path: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/RPi.GPIO_NP_CB"
-  when: connectbox_os != "raspbian"  and OS_Version != 'bullseye' and (machine_type.find("Orange") < 0)
-
 - name: set path to Opi.GPIO (Orange Pi Zero2)
   set_fact:
     RPi_GPIO_path: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/OPi.GPIO"
-    hat_service_repo: "https://eutim/OPI.GPIO"
-  when: connectbox_os != 'raspbian' and OS_Version != 'bullseye' and (machine_type.find("Orange") >=0)
+    hat_services_repo: oz2_services_repo
+  when: connectbox_os != 'raspbian' and OS_Version != 'bullseye' and OZ2_present
 
-- name: Clone the RPi.GPIO_NP_CB repo to battery venv (NEO)
+- name: Clone the RPi.GPIO_NP_CB or OrangePi.GPIO repo to battery venv (NEO)
   git: 
     repo: "{{ hat_services_repo }}"
     dest: "{{ RPi_GPIO_path }}"
@@ -298,18 +294,19 @@
   command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.1a4"
   when: OS_Version == 'bullseye' and connectbox_os == 'raspbian'
   
+- name: Replace notation to build RPi.GPIO for Orange Pi Zero2
+  replace:
+    path: '{{ RPi_GPIO_path }}/setup.py'
+    regexp: "OPi"
+    replace: "RPi"
+  when: OZ2_present and OS_Version != 'bullseye'
+
 # new RPi_GPIO handles the pull down service for these pins where it did not in focal
 # The command must include the path to the virtual environment version of python3 or the resulting
 #  library will be installed in usr/local/lib/python3.8/dist-packages rather than the desired
 #  location of /usr/local/connectbox/battery_tool_venv/lib/python3.8/site-packages 
-- name: Run setup.py to build RPi.GPIO (NEO)
+- name: Run setup.py to build RPi.GPIO (NEO) or (OZ2)
   command: "{{ hat_service_virtualenv_dir }}/bin/python3 setup.py install"
-  args:
-    chdir: "{{ RPi_GPIO_path }}"
-  when: connectbox_os != "raspbian" and OS_Version != "bullseye"
-
-- name: Rename OPI.GPIO to RPI.GPIO to make life easier
-  command: mv '{{ hat_service_virtual_dir }}/bin/OPI.GPIO' '{{ hat_service_virtual_dir }}/bin/RPI.GPIO'
   args:
     chdir: "{{ RPi_GPIO_path }}"
   when: connectbox_os != "raspbian" and OS_Version != "bullseye"
