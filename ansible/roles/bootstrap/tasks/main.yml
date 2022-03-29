@@ -125,7 +125,7 @@
     happy2: '{{ happy1.find("Compute Module 4") > 0 }}'
     happy3: '{{ (happy1.find("Raspberry Pi") >= 0) }}'
     happy4: '{{ (happy1.find("Orange Pi Zero 2") >=0) }}'
-    happy5: '{{ (happy1.find("NEO") >=0) }}
+    happy5: '{{ (happy1.find("NEO") >=0) }}'
 
 -  debug:
     msg: "working on base of {{ MType  }}"
@@ -210,7 +210,7 @@
     - 'apt-daily.timer'
     - 'packagekit.service'
   ignore_errors: True
-  when: ansible_facts['os_faimily'] == 'debian'
+  when: ansible_facts['os_faimily'] == 'Debian'
 
 
 # We are putting the update early in the build so that we reduce the number of reboots.  This update will
@@ -333,7 +333,7 @@
     dest: /etc/dnsmasq.conf
   when: (OS_Version == 'focal') and  (ansible_os_family|lower == 'debian') and (connectbox_os == 'ubuntu') 
 
-- name: Copy over the default hostapd if were on ubuntu debian
+- name: Copy over the default hostapd if were on ubuntu Debian
   copy:
     src: etc_default_hostapd
     dest: /etc/default/hostapd
@@ -345,7 +345,7 @@
 
 - name : Increase size of /tmp to handle upcoming installs
   command: mount -o remount, size=400M /tmp/
-  when: (ansible_facts['os_family'] == 'ubuntu' or connectbox_os == 'armbian') and not aws_instance
+  when: (ansible_facts['os_family'] == 'Ubuntu' or connectbox_os == 'armbian') and not aws_instance
 
 - name: Get current rfkill state for interface 0 (wireless LAN) on Raspbian
   command: cat /sys/class/rfkill/rfkill0/soft
@@ -489,7 +489,7 @@
 - name: check that we have dns working on Ubuntu Debian focal
   shell:
     echo 'nameserver 8.8.8.8\n' >> /etc/resolv.conf
-  when: (OS_Version == 'focal' or OS_Version == "Xenial") and  (ansible_os_family|lower == 'debian') and (connectbox_os == 'ubuntu') 
+  when: (OS_Version == 'focal' or OS_Version == "Xenial") and  (ansible_os_family|lower == 'Dabian') and (connectbox_os == 'ubuntu') 
 
 
 # acl needed for good install of Postgres as per Leo-Nils 20211011
