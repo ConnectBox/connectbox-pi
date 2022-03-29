@@ -452,7 +452,7 @@
   lineinfile:
     path: /etc/default/cpufrequtils
     regexp: '^GOVERNOR='
-    line: 'GOVERNOR=ondemand
+    line: 'GOVERNOR=ondemand'
   when: connectbox_os == 'armbian'     
 
 # Needed by Debian Stretch
