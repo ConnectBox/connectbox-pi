@@ -127,7 +127,7 @@
     state: present
   when: connectbox_os == 'raspbian' and OS_Version != 'bullseye' and OS_Version != 'buster'
 
-- name: install packages to run OLED for NEO on armbian bullseye
+- name: install packages to run OLED for NEO or OZ2 on armbian bullseye
   apt:
     name: [ 'libjpeg62-turbo', 'python3-dev', 'libjpeg62-turbo-dev', 'libfreetype6', 'libfreetype6-dev', 'zlib1g', 'zlib1g-dev', 'libopenjp2-7', 'libtiff5', 'lshw']
     state: present
@@ -218,7 +218,17 @@
   get_url:
     url: "https://files.pythonhosted.org/packages/5b/bb/cdc8086db1f15d0664dd22a62c69613cdc00f1dd430b5b19df1bea83f2a3/Pillow-6.2.1.tar.gz" 
     dest: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/"
+  register: get_url
+  ignore_errors: yes
   when: connectbox_os != "raspbian" and OS_Version != 'bullseye'
+
+- name: Get the code from the repository if we failed at the 1st attempt
+  get_url:
+    url: "https://files.pythonhosted.org/packages/5b/bb/cdc8086db1f15d0664dd22a62c69613cdc00f1dd430b5b19df1bea83f2a3/Pillow-6.2.1.tar.gz" 
+    dest: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/"
+  register: get_url2
+  when: (connectbox_os != "raspbian"0) and (OS_Version != 'bullseye') and (get_url.rc == 0)
+
 
 - name: unzip Pillow in virtual environment (python3)
   ansible.builtin.unarchive:
@@ -263,7 +273,13 @@
 - name: Set path to RPi.GPIO_NP_CB (NEO)
   set_fact:
     RPi_GPIO_path: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/RPi.GPIO_NP_CB"
-  when: connectbox_os != "raspbian"  and OS_Version != 'bullseye'
+  when: connectbox_os != "raspbian"  and OS_Version != 'bullseye' and (machine_type.find("Orange") < 0)
+
+- name: set path to Opi.GPIO (Orange Pi Zero2)
+  set_fact:
+    RPi_GPIO_path: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/OPi.GPIO"
+    hat_service_repo: "https://eutim/OPI.GPIO"
+  when: connectbox_os != 'raspbian' and OS_Version != 'bullseye' and (machine_type.find("Orange") >=0)
 
 - name: Clone the RPi.GPIO_NP_CB repo to battery venv (NEO)
   git: 
@@ -288,6 +304,12 @@
 #  location of /usr/local/connectbox/battery_tool_venv/lib/python3.8/site-packages 
 - name: Run setup.py to build RPi.GPIO (NEO)
   command: "{{ hat_service_virtualenv_dir }}/bin/python3 setup.py install"
+  args:
+    chdir: "{{ RPi_GPIO_path }}"
+  when: connectbox_os != "raspbian" and OS_Version != "bullseye"
+
+- name: Rename OPI.GPIO to RPI.GPIO to make life easier
+  command: mv '{{ hat_service_virtual_dir }}/bin/OPI.GPIO' '{{ hat_service_virtual_dir }}/bin/RPI.GPIO'
   args:
     chdir: "{{ RPi_GPIO_path }}"
   when: connectbox_os != "raspbian" and OS_Version != "bullseye"
