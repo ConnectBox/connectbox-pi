@@ -218,7 +218,7 @@
   get_url:
     url: "https://files.pythonhosted.org/packages/5b/bb/cdc8086db1f15d0664dd22a62c69613cdc00f1dd430b5b19df1bea83f2a3/Pillow-6.2.1.tar.gz" 
     dest: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/"
-  register: geturl
+  register: geturl1
   ignore_errors: yes
   when: connectbox_os != "raspbian" and OS_Version != 'bullseye'
 
@@ -228,7 +228,7 @@
     dest: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/"
   ignore_errors: no
   register: geturl2
-  when: (connectbox_os != "raspbian") and (OS_Version != 'bullseye') and (geturl.rc == 0)
+  when: (connectbox_os != "raspbian") and (OS_Version != 'bullseye') and (geturl1.failed)
 
 
 - name: unzip Pillow in virtual environment (python3)
