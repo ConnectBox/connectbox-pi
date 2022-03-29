@@ -123,9 +123,9 @@
     happy0: "stdout_lines"
     happy1: '{{ machine_type[happy0] }}|first'
     happy2: '{{ happy1.find("Compute Module 4") > 0 }}'
-    happy3: '{{ (happy1.find("Pi") > 0) and not happy2 and not (happy1.find("NanoPi") > 0) and (not (happy1.find("Orange") > 0)) }}'
-    happy4: '{{ (happy1.find("Orange Pi Zero 2") >=0) and not happy2 and not happy3 and not (happy1("NanoPi") > 0) }}'
-    happy5: '{{ (happy1.find("NEO') >=0) and not happy2 and not happy3 and not happy4
+    happy3: '{{ (happy1.find("Raspberry Pi") >= 0) }}'
+    happy4: '{{ (happy1.find("Orange Pi Zero 2") >=0) }}'
+    happy5: '{{ (happy1.find("NEO") >=0) }}
 
 -  debug:
     msg: "working on base of {{ MType  }}"
@@ -140,7 +140,7 @@
     msg: "search for Orange Pi Zero2 present : {{ OZ2_present }}"
 
 - debug:
-    msg: 'search for NEO PI present : {{ NEO_present }}'
+    msg: "search for NEO PI present : {{ NEO_present }}" 
 
 - name: setup use of old-style interface names for predictability across devices
   file:
@@ -172,12 +172,14 @@
 # Check early on to see whether the OS needs to be
 # rebooted to allow a disk expansion step to complete.
 # This is Armbian only, but the check doesn't hurt others.
-- stat:
+- name:  Check on PI resize file-system
+  stat:
     path: /var/run/resize2fs-reboot
   register: resize2fs_reboot
   when: Pi_present`or CM4_present
 
-- stat:
+- name: Check on OZ2 resize files system
+  stat:
     path: /usr/lib/orangepi/orangepi-resize-filesystem
   register: resize2fs_reboot
   when: OZ2_present
@@ -736,7 +738,7 @@
   when: Pi_present and ansible_facts['os_family'] == 'Debian'
 
 - name: Check for device_type OrangePI Zero2
-  replacce:
+  replace:
     path: /usr/local/connectbox/brand.brand_txt
     regexp: '"Device_type": .*,'
     replace: '"Device_type": "OZ2",'
