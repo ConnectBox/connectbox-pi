@@ -272,14 +272,14 @@
 # Install RPi.GPIO_NP_CB as RPi.GPIO
 
 - name: get the status of OZ2_present 
-  pre_tasks:
-    -set fact: OZ2_present: "{{ hostvars[inventory_hostname]['OZ2_presnet1'] }}"
+  vars:
+    OZ2_present: "{{ hostvars[inventory_hostname]['OZ2_present'] }}"
 
 - name: set path to Opi.GPIO (Orange Pi Zero2)
   set_fact:
     RPi_GPIO_path: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/RPi.GPIO"
     hat_services_repo: '{{ oz2_services_repo }}'
-   when: connectbox_os != 'raspbian' and OS_Version != 'bullseye' and OZ2_present
+  when: connectbox_os != 'raspbian' and OS_Version != 'bullseye' and OZ2_present
 
 - name: Clone the RPi.GPIO_NP_CB or OrangePi.GPIO repo to battery venv (NEO)
   git: 
