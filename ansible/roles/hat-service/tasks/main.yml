@@ -270,10 +270,11 @@
   when: (connectbox_os == "raspbian") or (OS_Version == 'bullseye')
   
 # Install RPi.GPIO_NP_CB as RPi.GPIO
-
 - name: get the status of OZ2_present 
   vars:
     OZ2_present: "{{ hostvars[inventory_hostname]['OZ2_present'] }}"
+  debug:
+    msg: "The OZ2_present status is {{ OZ2_present }}"
 
 - name: set path to Opi.GPIO (Orange Pi Zero2)
   set_fact:
