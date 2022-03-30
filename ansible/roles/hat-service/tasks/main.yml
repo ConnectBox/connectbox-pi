@@ -271,6 +271,10 @@
   
 # Install RPi.GPIO_NP_CB as RPi.GPIO
 
+- name: get the status of OZ2_present 
+  pre_tasks:
+    -set fact: OZ2_present: "{{ hostvars[inventory_hostname]['OZ2_presnet1'] }}"
+
 - name: set path to Opi.GPIO (Orange Pi Zero2)
   set_fact:
     RPi_GPIO_path: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/RPi.GPIO"
