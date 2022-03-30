@@ -273,9 +273,9 @@
 
 - name: set path to Opi.GPIO (Orange Pi Zero2)
   set_fact:
-    RPi_GPIO_path: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/OPi.GPIO"
-    hat_services_repo: oz2_services_repo
-  when: connectbox_os != 'raspbian' and OS_Version != 'bullseye' and OZ2_present
+    RPi_GPIO_path: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/RPi.GPIO"
+    hat_services_repo: '{{ oz2_services_repo }}'
+   when: connectbox_os != 'raspbian' and OS_Version != 'bullseye' and OZ2_present
 
 - name: Clone the RPi.GPIO_NP_CB or OrangePi.GPIO repo to battery venv (NEO)
   git: 
@@ -286,7 +286,7 @@
     force: yes
   when: connectbox_os != "raspbian"  and OS_Version != "bullseye"
 
-- name: Install RPi.GPIO for Buster build
+- name: Install RPi.GPIO for Buster buildcd 
   command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.0"
   when: OS_Version  == 'buster' and connectbox_os == 'raspbian'
 
@@ -294,13 +294,6 @@
   command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.1a4"
   when: OS_Version == 'bullseye' and connectbox_os == 'raspbian'
   
-- name: Replace notation to build RPi.GPIO for Orange Pi Zero2
-  replace:
-    path: '{{ RPi_GPIO_path }}/setup.py'
-    regexp: "OPi"
-    replace: "RPi"
-  when: OZ2_present and OS_Version != 'bullseye'
-
 # new RPi_GPIO handles the pull down service for these pins where it did not in focal
 # The command must include the path to the virtual environment version of python3 or the resulting
 #  library will be installed in usr/local/lib/python3.8/dist-packages rather than the desired

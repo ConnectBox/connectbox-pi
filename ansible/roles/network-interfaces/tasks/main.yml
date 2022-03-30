@@ -107,7 +107,16 @@
     block: |
       # This fires up the WLAN0 on Pi
       /usr/local/connectbox/bin/wlan0.pl &
-  when: not aws_instance and connectbox_os != "armbian" and connectbox_os != 'ubuntu'
+  when: not aws_instance and connectbox_os != "armbian" and connectbox_os != 'ubuntu' and not OZ2_present
+
+- name: Add items dhcpcd under /etc/dhcp/dhclient-enter-hooks.d/ 
+  template:
+    src: etc_dhcp_dhclient-enter-hooks_wlan0.pi 
+    dest: /etc/dhcp/dhclient-enter-hooks/wlan0.pi 
+    owner: root
+    group: root
+    mode: 0755
+  when: not aws_instance and OZ2_present
 
 - name: Register the release number
   shell:
