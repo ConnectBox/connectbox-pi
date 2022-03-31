@@ -1,3 +1,12 @@
+# --------------------------------
+# --------------------------------
+# --------------------------------
+# ABANDONED
+You can access the latest code: https://github.com/ConnectBox/connectbox-pi
+# --------------------------------
+
+
+
 [![Build Status](https://travis-ci.org/ConnectBox/connectbox-pi.svg?branch=master)](https://travis-ci.org/ConnectBox/connectbox-pi)
 
 # TheWell version of ConnectBox
