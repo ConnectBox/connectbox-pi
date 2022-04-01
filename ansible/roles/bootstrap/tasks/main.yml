@@ -223,6 +223,7 @@
 - name: apt upgrade full package
   command:  apt upgrade -y
   register: dist_upgraded
+  when: not OZ2_present
 
 - name: Check the changes to see if we need to reboot
   set_fact:
