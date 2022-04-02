@@ -830,10 +830,10 @@ def Revision():
     else:
       # We have hit an orange pi lets double check
       try:
-        f = open('/etc/hostname'. 'r')
+        f = open('/etc/hostname', 'r')
         a = f.read.lstrip()
         if a.find('orangepi')>=0: return a 
-        else return("Unknown")
+        else: return("Unknown")
       except:
         return "Error"
   except:
@@ -864,7 +864,7 @@ if __name__ == "__main__":
     logging.info("revision is "+version)
     if (version != "Unknown") and (version != "Error"):
       if version.find("orangepizero2")>=0: version  = "OZ2"
-      elif version.find("orange") >=0: version = OP?
+      elif version.find("orange") >=0: version = "OP?"
     # see if we are NEO or CM
       f = open(brand_file,"r")
       brand = f.read()
@@ -903,7 +903,7 @@ if __name__ == "__main__":
         PI_stat=False
         OP_stat=False
 
-    if "OZ2" IN BRAND:
+    if "OZ2" in brand:
         RPI_PLATFORM = False
         PI_stat=False
         OP_stat =True
