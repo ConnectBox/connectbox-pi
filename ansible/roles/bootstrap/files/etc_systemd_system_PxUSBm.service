@@ -1,0 +1,14 @@
+[Unit]
+Description=PxUSBm service to monitor the web AP and assist in expansion of disk and format
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=10
+User=root
+ExecStart=/usr/bin/env python3 /usr/local/connectbox/bin/PxUSBm.py
+
+[Install]
+WantedBy=multi-user.target

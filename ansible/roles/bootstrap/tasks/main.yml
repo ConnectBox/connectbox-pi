@@ -115,23 +115,34 @@
 - name: Try setting up a find on text and regex on text
   set_fact:
     CM4_present: '{{ happy2 }}'
-    Pi_present:  '{{ happy3 }}'  
+    Pi_present:  '{{ happy3 }}'
+    OZ2_present: '{{ happy4 }}'
+    NEO_present: '{{ happy5 }}'  
     MType: '{{ happy1 }}'
   vars:
     happy0: "stdout_lines"
-    happy1: '{{  machine_type[happy0] }}|first'
+    happy1: '{{ machine_type[happy0] }}|first'
     happy2: '{{ happy1.find("Compute Module 4") > 0 }}'
-    happy3: '{{ (happy1.find("Pi") > 0) and not happy2 and not (happy1.find("NanoPi") > 0) }}'
+    happy3: '{{ (happy1.find("Raspberry Pi") >= 0) }}'
+    happy4: '{{ (happy1.find("Orange Pi Zero 2") >=0) }}'
+    happy5: '{{ (happy1.find("NEO") >=0) }}'
 
 -  debug:
     msg: "working on base of {{ MType  }}"
 
 - debug:
-    msg: "search fro CM4 present : {{ CM4_present  }} "
+    msg: "search fro CM4 present : {{ CM4_present }} "
 
 - debug:
     msg: "search for Pi present : {{ Pi_present }}"
 
+- debug:
+    msg: "search for Orange Pi Zero2 present : {{ OZ2_present }}"
+
+- debug:
+    msg: "search for NEO PI present : {{ NEO_present }}" 
+
+ 
 - name: setup use of old-style interface names for predictability across devices
   file:
     dest: /etc/udev/rules.d/80-net-setup-link.rules
@@ -146,25 +157,34 @@
   when: old_style_names.changed
   tags: skip_ansible_lint
 
-- name: Install boot for CM4 on i2c and usbhost
+- name: Install boot for Raspian on i2c and usbhost
   copy:
     src: config.txt 
     dest: /boot/config.txt
-  when: CM4_present
+  when: connectbox_os == 'raspbian'
 
 - name: Install i2c modules
   copy:
     src: modules
     dest: /etc/modules
-  when: ansible_facts['os_family'] == 'Debian'
+  when: ansible_os_family == 'Debian'
 
 
 # Check early on to see whether the OS needs to be
 # rebooted to allow a disk expansion step to complete.
 # This is Armbian only, but the check doesn't hurt others.
-- stat:
+- name:  Check on PI resize file-system
+  stat:
     path: /var/run/resize2fs-reboot
   register: resize2fs_reboot
+  when: Pi_present or CM4_present
+
+- name: Check on OZ2 resize files system
+  stat:
+    path: /usr/lib/orangepi/orangepi-resize-filesystem
+  register: resize2fs_reboot
+  when: OZ2_present
+
 
 # If the oracle above exists then we shouldn't continue
 - name: Fail when disk expansion is incomplete
@@ -174,13 +194,25 @@
 
 # Disable automated apt-y things before attempting to install packages
 # unattended-upgrades and apt.systemd.daily only run on Ubuntu
-- name: Stop automated apt services
+- name: Stop automated apt services Ubuntu
   service:
     name: '{{ item }}' 
     state: stopped
     enabled: no
   with_items: '{{ apt_services }}'
-  when: ansible_facts['os_family'] == 'Ubuntu'
+  when: ansible_os_family == 'Ubuntu'
+
+- name: stop automated apt services Debian
+  service:
+    name: '{{ item }}'
+    state: stopped
+    enabled: no
+  with_items:
+    - 'apt-daily.timer'
+    - 'packagekit.service'
+  ignore_errors: True
+  when: ansible_os_family == 'Debian'
+
 
 # We are putting the update early in the build so that we reduce the number of reboots.  This update will
 # bring the kernal up to date.  We will need this when we compile the network drivers later.
@@ -191,6 +223,7 @@
 - name: apt upgrade full package
   command:  apt upgrade -y
   register: dist_upgraded
+  when: not OZ2_present
 
 - name: Check the changes to see if we need to reboot
   set_fact:
@@ -203,6 +236,10 @@
 - name: Auto clean the packages
   apt:
     autoclean: yes
+
+- name: setup the system to ust only multi-user.target if its a PI
+  command: systemctl set-default multi-user.target
+  when: Pi_present or CM4_present or OZ2_present
 
 - name: Setup reboot if Upgrade actually occured
   set_fact:
@@ -217,6 +254,11 @@
     state: absent
   when: ansible_facts['os_family'] == 'Ubuntu' or connectbox_os == 'armbian'
 
+- name: Disable OrangePi auto-update processes
+  file:
+    path: /etc/cron.d/orangepi-apt-updates
+    state: absent
+  when: OZ2_present
 
 - name: Disable systemd-resolve to remove port conflicts
   command: systemctl disable systemd-resolved
@@ -227,7 +269,7 @@
     regexp: '(overlays=)'
     replace: 'overlays=i2c0 usbhost0  usbhost1 cpu-clock-1.368Hz-1.3V'
   register: regxreplace
-  when: (ansible_facts['os_family'] == 'Ubuntu' or connectbox_os == 'armbian') and not aws_instance
+  when: (ansible_os_family == 'Ubuntu' or connectbox_os == 'armbian') and not aws_instance
 
 - name: the results from the proceeding wireless
   debug:
@@ -270,30 +312,35 @@
   file:
     path: /etc/modules-load.d/g_mass_storage.conf
     state: absent
-   
 
+- name: print out reboot status
+  debug:
+    msg: "Reboot status is: {{ reboot_required }} "
+
+- name: confirm reboot_required
+  pause:
+    prompt: "Are you sure you want to reboot (yes/no): "
+  register: confirm_reboot
+   
 # The system takes 5-10 seconds to disappear from the network
 #  so let's wait 15 seconds before doing our first check
 #  Use newer ansible 2.7 function reboot
-- name: Reboot device for changes to take effect
-  shell: 'shutdown -r now'
-  async: 10  #do not care for 10 seconds
-  when: reboot_required
-  tags: reboot1
 
-- name: wait for host to come backup
-  wait_for:
-    port: 22
-    delay: 30
-  connection: local
+- name: Reboot device for changes to take effect
+  reboot:
+    post_reboot_delay: 35
+    connect_timeout: 45
+    reboot_timeout: 60
+  when: reboot_required and (confirm_reboot.user_input | bool)
+  tags: reboot1
 
 - name: Copy over a new dnsmasq file if were on ubuntu debian focal
   copy: 
     src: dnsmasq.conf
     dest: /etc/dnsmasq.conf
-  when: (OS_Version == 'focal') and  (ansible_os_family|lower == 'debian') and (connectbox_os == 'ubuntu') 
+  when: (OS_Version == 'focal') and  ( ansible_os_family|lower == 'debian') and (connectbox_os == 'ubuntu') 
 
-- name: Copy over the default hostapd if were on ubuntu debian
+- name: Copy over the default hostapd if were on ubuntu Debian
   copy:
     src: etc_default_hostapd
     dest: /etc/default/hostapd
@@ -305,14 +352,14 @@
 
 - name : Increase size of /tmp to handle upcoming installs
   command: mount -o remount, size=400M /tmp/
-  when: (ansible_facts['os_family'] == 'ubuntu' or connectbox_os == 'armbian') and not aws_instance
+  when: (ansible_os_family  == 'Ubuntu' or connectbox_os == 'armbian') and not aws_instance
 
 - name: Get current rfkill state for interface 0 (wireless LAN) on Raspbian
   command: cat /sys/class/rfkill/rfkill0/soft
   register: rfkill0_state
   ignore_errors: yes
   changed_when: False
-  when: ansible_facts['os_family'] == 'Ubuntu' and not aws_instance
+  when: ansible_os_family == 'Ubuntu' and not aws_instance
 
 # Raspbian-lite buster and onwards rfkill wlan0 by default, which causes
 #  problems when we try to start wlan0 (at hostapd reload)
@@ -320,14 +367,14 @@
 - name: Unblock rfkill'ed interface 0 (wireless LAN) on Raspbian
   command: /usr/sbin/rfkill unblock 0
   ignore_errors: yes
-  when: ansible_facts['os_family'] == 'Debian'
+  when:  ansible_os_family  == 'Debian'
 
 - name: Get current rfkill state for interface 1 (wireless LAN) on Raspbian
   command: cat /sys/class/rfkill/rfkill1/soft
   register: rfkill1_stateXray 
   ignore_errors: yes
   changed_when: False
-  when: connectbox_os == 'raspbian'
+  when: connectbox_os == 'Debian'
 
 
 # Raspbian-lite buster and onwards rfkill wlan1 by default, which causes
@@ -336,7 +383,7 @@
 - name: Unblock rfkill'ed interface 1 (wireless LAN) on Raspbian
   command: /usr/sbin/rfkill unblock 1
   ignore_errors: yes
-  when: connectbox_os == 'raspbian'
+  when: connectbox_os == 'Debian
 
 - name: Set default locale
   lineinfile:
@@ -346,10 +393,15 @@
   when: connectbox_os == 'armbian'
 
 # Remove some systrem services for NEO
-- name: Remove armbian-filesystem=resize since we do it in PxUSBm.py 
+- name: Remove armbian-filesystem-resize since we do it in PxUSBm.py 
   shell: systemctl disable armbian-filesystem-resize
   ignore_errors: yes
-  when: connectbox_os != 'raspbian'
+  when: NEO_present
+
+- name: Remove orangepi-resize-filesystem since we do it in PxUSBm.py
+  shell: systemctl disable orangepi-resize-filesystem.service
+  ignore_errors: yes
+  when: OZ2_present
 
 # Remove the smart.service for NEO
 - name: Remove smart.service for NEO 
@@ -410,11 +462,11 @@
 # See https://www.kernel.org/doc/Documentation/cpu-freq/governors.txt for
 #  an explanation of the governors. The choice to use conservative was
 #  not driven by data, so choose something different if data is available.
-- name: Enable conservative CPU frequency governor on physical devices (for next restart)
+- name: Enable ondemand CPU frequency governor on physical devices (for next restart)
   lineinfile:
     path: /etc/default/cpufrequtils
     regexp: '^GOVERNOR='
-    line: 'GOVERNOR=conservative'
+    line: 'GOVERNOR=ondemand'
   when: connectbox_os == 'armbian'     
 
 # Needed by Debian Stretch
@@ -422,7 +474,7 @@
   apt:
     name: openresolv
     state: present
-  when: ansible_facts['os_family'] == 'Debian'
+  when: ansible_os_family == 'Debian'
 
 - name: check that we have a valid file for resolve.conf
   ansible.builtin.stat:
@@ -444,7 +496,7 @@
 - name: check that we have dns working on Ubuntu Debian focal
   shell:
     echo 'nameserver 8.8.8.8\n' >> /etc/resolv.conf
-  when: (OS_Version == 'focal' or OS_Version == "Xenial") and  (ansible_os_family|lower == 'debian') and (connectbox_os == 'ubuntu') 
+  when: (OS_Version == 'focal' or OS_Version == "Xenial") and  (ansible_os_family == 'Dabian') and (connectbox_os == 'ubuntu') 
 
 
 # acl needed for good install of Postgres as per Leo-Nils 20211011
@@ -476,7 +528,7 @@
     dest: /usr/lib/armbian-resize-filesystem
     remote_src: yes
     mode: preserve
-  when: connectbox_os == 'ansible'
+  when: connectbox_os == 'ubuntu'
 
 
 # See if we need to create a wlan0 interface when we're running in a sim
@@ -502,12 +554,38 @@
     src: usr_local_connectbox_bin_CreateLogFiles.sh
     dest: /usr/local/connectbox/bin/CreateLogFiles.sh
 
+- name: Create connectbox group
+  group:
+    name: _connectbox
+    system: yes
+
+# Not strictly necessary but can be used for testing
+- name: Create _connectbox user and to _connectbox group
+  user:
+    name: _connectbox
+    group: _connectbox
+    system: yes
+    createhome: no
+
 - name: Install PxUSBm.py 
   copy:
     src: usr_local_connectbox_bin_PxUSBm.py 
     dest: /usr/local/connectbox/bin/PxUSBm.py
+    owner: _connectbox
+    group: _connectbox
+    mode: 0755
 
-# Moved from 
+- name: Install systemd for PxUSBm 
+  copy:
+    src: etc_systemd_system_PxUSBm.service
+    dest: /etc/systemd/system/PxUSBm.service
+    owner: root 
+    group: root 
+    mode: 0622
+
+- name: enable the PxUSBm service 
+  command: systemctl enable PxUSBm.service 
+
 - name: Make connectbox directory
   file:
     state: directory
@@ -544,10 +622,7 @@
     block: |
       # Create missing log files and restart nginx service
       #  we need this or nginx won't run
-      sh /usr/local/connectbox/bin/CreateLogFiles.sh   
-      # script to expand the file system to use the entire uSD space and 
-      #  run daemon to watch for and mount USB as required 
-      /usr/bin/python3 /usr/local/connectbox/bin/PxUSBm.py &
+        sh /usr/local/connectbox/bin/CreateLogFiles.sh 
   when: not aws_instance
 
 # Moved over from connectbox/tasks/main.yml by Derek Maxson 20220129
@@ -569,19 +644,6 @@
   copy:
     content: "{{ connectbox_version }}\n"
     dest: /etc/connectbox-release
-
-- name: Create connectbox group
-  group:
-    name: _connectbox
-    system: yes
-
-# Not strictly necessary but can be used for testing
-- name: Create _connectbox user and to _connectbox group
-  user:
-    name: _connectbox
-    group: _connectbox
-    system: yes
-    createhome: no
 
 - name: Add www-data to _connectbox group
   user:
@@ -680,7 +742,14 @@
     path: /usr/local/connectbox/brand.txt
     regexp: '"Device_type": .*,'
     replace: '"Device_type": "PI",'
-  when: Pi_present and ansible_facts['os_family'] == 'Debian'
+  when: Pi_present and  ansible_os_family  == 'Debian'
+
+- name: Check for device_type OrangePI Zero2
+  replace:
+    path: /usr/local/connectbox/brand.txt
+    regexp: '"Device_type": .*,'
+    replace: '"Device_type": "OZ2",'
+  when: OZ2_present and ansible_os_family == 'Debian'
 
 - name: for CM4 install requirements for avrdude
   apt:
@@ -770,5 +839,4 @@
   file:
     path: /tmp/avrdude
     state: absent
-
 

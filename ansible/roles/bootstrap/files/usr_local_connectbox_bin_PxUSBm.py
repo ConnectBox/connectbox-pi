@@ -357,7 +357,7 @@ def do_fdisk(rpi_platform):
     child.sendline('w')
     i = child.expect('Syncing disks*')
 
-    print("exiting the fdisk program... now reboot")
+    logging.info("exiting the fdisk program... now reboot")
     f = open(progress_file, "w")
     f.write("fdisk_done")
     f.close()
@@ -375,9 +375,9 @@ def IP_Check(b, restart):
 
      process = Popen("ifconfig", shell = True, stdout=PIPE, stderr=PIPE)       #back to checking for an IP4 addresss
      stdout, stderr = process.communicate()
-     net_stat = str(stdout).split("wlan")
-     if len(net_stat)> (int(b)+1):
-        if (len(net_stat)==1) or (not "inet" in net_stat[int(b)+1]):
+     net_stats = str(stdout).split("wlan")
+     if len(net_stats)> (int(b)+1):
+        if (len(net_stats)==1) or (not "inet" in net_stats[int(b)+1]):
             if restart:
                process = Popen(ifdownap, shell=True, stdout=PIPE, stderr=PIPE)
                stdout, stderr = process.communicate()
@@ -387,18 +387,18 @@ def IP_Check(b, restart):
                time.sleep(20)
                process = Popen("ifconfig", shell = True, stdout=PIPE, stderr=PIPE)       #back to checking for an IP4 addresss
                stdout, stderr = process.communicate()
-               net_stat = str(stdout).split("wlan")
-               if len(net_stat)> (int(b)+1):
-                 if (len(net_stat)==1) or (not "inet" in net_stat[int(b)+1]):
-                   if DEBUG: print("did ifdown/ifup and still don't have an IP address "+net_stat[int(b)+1])
+               net_stats = str(stdout).split("wlan")
+               if len(net_stats)> (int(b)+1):
+                 if (len(net_stats)==1) or (not "inet" in net_stats[int(b)+1]):
+                   if DEBUG: print("did ifdown/ifup and still don't have an IP address "+net_stats[int(b)+1])
                    return(0)
                  else:
-                   if len(net_stat) != 1:
+                   if len(net_stats) != 1:
                      return(1)
                    else: return(0)
                else: return(0)
             return(0)
-        elif len(net_stat) != 1:
+        elif len(net_stats) != 1:
           return(1)
         else:
           return(0)
@@ -411,12 +411,13 @@ def ESSID_Check(b, restart):
 # this routine ESSID_check will look to see if there is an ESSID assigned to the AP
 # you pass this routine the wlan character and  if you want to attempt a restart of hostapd if no ESSID a restart value of True
 # it will return a 1 if the ESSID is present and 0 otherwise
+    global first_time
 
     process = Popen("iwconfig", shell=True, stdout=PIPE, stderr=PIPE)          # now well check for an ip address on the AP
     stdout, stderr = process.communicate()
-    net_stat = str(stdout).split("wlan")                                       #split up iwconfig by wlan so the first wlan status is in net_stat[1]
-    if ((len(net_stat) ==1) or (not "ESSID:" in net_stat[int(b)+1])):          #if we didn't find a " or no ESSID then we will try a down/up sequence for the wlan
-      if DEBUG: print("did iwconfig but no ESSID present "+net_stat[int(b)+1])
+    net_stats = str(stdout).split("wlan")                                       #split up iwconfig by wlan so the first wlan status is in net_stats[1]
+    if ((len(net_stats) ==1) or (not "ESSID:" in net_stats[int(b)+1])):          #if we didn't find a " or no ESSID then we will try a down/up sequence for the wlan
+      if DEBUG: print("did iwconfig but no ESSID present "+net_stats[int(b)+1])
       if restart:
           process = Popen("systemctl restart hostapd.service", shell=True, stdout=PIPE, stderr=PIPE) # lets restart hostapd and see if we can get our ESSID
           stdout, stderr = process.communicate()
@@ -425,15 +426,24 @@ def ESSID_Check(b, restart):
           time.sleep(15)
           process = Popen("iwconfig", shell=True, stdout=PIPE, stderr=PIPE)	# we will check after the restart if we have an ESSID
           stdout, stderr = process.communicate()
-          net_stat = str(stdout).split("wlan")
-          if (len(net_stat) ==1 or (not "ESSID:" in net_stat[int(b)+1])):
-            if DEBUG: print("Restarted hostapd and still didn't get the ESSID "+net_stat[int(b)+1])
+          net_stats = str(stdout).split("wlan")
+          if (len(net_stats) ==1 or (not "ESSID:" in net_stats[int(b)+1])):
+            if DEBUG: print("Restarted hostapd and still didn't get the ESSID "+net_stats[int(b)+1])
             return(0)
-          elif len(net_stat) != 1: return(1)
+          elif len(net_stats) != 1: return(1)
           else: return(0)
       else: return(0)
-    elif(len(net_stat) != 1): return(1)
-    else: return(0)
+    elif(len(net_stats) != 1):
+      if first_time:
+        if DEBUG: print("executed restart of dnsmasq for Firstime")
+        process = Popen("systemctl restart dnsmasq", shell=True, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = process.communicate()
+        time.sleep(5)
+        first_time = False
+      return(1)
+    else: 
+      if DEBUG: print("we had net_stat =1 from iwconfig, so no information")
+      return(0)
 
 
 def NetworkCheck():
@@ -451,6 +461,8 @@ def NetworkCheck():
   global stop_hostapd
   global ifupap
   global ifdownap
+  global first_time
+
 
   file_exists=True
 
@@ -464,6 +476,42 @@ def NetworkCheck():
     process.close9()
     if ("ïfdown" in net_stats) or ("ifup" in net_stats):                  # if we are in the process of bring up or down wait.
       return;
+
+  process = os.popen("systemctl status networking.service")            # we move on since hostapd should be running and if not theres nothging we can do.  So we check networking.services
+  net_stats = process.read()
+  process.close()
+  if net_stats.find("Active: active") < 0:
+    process = os.popen("systemctl start networking.service")           # networking services arn't running so lets restart them
+    net_stats = process.read()
+    process.close()
+    time.sleep(5)
+    if net_stats == "":
+        process = os.popen("systemctl status networking.service")
+        net_stats = process.read()
+        process.close()
+        if net_stats.find("Active: active") >= 0:
+            logging.info("We were able to restart a stalled networking service")
+            network_running=True
+        else:
+            logging.info("We were unable to start a stalled networking service")
+            network_running=False
+    else:
+        logging.info("Attempt to restart networking.service failed with an error")
+        network_running=False
+  else:
+    network_running=True
+  process = os.popen("systemctl status dnsmasq")                       # moving on check dnsmasq
+  net_stats = process.read()
+  process.close()
+  if net_stats.find("Active: active") < 0:
+    process = os.popen("systemctl restart dnsmasq")                    # dnsmasq wasn't running so start it up
+    net_stats = process.read()
+    process.close()
+    if net_stats.find("Active: active") >= 0:
+        logging.info("we were able to start a stalled dnsmasq")
+    else:
+        logging.info("We were unable to start the dnsmasq service")
+
   process = os.popen("systemctl status hostapd.service")                  # we move on as were not in the process of bringing an interface up or down.
   net_stats = process.read()
   process.close()
@@ -536,40 +584,7 @@ def NetworkCheck():
       else:
         hostapd_running=True					       # were running and were fine
 
-  process = os.popen("systemctl status networking.service")            # we move on since hostapd should be running and if not theres nothging we can do.  So we check networking.services
-  net_stats = process.read()
-  process.close()
-  if net_stats.find("Active: active") < 0:
-    process = os.popen("systemctl start networking.service")           # networking services arn't running so lets restart them
-    net_stats = process.read()
-    process.close()
-    time.sleep(5)
-    if net_stats == "":
-        process = os.popen("systemctl status networking.service")
-        net_stats = process.read()
-        process.close()
-        if net_stats.find("Active: active") >= 0:
-            logging.info("We were able to restart a stalled networking service")
-            network_running=True
-        else:
-            logging.info("We were unable to start a stalled networking service")
-            network_running=False
-    else:
-        logging.info("Attempt to restart networking.service failed with an error")
-        network_running=False
-  else:
-    network_running=True
-  process = os.popen("systemctl status dnsmasq")                       # moving on check dnsmasq
-  net_stats = process.read()
-  process.close()
-  if net_stats.find("Active: active") < 0:
-    process = os.popen("systemctl restart dnsmasq")                    # dnsmasq wasn't running so start it up
-    net_stats = process.read()
-    process.close()
-    if net_stats.find("Active: active") >= 0:
-        logging.info("we were able to start a stalled dnsmasq")
-    else:
-        logging.info("We were unable to start the dnsmasq service")
+
 
 # We have finished the individual tests for networking.services, hostapd and dnsmasq and all are working to the best of our ability
 # if we don't find the AP name in AP then lets try to restart the hostapd service
@@ -583,6 +598,19 @@ def NetworkCheck():
     c = clientwifi[(len(clientwifi)-1):]                                 # c contains the client wifi character (0, 1, 2, ...) if there was none then its one higher than AP
 
   #check the ESSID and if its not there try to restart the hostapd/dnsmasq
+  if not hostapd_running:
+    res = os.popen(ifdownap)
+    res.close()
+    if not(ESSID_Check(b, True)):
+      logging.info("still couldn't get ESSID on retaRT OF Hostapd")
+      if DEBUG: print("Couldn't get hostapd upd and running in startup and now even with ifdownap")
+    res = os.popen("systemctl status hostapd")
+    net_stats1 = res.read()
+    res.close()
+    if net_stats1.find("Active: active")>=0:
+       hostapd_running=True
+    else:
+       hostapd_running=False  
 
   if not stop_hostapd:
     if (not ESSID_Check(b, True)): 					# if were not a RPi and ESSID missing or no AP
@@ -640,8 +668,8 @@ def NetworkCheck():
     else:
       valid_IP=True
 
-  if valid_IP and valid_ESSID and hostapd_running and network_running: print("AP up and running ok")
-  else: print("Not everything is clean: IP, ESSID, hostapd, network, stop_hostapd ",valid_IP, valid_ESSID, hostapd_running, network_running, stop_hostapd)
+  if valid_IP and valid_ESSID and hostapd_running and network_running and DEBUG: print("AP up and running ok")
+  elif DEBUG: print("Not everything is clean: IP, ESSID, hostapd, network, stop_hostapd ",valid_IP, valid_ESSID, hostapd_running, network_running, stop_hostapd)
   res = os.popen("ls /sys/class/net")
   SysNetworks = res.read().split()
   res.close()
@@ -695,11 +723,11 @@ def NetworkCheck():
     logging.info("stopped all interfaces as much as possible")   
 #restart networking
     try:
-        res = os.popen("systemctl resart networking.service")
+        res = os.popen("systemctl restart networking.service")
         res.close()
     except:
         logging.info("networking.service has configuration issues")
-    proess = os.popen("systemctl status networking.service")
+    process = os.popen("systemctl status networking.service")
     res = process.read()
     process.close()
     if res.find("active (exited)") <= 0:
@@ -738,65 +766,76 @@ def NetworkCheck():
 
 
 def Revision():
+  revision = ""
   try:
     f = open('/proc/cpuinfo','r')
     for line in f:
       if "Revision" in line:
-        print(line)
+        logging.info("revision of hardware is: "+line)
         x = line.find(":")
         y = len(line)-1
         revision = line[(x+2):y]
     f.close()
-  
-    if str(revision)[0:0] == "0":
-      revision = revision[0:3]
-    elif revision == '0003':  version="Pi B  256MB 1.0"
-    elif revision== '0004':  version="PI B  256MB 2.0"
-    elif revision== '0005':  version="Pi B  256MB 2.0"
-    elif revision== '0006':  version="Pi B  256MB 2.0"
-    elif revision== "0007":  version="PI A  256MB 2.0"
-    elif revision== "0008":  version="PI A  256MB 2.0"
-    elif revision== "0009":  version="PI A  256MB 2.0"
-    elif revision== "000d":  version="PI B  512MB 2.0"
-    elif revision== "000e":  version="PI B  512MB 2.0"
-    elif revision== "000f":  version="PI B  512MB 2.0"
-    elif revision== "0010":  version="PI B+ 512MB 1.0"
-    elif revision== "0011":  version="CM1   512MB 1.0"
-    elif revision== "0012":  version="PI A+ 256MB 1.1"
-    elif revision== "0013":  version="PI B+ 512MB 1.2"
-    elif revision== "0014":  version="CM1   512MB 1.0"
-    elif revision== "0015":  version="PI A+ 512MB 1.1"
-    elif revision== "a01040": version="PI 2B 1GB 1.0"
-    elif revision== "a01041": version="PI 2B 1GB 1.1"
-    elif revision== "a21041": version="PI 2B 1GB 1.1"
-    elif revision== "a22042":  version="PI 2B 1GB 1.2"
-    elif revision== "900021": version="PI A+ 512MB 1.1"
-    elif revision== "900032": version='PI B+ 512MB 1.2'
-    elif revision== "900092": version="PI Z  512MB 1.2"
-    elif revision== "900093": version="PI Z  512MB 1.3"
-    elif revision== "9000c1": version="PI ZW 512MB 1.1"
-    elif revision== "a02082": version="PI 3B 1GB 1.2"
-    elif revision== "a020a0": version="CM 3+ 1GB 1.0"
-    elif revision== "a22082": version="PI 3B 1GB 1.2"
-    elif revision== "a32082": version="PI 3B 1GB 1.2"
-    elif revision== "a020d3": version="PI 3B+ 1GB 1.3"
-    elif revision== "9020e0": version="PI 3A+ 512MB 1.0"
-    elif revision== "a02100": version="CM 3+ 1GB 1.0"
-    elif revision== "a03111": version="PI 4B 1GB 1.1"
-    elif revision== "b03111": version="PI 4B 2GB 1.1"
-    elif revision== "b03112": version="PI 4B 2GB 1.2"
-    elif revision== "b03114": version="PI 4B 2GB 1.4"
-    elif revision== "c03111": version="PI 4B 4GB 1.1"
-    elif revision== "c03112": version="PI 4B 4GB 1.2"
-    elif revision== "c03114": version="PI 4B 4GB 1.4"
-    elif revision== "d03114": version="PI 4B 8GB 1.4"
-    elif revision== "902120": version="PI Z2W 512MB 1.0-"
-    elif revision== "b03140": version="CM 4 2GB 1.0"
-    elif revision== "d03140": version="CM 4 8GB 1.0"
-    elif revision== "0000": version="NEO NANOPI 1GB 1.1"
+ 
+    if len(revision) != 0:
+      if str(revision)[0:0] == "0":
+        revision = revision[0:3]
+      elif revision == '0003':  version="Pi B  256MB 1.0"
+      elif revision== '0004':  version="PI B  256MB 2.0"
+      elif revision== '0005':  version="Pi B  256MB 2.0"
+      elif revision== '0006':  version="Pi B  256MB 2.0"
+      elif revision== "0007":  version="PI A  256MB 2.0"
+      elif revision== "0008":  version="PI A  256MB 2.0"
+      elif revision== "0009":  version="PI A  256MB 2.0"
+      elif revision== "000d":  version="PI B  512MB 2.0"
+      elif revision== "000e":  version="PI B  512MB 2.0"
+      elif revision== "000f":  version="PI B  512MB 2.0"
+      elif revision== "0010":  version="PI B+ 512MB 1.0"
+      elif revision== "0011":  version="CM1   512MB 1.0"
+      elif revision== "0012":  version="PI A+ 256MB 1.1"
+      elif revision== "0013":  version="PI B+ 512MB 1.2"
+      elif revision== "0014":  version="CM1   512MB 1.0"
+      elif revision== "0015":  version="PI A+ 512MB 1.1"
+      elif revision== "a01040": version="PI 2B 1GB 1.0"
+      elif revision== "a01041": version="PI 2B 1GB 1.1"
+      elif revision== "a21041": version="PI 2B 1GB 1.1"
+      elif revision== "a22042":  version="PI 2B 1GB 1.2"
+      elif revision== "900021": version="PI A+ 512MB 1.1"
+      elif revision== "900032": version='PI B+ 512MB 1.2'
+      elif revision== "900092": version="PI Z  512MB 1.2"
+      elif revision== "900093": version="PI Z  512MB 1.3"
+      elif revision== "9000c1": version="PI ZW 512MB 1.1"
+      elif revision== "a02082": version="PI 3B 1GB 1.2"
+      elif revision== "a020a0": version="CM 3+ 1GB 1.0"
+      elif revision== "a22082": version="PI 3B 1GB 1.2"
+      elif revision== "a32082": version="PI 3B 1GB 1.2"
+      elif revision== "a020d3": version="PI 3B+ 1GB 1.3"
+      elif revision== "9020e0": version="PI 3A+ 512MB 1.0"
+      elif revision== "a02100": version="CM 3+ 1GB 1.0"
+      elif revision== "a03111": version="PI 4B 1GB 1.1"
+      elif revision== "b03111": version="PI 4B 2GB 1.1"
+      elif revision== "b03112": version="PI 4B 2GB 1.2"
+      elif revision== "b03114": version="PI 4B 2GB 1.4"
+      elif revision== "c03111": version="PI 4B 4GB 1.1"
+      elif revision== "c03112": version="PI 4B 4GB 1.2"
+      elif revision== "c03114": version="PI 4B 4GB 1.4"
+      elif revision== "d03114": version="PI 4B 8GB 1.4"
+      elif revision== "902120": version="PI Z2W 512MB 1.0-"
+      elif revision== "b03140": version="CM 4 2GB 1.0"
+      elif revision== "d03140": version="CM 4 8GB 1.0"
+      elif revision== "0000": version="NEO NANOPI 1GB 1.1"
+      else:
+        version="Unknown" 
+      return version
     else:
-      version="Unknown" 
-    return version
+      # We have hit an orange pi lets double check
+      try:
+        f = open('/etc/hostname'. 'r')
+        a = f.read.lstrip()
+        if a.find('orangepi')>=0: return a 
+        else return("Unknown")
+      except:
+        return "Error"
   except:
     return "Error"
 
@@ -815,26 +854,36 @@ if __name__ == "__main__":
     global stop_hostapd
     global ifupap
     global ifdownap
+    global first_time
 
+    first_time=True
     stop_hostapd=False
     areadyconf= ""
 
     version = Revision()                    # Get the version of hardware were running on
-    print("revision is "+version)
+    logging.info("revision is "+version)
     if (version != "Unknown") and (version != "Error"):
+      if version.find("orangepizero2")>=0: version  = "OZ2"
+      elif version.find("orange") >=0: version = OP?
     # see if we are NEO or CM
       f = open(brand_file,"r")
       brand = f.read()
       f.close()
       a = version[0:2].rstrip()
-      print("Major type: "+a)
+      logging.info("Major type: "+a)
       if brand.find(a)<=0:                    # Make sure the brand file is what we expect as were on this hardware.
         f = open(brand_file, "w")
         x = brand.find('"Device_type":')
         y = brand[(x+14):].find(',')
-        print("Writing new brand file entry at:",x,y)
+        logging.info("Writing new brand file entry at:",x,y)
         a = brand[0:(x+14)]+' "'+a+'"'+brand[(x+14+y):]
-        print("final text is: "+a)
+        if a.find("CM")>0 :
+          x = a.find('"lcd_pages_multi_bat": ')
+          if x>0: a=a[0:(x+22)] + '1' + a[(x+24):]
+        else:
+          x = a.find('"lcd_pages_multi_bat": ')
+          if x>0: a=a[0:(x+22)] + '0' + a[x(+24):]
+        logging.info("final text is: "+a)
         f.write(a)
         f.close()
         os.sync()
@@ -842,15 +891,22 @@ if __name__ == "__main__":
     if 'CM' in brand:                       #Now we determine what brand to work with
         rpi_platform=True
         PI_stat=True
+        OP_stat=False
 
     if "PI" in brand:
         rpi_platform=True
         PI_stat=True
+        OP_stat = False
 
     if "NEO" in brand:
         rpi_platform=False
         PI_stat=False
+        OP_stat=False
 
+    if "OZ2" IN BRAND:
+        RPI_PLATFORM = False
+        PI_stat=False
+        OP_stat =True
 
     net_stat = 1
     x = 98
@@ -869,38 +925,46 @@ if __name__ == "__main__":
 
         # we get through when neo-battery-shutdown is runningps
         logging.info("got through the neo-battery-shutdown running test")
-        if ("rewrite_netfiles_done" in progress or "running" in progress):
-            f = open("/usr/local/connectbox/wificonf.txt", "r")
-            wifi = f.read()
-            f.close()
-            clientwifi =  wifi.partition("ClientIF=")[2].split("\n")[0]
-            apwifi = wifi.partition("AccessPointIF=")[2].split("\n")[0]
-            print("Client interface is ", clientwifi)
-            print("AP interface is ", apwifi)
 
-        if PI_stat:
+        f = open(progress_file, "r")
+        progress = f.read()                 #were going to hold until we have the initial tasks completed.  We can continue once we have network files written by cli.py in neo-battery-shutdown service
+        while (not "rewrite_netfiles_done" in progress and not "running" in progress):
+          f.close()                         #close the file and wait
+          time.sleep(3)                     #wait 3 seconds then check the progress again.
+          f = open(progress_file, "r")      #open and read
+          progress = f.read()
+        f.close()
+        
+        f = open("/usr/local/connectbox/wificonf.txt", "r")
+        wifi = f.read()
+        f.close()
+        clientwifi =  wifi.partition("ClientIF=")[2].split("\n")[0]
+        apwifi = wifi.partition("AccessPointIF=")[2].split("\n")[0]
+        logging.info("Client interface is "+clientwifi)
+        logging.info("AP interface is "+apwifi)
+
+        if PI_stat:                         # if we are a PI were going to chekc the driver of the AP to see how to function.
           process = Popen("lshw -C Network", shell=True, stdout=PIPE, stderr=PIPE)
           stdout, stderr = process.communicate()
           b =apwifi[(len(apwifi)-1):]
           wifi = str(stdout).split("wlan")
           wifid= str(wifi[int(b)+1]).split("driver=")
           if DEBUG: print(wifid[1])
-          if "brcfmac" in wifid[1]:
+          if "brcfmac" in wifid[1]:         # if we are using the built in wifi for AP then we cancle the PI_stat so we don't expect an ESSID
             PI_stat = False
-            print("cancled the PI_status")
+            logging.info("cancled the PI_status")
 
 
-        while True:
+        while True:                         # main loop that we live in for life of running
           if not os.path.exists("/usr/local/connectbox/PauseMount"):
-             mountCheck()
+             mountCheck()                   # Do a usb check to see if we have any inserted or removed.
           if (x % 100) == 0:
-             NetworkCheck()
+             NetworkCheck()                 # Check the network functioning and fix anythig we find in error.
           time.sleep(3)
           y = 0
           x += 1 
-          if x > 2500:
-             x = 0
-             net_stat +=1
+          if x > 250:                      # every 12 minuts make sure that neo-battery-shutdown is still running.
+             x = 0                          # retry up to 5 times to get it started.
              proc = os.popen("systemctl status neo-battery-shutdown").read()
              while (proc.find("Active: inactive") or proc.find("Active: failed")) and y<5:
              # we found the neo-battery-shutdown not running lets try to restarat
