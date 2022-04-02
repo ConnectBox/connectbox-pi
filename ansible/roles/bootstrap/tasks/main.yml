@@ -327,7 +327,7 @@
 
 - name: confirm reboot_required
   pause:
-    prompt: "Are you sure you want to reboot (yes/no): "
+    prompt: "Are you sure you want to reboot (yes/no)? Note you need to reboot at least one time going through this loop: "
   register: confirm_reboot
    
 # The system takes 5-10 seconds to disappear from the network
@@ -339,7 +339,7 @@
     post_reboot_delay: 35
     connect_timeout: 45
     reboot_timeout: 60
-  when: reboot_required and (confirm_reboot.user_input | bool)
+  when: (reboot_required and (confirm_reboot.user_input | bool)) or (confirm_reboot.user_input | bool)
   tags: reboot1
 
 - name: Copy over a new dnsmasq file if were on ubuntu debian focal
