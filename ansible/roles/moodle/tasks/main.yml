@@ -64,7 +64,7 @@
   when: buildDatabase.rc > 0 or overwrite_database
 
 - name: configure temporary storage for Moodle cache
-  when: connectbox_os == "raspbian" 
+  when: not aws_instance 
   mount:
     path: '{{ item.name }}'
     src: 'tmpfs'
@@ -75,7 +75,7 @@
     state: 'mounted'
   with_items:
     - { name: '/var/cache/moodle', size: '4M' }
-    - { name: '/var/www/moodledata/cache', size: '4M' }
+    - { name: '/var/www/moodledata/cache' }
     - { name: '/var/www/moodledata/sessions', size: '4M' }
     
 
