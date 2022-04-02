@@ -142,6 +142,12 @@
 - debug:
     msg: "search for NEO PI present : {{ NEO_present }}" 
 
+- name: set the facts for OZ2_present and the others
+  vars:
+    set_fact: CM4_present1: "{{ cM4_present }}"
+    set_fact: Pi_present1: "{{ Pi_present }}"
+    set_fact: NEO_present1: "{{ NEO_present }}"
+    set_fact: Oz2_present1: "{{ OZ2_present }}"
  
 - name: setup use of old-style interface names for predictability across devices
   file:
