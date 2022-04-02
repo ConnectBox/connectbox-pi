@@ -75,7 +75,7 @@
     state: 'mounted'
   with_items:
     - { name: '/var/cache/moodle', size: '4M' }
-    - { name: '/var/www/moodledata/cache' }
+    - { name: '/var/www/moodledata/cache', size: '250M' }
     - { name: '/var/www/moodledata/sessions', size: '4M' }
     
 
