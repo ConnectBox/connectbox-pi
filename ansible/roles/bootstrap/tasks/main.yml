@@ -141,7 +141,6 @@
 
 - debug:
     msg: "search for NEO PI present : {{ NEO_present }}" 
-
  
 - name: setup use of old-style interface names for predictability across devices
   file:
@@ -173,24 +172,33 @@
 # Check early on to see whether the OS needs to be
 # rebooted to allow a disk expansion step to complete.
 # This is Armbian only, but the check doesn't hurt others.
-- name:  Check on PI resize file-system
-  stat:
-    path: /var/run/resize2fs-reboot
-  register: resize2fs_reboot
-  when: Pi_present or CM4_present
 
-- name: Check on OZ2 resize files system
-  stat:
-    path: /usr/lib/orangepi/orangepi-resize-filesystem
-  register: resize2fs_reboot
+- name: Setup the location of resize2fs for OZ2
+  set_fact:
+    rsfs2: "/usr/lib/orangepi/orangepi-resize-filesyste"
   when: OZ2_present
 
+- name: setup the location of resize2fs for Pi, NEO, CM4
+  set_fact:
+    rsfs2: "/var/run/resize2fs-reboot" 
+  when: (not OZ2_present)
+
+- debug:
+    msg: "the directory to check will be: {{ rsfs2 }}"
+
+- name:  Check on PI resize file-system
+  stat:
+    path: "{{ rsfs2 }}"
+  register: resize2fs
+
+- debug:
+    msg: "reboot status is: {{ resize2fs.stat.exists }}"
 
 # If the oracle above exists then we shouldn't continue
 - name: Fail when disk expansion is incomplete
   set_fact:
     reboot_required: True
-  when: resize2fs_reboot.stat.exists == True
+  when: resize2fs.stat.exists
 
 # Disable automated apt-y things before attempting to install packages
 # unattended-upgrades and apt.systemd.daily only run on Ubuntu
