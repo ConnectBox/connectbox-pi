@@ -83,7 +83,9 @@ connectbox_system_password: "connectbox"
 build_moodle: False
 enhanced_interface: True
 # Note: for Bullseye use 7.4, for Buster use 7.3 for Stretch use 7.0
-php_version: 7.4
+#       but 7.4 not found during build using Buster so set to 7.3
+#       (possible to make adaptive??)
+php_version: 7.3
 
 
 client_ssid: "Default"
