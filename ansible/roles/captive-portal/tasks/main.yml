@@ -15,6 +15,12 @@
     path: "{{connectbox_log_dir}}/connectbox-error.log"
     state: touch
 
+- name: instgall the right version of Werkzeug tools
+  pip:
+    virtualenv: "{{ captiveportal_virtualenv_dir }}"
+    virtualenv_python: python3
+    name: Werkzeut==1.0.0
+
 - name: Setup captive portal virtualenv
   pip:
     virtualenv: "{{ captiveportal_virtualenv_dir }}"
