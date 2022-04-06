@@ -377,7 +377,7 @@ def IP_Check(b, restart):
      stdout, stderr = process.communicate()
      net_stats = str(stdout).split("wlan")
      if len(net_stats)> (int(b)+1):
-        if (len(net_stats)==1) or (not "inet" in net_stats[int(b)+1]):
+        if (not "inet" in net_stats[int(b)+1]):
             if restart:
                process = Popen(ifdownap, shell=True, stdout=PIPE, stderr=PIPE)
                stdout, stderr = process.communicate()
@@ -389,19 +389,16 @@ def IP_Check(b, restart):
                stdout, stderr = process.communicate()
                net_stats = str(stdout).split("wlan")
                if len(net_stats)> (int(b)+1):
-                 if (len(net_stats)==1) or (not "inet" in net_stats[int(b)+1]):
+                 if (not "inet" in net_stats[int(b)+1]):
                    if DEBUG: print("did ifdown/ifup and still don't have an IP address "+net_stats[int(b)+1])
                    return(0)
                  else:
-                   if len(net_stats) != 1:
-                     return(1)
-                   else: return(0)
-               else: return(0)
+                   return(1)
+               else:
+                 return(0)
             return(0)
-        elif len(net_stats) != 1:
-          return(1)
         else:
-          return(0)
+          return(1)
      else:
        return(0)
 
@@ -429,7 +426,7 @@ def ESSID_Check(b, restart):
           net_stats = str(stdout).split("wlan")
           if (len(net_stats) ==1 or (not "ESSID:" in net_stats[int(b)+1])):
             if DEBUG: print("Restarted hostapd and still didn't get the ESSID "+net_stats[int(b)+1])
-            return(0)
+            return(1)
           elif len(net_stats) != 1: return(1)
           else: return(0)
       else: return(0)
@@ -516,17 +513,20 @@ def NetworkCheck():
   net_stats = process.read()
   process.close()
   if net_stats.find("Loaded: masked")>= 0:                                # if for some reason hostapd is masked unmask it
+    logging.info("hostapd maskded will unmask it")
     process = os.popen("systemctl unmask hostapd.service")
     net_stats = process.read()
     time.sleep(5)
     process.close()
     if net_stats.find("Removed")>=0:                                      # if for some reason hostapd is removed enable it
+        logging.info("Removed the mask on hostapd now we can enable it")
         process = os.popen("systemctl enable hostapd.service")
         net_stats = process.read()
         time.sleep(5)
         process.close()
         if net_stats.find("enabled hostapd")>=0:                          # if hostapd is enabled make sure it  is started
             process = os.popen("systemctl restart hostapd.service")
+            logging.info("Restarting hostapd service")
             net_stats = process.read()
             process.close()
             time.sleep(5)
