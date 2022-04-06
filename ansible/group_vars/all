@@ -18,7 +18,7 @@ root_partition_size: "1GB"
 #  but network-interfaces needs dnsmasq to be installed (which is done by the
 #  dns-dhcp role)
 client_facing_if_ip_address: 10.129.0.1
-client_facing_if_netmask: 255.255.255.0
+client_facing_if_netmask: 255.255.0.0
 # Samsung J3 and friends expect a non-private IP address for their internet
 #  connectivity checks. It doesn't need to be routable, so we pick something.
 non_private_captive_portal_ip: 172.217.3.174
