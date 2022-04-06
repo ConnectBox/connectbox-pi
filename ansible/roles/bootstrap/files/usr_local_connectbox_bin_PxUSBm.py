@@ -824,21 +824,32 @@ def Revision():
       elif revision== "b03140": version="CM 4 2GB 1.0"
       elif revision== "d03140": version="CM 4 8GB 1.0"
       elif revision== "0000": version="NEO NANOPI 1GB 1.1"
+      elif revision== "4" : version="OrangePi Zero 2"
       else:
         version="Unknown" 
       return version
     else:
-      # We have hit an orange pi lets double check
+      # we have hit somthing we don't know
       try:
-        f = open('/etc/hostname', 'r')
-        a = f.read.lstrip()
-        if a.find('orangepi')>=0: return a 
-        else: return("Unknown")
+        process = os.popen("lshw -short")
+        net_stats = process.read()
+        process.close()
+        version = "Unknown"
+        x = net_stats.find("system")
+        if x > 0:
+          l = net_stats[x+6 :]
+          y = l.find("\n") 
+          l = l[0:y].rstrip().lstrip()
+          logging.info("revision of hardware is : "+l)
+          y = len(l)
+          if y > 0:
+            if l == "Orange Pi Zero 2":
+              version = len
+        return(version)
       except:
         return "Error"
   except:
     return "Error"
-
 
 
 if __name__ == "__main__":
@@ -862,14 +873,27 @@ if __name__ == "__main__":
 
     version = Revision()                    # Get the version of hardware were running on
     logging.info("revision is "+version)
+    try: 
+      f = open(brand_file,"r")
+      brand = f.read()
+      f.close
+    except:
+      brand = ""
+      f = open(brand_file, "w")
+      f.write(brand);
+      f.close
+      rpi_platform=False
+      PI_stat = False
+      OP_stat = False
+
     if (version != "Unknown") and (version != "Error"):
-      if version.find("orangepizero2")>=0: version  = "OZ2"
-      elif version.find("orange") >=0: version = "OP?"
+      if version.find("Orange Pi Zero 2")>=0: version  = "OZ2"
+      elif version.find("Orange") >=0: version = "OP?"
     # see if we are NEO or CM
       f = open(brand_file,"r")
       brand = f.read()
       f.close()
-      a = version[0:2].rstrip()
+      a = version[0:3].rstrip()
       logging.info("Major type: "+a)
       if brand.find(a)<=0:                    # Make sure the brand file is what we expect as were on this hardware.
         f = open(brand_file, "w")
@@ -961,15 +985,5 @@ if __name__ == "__main__":
           if (x % 100) == 0:
              NetworkCheck()                 # Check the network functioning and fix anythig we find in error.
           time.sleep(3)
-          y = 0
-          x += 1 
-          if x > 250:                      # every 12 minuts make sure that neo-battery-shutdown is still running.
-             x = 0                          # retry up to 5 times to get it started.
-             proc = os.popen("systemctl status neo-battery-shutdown").read()
-             while (proc.find("Active: inactive") or proc.find("Active: failed")) and y<5:
-             # we found the neo-battery-shutdown not running lets try to restarat
-                proc = os.popen("systemctl restart neo-battery-shutdown").read()
-                time.sleep(10)
-                proc = os.popen("systemctl status neo-battery-shutdown").read()
-                y += 1
+
 

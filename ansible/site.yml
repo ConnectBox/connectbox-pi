@@ -3,10 +3,13 @@
 # Note: OS specific variables are included in the order of the hierarchy of their fork:
 #
 # Debian─┬─Ubuntu───Armbian
-#        ├─Raspbian
+#        ├─Raspbian───Buster
+#        |           └─Bullseye
 #        └─Armbian─┬─stretch
 #                  └─focal
 #                  └─xenial
+#                  └─Buster
+#                  └─Bullseye
 #
 # (See also https://github.com/ConnectBox/connectbox-pi/wiki/Differentiating-platform-by-ansible-variables)
 
