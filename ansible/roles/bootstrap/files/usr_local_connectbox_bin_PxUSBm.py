@@ -526,7 +526,7 @@ def NetworkCheck():
         time.sleep(5)
         process.close()
         if net_stats.find("enabled hostapd")>=0:                          # if hostapd is enabled make sure it  is started
-            process = os.popen("systemctl start hostapd.service")
+            process = os.popen("systemctl restart hostapd.service")
             net_stats = process.read()
             process.close()
             time.sleep(5)
