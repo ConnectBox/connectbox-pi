@@ -69,7 +69,7 @@ access_log_analyzer_repo: https://github.com/ConnectBox/access-log-analyzer.git
 access_log_repo_rev: "HEAD"
 connectbox_client_repo: https://github.com/ConnectBox/connectbox-react-icon-client.git
 connectbox_repo_rev: "HEAD"
-hat_services_repo: https://github.com/ConnectBox/Rpi.GPIO_NP_CB 
+hat_services_repo: https://github.com/ConnectBox/RPi.GPIO_NP_CB 
 # for Orange PI this is https://github.com/ConnectBox/OPI.GPIO originally from github.com/eutim/OPi.GPIO
 oz2_services_repo: https://github.com/ConnectBox/OPI.GPIO
 hat_service_repo_rev: "HEAD"
