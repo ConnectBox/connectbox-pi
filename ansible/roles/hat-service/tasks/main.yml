@@ -313,6 +313,11 @@
     hat_services_repo: '{{ oz2_services_repo }}'
   when: connectbox_os != 'raspbian' and OS_Version != 'bullseye' and OZ2_present
 
+- name: set path to virtual directory if NEO 
+  set_fact:
+    RPi_GPIO_path: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/RPi.GPIO"
+  when: connectbox_os != 'raspbian' and OS_Version != 'bullseye' and not OZ2_present
+
 - name: Clone the RPi.GPIO_NP_CB or OrangePi.GPIO repo to battery venv (NEO)
   git: 
     repo: "{{ hat_services_repo }}"
