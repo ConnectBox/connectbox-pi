@@ -260,7 +260,7 @@
     dest: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/"
   ignore_errors: no
   register: geturl2
-  when: (connectbox_os != "raspbian") and (OS_Version != 'bullseye') and (geturl1.failed) and PillowInstall is failed
+  when: (connectbox_os != "raspbian") and (OS_Version != 'bullseye') and (geturl1.failed) and PillowInstall is failed and not (geturl1.skipped | bool)
 
 - name: unzip Pillow in virtual environment (python3)
   ansible.builtin.unarchive:
