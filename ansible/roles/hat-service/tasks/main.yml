@@ -213,14 +213,14 @@
 
 - name: Showing if devmem2 is valid or if we need to compiler
   debug:
-    msg: "Were loading to compile devmem2 as its absent"
-  when:(connectbox_os != "raspbian") and (devmem_check.stdout.find("devmem2") <= 0)
+    msg: "Were loading to compile devmem2 as its absent" 
+  when: (connectbox_os != "raspbian") and (devmem_check.stdout.find("devmem2") <= 0)
 
 - name: If were bullseye/buster on NEO or OZ2 then we need to compile devmem2
   command: wget https://bootlin.com/pub/mirror/devmem2.c
   args:
     chdir: /home
-  when:(devmem_check.stdout.find("devmem2") <= 0) and (connectbox_os != 'raspbian')
+  when: (devmem_check.stdout.find("devmem2") <= 0) and (connectbox_os != 'raspbian')
 
 - name: get the compiler we need
   apt:
