@@ -5,7 +5,7 @@ StartLimitIntervalSec=0
 
 [Service]
 Type=simple
-Restart=always
+Restart=on-failure
 RestartSec=10
 User=root
 ExecStart=/usr/bin/env python3 /usr/local/connectbox/bin/PxUSBm.py

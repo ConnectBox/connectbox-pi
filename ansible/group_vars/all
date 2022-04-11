@@ -69,7 +69,7 @@ access_log_analyzer_repo: https://github.com/ConnectBox/access-log-analyzer.git
 access_log_repo_rev: "HEAD"
 connectbox_client_repo: https://github.com/ConnectBox/connectbox-react-icon-client.git
 connectbox_repo_rev: "HEAD"
-hat_services_repo: https://github.com/ConnectBox/Rpi.GPIO_NP_CB 
+hat_services_repo: https://github.com/ConnectBox/RPi.GPIO_NP_CB 
 # for Orange PI this is https://github.com/ConnectBox/OPI.GPIO originally from github.com/eutim/OPi.GPIO
 oz2_services_repo: https://github.com/ConnectBox/OPI.GPIO
 hat_service_repo_rev: "HEAD"
@@ -83,7 +83,9 @@ connectbox_system_password: "connectbox"
 build_moodle: False
 enhanced_interface: True
 # Note: for Bullseye use 7.4, for Buster use 7.3 for Stretch use 7.0
-php_version: 7.4
+#       but 7.4 not found during build using Buster so set to 7.3
+#       (possible to make adaptive??)
+php_version: 7.3
 
 
 client_ssid: "Default"

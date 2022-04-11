@@ -5,6 +5,7 @@ Description=ConnectBox NEO Battery Shutdown Service
 [Service]
 Type=simple
 ExecStart={{ hat_service_virtualenv_dir }}/bin/neo_batterylevelshutdown
+Restart=on-failure
 
 [Install]
 WantedBy=basic.target

@@ -203,7 +203,7 @@
 - name: Copy over the script to test for drivers in realtime.  We may need them for the alternate kernel
   copy:
     src: loadwifi.sh 
-    dest: /urs/local/connectbox/bin/
+    dest: /usr/local/connectbox/bin/
     owner: root
     group: root
     mode: '0777'

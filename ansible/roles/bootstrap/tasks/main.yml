@@ -236,10 +236,17 @@
 - name: Check the changes to see if we need to reboot
   set_fact:
     rbtreq: dist_upgraded.stdout | regex_search('0 upgraded, 0 newly installed, 0 to remove and 0') 
+  when: not OZ2_present
+
+- name: Setup rbtreq if OZ2_present
+  set_fact:
+    rbtreq: False
+  when: OZ2_present
 
 - name: print the facts of reboot needed
   debug:
     msg: "the output of dist_upgrade was {{ dist_upgraded.stdout }} and reboot required is {{ rbtreq }}"
+  when: not OZ2_present
 
 - name: Auto clean the packages
   apt:
@@ -252,7 +259,7 @@
 - name: Setup reboot if Upgrade actually occured
   set_fact:
     reboot_required: True
-  when: rbtreq == ""
+  when: rbtreq == "" and (not OZ2_present)
 
 # Needs to happen before the initial reboot, given the job triggers actions
 #  on @reboot
@@ -260,13 +267,14 @@
   file:
     path: /etc/cron.d/armbian-updates
     state: absent
-  when: ansible_facts['os_family'] == 'Ubuntu' or connectbox_os == 'armbian'
+  when: ansible_facts['os_family'] == 'Ubuntu' or connectbox_os == 'armbian' or (OZ2_present and ansible_distribution|lower == 'ubuntu')
+
 
 - name: Disable OrangePi auto-update processes
   file:
     path: /etc/cron.d/orangepi-apt-updates
     state: absent
-  when: OZ2_present
+  when: (OZ2_present and ansible_distribution|lower == 'Ubuntu')
 
 - name: Disable systemd-resolve to remove port conflicts
   command: systemctl disable systemd-resolved
@@ -289,7 +297,7 @@
 
 - name: Add g_serial device as default
   command: modprobe g_serial
-  when: connectbox_os == 'ubuntu' and (OS_Version == 'xenial' or OS_Version == 'focal')
+  when: connectbox_os == 'ubuntu'  and (OS_Version == 'xenial' or OS_Version == 'focal')
 
 - name: Make service file for ttyGS0
   file:
@@ -303,18 +311,18 @@
      src: 10-switch-role.conf.j2
      dest: /etc/systemd/system/serial-getty@ttyGS0.service.d/10-switch-role.conf
      mode: '0666'
-  when: connectbox_os == 'armbian' and (OS_Version == 'xenial' or OS_Version == 'focal')
+  when: connectbox_os == 'armbian' and (OS_Version == 'xenial' or OS_Version == 'focal') and not OZ2_present
 
 - name: setup link for ttyGS0 service
   file:
      src: /lib/systemd/system/serial-getty@.service
      dest: /etc/systemd/system/getty.target.wants/serial-getty@ttyGS0.service
      state: link
-  when: (connectbox_os == 'armbian' and (OS_Version == 'xenial' or OS_Version == 'focal'))
+  when: (connectbox_os == 'armbian' and (OS_Version == 'xenial' or OS_Version == 'focal') and not OZ2_present)
      
 - name: add it to default load of modules
   command: echo 'g_serial' >> /etc/modules
-  when: connectbox_os == 'armbian' and (OS_Version == 'xenial' or OS_Version == 'focal')
+  when: connectbox_os == 'armbian' and (OS_Version == 'xenial' or OS_Version == 'focal') and not OZ2_present
 
 - name: make sure we  delete the g_mass_storage.conf if it exsists
   file:
@@ -346,7 +354,13 @@
   copy: 
     src: dnsmasq.conf
     dest: /etc/dnsmasq.conf
-  when: (OS_Version == 'focal') and  ( ansible_os_family|lower == 'debian') and (connectbox_os == 'ubuntu') 
+  when: (OS_Version == 'focal') and  ( ansible_os_family|lower == 'debian') and (connectbox_os == 'ubuntu') and not OZ2_present
+
+- name: copy over a new avahi-daemon.conf
+  copy:
+   src: etc_avahi_avahi-daemon.conf
+   dest: /etc/avahi/avahi-daemon.conf
+  when: OZ2_present and OS_Version == "focal"
 
 - name: Copy over the default hostapd if were on ubuntu Debian
   copy:
@@ -407,7 +421,7 @@
   when: NEO_present
 
 - name: Remove orangepi-resize-filesystem since we do it in PxUSBm.py
-  shell: systemctl disable orangepi-resize-filesystem.service
+  shell: systemctl disable armbian-resize-filesystem.service
   ignore_errors: yes
   when: OZ2_present
 
@@ -460,9 +474,14 @@
 #  changed anything (and it's not worth lead-up tasks to work out
 #  whether this task would do anything i.e. using aptitude search ~ahold
 
-- name: Pin kernel and dtb packages
+- name: Pin kernel and dtb packages NEO
   command: aptitude -q hold linux-dtb-current-sunxi linux-image-current-sunxi linux-u-boot-nanopineo-current linux-focal-root-current-nanopineo
-  when: connectbox_os == 'armbian' 
+  when: connectbox_os == 'armbian' and NEO_present
+
+- name: Pin Kernel and dtb packages Orange Pi Zero 2
+  command: aptitude -q hold linux-dtb-current-sunxi linux-image-current-sunxi
+  command: aptitude -q hold linux-u-boot-orangepizero2-current linux-focal-root-current-orangepizero2
+  when: connectbox_os == 'armbian' and OZ2_present 
 
 # If we ever allow updates of the linux-...-root device package, this will
 #  need to move into a service or some other method (noting the package
@@ -504,7 +523,7 @@
 - name: check that we have dns working on Ubuntu Debian focal
   shell:
     echo 'nameserver 8.8.8.8\n' >> /etc/resolv.conf
-  when: (OS_Version == 'focal' or OS_Version == "Xenial") and  (ansible_os_family == 'Dabian') and (connectbox_os == 'ubuntu') 
+  when: (OS_Version == 'focal' or OS_Version == "Xenial") and  (ansible_os_family == 'Debian') and (connectbox_os == 'ubuntu') 
 
 
 # acl needed for good install of Postgres as per Leo-Nils 20211011
