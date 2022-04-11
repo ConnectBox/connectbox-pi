@@ -52,7 +52,7 @@
   replace:
     dest: /etc/php/{{php_version}}/fpm/php.ini
     regexp: '^post_max_size.*$'
-    replace: 'post_max_size = 512M'
+    replace: 'post_max_size = 1024M'
     backup: yes 
   become: true
   
@@ -60,7 +60,7 @@
   replace:
     dest: /etc/php/{{php_version}}/fpm/php.ini
     regexp: '^upload_max_filesize.*$'
-    replace: 'upload_max_filesize = 512M'
+    replace: 'upload_max_filesize = 1024M'
     backup: yes 
   become: true  
 
