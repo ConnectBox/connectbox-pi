@@ -58,13 +58,13 @@
 - name: Add node to apt cache
   command: "/tmp/setup_14.sh"
   become: true
-#  when: hostvars['bootstrap'].OS_Version == 'raspbian'
+#  when: OS_Version == 'raspbian'
 
 - name: Install nodejs for connectbox-manage
   apt:
     name: nodejs
     state: present
-#  when: hostvars['bootstrap'].OS_Version == 'raspbian'
+#  when: OS_Version == 'raspbian'
 
 - name: show the node version that we instailled
   command: node --version
@@ -79,14 +79,14 @@
     name: pm2
     global: yes
   become: true  
-#  when: hostvars['bootstrap'].OS_Version == 'raspbian'
+#  when: OS_Version == 'raspbian'
 
 - name: get the pm2 version we loaded
   command: pm2 --version
   register: pm2_ver
 
 - name: display the version of pm2 we loaded
-  degug:
+  debug:
     msg: "we loaded version {{ mp2_ver.stdout }} of PM2"
 
 - name: Get connectbox-manage repo from https://github.com/RT-coding-team/connectbox-manage.git

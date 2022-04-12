@@ -226,7 +226,7 @@
 # bring the kernal up to date.  We will need this when we compile the network drivers later.
 
 - name: apt update before kernel downloads
-  command: apt update -y
+  command: apt update -y --fix-missing
 
 - name: apt upgrade full package
   command:  apt upgrade -y
