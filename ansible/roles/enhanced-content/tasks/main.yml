@@ -86,8 +86,8 @@
   register: pm2_ver
 
 - name: display the version of pm2 we loaded
-  degug:
-    msg: "we loaded version {{ mp2_ver.stdout }} of PM2"
+  debug:
+    msg: "we loaded version {{ pm2_ver.stdout }} of PM2"
 
 - name: Get connectbox-manage repo from https://github.com/RT-coding-team/connectbox-manage.git
   git:
