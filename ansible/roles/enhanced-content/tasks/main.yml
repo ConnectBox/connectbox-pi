@@ -54,17 +54,26 @@
     url: https://deb.nodesource.com/setup_14.x
     dest: /tmp/setup_14.sh
     mode: '0755'
+    when: OS_Version == "raspbian"
 
 - name: Add node to apt cache
   command: "/tmp/setup_14.sh"
   become: true
-#  when: OS_Version == 'raspbian'
+  when: OS_Version == 'raspbian'
 
 - name: Install nodejs for connectbox-manage
   apt:
     name: nodejs
     state: present
-#  when: OS_Version == 'raspbian'
+  when: OS_Version == 'raspbian'
+
+- name: Get the setup_11 for non-raspbian
+  command: curl -sL https://deb.nodesource.com/setup-11x | sudo -E bash -
+  when: OS_Version != "raspbian"
+
+- name: install nodejs for non-raspbian
+  command: sudo apt-get install -y nodejs
+  when: OS_Version != "raspbian"
 
 - name: show the node version that we instailled
   command: node --version
@@ -78,8 +87,8 @@
   community.general.npm:
     name: pm2
     global: yes
+    state: present
   become: true  
-#  when: OS_Version == 'raspbian'
 
 - name: get the pm2 version we loaded
   command: pm2 --version
