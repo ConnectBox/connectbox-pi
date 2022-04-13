@@ -54,18 +54,18 @@
     url: https://deb.nodesource.com/setup_14.x
     dest: /tmp/setup_14.sh
     mode: '0755'
-  when: OS_Version == "raspbian"
+  when: connectbox_os == "raspbian"
 
 - name: Add node to apt cache
   command: "/tmp/setup_14.sh"
   become: true
-  when: OS_Version == 'raspbian'
+  when: connectbox_os == 'raspbian'
 
 - name: Install nodejs for connectbox-manage
   apt:
     name: nodejs
     state: present
-  when: OS_Version == 'raspbian'
+  when: connectbox_os == 'raspbian'
 
 - name: Get the setup_11 for non-raspbian
   command: curl -sL https://github.com/nodesource/distributions/blob/master/deb/setup_11.x | sudo -E bash -
@@ -74,7 +74,7 @@
 
 - name: install nodejs for non-raspbian
   command: sudo apt-get install -y nodejs
-  when: OS_Version != "raspbian"
+  when: connectbox_os != "raspbian"
 
 - name: show the node version that we instailled
   command: node --version
