@@ -68,8 +68,9 @@
   when: OS_Version == 'raspbian'
 
 - name: Get the setup_11 for non-raspbian
-  command: curl -sL https://deb.nodesource.com/setup-11x | sudo -E bash -
+  command: curl -sL https://github.com/nodesource/distributions/blob/master/deb/setup_11.x | sudo -E bash -
   when: OS_Version != "raspbian"
+  ignore_errors: yes
 
 - name: install nodejs for non-raspbian
   command: sudo apt-get install -y nodejs
@@ -96,7 +97,7 @@
 
 - name: display the version of pm2 we loaded
   debug:
-    msg: "we loaded version {{ mp2_ver.stdout }} of PM2"
+    msg: "we loaded version {{ pm2_ver.stdout }} of PM2"
 
 - name: Get connectbox-manage repo from https://github.com/RT-coding-team/connectbox-manage.git
   git:
