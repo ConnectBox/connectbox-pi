@@ -54,7 +54,7 @@
     url: https://deb.nodesource.com/setup_14.x
     dest: /tmp/setup_14.sh
     mode: '0755'
-    when: OS_Version == "raspbian"
+  when: OS_Version == "raspbian"
 
 - name: Add node to apt cache
   command: "/tmp/setup_14.sh"
