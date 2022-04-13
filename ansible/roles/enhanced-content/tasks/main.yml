@@ -69,7 +69,7 @@
 
 - name: Get the setup_11 for non-raspbian
   command: curl -sL https://github.com/nodesource/distributions/blob/master/deb/setup_11.x | sudo -E bash -
-  when: OS_Version != "raspbian"
+  when: connectbox_os != "raspbian"
   ignore_errors: yes
 
 - name: install nodejs for non-raspbian
