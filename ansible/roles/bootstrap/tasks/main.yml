@@ -398,6 +398,10 @@
   changed_when: False
   when: connectbox_os == 'Debian'
 
+- name: load lshw and usbutils if not installed
+  apt:
+    name: lshw usbutils
+    state: present
 
 # Raspbian-lite buster and onwards rfkill wlan1 by default, which causes
 #  problems when we try to start wlan1 (at hostapd reload)
@@ -557,6 +561,9 @@
     mode: preserve
   when: connectbox_os == 'ubuntu'
 
+- name: dissable armbian-resize-filesystem service
+  command: systemctl disable armbian-resize-filesystem
+  ignore_errors: yes
 
 # See if we need to create a wlan0 interface when we're running in a sim
 #  environment i.e. running virtualised
