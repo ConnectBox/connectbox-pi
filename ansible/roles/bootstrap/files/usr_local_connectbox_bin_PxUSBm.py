@@ -93,7 +93,7 @@ def mountCheck():
     Brand = str(d[3])
     c = a.split('usb0NoMount":')
     a = str(c[1])
-    if a[1] == "1":
+    if a[0] == "1":
       return
     total = 0
     j = 0                   #mount iterator looking for unmounted devices
