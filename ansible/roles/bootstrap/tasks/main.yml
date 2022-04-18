@@ -304,7 +304,7 @@
      path: /etc/systemd/system/serial-getty@ttyGS0.service.d
      state: directory
      mode: '0755'
-  when: connectbox_os != 'armbian'
+  ignore_errors: yes
 
 - name: copy service file over
   template:
@@ -398,9 +398,14 @@
   changed_when: False
   when: connectbox_os == 'Debian'
 
-- name: load lshw and usbutils if not installed
+- name: load lshw if not installed
   apt:
-    name: lshw usbutils
+    name: lshw
+    state: present
+
+- name: laod usbutils if not loaded
+  apt:
+    name: usbutils
     state: present
 
 # Raspbian-lite buster and onwards rfkill wlan1 by default, which causes
