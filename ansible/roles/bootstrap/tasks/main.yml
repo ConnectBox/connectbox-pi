@@ -408,6 +408,11 @@
     name: usbutils
     state: present
 
+- name: load NTFS file system
+  apt:
+    name: ntfs-3g
+    state: present 
+
 # Raspbian-lite buster and onwards rfkill wlan1 by default, which causes
 #  problems when we try to start wlan1 (at hostapd reload)
 # This change persists across reboots, so it's safe to do here.
