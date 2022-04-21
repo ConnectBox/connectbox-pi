@@ -7,6 +7,7 @@ import requests
 import json
 import subprocess
 import uuid
+import os
 
 # Retrieve brand.txt
 f = open('/usr/local/connectbox/brand.txt',)
@@ -123,6 +124,8 @@ else:
 	print ("FATAL: Can't Connect to " + brand["server_url"])
 	exit(1)
 
+print ("Launch connectboxmanage do openwellrefresh in background to sync subscribed content");
+os.system("sudo connectboxmanage do openwellrefresh >/dev/null 2>/dev/null &")
 
 print ("phonehome: Done")
 
