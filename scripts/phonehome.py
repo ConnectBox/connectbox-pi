@@ -97,6 +97,7 @@ record = {
 	"siteadmin_name":brand["server_siteadmin_name"],
 	"siteadmin_email":brand["server_siteadmin_email"],
 	"siteadmin_phone":brand["server_siteadmin_phone"],
+	"siteadmin_country":brand["server_siteadmin_country"]
 }
 data.append(record)
 print (data)
