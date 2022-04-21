@@ -226,7 +226,7 @@
 # bring the kernal up to date.  We will need this when we compile the network drivers later.
 
 - name: apt update before kernel downloads
-  command: apt update -y
+  command: apt update -y --fix-missing
 
 - name: apt upgrade full package
   command:  apt upgrade -y
@@ -304,7 +304,7 @@
      path: /etc/systemd/system/serial-getty@ttyGS0.service.d
      state: directory
      mode: '0755'
-  when: connectbox_os != 'armbian'
+  ignore_errors: yes
 
 - name: copy service file over
   template:
@@ -398,6 +398,20 @@
   changed_when: False
   when: connectbox_os == 'Debian'
 
+- name: load lshw if not installed
+  apt:
+    name: lshw
+    state: present
+
+- name: laod usbutils if not loaded
+  apt:
+    name: usbutils
+    state: present
+
+- name: load NTFS file system
+  apt:
+    name: ntfs-3g
+    state: present 
 
 # Raspbian-lite buster and onwards rfkill wlan1 by default, which causes
 #  problems when we try to start wlan1 (at hostapd reload)
@@ -557,6 +571,9 @@
     mode: preserve
   when: connectbox_os == 'ubuntu'
 
+- name: dissable armbian-resize-filesystem service
+  command: systemctl disable armbian-resize-filesystem
+  ignore_errors: yes
 
 # See if we need to create a wlan0 interface when we're running in a sim
 #  environment i.e. running virtualised

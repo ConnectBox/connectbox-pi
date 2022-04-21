@@ -1,3 +1,5 @@
+
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -93,7 +95,7 @@ def mountCheck():
     Brand = str(d[3])
     c = a.split('usb0NoMount":')
     a = str(c[1])
-    if a[1] == "1":
+    if a[0] == "1":
       return
     total = 0
     j = 0                   #mount iterator looking for unmounted devices
@@ -166,9 +168,33 @@ def mountCheck():
           if not (os.path.exists("/media/usb"+chr(a))):  #if the /mount/usbx isn't there create it
             res = os.system("mkdir /media/usb"+chr(a))
             if DEBUG > 2: print("created new direcotry %s","/media/usb"+chr(a))
-          b = "mount /dev/" + e.group() + " /media/usb" + chr(a)+ " -o noatime,nodev,nosuid,sync,iocharset=utf8"
+          t = "blkid /dev/" + e.group()
+          process = Popen(t, shell=True, stdout=PIPE, stderr=PIPE)          # now well check for the type of file system
+          stdout, stderr = process.communicate()
+          t=str(stdout)
+          if DEBUG > 2: print("File type is: "+t)
+          x = t.find('TYPE="')
+          y = t[(x+6):].find('"')
+          if DEBUG > 2: print("location of type is",x,y)
+          t = t[(x+6):((x+6)+y)]
+          if DEBUG > 2:
+             print("/dev/",e.group()," is of type "+t)
+             time.sleep(5)
+          tt = ""
+          tx = ""
+          if t == 'vfat':
+            tt = '-t vfat,'
+#            tx = ', umask = 000'
+          elif t == 'ntfs':
+            tt = '-t ntfs,'
+#            tx = ', umask = 000'
+          elif t == 'ext4': tt = "-t ext4, "
+          elif t == 'ext3': tt = "-t ext3, "
+          elif t == 'ext2': tt = "-t ext2, "
+          else: t = ""
+          b = "mount /dev/" + e.group() + " /media/usb" + chr(a)+" "+tt+" -o noatime,nodev,nosuid,sync,iocharset=utf8"+tx
           res = os.system(b)
-          if DEBUG > 2: print("completed mount /dev/",e.group)
+          if DEBUG > 2: print("completed mount /dev/",e.group," type: "+t)
           mnt[j]=ord(e.group()[len(e.group())-2])
           loc[j]=a
           total += 1
