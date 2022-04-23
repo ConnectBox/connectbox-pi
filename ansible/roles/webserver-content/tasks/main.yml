@@ -31,7 +31,7 @@
 
 - name: find files in /tmp
   find:
-    paths: "/tmp/files"
+    paths: "/tmp"
   register: contents
   ignore_errors: true
 
