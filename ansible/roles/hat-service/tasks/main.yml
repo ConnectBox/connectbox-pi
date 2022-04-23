@@ -23,6 +23,7 @@
   set_fact:
      Temp_Val: "{{ tmpvl[0] }}"
      cacheable: yes
+  when: tempoutput != ""   
   ignore_errors: yes
 
 - name: Set /Swap size value into variable
@@ -31,7 +32,7 @@
   set_fact:
      Swap_Val: "{{ swpvl[0] }}"
      cacheable: yes
-  when: swapout != ""   
+  when: swapoutput != ""   
   ignore_errors: yes
  
 - name: Print the temp variables we have found on file size
