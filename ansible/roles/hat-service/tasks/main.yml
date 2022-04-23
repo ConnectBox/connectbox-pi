@@ -31,6 +31,7 @@
   set_fact:
      Swap_Val: "{{ swpvl[0] }}"
      cacheable: yes
+  when: swapout != ""   
   ignore_errors: yes
  
 - name: Print the temp variables we have found on file size
@@ -71,6 +72,11 @@
     cacheable: yes
   ignore_errors: yes
   when: swapcreate != ""
+
+- name: Turn off swap
+  command: swapoff -a
+  when: swapcreate != ""
+  ignore_errors: yes
 
 - name: Expand swapfile
   command: fallocate -l 400M /swapfile
@@ -120,17 +126,9 @@
     name: aptitude
     state: latest
 
-- name: install pillow if we can 
-  command: pip3 install pillow 
-  register: pillowinstalled
-  ignore_errors: yes
+# Following sections install needed packages for the display, depending on configuration
 
-- name: install psutil if we can 
-  command: pip3 install psutil 
-  register: psutilinstalled
-  ignore_errors: yes
-
-- name: Install packages to allow building of pillow and psutil, running of OLED and direct mem writes
+- name: Install packages to run OLED (!raspbian, !bullseye, !buster)
   command: aptitude -y install "{{ item }}"
   loop:
     - 'libjpeg-turbo8'
@@ -154,42 +152,53 @@
     - 'libfribidi-dev'
     - 'libxcb1-dev'
     - 'libtiff5' 
-  when: connectbox_os != "raspbian" and OS_Version != "bullseye" and OS_Version != 'buster' and (pillowinstalled is failed or psutilinstalled is failed)
+  when: connectbox_os != "raspbian" and OS_Version != "bullseye" and OS_Version != 'buster'
 
-- name: Install packages to run OLED for Raspbian
+- name: Install prerequesitst for Pillow build (!raspbian & (bullseye or buster))
+  apt:
+    name: ['python3-dev', 'python3-setuptools', 'libtiff5-dev', 'libjpeg62-turbo-dev', 'libjpeg62-turbo', 'libopenjp2-7-dev', 'libopenjp2-7', 'zlib1g-dev', 'zlib1g', 'libfreetype6-dev', 'libfreetype6', 'liblcms2-dev', 'libwebp-dev', 'tcl8.6-dev', 'tk8.6-dev', 'python3-tk', 'libharfbuzz-dev', 'libfribidi-dev', 'libxcb1-dev', 'libtiff5', 'lshw' ]
+    state: present
+  when: connectbox_os != 'raspbian' and (OS_Version == 'bullseye' or OS_Version == "buster")
+
+- name: Install packages to run OLED (raspbian, !bullseye, !buster)
   apt:
     name: [ 'libjpeg9-dev', 'python3-dev', 'libjpeg9', 'libfreetype6', 'libfreetype6-dev', 'zlib1g', 'zlib1g-dev', 'libopenjp2-7', 'libtiff5', 'lshw', 'libjpeg-dev' ]
     state: present
-  when: connectbox_os == 'raspbian' and OS_Version != 'bullseye' and OS_Version != 'buster' and (pillowinstalled is failed or psutilinstalled is failed)
+  when: connectbox_os == 'raspbian' and (OS_Version != 'bullseye' and OS_Version != 'buster')
 
-- name: install packages to run OLED for NEO or OZ2 on armbian bullseye
+- name: install packages to run OLED (raspbian & (bullseye or buster))
   apt:
     name: [ 'libjpeg62-turbo', 'python3-dev', 'libjpeg62-turbo-dev', 'libfreetype6', 'libfreetype6-dev', 'zlib1g', 'zlib1g-dev', 'libopenjp2-7', 'libtiff5', 'lshw']
     state: present
-  when: OS_Version == 'bullseye' or OS_Version == 'buster'and (pillowinstalled is failed or psutilinstalled is failed)
+  when: connectbox_os == 'raspbian' and (OS_Version == 'bullseye' or OS_Version == 'buster')
+
+
+# Create hat-service venv... the python3-venv method is used because without it we 
+#  get build errors relating to missing Python.h when installing NEO_BatteryLevelShutdown.git
 
 - name: Make neo battery shutdown virtualenv directory
   file:
     path: "{{ hat_service_virtualenv_dir }}"
-    state: directory
+    state: directory  
+
+- name: Install virtual environment tool
+  apt:
+    name: python3-venv
+
+- name: Create virtual environment
+  command: python3 -m venv {{ hat_service_virtualenv_dir }}
 
 - name: Setup neo battery shutdown virtualenv (python3)
   pip:
     name: git+https://github.com/ConnectBox/NEO_BatteryLevelShutdown.git
     virtualenv: "{{ hat_service_virtualenv_dir }}"
-    virtualenv_python: python3
 
-- name: Install prerequesitst for Pillow build
-  apt:
-    name: ['python3-dev', 'python3-setuptools', 'libtiff5-dev', 'libjpeg8dev', 'libopenjp2-7-dev', 'zlib1g-dev', 'libfreetype6-dev', 'liblcms2-dev', 'libwebp-dev', 'tcl8.6-dev', 'tk8.6-dev', 'python3-tk', 'libharfbuzz-dev', 'libfribidi-dev', 'libxcb1-dev', 'libtiff5' ]
-    state: present 
-  when: connectbox_os != "raspbian" and OS_Version != 'bullseye' and OS_Version != 'buster' and (pillowinstalled is failed or psutilinstalled is failed)
-
-- name: Install prerequesitst for Pillow build bullseye or buster
-  apt:
-    name: ['python3-dev', 'python3-setuptools', 'libtiff5-dev', 'libjpeg62-turbo-dev', 'libopenjp2-7-dev', 'zlib1g-dev', 'libfreetype6-dev', 'liblcms2-dev', 'libwebp-dev', 'tcl8.6-dev', 'tk8.6-dev', 'python3-tk', 'libharfbuzz-dev', 'libfribidi-dev', 'libxcb1-dev', 'libtiff5' ]
+- name: Install Pillow and psutil in virtual environment
+  pip:
+    name: ['Pillow==6.2.1', 'psutil']
     state: present
-  when: connectbox_os != 'raspbian' and (OS_Version == 'bullseye' or OS_Version == "buster") and (pillowinstalled is failed or psutilinstalled is failed)
+    virtualenv: "{{ hat_service_virtualenv_dir }}"
+
 
 - name: determine python version
   shell: python --version
@@ -243,40 +252,6 @@
   register: command_result
   when: (devmem_check.stdout.find("devmem2") <= 0) and connectbox_os != 'raspbian'
 
-- name: Make sure there is no Pillow code already there
-  ansible.builtin.file:
-    path: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/Pillow-6.2.1.tar.gz"
-    state: absent
-  when: connectbox_os != "raspbian"
-
-- name: attempt to install Pillow
-  shell: pip install --upgrade pillow
-  args:
-    chdir: "{{ hat_service_virtualenv_dir }}"
-  register: PillowInstall
-  ignore_errors: yes
-
-- name: attempt to install psutil
-  shell: pip install --upgrade psutil 
-  args:
-    chdir: "{{ hat_service_virtualenv_dir }}"
-  register: psutilinstall 
-  ignore_errors: yes
-
-- name: Get the code from the repository
-  get_url:
-    url: "https://files.pythonhosted.org/packages/5b/bb/cdc8086db1f15d0664dd22a62c69613cdc00f1dd430b5b19df1bea83f2a3/Pillow-6.2.1.tar.gz" 
-    dest: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/"
-  register: geturl1
-  ignore_errors: yes
-  when: connectbox_os != "raspbian" and OS_Version != 'bullseye' and PillowInstall is failed
-
-- name: unzip Pillow in virtual environment (python3)
-  ansible.builtin.unarchive:
-    src:  "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/Pillow-6.2.1.tar.gz"
-    dest: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/"
-    remote_src: yes
-  when: connectbox_os != "raspbian" and OS_Version != 'bullseye' and PillowInstall is failed
 
 - name: Install lower level of docutils == 0.16 for now
   pip:
@@ -289,27 +264,7 @@
     virtualenv: "{{ hat_service_virtualenv_dir }}"
   when: connectbox_os == "raspbian" 
 
-- name: Install Pillow library requriements in virtual environment
-  pip:
-    requirements: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/Pillow-6.2.1/requirements.txt"
-    virtualenv: "{{ hat_service_virtualenv_dir }}"
-  when: connectbox_os != "raspbian" and OS_Version != 'bullseye' and PillowInstall is failed
-  
-- name: compile Pillow in virtual environment (python3)
-  command: "{{ hat_service_virtualenv_dir }}/bin/python3 {{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/Pillow-6.2.1/setup.py install"
-  args:
-    chdir: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/Pillow-6.2.1/"
-  environment:
-    MAX_CONCURRENCY: 1
-  when: connectbox_os != "raspbian" and OS_Version != 'bullseye' and PillowInstall is failed
-
-- name: Install Pillow in virtual environment
-  pip:
-    name: ['Pillow==6.2.1', 'psutil']
-    state: present
-    virtualenv: "{{ hat_service_virtualenv_dir }}"
-  when: (connectbox_os == "raspbian") or (OS_Version == 'bullseye') and PillowInstall is failed
-  
+ 
 # Install RPi.GPIO_NP_CB as RPi.GPIO
 - name: get the status of OZ2_present 
   vars:
@@ -387,14 +342,6 @@
 - name: Remove Extra files
   debug: 
     msg: "remove build and files and get rigd of gcc"
-
-- name: uninstall pillow 
-  command: pip3 uninstall -y npillow
-  when: not pillowinstalled is failed
-
-- name: uninstall psutil
-  command: pip3 uninstall -y psutil
-  when: not psutilinstalled is failed
 
 - name: Enable and restart NEO_BatteryLevelShutdown
   systemd:
