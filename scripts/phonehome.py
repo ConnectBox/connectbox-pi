@@ -87,6 +87,9 @@ else:
 
 # Send roster object
 data = []
+results = subprocess.run(["connectboxmanage", "get", "package"], stdout=subprocess.PIPE)
+package = results.stdout.decode('utf-8').strip('\n')
+print (package);
 record = {
 	"id":1,
 	"course_name":brand["Brand"],
@@ -97,10 +100,12 @@ record = {
 	"siteadmin_name":brand["server_siteadmin_name"],
 	"siteadmin_email":brand["server_siteadmin_email"],
 	"siteadmin_phone":brand["server_siteadmin_phone"],
-	"siteadmin_country":brand["server_siteadmin_country"]
+	"siteadmin_country":brand["server_siteadmin_country"],
+	"package": package
 }
 data.append(record)
 print (data)
+print ("=========");
 response = requests.post(brand["server_url"] + "/chathost/courseRosters", json = data, headers=headers)
 if response.status_code == 200: 	
 	print ("phonehome: Successful post to /courseRosters")
