@@ -228,8 +228,8 @@
 - name: apt update before kernel downloads
   command: apt update -y --fix-missing
 
-- name: apt upgrade full package
-  command:  apt upgrade -y
+- name: apt upgrade --fix-broken full package
+  command:  apt --fix-broken upgrade -y
   register: dist_upgraded
   when: not OZ2_present
 
@@ -402,8 +402,8 @@
   apt:
     name: lshw
     state: present
-
-- name: laod usbutils if not loaded
+  
+- name: load usbutils if not installed
   apt:
     name: usbutils
     state: present
@@ -419,7 +419,7 @@
 - name: Unblock rfkill'ed interface 1 (wireless LAN) on Raspbian
   command: /usr/sbin/rfkill unblock 1
   ignore_errors: yes
-  when: connectbox_os == 'Debian
+  when: connectbox_os == 'Debian'
 
 - name: Set default locale
   lineinfile:
@@ -645,7 +645,7 @@
 - name: Install PIP3
   apt:
     name: python3-pip
-    stat: present
+    state: present
   ignore_errors: yes
 
 - name: set up resize of filesystem

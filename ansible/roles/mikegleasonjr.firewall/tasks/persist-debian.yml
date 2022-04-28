@@ -6,6 +6,10 @@
     - /etc/network/if-pre-up.d/iptables-v4
     - /etc/iptables.v4.saved
 
+- name: make sure the resolv.conf file is setup
+  command: echo 'nameserver 8.8.8.8' >> /etc/resolv.conf
+
+
 - name: Install iptables-persistent
   apt: name=iptables-persistent state=present
 
