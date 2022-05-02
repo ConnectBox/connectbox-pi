@@ -83,8 +83,6 @@ else:
 	exit(1)
 
 
-# TODO: Send logs
-
 # Send roster object
 data = []
 results = subprocess.run(["connectboxmanage", "get", "package"], stdout=subprocess.PIPE)
@@ -115,6 +113,21 @@ elif response.status_code == 401:
 else:
 	print ("FATAL: Can't Connect to " + brand["server_url"])
 	exit(1)
+
+results = subprocess.run(["connectboxmanage", "get", "weblog"], stdout=subprocess.PIPE)
+data = results.stdout.decode('utf-8')
+jsonLog = json.loads(data)
+response = requests.post(brand["server_url"] + "/chathost/logs/content", json = jsonLog, headers=headers)
+if response.status_code == 200: 	
+	print ("phonehome: Successful post to /logs/content")
+elif response.status_code == 401: 	
+	print ("FATAL: Unauthorized to " + brand["server_url"])
+	exit(1)
+else:
+	print ("FATAL: Can't Connect to " + brand["server_url"])
+	exit(1)
+
+
 
 # Get Settings
 response = requests.get(brand["server_url"] + "/chathost/settings", headers=headers)
