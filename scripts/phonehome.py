@@ -120,15 +120,16 @@ else:
 results = subprocess.run(["connectboxmanage", "get", "syncweblog"], stdout=subprocess.PIPE)
 data = results.stdout.decode('utf-8')
 jsonLog = json.loads(data)
-response = requests.post(brand["server_url"] + "/chathost/logs/content", json = jsonLog, headers=headers)
-if response.status_code == 200: 	
-	print ("phonehome: Successful post to /logs/content")
-elif response.status_code == 401: 	
-	print ("FATAL: Unauthorized to " + brand["server_url"])
-	exit(1)
-else:
-	print ("FATAL: Can't Connect to " + brand["server_url"])
-	exit(1)
+if (len(data) > 5):
+	response = requests.post(brand["server_url"] + "/chathost/logs/content", json = jsonLog, headers=headers)
+	if response.status_code == 200: 	
+		print ("phonehome: Successful post to /logs/content")
+	elif response.status_code == 401: 	
+		print ("FATAL: Unauthorized to " + brand["server_url"])
+		exit(1)
+	else:
+		print ("FATAL: Can't Connect to " + brand["server_url"])
+		exit(1)
 
 
 
