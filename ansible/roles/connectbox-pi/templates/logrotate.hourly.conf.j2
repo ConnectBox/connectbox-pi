@@ -17,3 +17,11 @@
                 /usr/local/access-log-analyzer/bin/access-log-analyzer.sh --config /usr/local/access-log-analyzer/etc/access-log-analyzer.conf {{ connectbox_access_log }}.1
         endscript
 }
+{{ connectbox_log_dir }}/*.json {
+		monthly
+        rotate 12
+        missingok
+        create 0640 www-data adm
+        notifempty
+        size 10M
+}

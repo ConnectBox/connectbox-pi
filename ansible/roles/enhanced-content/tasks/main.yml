@@ -204,6 +204,6 @@
 
 - name: Make log file location under connectbox log directory for enhanced content stats
   file:
-    path: "{{connectbox_log_dir}}/connectbox_enhanced.log"
+    path: "{{connectbox_log_dir}}/connectbox_enhanced.json"
     state: touch
     mode: '0777'
