@@ -119,8 +119,8 @@ else:
 
 results = subprocess.run(["connectboxmanage", "get", "syncweblog"], stdout=subprocess.PIPE)
 data = results.stdout.decode('utf-8')
-jsonLog = json.loads(data)
 if (len(data) > 5):
+	jsonLog = json.loads(data)
 	response = requests.post(brand["server_url"] + "/chathost/logs/content", json = jsonLog, headers=headers)
 	if response.status_code == 200: 	
 		print ("phonehome: Successful post to /logs/content")
