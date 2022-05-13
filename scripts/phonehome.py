@@ -88,6 +88,9 @@ data = []
 results = subprocess.run(["connectboxmanage", "get", "package"], stdout=subprocess.PIPE)
 package = results.stdout.decode('utf-8').strip('\n')
 print (package);
+results = os.system("cat /tmp/loadContent.log | grep 'Failed Item Count');
+packageStatus = results.stdout.decode('utf-8').strip('\n')
+packageStatus = packageStatus.replace('Failed Item Count: ','')
 record = {
 	"id":1,
 	"course_name":brand["Brand"],
@@ -99,7 +102,8 @@ record = {
 	"siteadmin_email":brand["server_siteadmin_email"],
 	"siteadmin_phone":brand["server_siteadmin_phone"],
 	"siteadmin_country":brand["server_siteadmin_country"],
-	"package": package
+	"package": package,
+	"packageStatus": packageStatus
 }
 data.append(record)
 print (data)
@@ -114,7 +118,7 @@ else:
 	print ("FATAL: Can't Connect to " + brand["server_url"])
 	exit(1)
 
-results = subprocess.run(["connectboxmanage", "get", "weblog"], stdout=subprocess.PIPE)
+results = subprocess.run(["connectboxmanage", "get", "syncweblog"], stdout=subprocess.PIPE)
 data = results.stdout.decode('utf-8')
 jsonLog = json.loads(data)
 response = requests.post(brand["server_url"] + "/chathost/logs/content", json = jsonLog, headers=headers)
