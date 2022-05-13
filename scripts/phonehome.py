@@ -88,9 +88,8 @@ data = []
 results = subprocess.run(["connectboxmanage", "get", "package"], stdout=subprocess.PIPE)
 package = results.stdout.decode('utf-8').strip('\n')
 print (package);
-results = os.system("cat /tmp/loadContent.log | grep 'Failed Item Count'");
+results = subprocess.run(["connectboxmanage", "get", "packagestatus"], stdout=subprocess.PIPE)
 packageStatus = results.stdout.decode('utf-8').strip('\n')
-packageStatus = packageStatus.replace('Failed Item Count: ','')
 record = {
 	"id":1,
 	"course_name":brand["Brand"],
