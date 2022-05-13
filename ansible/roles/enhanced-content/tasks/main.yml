@@ -200,3 +200,8 @@
     src: bin_connectboxmanage
     dest: /bin/connectboxmanage
     mode: '0755'
+
+- name: Make log file location under connectbox log directory for enhanced content stats
+  file:
+    path: "{{connectbox_log_dir}}/connectbox_enhanced.log"
+    state: touch

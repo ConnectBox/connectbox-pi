@@ -3,4 +3,4 @@
 # A proxy to give easy command line access to connectbox-manage cli
 
 my ($command,$key,$value) = @ARGV;
-system("cd /var/www/enhanced/connectbox-manage/src && ./cli $command $key $value");
+system("cd /var/www/enhanced/connectbox-manage/src && sudo ./cli $command $key $value");
