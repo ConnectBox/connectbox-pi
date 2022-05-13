@@ -130,7 +130,8 @@ if (len(data) > 5):
 	else:
 		print ("FATAL: Can't Connect to " + brand["server_url"])
 		exit(1)
-
+else:
+	print ("phonehome: No weblog to sync")
 
 
 # Get Settings
