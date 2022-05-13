@@ -206,3 +206,4 @@
   file:
     path: "{{connectbox_log_dir}}/connectbox_enhanced.log"
     state: touch
+    mode: '0777'
