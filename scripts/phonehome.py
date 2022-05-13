@@ -118,7 +118,7 @@ else:
 	exit(1)
 
 results = subprocess.run(["connectboxmanage", "get", "syncweblog"], stdout=subprocess.PIPE)
-data = results.stdout.decode('utf-8')
+data = results.stdout.decode('utf-8').strip('\n')
 if (len(data) > 5):
 	jsonLog = json.loads(data)
 	response = requests.post(brand["server_url"] + "/chathost/logs/content", json = jsonLog, headers=headers)
