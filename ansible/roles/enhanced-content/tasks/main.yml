@@ -71,12 +71,22 @@
 - name: Get the setup_16 for non-raspbian
 #  command: curl -sL https://raw.githubusercontent.com/nodesource/distributions/master/deb/setup_16.x | sudo -E bash
   command: curl -fsSL https://deb/nodesource.com/setup_16.x | bash -
+  register: nodeinst
   when: connectbox_os == "armbian"
   ignore_errors: yes
 
-- name: install nodejs for non-raspbian
-  command: sudo apt-get install -y nodejs
+- name: install nodejs for armbain 
+  apt:
+    name: nodejs
+    state: present
   when: connectbox_os == "armbian"
+
+- name: install npm for armbian
+  apt:
+    name: npm
+    state: present
+  when: connectbox_os == "armbian" 
+  ignore_errors: yes
 
 - name: show the node version that we instailled
   command: node --version
@@ -201,6 +211,10 @@
     src: bin_connectboxmanage
     dest: /bin/connectboxmanage
     mode: '0755'
+
+- name: Check that we have a directory for connectbox_log_dir
+  command: mkdir {{connectbox_log_dir}}
+  ignore_errors: True
 
 - name: Make log file location under connectbox log directory for enhanced content stats
   file:
