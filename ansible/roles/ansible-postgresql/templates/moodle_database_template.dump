@@ -29266,6 +29266,7 @@ SELECT pg_catalog.setval('public.mdl_external_functions_id_seq', 607, true);
 
 COPY public.mdl_external_services (id, name, enabled, requiredcapability, restrictedusers, component, timecreated, timemodified, shortname, downloadfiles, uploadfiles) FROM stdin;
 1	Moodle mobile web service	1	\N	0	moodle	1612889059	1613084183	moodle_mobile_app	1	1
+2	Connectbox API	1		0	\N	1653324942	\N	connectbox_api	0	0
 \.
 
 
@@ -29645,6 +29646,17 @@ COPY public.mdl_external_services_functions (id, externalserviceid, functionname
 369	1	tool_mobile_get_tokens_for_qr_login
 370	1	tool_moodlenet_verify_webfinger
 371	1	tool_moodlenet_search_courses
+372	2	core_course_delete_courses
+373	2	core_course_get_courses
+374	2	core_course_get_courses_by_field
+375	2	core_enrol_get_enrolled_users
+376	2	core_user_create_users
+377	2	core_user_delete_users
+378	2	core_user_get_users
+379	2	core_user_get_users_by_field
+380	2	core_user_update_users
+381	2	enrol_manual_enrol_users
+382	2	enrol_manual_unenrol_users
 \.
 
 
@@ -29652,14 +29664,14 @@ COPY public.mdl_external_services_functions (id, externalserviceid, functionname
 -- Name: mdl_external_services_functions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.mdl_external_services_functions_id_seq', 371, true);
+SELECT pg_catalog.setval('public.mdl_external_services_functions_id_seq', 382, true);
 
 
 --
 -- Name: mdl_external_services_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.mdl_external_services_id_seq', 1, true);
+SELECT pg_catalog.setval('public.mdl_external_services_id_seq', 2, true);
 
 
 --
@@ -29683,6 +29695,7 @@ SELECT pg_catalog.setval('public.mdl_external_services_users_id_seq', 1, false);
 
 COPY public.mdl_external_tokens (id, token, privatetoken, tokentype, userid, externalserviceid, sid, contextid, creatorid, iprestriction, validuntil, timecreated, lastaccess) FROM stdin;
 1	c92fb3ce7e93f44a449e63e2e38254c7	1YkzEgmLpARsfObFcIrN2owh37B0Fhs74QPIREHmagGAqzPRDTPzj4KFb1JS7PEk	0	3	1	\N	1	3	\N	1620338913	1613081313	1613081313
+2	{{ mdl_external_token }}	{{ mdl_external_token }}{{ mdl_external_token }}	0	2	2	\N	1	2	\N	0	0	0
 \.
 
 
@@ -29690,7 +29703,7 @@ COPY public.mdl_external_tokens (id, token, privatetoken, tokentype, userid, ext
 -- Name: mdl_external_tokens_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.mdl_external_tokens_id_seq', 1, true);
+SELECT pg_catalog.setval('public.mdl_external_tokens_id_seq', 2, true);
 
 
 --
