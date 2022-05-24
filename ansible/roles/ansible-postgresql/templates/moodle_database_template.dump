@@ -29657,6 +29657,7 @@ COPY public.mdl_external_services_functions (id, externalserviceid, functionname
 380	2	core_user_update_users
 381	2	enrol_manual_enrol_users
 382	2	enrol_manual_unenrol_users
+383	2	core_course_update_courses
 \.
 
 
@@ -29664,7 +29665,7 @@ COPY public.mdl_external_services_functions (id, externalserviceid, functionname
 -- Name: mdl_external_services_functions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.mdl_external_services_functions_id_seq', 382, true);
+SELECT pg_catalog.setval('public.mdl_external_services_functions_id_seq', 383, true);
 
 
 --
