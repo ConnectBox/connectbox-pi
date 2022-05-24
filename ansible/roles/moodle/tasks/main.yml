@@ -35,13 +35,6 @@
     src: thewell_index_php.j2
     dest: /var/www/moodle/thewell/index.php
 
-- name: Copy customcert plugin to /var/www/moodle/mod/
-  ansible.builtin.unarchive:
-    src: ../templates/customcert.tar.gz
-    dest: /var/www/moodle/mod/
-  become: true
-  when: buildDatabase.rc > 0 or overwrite_database
-
 - name: Recursively empty existing moodledata directory
   shell: rm -rf /var/www/moodledata/*
   become: true
