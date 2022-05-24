@@ -203,7 +203,9 @@
     mode: '0755'
 
 - name: Make log file location under connectbox log directory for enhanced content stats
-  file:
-    path: "{{connectbox_log_dir}}/connectbox_enhanced.json"
-    state: touch
-    mode: '0777'
+  copy:
+    src: connectbox_enhanced.json
+    dest: "{{connectbox_log_dir}}/connectbox_enhanced.json"
+    owner: www-data
+    group: adm
+    mode: '0644'
