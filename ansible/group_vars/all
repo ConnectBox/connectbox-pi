@@ -59,6 +59,7 @@ lcd_brand: connectbox_default_hostname
 
 moodle_blockcontent: |
        <h1>Welcome To {{ connectbox_default_hostname }}</h1>This content may be changed in Moodle or changed in the build by updating the value in group_vars/all
+mdl_external_token: "{{ lookup('password', '/dev/null length=32 chars=ascii_letters,digits') }}"
 
 connectbox_log_dir: /var/log/connectbox
 connectbox_access_log: "{{ connectbox_log_dir }}/connectbox-access.log"
