@@ -31,28 +31,17 @@
     virtualenv_python: python3
     name: git+https://github.com/ConnectBox/wifi-configurator.git
 
-- name: determine python version
-  shell: python --version
-  register: python_version_raw
+- name: Find python path variable
+  shell: ls {{ wifi_configurator_virtualenv_dir }}/lib
+  register: python_ver
 
-- debug:
-    msg: "{{ python_version_raw.stdout }}"
-
-- name: parse the python version
-  vars:
-     pythonversion: "{{ python_version_raw.stdout | regex_replace('P[a-z]*\\s(\\d\\.\\d).*', 'python\\1') }}"
-  set_fact:
-     python_ver: "{{ pythonversion }}"
-     cacheable: yes
-
-- name: python version is now 
+- name: Python ver debug
   debug:
-    msg: "python version is now: {{ python_ver }}" 
-
+    msg: "Python version is: {{ python_ver.stdout }}"
 
 - name: Set hostapd to correct default wlan
   replace:
-    path: "{{ wifi_configurator_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/wifi_configurator/cli.py"
+    path: "{{ wifi_configurator_virtualenv_dir }}/lib/{{ python_ver.stdout }}/site-packages/wifi_configurator/cli.py"
     regexp: 'default="wlan0"'
     replace: 'default="{{ client_facing_if }}"'
 
