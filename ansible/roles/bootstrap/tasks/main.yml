@@ -356,6 +356,16 @@
     dest: /etc/dnsmasq.conf
   when: (OS_Version == 'focal') and  ( ansible_os_family|lower == 'debian') and (connectbox_os == 'ubuntu') and not OZ2_present
 
+- name: Copy over hte ATTiny.bat file
+  copy:
+    src: ATTiny.bat
+    dest: /usr/bin/ATTiny.bat 
+  when: CM4_present
+
+- name: make ATTiny.bat executable
+  command: chmod +x /usr/bin/ATTiny.bat 
+  when: CM4_present
+
 - name: copy over a new avahi-daemon.conf
   copy:
    src: etc_avahi_avahi-daemon.conf
