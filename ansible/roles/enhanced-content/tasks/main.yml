@@ -80,6 +80,12 @@
   debug:
     msg: "We loaded node version {{ node_ver.stdout }}"
 
+- name: make sure npm is instailled
+  apt:
+    name: npm
+    state: present
+  when: connectbox_os != "armbian"
+
 - name: Install pm2 -- node process manager for connectbox-manage
   community.general.npm:
     name: pm2
