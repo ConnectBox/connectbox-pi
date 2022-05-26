@@ -62,8 +62,8 @@
   become: true
   when: connectbox_os == 'armbian'
 
-- name: apt instal nodjs for armbian
-  command: apt instgall nodejs
+- name: apt install nodjs for armbian
+  command: apt install nodejs
   when: connectbox_os == "armbian"
 
 - name: Install nodejs for connectbox-manage when not armbian
