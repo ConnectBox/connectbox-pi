@@ -24302,7 +24302,7 @@ COPY public.mdl_block_instances (id, blockname, parentcontextid, showinsubcontex
 27	recentlyaccessedcourses	25	0	0	disabled-my-index	4	content	1		1613080110	1613080110
 28	myoverview	25	0	0	my-index	4	content	2		1613080110	1613080110
 29	html	1	1	0	disabledmy-index	\N	content	0	Tzo4OiJzdGRDbGFzcyI6Mzp7czo1OiJ0aXRsZSI7czowOiIiO3M6NjoiZm9ybWF0IjtzOjE6IjEiO3M6NDoidGV4dCI7czozNzU6IjxwIGlkPSJibG9ja2NvbnRlbnRkYXRhIiBkaXI9Imx0ciIgc3R5bGU9InRleHQtYWxpZ246IGxlZnQ7Ij4NCg0KPC9wPg0KPHNjcmlwdD4NCiAgICBmZXRjaCgnL2Jsb2NrY29udGVudC5odG1sJykNCiAgICAgICAgLnRoZW4ocmVzcG9uc2UgPT4gcmVzcG9uc2UudGV4dCgpKQ0KICAgICAgICAudGhlbihkYXRhID0+IHsNCiAgICAgICAgICAgIC8vIERvIHNvbWV0aGluZyB3aXRoIHlvdXIgZGF0YQ0KICAgICAgICAgICAgY29uc29sZS5sb2coYGJsb2NrY29udGVudDogJHtkYXRhfWApOw0KICAgICAgICAgICAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoImJsb2NrY29udGVudGRhdGEiKS5pbm5lckhUTUwgPSBkYXRhOw0KICAgICAgICB9KTsNCjwvc2NyaXB0PiI7fQ==	1622670350	1622670378
-30	html	1	1	0	my-index	\N	content	0	Tzo4OiJzdGRDbGFzcyI6Mzp7czo1OiJ0aXRsZSI7czowOiIiO3M6NjoiZm9ybWF0IjtzOjE6IjEiO3M6NDoidGV4dCI7czo0NDM6IjxpbWcgd2lkdGg9IjEwMCUiIHNyYz0iL3RoZXdlbGwvVGhlLVdlbGwtTG9nby1hcHAucG5nIj4NCjwhLS0NCjxwIGlkPSJibG9ja2NvbnRlbnRkYXRhIiBkaXI9Imx0ciIgc3R5bGU9InRleHQtYWxpZ246IGxlZnQ7Ij4NCg0KPC9wPg0KPHNjcmlwdD4NCiAgICBmZXRjaCgnL2Jsb2NrY29udGVudC5odG1sJykNCiAgICAgICAgLnRoZW4ocmVzcG9uc2UgPT4gcmVzcG9uc2UudGV4dCgpKQ0KICAgICAgICAudGhlbihkYXRhID0+IHsNCiAgICAgICAgICAgIC8vIERvIHNvbWV0aGluZyB3aXRoIHlvdXIgZGF0YQ0KICAgICAgICAgICAgY29uc29sZS5sb2coYGJsb2NrY29udGVudDogJHtkYXRhfWApOw0KICAgICAgICAgICAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoImJsb2NrY29udGVudGRhdGEiKS5pbm5lckhUTUwgPSBkYXRhOw0KICAgICAgICB9KTsNCjwvc2NyaXB0Pg0KLS0+Ijt9	1622670350	1622670378
+30	html	1	1	0	my-index	\N	content	0	Tzo4OiJzdGRDbGFzcyI6Mzp7czo1OiJ0aXRsZSI7czowOiIiO3M6NjoiZm9ybWF0IjtzOjE6IjEiO3M6NDoidGV4dCI7czoxNjc6IjxpbWcgc3JjPSJAQFBMVUdJTkZJTEVAQC9sb2dvLnBuZyIgYWx0PSJMb2dvIiB3aWR0aD0iMTYzOSIgaGVpZ2h0PSI4OTciIGNsYXNzPSJpbWctZmx1aWQgYXR0b19pbWFnZV9idXR0b25fdGV4dC1ib3R0b20iPjxwIGRpcj0ibHRyIiBzdHlsZT0idGV4dC1hbGlnbjogbGVmdDsiPjxicj48L3A+Ijt9	1622670350	1622670378
 \.
 -- TO UPDATE THE Block Text, copy the content into https://www.base64decode.org/, then change the text and re-encode (DM 20210602)
 
@@ -29869,6 +29869,7 @@ COPY public.mdl_files (id, contenthash, pathnamehash, contextid, component, file
 5	8c96a486d5801e0f4ab8c411f561f1c687e1f865	373e63af262a9b8466ba8632551520be793c37ff	1	assignfeedback_editpdf	stamps	0	/	cross.png	2	861	image/png	0	\N	\N	\N	1612889097	1612889097	0	\N
 14	a44e5c7aef709981c8de8614ba086bee6248c0a0	3d411fa3d19cbc1bcd6024df2a96046ffdbcff5b	1	core_admin	logo	0	/	Droplet  Text - Teal - Transparent.png	2	28987	image/png	0	Droplet & Text - Teal - Transparent.png	Admin User	unknown	1619624833	1619624888	0	\N
 16	111633dac88c2c1f8a4a3ce418ec381274e012c6	0d626e8ba8127b8d1c94d5e1dbebb73a95ae9504	1	core_admin	logocompact	0	/	Droplet - Teal - Transparent.png	2	72391	image/png	0	Droplet - Teal - Transparent.png	Admin User	unknown	1619624847	1619624888	0	\N
+17	6766cc3a667601eca7e24fd5c484b6f10182031c	9d8075fa3325517c552964a93a7231e677205df4	37	block_html	content	0	/	logo.png	2	32797	image/png	0	logo.png	Admin User	unknown	1654105292	1654105325	0	\N
 \.
 
 
@@ -29876,7 +29877,7 @@ COPY public.mdl_files (id, contenthash, pathnamehash, contextid, component, file
 -- Name: mdl_files_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.mdl_files_id_seq', 5, true);
+SELECT pg_catalog.setval('public.mdl_files_id_seq', 18, true);
 
 
 --
