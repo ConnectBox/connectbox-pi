@@ -53,6 +53,9 @@
   ansible.builtin.unarchive:
     src: ../templates/filedir.tar.gz
     dest: /var/www/moodledata/
+    owner: www-data
+    group: www-data
+    mode: 0777
   become: true
   when: buildDatabase.rc > 0 or overwrite_database
 
