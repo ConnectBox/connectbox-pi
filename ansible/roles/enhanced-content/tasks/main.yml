@@ -152,27 +152,6 @@
     user: www-data
     job: "/usr/bin/python /usr/local/connectbox/bin/phonehome.py >/tmp/push_messages.log  2>&1"
 
-- name: Update enhanced template footer for Moodle if build_moodle
-  replace:
-    path: /var/www/enhanced/content/www/assets/templates/footer.html
-    regexp: 'ifMoodle hidden'
-    replace: 'ifMoodle'
-  when: build_moodle
-
-- name: Update enhanced template footer for Moodle if build_moodle
-  replace:
-    path: /var/www/enhanced/content/www/assets/templates/footer.html
-    regexp: 'DOMAIN'
-    replace: '{{ connectbox_default_hostname }}'
-  when: build_moodle
-
-- name: Copy footer from template to content for live
-  ansible.builtin.copy:
-    src: /var/www/enhanced/content/www/assets/templates/footer.html
-    dest: /var/www/enhanced/content/www/assets/content/footer.html
-    remote_src: yes
-  when: build_moodle
-
 - name: Update hostname in MMI
   replace:
     path: /var/www/enhanced/content/www/assets/content/en/data/interface.json
