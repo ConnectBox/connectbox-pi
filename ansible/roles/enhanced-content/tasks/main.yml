@@ -50,10 +50,9 @@
     owner: www-data
     group: www-data
 
-- name: Install python3-requests
-  apt:
-    name: python3-requests
-    state: present
+- name: Install python requests library
+  pip:
+    name: requests
 
 - name: Download script to add node to apt cache
   get_url:
