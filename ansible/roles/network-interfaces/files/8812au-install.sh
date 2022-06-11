@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 if [ -f /lib/modules/$(uname -r)/kernel/drivers/net/wireless/8812au.ko ];
 then
