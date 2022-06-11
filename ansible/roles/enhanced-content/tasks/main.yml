@@ -50,9 +50,9 @@
     owner: www-data
     group: www-data
 
-- name: Install python requests library
-  pip:
-    name: requests
+- name: Install python2 requests library
+  command: >
+    pip2 install requests 
 
 - name: Download script to add node to apt cache
   get_url:
