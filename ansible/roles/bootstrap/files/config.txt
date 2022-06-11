@@ -80,6 +80,7 @@ dtoverlay=sdtweak,overclock_50=100
 # set boloader delay to 0 seconds
 boot_delay=0
 dtparam=spi=on
+deparam=ant2
 
 [all]
 #dtoverlay=vc4-fkms-v3d
