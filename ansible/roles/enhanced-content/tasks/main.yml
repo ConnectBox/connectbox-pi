@@ -50,9 +50,9 @@
     owner: www-data
     group: www-data
 
-- name: Install python3 requests library
+- name: Install python2 requests library
   command: >
-    pip3 install requests 
+    pip2 install requests 
 
 - name: Install python3 pathlib library
   command: >
