@@ -50,9 +50,13 @@
     owner: www-data
     group: www-data
 
-- name: Install python2 requests library
+- name: Install python3 requests library
   command: >
-    pip2 install requests 
+    pip3 install requests 
+
+- name: Install python3 pathlib library
+  command: >
+    pip3 install pathlib
 
 - name: Download script to add node to apt cache
   get_url:
