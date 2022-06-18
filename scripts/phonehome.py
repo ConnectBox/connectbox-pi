@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 #  Allows ConnectBox to send status and receive updates from Chathost APIs
 
 
