@@ -684,8 +684,9 @@
 #
 
 - name: Configure hostname
-  hostname:
-    name: "{{ connectbox_default_hostname }}"
+  copy:
+    content: "{{ connectbox_default_hostname }}\n"
+    dest: /etc/hostname
 
 - name: Add hosts entry
   blockinfile:
