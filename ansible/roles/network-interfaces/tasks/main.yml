@@ -109,10 +109,15 @@
       /usr/local/connectbox/bin/wlan0.pl &
   when: not aws_instance and connectbox_os != "armbian" and connectbox_os != 'ubuntu' and not OZ2_present
 
+- name: create directory /etc/dhcp/etc_dhcp_dhclient-enter-hooks
+  file: 
+    path: /etc/dhcp/dhclient-enter-hooks
+    state: directory
+
 - name: Add items dhcpcd under /etc/dhcp/dhclient-enter-hooks.d/ 
   template:
-    src: etc_dhcp_dhclient-enter-hooks_wlan0.pi 
-    dest: /etc/dhcp/dhclient-enter-hooks/wlan0.pi 
+    src: etc_dhcp_dhclient-enter-hooks_wlan0.pl 
+    dest: /etc/dhcp/dhclient-enter-hooks/wlan0.pl 
     owner: root
     group: root
     mode: 0755
