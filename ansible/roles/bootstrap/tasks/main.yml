@@ -124,7 +124,7 @@
     happy1: '{{ machine_type[happy0] }}|first'
     happy2: '{{ happy1.find("Compute Module 4") > 0 }}'
     happy3: '{{ (happy1.find("Raspberry Pi") >= 0) }}'
-    happy4: '{{ (happy1.find("Orange Pi Zero 2") >=0 || (happy1.find("OrangePi Zero2") >=0)) }}'
+    happy4: '{{ (happy1.find("Orange") >=0 ) }}'
     happy5: '{{ (happy1.find("NEO") >=0) }}'
 
 -  debug:
