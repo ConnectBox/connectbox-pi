@@ -231,22 +231,15 @@
 - name: apt upgrade --fix-broken full package
   command:  apt --fix-broken upgrade -y
   register: dist_upgraded
-  when: not OZ2_present
+
 
 - name: Check the changes to see if we need to reboot
   set_fact:
     rbtreq: dist_upgraded.stdout | regex_search('0 upgraded, 0 newly installed, 0 to remove and 0') 
-  when: not OZ2_present
-
-- name: Setup rbtreq if OZ2_present
-  set_fact:
-    rbtreq: False
-  when: OZ2_present
 
 - name: print the facts of reboot needed
   debug:
     msg: "the output of dist_upgrade was {{ dist_upgraded.stdout }} and reboot required is {{ rbtreq }}"
-  when: not OZ2_present
 
 - name: Auto clean the packages
   apt:
@@ -259,7 +252,7 @@
 - name: Setup reboot if Upgrade actually occured
   set_fact:
     reboot_required: True
-  when: rbtreq == "" and (not OZ2_present)
+  when: rbtreq == ""
 
 # Needs to happen before the initial reboot, given the job triggers actions
 #  on @reboot
@@ -274,7 +267,7 @@
   file:
     path: /etc/cron.d/orangepi-apt-updates
     state: absent
-  when: (OZ2_present and ansible_distribution|lower == 'Ubuntu')
+  when: (OZ2_present 
 
 - name: Disable systemd-resolve to remove port conflicts
   command: systemctl disable systemd-resolved
@@ -285,7 +278,7 @@
     regexp: '(overlays=)'
     replace: 'overlays=i2c0 usbhost0  usbhost1 cpu-clock-1.368Hz-1.3V'
   register: regxreplace
-  when: (ansible_os_family == 'Ubuntu' or connectbox_os == 'armbian') and not aws_instance
+  when: (ansible_os_family == 'Ubuntu' or connectbox_os == 'armbian') and not aws_instance and not OZ2_present
 
 - name: the results from the proceeding wireless
   debug:
@@ -305,6 +298,7 @@
      state: directory
      mode: '0755'
   ignore_errors: yes
+  when: connectbox_os == 'armbian' and (OS_Version == 'xenial' or OS_Version == 'focal') and not OZ2_present
 
 - name: copy service file over
   template:
@@ -459,7 +453,7 @@
 - name: remove the smartmontools.service 
   shell: systemctl disable smartmontools.service 
   ignore_errors: yes
-  when: connectbox_os != 'raspbian'
+  when: connectbox_os != 'raspbian' or OZ2_present
 
 #  Needed for package upgrades via ansible (aptitude safe-upgrade)
 - name: Install apt
@@ -475,7 +469,6 @@
 # mikegleasonjr.firewall assumes iptables but Armbian doesn't ship with it
 - name: Install iptables
   apt:
-    name: iptables
     state: present
   when: connectbox_os == 'armbian'
 
