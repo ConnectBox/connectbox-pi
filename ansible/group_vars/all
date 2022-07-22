@@ -72,7 +72,7 @@ connectbox_client_repo: https://github.com/ConnectBox/connectbox-react-icon-clie
 connectbox_repo_rev: "HEAD"
 hat_services_repo: https://github.com/ConnectBox/RPi.GPIO_NP_CB 
 # for Orange PI this is https://github.com/ConnectBox/OPI.GPIO originally from github.com/eutim/OPi.GPIO
-oz2_services_repo: https://github.com/ConnectBox/OPI.GPIO
+oz2_services_repo: https://github.com/ConnectBox/RPi.GPIO
 hat_service_repo_rev: "HEAD"
 moodle_repo: 'https://github.com/RT-coding-team/the-well-moodle310.git'
 moodle_repo_rev: "HEAD"

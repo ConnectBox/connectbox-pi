@@ -285,6 +285,10 @@
   when: connectbox_os != 'raspbian' and not OZ2_present
 
 - name: Clone the RPi.GPIO_NP_CB or OrangePi.GPIO repo to battery venv (NEO)
+  debug:
+    msg: "the cloned directory is: {{ hat_services_repo }} to: {{ RPi_GPIO_path }}"
+
+- name: clone the repo for compile
   git: 
     repo: "{{ hat_services_repo }}"
     dest: "{{ RPi_GPIO_path }}"

@@ -267,7 +267,7 @@
   file:
     path: /etc/cron.d/orangepi-apt-updates
     state: absent
-  when: (OZ2_present 
+  when: OZ2_present 
 
 - name: Disable systemd-resolve to remove port conflicts
   command: systemctl disable systemd-resolved
