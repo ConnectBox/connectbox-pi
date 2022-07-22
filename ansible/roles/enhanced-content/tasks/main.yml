@@ -52,7 +52,7 @@
 
 - name: Install python2 requests library
   command: >
-    pip2 install requests 
+    pip3 install requests 
 
 - name: Install python3 pathlib library
   command: >

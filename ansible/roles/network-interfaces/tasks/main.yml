@@ -144,16 +144,16 @@
   register: found_drivers
   ignore_errors: true
 
-#- name: look for alternate kernel drivers that may need to be loaded
-#  shell:
-#    cmd: ls /lib/modules
-#  register: module_ver
+- name: look for alternate kernel drivers that may need to be loaded
+  shell:
+    cmd: ls /lib/modules
+  register: module_ver
 
-#- name: double check the list
-#  set_fact:
-#    file_list: "{{ module_ver.stdout.split() | map('regex_replace', '.*$', '/') | list }}"
-#  debug:
-#    msg: "the list is {{ file_list }}"
+- name: double check the list
+  set_fact:
+    file_list: "{{ module_ver.stdout.split() | map('regex_replace', '.*$', '/') | list }}"
+  debug:
+    msg: "the list is {{ file_list }}"
 
 #- name: Check for drivers that already exsist and we compiled for this release
 #  copy:
@@ -170,20 +170,39 @@
 #  register: found_drivers
 #  when: Copy_output.stdout.find("8812au") or Copy_output.stdout.find("88x2bu") 
 
+- name: check for exsisting drivers in os 
+  command: grep -r rtl88* /usr/lib/modules/{{ module_ver }}/kernel/drivers/net/wireless
+  register: List_output
+  ignore_errors: true
+
+- name: check for rtl88xxxu
+  register: found_drivers
+  when: List_output.stdout.find("rtl8xxxu")
+  
+- name: check for rtl8812au
+  register: driver_a
+  when: List_output.stdout.find("rtl8812au")
+
+- name: check for rtl8812bu
+  register: driverf_b
+  when: List_output.stdout.find("rtl88xbu")
+
 - name: Let the user know that we found the drivers
   debug:
     msg: We found the drivers already compiled on the system for some kernels
-  when: found_drivers is succeeded
+  when: found_drivers is succeeded or driver_a is succeeded or driver_b is succeeded
 
 - name: lets check for exsisting 8812au driver
   shell: dmesg -k | grep -G 88..au
   register: driver_a
   ignore_errors: true
+  when: not driver_a succeeded and not found_drivers succeeded
 
 - name: lset check for the 8812bu driver
   shell: dmesg -k | grep -G 88.2bu
   register: driver_b
   ignore_errors: true
+  when: not driver_b succeeded and not found_drivers succeeded
 
 - name: Insert the driver into the kernel modules 8812au
   command: insmod  /lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/8812au.ko
@@ -228,7 +247,7 @@
     - libelf-dev
     - libssl-dev
     state: present
-  when: (found_drivers.failed or driver_a.stdout.find("8812au") <= -1 or driver_b.stdout.find("88x2bu") <= -1 ) and not (driver_a.stdout.find("88XXau")>=0 or driver_b.stdout.find("88X2bu")>=0)
+  when: (found_drivers.failed or driver_a.stdout.find("8812au") <= -1 or driver_b.stdout.find("88x2bu") <= -1 ) and not (driver_a.stdout.find("88XXau")>=0 or driver_b.stdout.find("88X2bu")>=0) 
 
 - name: apt install raspberrypi-kernel-headers
   apt:
