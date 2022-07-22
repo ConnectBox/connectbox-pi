@@ -894,3 +894,10 @@
     path: /tmp/avrdude
     state: absent
 
+- name: Change the LED functions on orangepi
+  copy:
+    src: rc.local.OZ2 
+    dest: /etc/rc.local
+  when: OZ2_present
+  
+
