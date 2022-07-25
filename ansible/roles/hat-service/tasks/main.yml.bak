@@ -295,7 +295,6 @@
     clone: yes
     update: yes
     force: yes
-  ignore_errors: yes
   when: connectbox_os != "raspbian"
 
 - name: Install RPi.GPIO for Buster buildcd 
