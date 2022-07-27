@@ -9,41 +9,40 @@ PxUSBm.py
 
 This module is a marriage of code to do partition expansion during the first power on (formerly expandFS.py)
  and code to monitor USB activity to mount and unmount USB sticks as they are added and removed from
- USB ports on the ConnectBox. (Testing has shown problems with using two python scripts in the rc.local file.) 
+ USB ports on the ConnectBox. (Testing has shown problems with using two python scripts in the rc.local file.)
 '''
 
 # Python code to expand filesystem
 
-'''
-General outline of Partition Expansion need:
 
-The building of an image results in a single partition which is much smaller than the size of the uSD card
-(typically 2 - 3 GB). It is desired that this partition be expanded to the full size of the uSD card on 
-which the image is placed. To do this, we will use the fdisk program to find the starting sector of the 
-partition. If we then delete the partition, followed by the creation of a new primary partion we can set 
-the start of the new partition at the starting sector of the old partition, and then set the size of the 
-new partition to be the remainder of the disk. During this process, two reboots will be required, one after
-setting up the new partition with fdisk and one after doing the file expansion using resize2fs. 
+#General outline of Partition Expansion need:
 
-Method:
+#The building of an image results in a single partition which is much smaller than the size of the uSD card
+#(typically 2 - 3 GB). It is desired that this partition be expanded to the full size of the uSD card on
+#which the image is placed. To do this, we will use the fdisk program to find the starting sector of the
+#partition. If we then delete the partition, followed by the creation of a new primary partion we can set
+#the start of the new partition at the starting sector of the old partition, and then set the size of the
+#new partition to be the remainder of the disk. During this process, two reboots will be required, one after
+#setting up the new partition with fdisk and one after doing the file expansion using resize2fs.
 
-We will use the library pexpect to handle the interactions between this program and the fdisk program and 
-the library re to handle the regex calls to sort out the number of the starting sector. We also need to 
-handle the selection of whether we are in the fdisk section of the process or the resize2fs section. To do
-this, we will use a second file, expand_progress.txt. Initially, that file will not exist. Upon the first
-boot of the uSD with a new image, this code will be called (rc.local). At the top of this code, we will
-look for the expand_progress.txt file. If it doesn't exist, we know that we are in the fdisk section, and
-so that section will be run. If it completes successfully, the expand_progress file will be created 
-"fdisk_done" will be written and a reboot will be issued by this code. At reboot, this file will be 
-called and again, will test for the existence of expand_progress.txt. Upon finding the file, it will 
-read the contents ("fdisk_done") and if "fdisk_done" is the only entry,
-will proceed to run the resize2fs section of the code. Upon successful completion of that section,
-the expand_progress.txt file will be opened an written with "resize2fs_done" and a second reboot invoked. After
-this reboot, this code will look for the expand_progress.txt file, find it present (fdisk stuff done), 
-read the contents (not empty, so resize2fs complete) and exit. Thus at each reboot from that point on, 
-this code will quickly test the expand_progress.txt file an finding the process complete, will exit.
+#Method:
 
-'''
+#We will use the library pexpect to handle the interactions between this program and the fdisk program and
+#the library re to handle the regex calls to sort out the number of the starting sector. We also need to
+#handle the selection of whether we are in the fdisk section of the process or the resize2fs section. To do
+#this, we will use a second file, expand_progress.txt. Initially, that file will not exist. Upon the first
+#boot of the uSD with a new image, this code will be called (rc.local). At the top of this code, we will
+#look for the expand_progress.txt file. If it doesn't exist, we know that we are in the fdisk section, and
+#so that section will be run. If it completes successfully, the expand_progress file will be created
+#"fdisk_done" will be written and a reboot will be issued by this code. At reboot, this file will be
+#called and again, will test for the existence of expand_progress.txt. Upon finding the file, it will
+#read the contents ("fdisk_done") and if "fdisk_done" is the only entry,
+#will proceed to run the resize2fs section of the code. Upon successful completion of that section,
+#the expand_progress.txt file will be opened an written with "resize2fs_done" and a second reboot invoked. After
+#this reboot, this code will look for the expand_progress.txt file, find it present (fdisk stuff done,
+#read the contents (not empty, so resize2fs complete) and exit. Thus at each reboot from that point on,
+#this code will quickly test the expand_progress.txt file an finding the process complete, will exit.
+
 
 import pexpect
 import time
@@ -285,8 +284,18 @@ def do_fdisk(rpi_platform):
 
   # the value of i is the reference to which of the [] arguments was found
     if i==1:
-        if DEBUG: print("There is no /dev/mmcblk0 partition... exiting")
+        if DEBUG: print("There is no /dev/mmcblk0 partition... ")
         child.kill(0)
+        child = pexpect.spawn("fdisk /dev/mmcblk1", timeout = 10)
+        try:
+           i = child.expect(['Command(m for help)*', 'No such file or directory'])
+        except:
+           if DEBUG: print("Exception thrown during fdisk")
+           if DEBUG: print("debug info:")
+           if DEBUG: print(str(child))
+        if i==1:
+            if DEBUG: print("There is no /dev/mmcblk1 partiton.... kill child")
+            child.kill(0)
     if i==0:
         if DEBUG: print("Found it!")  
   # continuing
@@ -295,7 +304,7 @@ def do_fdisk(rpi_platform):
     child.sendline('p')
     i = child.expect('Command (m for help)*')  
   # the child.before contains all that came BEFORE we found the expected text
-  #print (child.before)  
+  #print (child.before)
     response = child.before
 
   # change from binary to string
@@ -930,7 +939,7 @@ if __name__ == "__main__":
         OP_stat=False
 
     if "OZ2" in brand:
-        RPI_PLATFORM = False
+        rpi_platform = False
         PI_stat=False
         OP_stat =True
 
