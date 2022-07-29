@@ -29,6 +29,16 @@
 #    update-cache: yes
 
 # These are all required by Moodle: Moodle can just take the latest so we don't have to specify version even if Pi will want 7.3 and AWS will install 8.x
+- name: check the version of the OS being used and update the PHP php_version
+  command: echo '7.4'
+  register: php_version
+  when: OS_Version == 'buster'
+
+- name: check the version of the OS being used and update the PHP php_version
+  command: echo '7.0'
+  register: php_version
+  when OS_Version`= 'stretch'
+
 - name: Install PHP & Libraries required by Moodle
   apt:
     pkg:
