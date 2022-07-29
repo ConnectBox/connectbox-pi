@@ -61,7 +61,7 @@
     - php{{ php_version }}-soap
     - php{{ php_version }}-fpm
     - php{{ php_version }}-gd
-  state: present
+
 
 # Set larger uploads configs for PHP
 
