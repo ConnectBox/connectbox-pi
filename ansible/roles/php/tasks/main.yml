@@ -33,7 +33,7 @@
   ansible.builtin.set_fact:
     php_version: 7.4
     casheable: yes
-  when: OS_Version == 'buster'
+  when: OS_Version == 'bullseye'
 
 - name: check the version of the OS being used and update the PHP php_version
   ansible.builtin.set_fact:
