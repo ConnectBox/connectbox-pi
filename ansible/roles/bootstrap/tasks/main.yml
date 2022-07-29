@@ -895,9 +895,15 @@
     state: absent
 
 - name: Change the LED functions on orangepi
-  copy:
-    src: rc.local.OZ2 
-    dest: /etc/rc.local
-  when: OZ2_present
+  blockinfile:
+    path: /etc/rc.local
+    insertafter: "# By default this script does nothing."
+    block: |
+        # Change the way the LED's work on the OrangePi Zero2
+        echo 'mmc0' > /sys/class/leds/red\:power/trigger
+        echo 'activity' > /sys/class/leds/green\:status/trigger
+
+  when: not aws_instance and OZ2_present
+  
   
 
