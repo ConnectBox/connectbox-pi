@@ -193,6 +193,7 @@
   pip:
     name: git+https://github.com/ConnectBox/NEO_BatteryLevelShutdown.git
     virtualenv: "{{ hat_service_virtualenv_dir }}"
+  ignore_errors: yes                                              #If already installed don't fail on the failed git.
 
 - name: Install Pillow and psutil in virtual environment
   pip:
