@@ -53,6 +53,7 @@
 - name: Install usbmuxd for Tethering Internet Connection
   apt:
     package: usbmuxd
+    state: present
 
 - name: Configure network interfaces NEO
   template:
