@@ -30,17 +30,16 @@
 
 # These are all required by Moodle: Moodle can just take the latest so we don't have to specify version even if Pi will want 7.3 and AWS will install 8.x
 - name: check the version of the OS being used and update the PHP php_version
-  ansible.builtin.set.fact:
+  ansible.builtin.set_fact:
     php_version: 7.4
     casheable: yes
   when: OS_Version == 'buster'
 
 - name: check the version of the OS being used and update the PHP php_version
-  ansible.builtin.set.fact:
+  ansible.builtin.set_fact:
     php_version: 7.0
     cacheable: yes
   when: OS_Version == 'stretch'
-
 
 - name: show the php version number
   debug:
