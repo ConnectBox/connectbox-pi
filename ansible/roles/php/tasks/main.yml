@@ -37,7 +37,7 @@
 - name: check the version of the OS being used and update the PHP php_version
   shell: echo '7.0'
   register: php_version
-  when: OS_Version`== 'stretch'
+  when: OS_Version == 'stretch'
 
 - name: show the php version number
   debug:
