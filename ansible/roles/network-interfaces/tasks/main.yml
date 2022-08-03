@@ -141,6 +141,7 @@
   shell:
     cmd: ls /lib/modules
   register: module_ver
+
 - name: Check for drivers that already exisist and we compiled for this release
   copy:
     src: "{{ module_ver }}/"
@@ -150,6 +151,12 @@
     mode: '0644'
   register: found_drivers
   ignore_errors: true 
+
+
+- name: tell if we found pre-compiled drivers
+  debug:
+    msg: "We found pre-compiled drivers on the build system!"
+  when: found_drivers
 
 
 #- set_fact:
@@ -182,7 +189,7 @@
   shell: echo  "rtl8xxxu"
   register: found_drivers
   ignore_errors: yes
-  when: '"rtl8xxxu" in List_output.stdout'
+  when: ('"rtl8xxxu" in List_output.stdout') and (connectbox_os != 'raspbian') 
   
 - name: check for rtl8812au
   shell: echo "rtl8812au"
@@ -236,9 +243,19 @@
     group: root
     mode: '0777'
 
-- name: Add running of loadwifi.sh to the end of boot with rc.local  
-  command: echo "sh /usr/local/connectbox/bin/loadwifi.sh" >> /etc/rc.local
+- name: Add items to rc.local
+  blockinfile:
+    path: /etc/rc.local
+    insertafter: "# By default this script does nothing."
+    block: |
+      # Add running of loadwifi.sh to the end of boot with rc.local
+        sh /usr/local/connectbox/bin/loadwifi.sh
+  when: not aws_instance
 
+- name: Create a variable based on the results of the finds
+    set_fact:
+       compile_a : (((found_drivers.failed) or (driver_a1.find("8812au") <= -1)) and (not (driver_a1.find("88XXau")>=0)))
+       compile_b : (((found_drivers.failed) or (driver_b1.find("88x2bu") <= -1)) and (not (driver_b1.find("88X2bu")>=0)))
 
 # Note we have already upgraded the OS to the lattest in role bootstrap
 # now we just install the current OS build tools
@@ -252,7 +269,7 @@
     - libssl-dev
     state: present
   ignore_errors: yes
-  when: ((found_drivers.failed) or (driver_a1.find("8812au") <= -1) or (driver_b1.find("88x2bu") <= -1)) and (not ((driver_a1.find("88XXau")>=0) or (driver_b1.find("88X2bu")>=0))) 
+  when: compile_a or compile_b
 
 - name: apt install raspberrypi-kernel-headers
   apt:
@@ -260,7 +277,7 @@
     - raspberrypi-kernel-headers
     state: present
   ignore_errors: yes
-  when: (connectbox_os == "raspbian") and  (found_drivers.failed and ((driver_a1.stdout.find("8812au") <= -1) or (driver_b1.stdout.find("8812bu") <= -1)) and not ((driver_a1.find("88XXau")>=0) or (driver_b1.find("88X2bu")>=0)))
+  when: (connectbox_os == "raspbian") and (compile_b or compile_a)
 
 # or apt-get install linux-headers-$(uname -r)
 - name: apt install linux-headers-current-sunxi
@@ -269,7 +286,7 @@
     - linux-headers-current-sunxi
     state: present
   ignore_errors: yes
-  when: ((connectbox_os != "raspbian") and  ((found_drivers.failed) and ((driver_a.find("8812au") <= -1) or (driver_b.find("8812bu") <= -1 )) and not ((driver_a1.find("88XXau")>=0) or (driver_b1.find("88X2bu")>=0))))
+  when: ((connectbox_os != "raspbian") and (compile_b or compile_a)
 
 - name: Copy over 8812au-install script for Raspian
   copy:
@@ -277,14 +294,14 @@
     dest: /tmp/8812au-install.sh
     mode: "+x"
   ignore_errors: yes
-  when: (found_drivers.failed) and (driver_a1.find("8812au") <= -1) and (driver_a1.find("88XXau")<0)
+  when: ((found_drivers.failed) and (driver_a1.find("88XXau")<0)) or compile_a
 
 - name: Compile the 8812au driver for Raspbian or NEO
   command:
      chdir: /tmp
      cmd: "sh 8812au-install.sh"
   ignore_errors: yes
-  when: (found_drivers.failed) and (driver_a1.find("8812au") <= -1) and (driver_a1.find("88XXau")<0)
+  when: ((found_drivers.failed) and (driver_a1.find("88XXau")<0)) or compile_a
 
 - name: Copy over 88x2bu-install script for Raspian
   copy:
@@ -292,21 +309,21 @@
     dest: /tmp/88x2bu-install.sh
     mode: "+x"
   ignore_errors: yes
-  when: (found_drivers.failed) and (driver_b1.find("8812bu") <= -1) and (driver_b1.find("88X2bu")<0)
+  when: ((found_drivers.failed) and (driver_b1.find("8812bu") <= 0) and (driver_b1.find("88X2bu") < 0)) or compile_b 
 
 - name: Fetch the compiled 8812au driver to control machine
   fetch:
     src: /tmp/rtl8812au*/88x12au.ko 
     dest: "~/connectbox/connectbox-tools/{{ kernel_num.stdout }}_8812au.ko"
   ignore_errors: yes
-  when: (found_drivers.failed) and (driver_a1.find("8812au") <= -1) and (driver_a1.find("88XXau")<0)
+  when: ((found_drivers.failed) and (driver_a1.find("88XXau")<0)) or compile_a
 
 - name: Compile the 88x2bu driver for Raspbian or NEO
   command:
      chdir: /tmp
      cmd: "sh 88x2bu-install.sh"
   ignore_errors: yes
-  when: (found_drivers.failed) and (driver_b1.find("8812bu") <= -1) and (driver_b1.find("88X2bu")< 0)
+  when: ((found_drivers.failed) and (driver_b1.find("8812bu") <= 0) and (driver_b1.find("88X2bu") < 0)) or compile_b
 
 - name: Fetch the compiled 8812bu driver to control machine
   fetch:
@@ -315,7 +332,7 @@
     fail_on_missing: yes
     flat: yes
   ignore_errors: yes
-  when: (found_drivers.failed) and (driver_b1.find("8812bu") <= -1) and (driver_b1.find("88X2bu")< 0)
+  when: ((found_drivers.failed) and (driver_b1.find("8812bu") <= 0) and (driver_b1.find("88X2bu") < 0)) or compile_b
 
 - name: Remove headers for raspbian
   apt:
@@ -323,7 +340,7 @@
     - raspberrypi-kernel-headers
     state: absent
   ignore_errors: yes
-  when: (connectbox_os == "raspbian") and  ((found_drivers.failed) and ((driver_a1.find("8812au") <= -1) or (driver_b1.find("8812bu") <= -1))) and (not ((driver_a1.find("88XXau")>=0) or (driver_b1.find("88X2bu")>=0)))
+  when: ((compile_a or compile_b) and (connectbox_os == "raspbian"))
 
 # or remove linux-headers-$(uname -r)
 - name: apt install linux-headers-current-sunxi
@@ -332,15 +349,7 @@
     - linux-headers-current-sunxi
     state: absent
   ignore_errors: yes
-  when: (connectbox_os != "raspbian") and  ((found_drivers.failed) and ((driver_a1.find("8812au") <= -1) or (driver_b1.find("8812bu") <= -1 ))) and (not ((driver_a1.find("88XXau")>=0) or (driver_b1.find("88X2bu")>=0)))
-
-- name: remove headers for raspbian
-  apt:
-    pkg:
-    - raspberrypi-kernel-headerst
-    state: absent
-  ignore_errors: yes
-  when: (connectbox_os == "raspbian") and  ((found_drivers.failed) and ((driver_a.find("8812au") <= -1) or (driver_b.find("8812bu") <= -1 )))  and (not ((driver_a1.find("88XXau")>=0) or (driver_b1.find("88X2bu")>=0)))
+  when: ((connectbox_os != "raspbian") and  (compile_a or compile_b))
 
 - name: remove build tools
   apt:
@@ -352,7 +361,7 @@
     - raspbewrrypi-kernel-headers
     state: absent
   ignore_errors: yes
-  when:  ((found_drivers.failed) or (driver_a1.find("8812au") <= -1) or (driver_b1.find("8812bu") <= -1 )) and (not ((driver_a1.find("88XXau")>=0) or (driver_b1.find("88X2bu")>=0)))
+  when:  ((found_drivers.failed) or compile_a or compile_b)
 
 # Note: this is not a handler because we need the network configuration in
 # effect before proceeding with the wifi-ap and firewall roles, which will
