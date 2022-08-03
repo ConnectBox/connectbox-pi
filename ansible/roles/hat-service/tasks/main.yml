@@ -266,6 +266,9 @@
     virtualenv: "{{ hat_service_virtualenv_dir }}"
   when: connectbox_os == "raspbian" 
 
+- name: set fact for RPi_GPIP_path
+  vars:
+    RPi_GPIO_path: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/RPi.GPIO"
  
 # Install RPi.GPIO_NP_CB as RPi.GPIO
 - name: get the status of OZ2_present 
@@ -276,14 +279,8 @@
 
 - name: set path to Opi.GPIO (Orange Pi Zero2)
   set_fact:
-    RPi_GPIO_path: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/RPi.GPIO"
     hat_services_repo: '{{ oz2_services_repo }}'
   when: connectbox_os != 'raspbian' and OZ2_present
-
-- name: set path to virtual directory if NEO 
-  set_fact:
-    RPi_GPIO_path: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/RPi.GPIO"
-  when: connectbox_os != 'raspbian' and not OZ2_present
 
 - name: Clone the RPi.GPIO_NP_CB or OrangePi.GPIO repo to battery venv (NEO)
   debug:
