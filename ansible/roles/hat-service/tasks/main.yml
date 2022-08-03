@@ -267,12 +267,12 @@
   when: connectbox_os == "raspbian" 
 
 - name: set fact for RPi_GPIP_path
-  vars:
+  set_fact:
     RPi_GPIO_path: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/RPi.GPIO"
  
 # Install RPi.GPIO_NP_CB as RPi.GPIO
 - name: get the status of OZ2_present 
-  vars:
+  set_fact:
     OZ2_present: "{{ hostvars[inventory_hostname]['OZ2_present'] }}"
   debug:
     msg: "The OZ2_present status is {{ OZ2_present }}"
@@ -281,6 +281,8 @@
   set_fact:
     hat_services_repo: '{{ oz2_services_repo }}'
   when: connectbox_os != 'raspbian' and OZ2_present
+
+# Hat Services Repo for NEO is set in ansible/group_vars/all by default
 
 - name: Clone the RPi.GPIO_NP_CB or OrangePi.GPIO repo to battery venv (NEO)
   debug:
