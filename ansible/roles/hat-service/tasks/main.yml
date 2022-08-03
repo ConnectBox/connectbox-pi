@@ -269,15 +269,22 @@
 - name: set fact for RPi_GPIP_path
   set_fact:
     RPi_GPIO_path: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/RPi.GPIO"
+
+- debug: output the path for RPi_GPIO
+    msg: "The path for RPi_GPIO is: {{ RPi_GPIO_path }}"
  
-# Install RPi.GPIO_NP_CB as RPi.GPIO
+# Install RPi.GPIO_NP_CB as RPi.GPIO for NEO compiling of RPi.GPIO
+# note that this was done in the ansible/group_var/all file
+
 - name: get the status of OZ2_present 
   set_fact:
     OZ2_present: "{{ hostvars[inventory_hostname]['OZ2_present'] }}"
+
+- name: output the OZ2 variable
   debug:
     msg: "The OZ2_present status is {{ OZ2_present }}"
 
-- name: set path to Opi.GPIO (Orange Pi Zero2)
+- name: set path to Opi.GPIO (Orange Pi Zero2) for compiling RPi.GPIO
   set_fact:
     hat_services_repo: '{{ oz2_services_repo }}'
   when: connectbox_os != 'raspbian' and OZ2_present
