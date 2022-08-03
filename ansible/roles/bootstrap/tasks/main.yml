@@ -346,8 +346,8 @@
 
 - name: Install PHP if this is an OrangePi Zero2 
   apt:
-    PHP
-  state: present 
+    name: PHP
+    state: present 
   when: OZ2_present
 
 - name: Copy over a new dnsmasq file if were on ubuntu debian focal
