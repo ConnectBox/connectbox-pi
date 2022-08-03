@@ -49,6 +49,7 @@ import time
 import logging
 import re
 import os
+import Popen
 from subprocess import Popen, PIPE
 
 
@@ -167,7 +168,13 @@ def mountCheck():
           if not (os.path.exists("/media/usb"+chr(a))):  #if the /mount/usbx isn't there create it
             res = os.system("mkdir /media/usb"+chr(a))
             if DEBUG > 2: print("created new direcotry %s","/media/usb"+chr(a))
-          b = "mount /dev/" + e.group() + " /media/usb" + chr(a)+ " -o noatime,nodev,nosuid,sync,iocharset=utf8"
+          x = Popen(["uname", "-r"], stdout=PIPE)
+          y = str(x.communicate()[0])
+          x.stdout.close()
+          if y>="5.15.0":
+            b = "mount /dev/" + e.group() + "-t auto -o noatime,nodev,nosuid,sync,utf8" + " /media/usb" + chr(a)
+          else:
+            b = "mount /dev/" + e.group() + " -o noatime,nodev,nosuid,sync,iocharset=utf8" + " /media/usb" + chr(a)
           res = os.system(b)
           if DEBUG > 2: print("completed mount /dev/",e.group)
           mnt[j]=ord(e.group()[len(e.group())-2])
