@@ -344,6 +344,12 @@
   when: (reboot_required and (confirm_reboot.user_input | bool)) or (confirm_reboot.user_input | bool)
   tags: reboot1
 
+- name: Install PHP if this is an OrangePi Zero2 
+  apt:
+    PHP
+  state: present 
+  when: OZ2_present
+
 - name: Copy over a new dnsmasq file if were on ubuntu debian focal
   copy: 
     src: dnsmasq.conf
@@ -670,7 +676,21 @@
       # Create missing log files and restart nginx service
       #  we need this or nginx won't run
         sh /usr/local/connectbox/bin/CreateLogFiles.sh 
-  when: not aws_instance
+  when: not aws_instance and not OZ2_present
+
+
+- name: Add items to rc.local
+  blockinfile:
+    path: /etc/rc.local
+    insertafter: "# By default this script does nothing."
+    block: |
+      # Create missing log files and restart nginx service
+      #  we need this or nginx won't run
+        sh /usr/local/connectbox/bin/CreateLogFiles.sh 
+      # Change the way the LED's work on the OrangePi Zero2
+        echo 'mmc0' > /sys/class/leds/red\:power/trigger
+        echo 'activity' > /sys/class/leds/green\:status/trigger
+  when: not aws_instance and OZ2_present
 
 # Moved over from connectbox/tasks/main.yml by Derek Maxson 20220129
 #   So that we have access to the scripts during startup
@@ -894,16 +914,7 @@
     path: /tmp/avrdude
     state: absent
 
-- name: Change the LED functions on orangepi
-  blockinfile:
-    path: /etc/rc.local
-    insertafter: "# By default this script does nothing."
-    block: |
-        # Change the way the LED's work on the OrangePi Zero2
-        echo 'mmc0' > /sys/class/leds/red\:power/trigger
-        echo 'activity' > /sys/class/leds/green\:status/trigger
 
-  when: not aws_instance and OZ2_present
   
   
 

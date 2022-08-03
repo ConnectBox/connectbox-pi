@@ -222,6 +222,11 @@
     dest: /var/cache/apt
     state: absent
 
+# File system resize is now handled by PxUSBm.py
+# So the following code was taken out by Kirk Wilson
+# 2022.8.2
+
+
 # Schedule a resize of the root partition after the next boot
 # This is a benign operation if the partition is already full
 #  and scheduling it here allows for it to be expanded on first
@@ -231,19 +236,19 @@
 # Note that this step will fail when using focal... need to discover
 #  a correct way to accomplish resize...
 
-- name: Copy armbian-resize-filesystem.service source
-  copy:
-    src: armbian-resize-filesystem.service
-    dest: /etc/systemd/system/armbian-resize-filesystem.service
-  when: connectbox_os != "raspbian"
+#- name: Copy armbian-resize-filesystem.service source
+#  copy:
+#    src: armbian-resize-filesystem.service
+#    dest: /etc/systemd/system/armbian-resize-filesystem.service
+#  when: connectbox_os != "raspbian"
 
 - name: Reload systemd
   command: systemctl daemon-reload
   when: connectbox_os != "raspbian"
 
-- name: Enable the file resize on next reboot
-  command: systemctl enable armbian-resize-filesystem.service
-  when: connectbox_os != "raspbian"
+#- name: Enable the file resize on next reboot
+#  command: systemctl enable armbian-resize-filesystem.service
+#  when: connectbox_os != "raspbian"
 
 - name: Remove .ssh authorized_keys
   file:

@@ -270,7 +270,8 @@
   set_fact:
     RPi_GPIO_path: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/RPi.GPIO"
 
-- debug: output the path for RPi_GPIO
+- name: Output the path for RPI_GPIO
+  debug:
     msg: "The path for RPi_GPIO is: {{ RPi_GPIO_path }}"
  
 # Install RPi.GPIO_NP_CB as RPi.GPIO for NEO compiling of RPi.GPIO

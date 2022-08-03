@@ -49,7 +49,6 @@ import time
 import logging
 import re
 import os
-import Popen
 from subprocess import Popen, PIPE
 
 
