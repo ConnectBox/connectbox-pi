@@ -252,10 +252,10 @@
         sh /usr/local/connectbox/bin/loadwifi.sh
   when: not aws_instance
 
-- name: Create a variable based on the results of the finds
-    set_fact:
-       compile_a : (((found_drivers.failed) or (driver_a1.find("8812au") <= -1)) and (not (driver_a1.find("88XXau")>=0)))
-       compile_b : (((found_drivers.failed) or (driver_b1.find("88x2bu") <= -1)) and (not (driver_b1.find("88X2bu")>=0)))
+#Create a variable based on the results of the finds
+- set_fact:
+    compile_a : (((found_drivers.failed) or (driver_a1.find("8812au") <= -1)) and (not (driver_a1.find("88XXau")>=0)))
+    compile_b : (((found_drivers.failed) or (driver_b1.find("88x2bu") <= -1)) and (not (driver_b1.find("88X2bu")>=0)))
 
 # Note we have already upgraded the OS to the lattest in role bootstrap
 # now we just install the current OS build tools
@@ -294,14 +294,14 @@
     dest: /tmp/8812au-install.sh
     mode: "+x"
   ignore_errors: yes
-  when: ((found_drivers.failed) and (driver_a1.find("88XXau")<0)) or compile_a
+  when: ((driver_a1.find("88XXau")<0) or compile_a)
 
 - name: Compile the 8812au driver for Raspbian or NEO
   command:
      chdir: /tmp
      cmd: "sh 8812au-install.sh"
   ignore_errors: yes
-  when: ((found_drivers.failed) and (driver_a1.find("88XXau")<0)) or compile_a
+  when: ((driver_a1.find("88XXau")<0) or compile_a)
 
 - name: Copy over 88x2bu-install script for Raspian
   copy:
@@ -309,21 +309,21 @@
     dest: /tmp/88x2bu-install.sh
     mode: "+x"
   ignore_errors: yes
-  when: ((found_drivers.failed) and (driver_b1.find("8812bu") <= 0) and (driver_b1.find("88X2bu") < 0)) or compile_b 
+  when: (((driver_b1.find("8812bu") <= 0) and (driver_b1.find("88X2bu") < 0)) or compile_b )
 
 - name: Fetch the compiled 8812au driver to control machine
   fetch:
     src: /tmp/rtl8812au*/88x12au.ko 
     dest: "~/connectbox/connectbox-tools/{{ kernel_num.stdout }}_8812au.ko"
   ignore_errors: yes
-  when: ((found_drivers.failed) and (driver_a1.find("88XXau")<0)) or compile_a
+  when: ((driver_a1.find("88XXau")<0) or compile_a)
 
 - name: Compile the 88x2bu driver for Raspbian or NEO
   command:
      chdir: /tmp
      cmd: "sh 88x2bu-install.sh"
   ignore_errors: yes
-  when: ((found_drivers.failed) and (driver_b1.find("8812bu") <= 0) and (driver_b1.find("88X2bu") < 0)) or compile_b
+  when: (((driver_b1.find("8812bu") <= 0) and (driver_b1.find("88X2bu") < 0)) or compile_b)
 
 - name: Fetch the compiled 8812bu driver to control machine
   fetch:
@@ -332,7 +332,7 @@
     fail_on_missing: yes
     flat: yes
   ignore_errors: yes
-  when: ((found_drivers.failed) and (driver_b1.find("8812bu") <= 0) and (driver_b1.find("88X2bu") < 0)) or compile_b
+  when: (((driver_b1.find("8812bu") <= 0) and (driver_b1.find("88X2bu") < 0)) or compile_b)
 
 - name: Remove headers for raspbian
   apt:
@@ -361,7 +361,7 @@
     - raspbewrrypi-kernel-headers
     state: absent
   ignore_errors: yes
-  when:  ((found_drivers.failed) or compile_a or compile_b)
+  when:  (compile_a or compile_b)
 
 # Note: this is not a handler because we need the network configuration in
 # effect before proceeding with the wifi-ap and firewall roles, which will
