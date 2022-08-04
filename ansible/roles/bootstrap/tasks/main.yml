@@ -675,7 +675,8 @@
     block: |
       # Create missing log files and restart nginx service
       #  we need this or nginx won't run
-        sh /usr/local/connectbox/bin/CreateLogFiles.sh 
+        sh /usr/local/connectbox/bin/CreateLogFiles.sh
+        sh /usr/local/connectbox/bin/loadwifi.sh 
   when: not aws_instance and not OZ2_present
 
 
@@ -687,6 +688,7 @@
       # Create missing log files and restart nginx service
       #  we need this or nginx won't run
         sh /usr/local/connectbox/bin/CreateLogFiles.sh 
+        sh /usr/local/connectbox/bin/loadwifi.sh 
       # Change the way the LED's work on the OrangePi Zero2
         echo 'mmc0' > /sys/class/leds/red\:power/trigger
         echo 'activity' > /sys/class/leds/green\:status/trigger

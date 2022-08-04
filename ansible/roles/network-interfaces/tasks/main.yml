@@ -34,16 +34,6 @@
 
     mode: 0755
 
-- name: Add items to rc.local
-  blockinfile:
-    path: /etc/rc.local
-    insertafter: "#BEGIN ANSIBLE MANAGED BLOCK"
-    marker: <!--- {~} load wifi script -->
-    block: |
-      # Run shell script to load Wifi drivers into kernel if they are no 
-      # already loaded (alternate kernels on some devices)
-      sh /usr/local/connectbox/bin/loadwifi.sh   
-
 - name: Make sure systemd-resolved is not running
   service:
     name: systemd-resolved
@@ -218,14 +208,17 @@
     group: root
     mode: '0777'
 
-- name: Add items to rc.local
-  blockinfile:
-    path: /etc/rc.local
-    insertafter: "# By default this script does nothing."
-    block: |
-      # Add running of loadwifi.sh to the end of boot with rc.local
-        sh /usr/local/connectbox/bin/loadwifi.sh
-  when: not aws_instance
+
+# This line was moved to bootstrap/tasks/main.yml since two edits don't work 
+# See Add items to rc.local in bootstrap.
+#- name: Add items to rc.local
+#  blockinfile:
+#    path: /etc/rc.local
+#    insertafter: "# By default this script does nothing."
+#    block: |
+#       Add running of loadwifi.sh to the end of boot with rc.local
+#        sh /usr/local/connectbox/bin/loadwifi.sh
+#  when: not aws_instance
 
 #Create a variable based on the results of the finds
 - set_fact:
