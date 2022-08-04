@@ -163,7 +163,7 @@ def mountCheck():
             k += 1
           a = ord('0')+k
           if DEBUG > 2: print("end of loop were going to use location "+str(j)+" and ord "+chr(a))
-# Now e know we need to do a mount and have found the lowest mount point to use in (a)
+# Now we know we need to do a mount and have found the lowest mount point to use in (a)
           if not (os.path.exists("/media/usb"+chr(a))):  #if the /mount/usbx isn't there create it
             res = os.system("mkdir /media/usb"+chr(a))
             if DEBUG > 2: print("created new direcotry %s","/media/usb"+chr(a))
@@ -171,7 +171,7 @@ def mountCheck():
           y = str(x.communicate()[0])
           x.stdout.close()
           if y>="5.15.0":
-            b = "mount /dev/" + e.group() + "-t auto -o noatime,nodev,nosuid,sync,utf8" + " /media/usb" + chr(a)
+            b = "mount /dev/" + e.group() + " -o noatime,nodev,nosuid,sync,utf8" + " /media/usb" + chr(a)
           else:
             b = "mount /dev/" + e.group() + " -o noatime,nodev,nosuid,sync,iocharset=utf8" + " /media/usb" + chr(a)
           res = os.system(b)
