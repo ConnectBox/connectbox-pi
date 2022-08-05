@@ -171,9 +171,9 @@ def mountCheck():
           y = str(x.communicate()[0])
           x.stdout.close()
           if y>="5.15.0":
-            b = "mount /dev/" + e.group() + " -o noatime,nodev,nosuid,sync,utf8" + " /media/usb" + chr(a)
+            b = "mount /dev/" + e.group() + " -t auto -o noatime,nodev,nosuid,sync,utf8" + " /media/usb" + chr(a)
           else:
-            b = "mount /dev/" + e.group() + " -o noatime,nodev,nosuid,sync,iocharset=utf8" + " /media/usb" + chr(a)
+            b = "mount /dev/" + e.group() + " -t auto -o noatime,nodev,nosuid,sync,iocharset=utf8" + " /media/usb" + chr(a)
           res = os.system(b)
           if DEBUG > 2: print("completed mount /dev/",e.group)
           mnt[j]=ord(e.group()[len(e.group())-2])
