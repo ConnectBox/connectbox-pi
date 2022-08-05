@@ -435,6 +435,11 @@ def ESSID_Check(b, restart):
       if restart:
           process = Popen("systemctl restart hostapd.service", shell=True, stdout=PIPE, stderr=PIPE) # lets restart hostapd and see if we can get our ESSID
           stdout, stderr = process.communicate()
+          if "masked" in stdout:
+            process = Popen("systemctl unmask hostapd.service", shell=True, stdout=PIPE, stderr=PIPE) # lets unmask the hostapd.
+            stdout, stderr = process.communicate()
+            process = Popen("systemctl restart hostapd.service", shell=True, stdout=PIPE, stderr=PIPE) # if we unmasked it lets restart it.
+            stdout, stderr = process.communicate()
           process = Popen("systemctl restart dnsmasq", shell=True, stdout=PIPE, stderr=PIPE)
           stdout, stderr = process.communicate()
           time.sleep(15)
