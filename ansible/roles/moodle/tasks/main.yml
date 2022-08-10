@@ -27,7 +27,7 @@
 
 - name: Download The Well App (Moodle Android App) from URL 
   get_url:
-    url: 'https://thewell-images.s3-us-west-2.amazonaws.com/{{app_download_local_filename}}'
+    url: 'https://github.com/RT-coding-team/moodleapp/raw/master/builds/the-well.apk'
     dest: /var/www/moodle/thewell
 
 - name: Customize App Download Page
