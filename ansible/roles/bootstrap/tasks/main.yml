@@ -881,6 +881,34 @@
 #    mode: preserve
 #  when: CM4_present
 
+- name: Make connectbox test directory
+  file:
+    state: directory
+    path: /usr/local/connectbox/test
+    mode: 0755
+
+- name: copy test file RW_AT.py
+  copy:
+   src: usr_local_connectbox_test_RW_AT.py
+   dest: /usr/local/connectbox/test/RW_AT.py
+  when: CM4_present
+
+- name: copy test file RW_AXP209-53.py
+  copy:
+   src: usr_local_connectbox_test_RW_AXP209-53.py
+   dest: /usr/local/connectbox/test/RW_AXP209-53.py
+  when: CM4_present
+
+- name: copy test file RW_BatLog.py
+  copy:
+   src: usr_local_connectbox_test_RW_BatLog.py
+   dest: /usr/local/connectbox/test/RW_BatLog.py
+  when: CM4_present
+
+- name: Install smbus2 for CM4 build
+  command: "pip3 install smbus2"
+  when: CM4_present
+
 - name: Change avrdude config for reset pin for CM4
   replace:
     path: /etc/avrdude.conf
