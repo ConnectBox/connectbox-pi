@@ -873,6 +873,11 @@
     state: present
   when: CM4_present
 
+- name: install other needed python libraries
+  apt:
+    name: smbus2, json
+    state: present
+
 #- name: copy the config files
 #  copy:
 #    src: /tmp/avrdude/avrdude/avrdude.conf 

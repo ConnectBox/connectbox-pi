@@ -266,7 +266,7 @@
     virtualenv: "{{ hat_service_virtualenv_dir }}"
   when: connectbox_os == "raspbian" 
 
-- name: set fact for RPi_GPIP_path
+- name: set fact for RPi_GPIO_path
   set_fact:
     RPi_GPIO_path: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/RPi.GPIO"
 
@@ -313,6 +313,11 @@
 - name: Install RPi.GPIO for Bullseye build
   command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.1a4"
   when: OS_Version == 'bullseye' and connectbox_os == 'raspbian'
+
+- name: check for setup.python
+  stat:
+    path: "{{ hat_service_virtualenv_dir }}/setup.py"
+  register: setup_file_exists
   
 # new RPi_GPIO handles the pull down service for these pins where it did not in focal
 # The command must include the path to the virtual environment version of python3 or the resulting
@@ -322,7 +327,7 @@
   command: "{{ hat_service_virtualenv_dir }}/bin/python3 setup.py install"
   args:
     chdir: "{{ RPi_GPIO_path }}"
-  when: connectbox_os != "raspbian" 
+  when: (connectbox_os != "raspbian") and (setup_file_esxists.stat.exist)   # it will not exsist if we have come through here already
 
 # With RPi.GPIO installed, we can now install the luma.core and luma.oled modules
 #  which will use the installed RPi.GPIO 
