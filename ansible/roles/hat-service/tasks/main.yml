@@ -327,7 +327,7 @@
   command: "{{ hat_service_virtualenv_dir }}/bin/python3 setup.py install"
   args:
     chdir: "{{ RPi_GPIO_path }}"
-  when: (connectbox_os != "raspbian") and (setup_file_exists.stat.exist)   # it will not exsist if we have come through here already
+  when: (connectbox_os != "raspbian") and (setup_file_exists.stat.exists)   # it will not exsist if we have come through here already
 
 # With RPi.GPIO installed, we can now install the luma.core and luma.oled modules
 #  which will use the installed RPi.GPIO 
