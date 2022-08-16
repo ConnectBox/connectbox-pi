@@ -469,7 +469,7 @@
 
 - name: Install jq so that ConnectBoxManage.sh can edit brand.txt easily
   apt:
-    name: ['jq', 'usbutils']
+    name: ['jq']
     state: present
 
 # mikegleasonjr.firewall assumes iptables but Armbian doesn't ship with it
@@ -880,7 +880,6 @@
   ignore_errors: yes
 
 
-
 #- name: copy the config files
 #  copy:
 #    src: /tmp/avrdude/avrdude/avrdude.conf 
@@ -892,7 +891,7 @@
 - name: Make connectbox test directory
   file:
     state: directory
-    path: /usr/local/connectbox/test
+    path: /usr/local/connectbox/tes
     mode: 0755
 
 - name: copy test file RW_AT.py
@@ -913,9 +912,6 @@
    dest: /usr/local/connectbox/test/RW_BatLog.py
   when: CM4_present
 
-- name: Install smbus2 for CM4 build
-  command: "pip3 install smbus2"
-  when: CM4_present
 
 - name: Change avrdude config for reset pin for CM4
   replace:
