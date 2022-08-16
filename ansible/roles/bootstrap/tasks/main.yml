@@ -874,9 +874,12 @@
   when: CM4_present
 
 - name: install other needed python libraries
-  apt:
-    name: smbus2, json
-    state: present
+  pip:
+    name: json, smbus2
+    executable: pip3
+  ignore_errors: yes
+
+
 
 #- name: copy the config files
 #  copy:
