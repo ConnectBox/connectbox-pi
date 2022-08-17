@@ -306,14 +306,6 @@
   ignore_errors: yes
   when: connectbox_os != "raspbian"
 
-- name: Install RPi.GPIO for Buster buildcd 
-  command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.0"
-  when: OS_Version  == 'buster' and connectbox_os == 'raspbian'
-
-- name: Install RPi.GPIO for Bullseye build
-  command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.1a4"
-  when: OS_Version == 'bullseye' and connectbox_os == 'raspbian'
-
 - name: check for setup.python
   stat:
     path: "{{ hat_service_virtualenv_dir }}/setup.py"
@@ -328,6 +320,14 @@
   args:
     chdir: "{{ RPi_GPIO_path }}"
   when: (connectbox_os != "raspbian") and (setup_file_exists.stat.exists)   # it will not exsist if we have come through here already
+
+- name: Install RPi.GPIO for Buster buildcd 
+  command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.0"
+  when: OS_Version  == 'buster' and connectbox_os == 'raspbian'
+
+- name: Install RPi.GPIO for Bullseye build
+  command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.1a4"
+  when: OS_Version == 'bullseye' and connectbox_os == 'raspbian'
 
 # With RPi.GPIO installed, we can now install the luma.core and luma.oled modules
 #  which will use the installed RPi.GPIO 

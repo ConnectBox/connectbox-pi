@@ -145,7 +145,7 @@
 
 
 - name: check for exsisting drivers in os 
-  shell: "grep -r rtl88* /usr/lib/modules/{{ kernel_num }}/kernel/drivers/net/wireless/"
+  shell: "grep -r rtl88* /lib/modules/{{ kernel_num }}/kernel/drivers/net/wireless/"
   ignore_errors: yes
   register: List_output
   ignore_errors: true
@@ -167,6 +167,12 @@
   register: driver_b
   ignore_errors: yes
   when: ('"rtl88xbu" in List_output.stdout')
+
+- name: check for trl8812bu
+  shell: echo "rtl88x2bu"
+  register: driver_b
+  ignore_errors: yes
+  when: ('"rtl88x2bu" in List_output.stdout')
 
 - name: Let the user know that we found the drivers
   debug:
