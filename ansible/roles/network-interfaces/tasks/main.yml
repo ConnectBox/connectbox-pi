@@ -40,9 +40,10 @@
     state: stopped
     enabled: no
 
-- name: Install usbmuxd for Tethering Internet Connection
+- name: Install usbmuxd and usb-modeswitch for Tethering Internet Connection
   apt:
     package: usbmuxd
+             usb-modeswitch
     state: present
 
 - name: Configure network interfaces NEO
@@ -141,7 +142,7 @@
 - name: tell if we found pre-compiled drivers
   debug:
     msg: "We found pre-compiled drivers on the build system!"
-  when: found_drivers
+  when: found_drivers.rc == 0
 
 
 - name: check for exsisting drivers in os 
@@ -151,25 +152,25 @@
   ignore_errors: true
 
 - name: check for rtl88xxxu
-  shell: echo  "rtl8xxxu"
+  shell: echo  "1"
   register: found_drivers
   ignore_errors: yes
   when: ('"rtl8xxxu" in List_output.stdout') and (connectbox_os != 'raspbian') 
   
 - name: check for rtl8812au
-  shell: echo "rtl8812au"
+  shell: echo "1"
   register: driver_a
   ignore_errors: yes
   when: ('"rtl88XXau" in List_output.stdout' or '"rtl8812au" in List_output.stdout')
 
-- name: check for rtl8812bu
-  shell: echo "rtl88xbu"
+- name: check for rtl88xbu
+  shell: echo "1"
   register: driver_b
   ignore_errors: yes
   when: ('"rtl88xbu" in List_output.stdout')
 
-- name: check for trl8812bu
-  shell: echo "rtl88x2bu"
+- name: check for rtl88x2bu
+  shell: echo "1"
   register: driver_b
   ignore_errors: yes
   when: ('"rtl88x2bu" in List_output.stdout')
