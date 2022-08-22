@@ -218,7 +218,7 @@
     owner: root
     group: root
     mode: '0777'
-when: (("8812au" in driver_a1.stdout) or ("88x2bu" in driverb1.stdout))
+  when: (('"8812au" in driver_a1.stdout') or ('"88x2bu" in driver_b1.stdout'))
 
 # This line was moved to bootstrap/tasks/main.yml since two edits don't work 
 # See Add items to rc.local in bootstrap.
