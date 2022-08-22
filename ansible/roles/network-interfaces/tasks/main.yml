@@ -152,7 +152,7 @@
   ignore_errors: true
 
 - debug:
-    msg: "Output of driver search for rtl88* is :\n"+List_output.stdout
+    msg: 'Output of driver search for rtl88* is :\n {{ List_output.stdout}}'
   when: list_output.rc == 0
 
 - name: check for rtl88xxxu
