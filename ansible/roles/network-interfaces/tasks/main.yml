@@ -137,7 +137,7 @@
   when: not found_drivers.failed
 
 - name: check for exsisting drivers in os 
-  shell: "grep -r rtl88* /lib/modules/{{ kernel_num }}/kernel/drivers/net/wireless/"
+  shell: "grep rtl88* /lib/modules/{{ kernel_num }}/kernel/drivers/net/wireless/"
   ignore_errors: yes
   register: List_output
   ignore_errors: true
