@@ -133,8 +133,8 @@
 - name: tell if we found pre-compiled drivers
   debug:
     msg: "We found pre-compiled drivers on the build system!"
-  when: found_drivers.rc == 0
-
+  ignore_errors: yes
+  when: not found_drivers.failed
 
 - name: check for exsisting drivers in os 
   shell: "grep -r rtl88* /lib/modules/{{ kernel_num }}/kernel/drivers/net/wireless/"
@@ -144,7 +144,8 @@
 
 - debug:
     msg: 'Output of driver search for rtl88* is :\n {{ List_output.stdout}}'
-  when: list_output.rc == 0
+  ignore_errors: yes
+  when: not list_output.failed
 
 - name: check for rtl88xxxu
   shell: echo  "1"
@@ -288,6 +289,11 @@
     mode: "+x"
   ignore_errors: yes
   when: ( compile_b )
+
+- name: make directory on host to save compiled code 
+  command: mkdir "~/connectbox/connectbox-tools/"
+  ignore_erros: yes
+  when: ( compile_a or compile_b)
 
 - name: Fetch the compiled 8812au driver to control machine
   fetch:
