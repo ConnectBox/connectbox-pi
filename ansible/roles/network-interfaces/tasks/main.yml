@@ -21,29 +21,20 @@
     pkg: network-manager
     state: absent
 
-- name: Install loadwifi.sh
-  copy:
-    src: loadwifi.sh 
-    dest: /usr/local/connectbox/bin/loadwifi.sh
-
-- name: change permissions on loadwifi.sh
-  file:
-    path:  /usr/local/connectbox/bin/loadwifi.sh
-    owner: _connectbox
-    group: _connectbox
-
-    mode: 0755
-
 - name: Make sure systemd-resolved is not running
   service:
     name: systemd-resolved
     state: stopped
     enabled: no
 
-- name: Install usbmuxd and usb-modeswitch for Tethering Internet Connection
+- name: Install usbmuxd for Tethering iPhones
   apt:
     package: usbmuxd
-             usb-modeswitch
+    state: present
+
+- name: Install usb-modeswitch for techtering android
+  apt:
+    package: usb-modeswitch
     state: present
 
 - name: Configure network interfaces NEO
