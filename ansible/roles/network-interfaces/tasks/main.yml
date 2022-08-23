@@ -273,14 +273,14 @@
     dest: /tmp/8812au-install.sh
     mode: "+x"
   ignore_errors: yes
-  when: ( compile_a)
+  when:  compile_a)
 
 - name: Compile the 8812au driver for Raspbian or NEO
   command:
      chdir: /tmp
      cmd: "sh 8812au-install.sh"
   ignore_errors: yes
-  when: ( compile_a)
+  when: (compile_a)
 
 - name: Copy over 88x2bu-install script for Raspian
   copy:
@@ -288,26 +288,32 @@
     dest: /tmp/88x2bu-install.sh
     mode: "+x"
   ignore_errors: yes
-  when: ( compile_b )
+  when: (compile_b)
+
+- name: check for directory
+  command: ls /~/connectbox/connectbox-tools/
+  register: direct_a1
+  ignore_errors: yes
 
 - name: make directory on host to save compiled code 
-  command: mkdir "~/connectbox/connectbox-tools/"
-  ignore_erros: yes
-  when: ( compile_a or compile_b)
+  command: mkdir /~/connectbox/connectbox-tools/
+  when: ((compile_a or compile_b) and direct_a1.fail)
 
 - name: Fetch the compiled 8812au driver to control machine
   fetch:
     src: /tmp/rtl8812au*/88x12au.ko 
     dest: "~/connectbox/connectbox-tools/{{ kernel_num.stdout }}_8812au.ko"
+    fail_on_missing: yes
+    flat: yes
   ignore_errors: yes
-  when: ( compile_a)
+  when: (compile_a)
 
 - name: Compile the 88x2bu driver for Raspbian or NEO
   command:
      chdir: /tmp
      cmd: "sh 88x2bu-install.sh"
   ignore_errors: yes
-  when: ( compile_b )
+  when: (compile_b)
 
 - name: Fetch the compiled 8812bu driver to control machine
   fetch:
@@ -316,7 +322,7 @@
     fail_on_missing: yes
     flat: yes
   ignore_errors: yes
-  when: ( compile_b )
+  when: (compile_b)
 
 - name: Remove headers for raspbian
   apt:
