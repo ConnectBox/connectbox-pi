@@ -233,21 +233,27 @@
 #        sh /usr/local/connectbox/bin/loadwifi.sh
 #  when: not aws_instance
 
-#Create a variable based on the results of the finds
-- set_fact:
-    compile_a : not (('"8812au" in driver_a1.stdout') or ('"88xxau" in driver_a1.stdout') or driver_a.stdout or driver_x.stdout)
-    compile_b : not (('"88x2bu" in driver_b1.stdout') or ('"88x2b" in driver_b1.stdout') or driver_b.stdout or driver_2b.stdout or driver_x.stdout)
+- name: Create a variable based on the results of the finds for compile_a
+  command: echo 'yes'
+  register: compile_a
+  when: not (('"8812au" in driver_a1.stdout') or ('"88xxau" in driver_a1.stdout') or driver_a.stdout or driver_x.stdout)
+
+
+- name: Create a variable based on the results ofthe finds for compile_b
+  command: echo 'yes'
+  register: compile_b
+  when: not (('"88x2bu" in driver_b1.stdout') or ('"88x2b" in driver_b1.stdout') or driver_b.stdout or driver_2b.stdout or driver_x.stdout)
 
 # Note we have already upgraded the OS to the lattest in role bootstrap
 # now we just install the current OS build tools
 
 - debug:
     msg: "We need to compile the 8812au drivers"
-  when: compile_a.changed
+  when: compile_a.stdout
 
 - debug:
     msg: "We need to compile the 88x2bu driver"
-  when: compile_b.changed
+  when: compile_b.stdout
 
 - name: apt install build tools
   apt:
@@ -258,7 +264,7 @@
     - libssl-dev
     state: present
   ignore_errors: yes
-  when: (compile_a.changed or compile_b.changed)
+  when: (compile_a.stdout or compile_b.stdout)
 
 - name: apt install raspberrypi-kernel-headers
   apt:
@@ -266,7 +272,7 @@
     - raspberrypi-kernel-headers
     state: present
   ignore_errors: yes
-  when: ((connectbox_os == "raspbian") and (compile_b.changed or compile_a.changed))
+  when: ((connectbox_os == "raspbian") and (compile_b.stdout or compile_a.stdout))
 
 # or apt-get install linux-headers-$(uname -r)
 - name: apt install linux-headers-current-sunxi
@@ -275,7 +281,7 @@
     - linux-headers-current-sunxi
     state: present
   ignore_errors: yes
-  when: ((connectbox_os != "raspbian") and (compile_b.changed or compile_a.changed))
+  when: ((connectbox_os != "raspbian") and (compile_b.stdout or compile_a.stdout))
 
 - name: Copy over 8812au-install script for Raspian
   copy:
@@ -283,14 +289,14 @@
     dest: /tmp/8812au-install.sh
     mode: "+x"
   ignore_errors: yes
-  when: compile_a.changed
+  when: compile_a.stdout
 
 - name: Compile the 8812au driver for Raspbian or NEO
   command:
      chdir: /tmp
      cmd: "sh 8812au-install.sh"
   ignore_errors: yes
-  when: compile_a.changed
+  when: compile_a.stdout
 
 - name: Copy over 88x2bu-install script for Raspian
   copy:
@@ -298,7 +304,7 @@
     dest: /tmp/88x2bu-install.sh
     mode: "+x"
   ignore_errors: yes
-  when: compile_b.changed
+  when: compile_b.stdout
 
 - name: Fetch the compiled 8812au driver to control machine
   fetch:
@@ -307,14 +313,14 @@
     fail_on_missing: yes
     flat: yes
   ignore_errors: yes
-  when: compile_a.changed
+  when: compile_a.stdout
 
 - name: Compile the 88x2bu driver for Raspbian or NEO
   command:
      chdir: /tmp
      cmd: "sh 88x2bu-install.sh"
   ignore_errors: yes
-  when: compile_b.changed
+  when: compile_b.stdout
 
 - name: Fetch the compiled 8812bu driver to control machine
   fetch:
@@ -323,7 +329,7 @@
     fail_on_missing: yes
     flat: yes
   ignore_errors: yes
-  when: compile_b.changed
+  when: compile_b.stdout
 
 - name: Remove headers for raspbian
   apt:
@@ -331,7 +337,7 @@
     - raspberrypi-kernel-headers
     state: absent
   ignore_errors: yes
-  when: ((compile_a.changed or compile_b.changed) and (connectbox_os == "raspbian"))
+  when: ((compile_a.stdout or compile_b.stdout) and (connectbox_os == "raspbian"))
 
 # or remove linux-headers-$(uname -r)
 - name: apt install linux-headers-current-sunxi
@@ -340,7 +346,7 @@
     - linux-headers-current-sunxi
     state: absent
   ignore_errors: yes
-  when: ((connectbox_os != "raspbian") and  (compile_a.changed or compile_b.changed))
+  when: ((connectbox_os != "raspbian") and  (compile_a.stdout or compile_b.stdout))
 
 - name: remove build tools
   apt:
@@ -352,7 +358,7 @@
     - raspbewrrypi-kernel-headers
     state: absent
   ignore_errors: yes
-  when:  (compile_a.changed or compile_b.changed)
+  when:  (compile_a.stdout or compile_b.stdout)
 
 # Note: this is not a handler because we need the network configuration in
 # effect before proceeding with the wifi-ap and firewall roles, which will
@@ -361,7 +367,7 @@
   service:
     name: systemd-networkd.service
     state: restarted
-  when: etc_network_interfaces.changed
+  when: etc_network_interfaces.stdout
   tags:
     # This task on change is intentionally not a handler; don't trigger ANSIBLE0016
     - skip_ansible_lint
