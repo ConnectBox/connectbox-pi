@@ -126,6 +126,8 @@
     driver_2b : false
     driver_a1 : false
     driver_b1 : false
+    compile_a : false
+    compile_b : false
 
 - name: Check for drivers that already exisist and we compiled for this release
   copy:
