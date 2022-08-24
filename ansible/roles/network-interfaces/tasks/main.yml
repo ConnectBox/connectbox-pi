@@ -118,7 +118,14 @@
   debug:
     msg: "Current Kernel # is: {{ kernel_num.stdout }}"
 
-
+- set_fact
+    driver_x : "0"
+    driver_a : "0"
+    driver_b : "0"
+    driver_2b : "0"
+    driver_a1 : "0"
+    driver_b1 : "0"
+    
 - name: Check for drivers that already exisist and we compiled for this release
   copy:
     src: "{{ kernel_num.stdout }}/"
@@ -128,7 +135,6 @@
     mode: '0644'
   register: found_drivers
   ignore_errors: true 
-
 
 - name: tell if we found pre-compiled drivers
   debug:
