@@ -110,7 +110,7 @@
 
 - name: Register the release number
   shell:
-    cmd: (uname -r).stdout
+    cmd: (uname -r)
   register: kernel_num
 
 
@@ -121,7 +121,7 @@
 
 - name: Check for drivers that already exisist and we compiled for this release
   copy:
-    src: "{{ kernel_num }}/"
+    src: "{{ kernel_num.stdout }}/"
     dest: "/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/"
     owner: root
     group: root
