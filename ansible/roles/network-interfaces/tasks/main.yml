@@ -14,7 +14,7 @@
     name: network-manager
     state: stopped
     enabled: no
-  when: nm_installed_check.stdout.find('network-manager') >= 0
+  when: nm_installed_test.stdout.find('network-manager') >= 0
 
 - name: Remove NetworkManager
   apt:
@@ -243,11 +243,11 @@
 
 - debug:
     msg: "We need to compile the 8812au drivers"
-  when: compile_a
+  when: compile_a.changed
 
 - debug:
     msg: "We need to compile the 88x2bu driver"
-  when: compile_b
+  when: compile_b.changed
 
 - name: apt install build tools
   apt:
@@ -258,7 +258,7 @@
     - libssl-dev
     state: present
   ignore_errors: yes
-  when: (compile_a or compile_b)
+  when: (compile_a.changed or compile_b.changed)
 
 - name: apt install raspberrypi-kernel-headers
   apt:
@@ -266,7 +266,7 @@
     - raspberrypi-kernel-headers
     state: present
   ignore_errors: yes
-  when: ((connectbox_os == "raspbian") and (compile_b or compile_a))
+  when: ((connectbox_os == "raspbian") and (compile_b.changed or compile_a.changed))
 
 # or apt-get install linux-headers-$(uname -r)
 - name: apt install linux-headers-current-sunxi
@@ -275,7 +275,7 @@
     - linux-headers-current-sunxi
     state: present
   ignore_errors: yes
-  when: ((connectbox_os != "raspbian") and (compile_b or compile_a))
+  when: ((connectbox_os != "raspbian") and (compile_b.changed or compile_a.changed))
 
 - name: Copy over 8812au-install script for Raspian
   copy:
@@ -283,14 +283,14 @@
     dest: /tmp/8812au-install.sh
     mode: "+x"
   ignore_errors: yes
-  when: compile_a
+  when: compile_a.changed
 
 - name: Compile the 8812au driver for Raspbian or NEO
   command:
      chdir: /tmp
      cmd: "sh 8812au-install.sh"
   ignore_errors: yes
-  when: compile_a
+  when: compile_a.changed
 
 - name: Copy over 88x2bu-install script for Raspian
   copy:
@@ -298,7 +298,7 @@
     dest: /tmp/88x2bu-install.sh
     mode: "+x"
   ignore_errors: yes
-  when: compile_b
+  when: compile_b.changed
 
 - name: Fetch the compiled 8812au driver to control machine
   fetch:
@@ -307,14 +307,14 @@
     fail_on_missing: yes
     flat: yes
   ignore_errors: yes
-  when: compile_a
+  when: compile_a.changed
 
 - name: Compile the 88x2bu driver for Raspbian or NEO
   command:
      chdir: /tmp
      cmd: "sh 88x2bu-install.sh"
   ignore_errors: yes
-  when: compile_b
+  when: compile_b.changed
 
 - name: Fetch the compiled 8812bu driver to control machine
   fetch:
@@ -323,7 +323,7 @@
     fail_on_missing: yes
     flat: yes
   ignore_errors: yes
-  when: compile_b
+  when: compile_b.changed
 
 - name: Remove headers for raspbian
   apt:
@@ -331,7 +331,7 @@
     - raspberrypi-kernel-headers
     state: absent
   ignore_errors: yes
-  when: ((compile_a or compile_b) and (connectbox_os == "raspbian"))
+  when: ((compile_a.changed or compile_b.changed) and (connectbox_os == "raspbian"))
 
 # or remove linux-headers-$(uname -r)
 - name: apt install linux-headers-current-sunxi
@@ -340,7 +340,7 @@
     - linux-headers-current-sunxi
     state: absent
   ignore_errors: yes
-  when: ((connectbox_os != "raspbian") and  (compile_a or compile_b))
+  when: ((connectbox_os != "raspbian") and  (compile_a.changed or compile_b.changed))
 
 - name: remove build tools
   apt:
@@ -352,7 +352,7 @@
     - raspbewrrypi-kernel-headers
     state: absent
   ignore_errors: yes
-  when:  (compile_a or compile_b)
+  when:  (compile_a.changed or compile_b.changed)
 
 # Note: this is not a handler because we need the network configuration in
 # effect before proceeding with the wifi-ap and firewall roles, which will
