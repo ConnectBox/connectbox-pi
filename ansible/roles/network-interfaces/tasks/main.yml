@@ -119,13 +119,13 @@
     msg: "Current Kernel # is: {{ kernel_num.stdout }}"
 
 - name: set the default values for variables for drivers
-  set_fact:
-    driver_x : "false"
-    driver_a : "false"
-    driver_b : "false"
-    driver_2b : "false"
-    driver_a1 : "false"
-    driver_b1 : "false"
+  ansible.builtin.set_fact:
+    driver_x : false
+    driver_a : false
+    driver_b : false
+    driver_2b : false
+    driver_a1 : false
+    driver_b1 : false
 
 - name: Check for drivers that already exisist and we compiled for this release
   copy:
