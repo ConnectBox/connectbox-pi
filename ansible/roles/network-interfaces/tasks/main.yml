@@ -224,8 +224,8 @@
 
 #Create a variable based on the results of the finds
 - set_fact:
-    compile_a : ((not ('"8812au" in driver_a1.stdout')) and (not ('"88xxau" in driver_a1.stdout'))) or not (deiver a.stdout or driver_x.stdout)
-    compile_b : ((not ('"88x2bu" in driver_b1.stdout')) and (not ('"88x2b" in driver_b1.stdout'))) or not (driver_b.stdout or driver_2b.stdout or driver_x.stdout)
+    compile_a : not (('"8812au" in driver_a1.stdout') or ('"88xxau" in driver_a1.stdout') or driver_a.stdout or driver_x.stdout)
+    compile_b : not (('"88x2bu" in driver_b1.stdout') or ('"88x2b" in driver_b1.stdout') or driver_b.stdout or driver_2b.stdout or driver_x.stdout)
 
 # Note we have already upgraded the OS to the lattest in role bootstrap
 # now we just install the current OS build tools
