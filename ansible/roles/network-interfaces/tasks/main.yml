@@ -14,7 +14,7 @@
     name: network-manager
     state: stopped
     enabled: no
-  when: nm_installed_test.stdout.find('network-manager') > 0
+  when: nm_installed_check.stdout.find('network-manager') >= 0
 
 - name: Remove NetworkManager
   apt:
@@ -199,17 +199,19 @@
 - name: Insert the driver into the kernel modules 8812au
   command: insmod  /lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtl8812au/8812au.ko
   ignore_errors: yes
+  register: changed1
   when: (not('"8812au" in driver_a1.stdout') and driver_a.stdout)
 
 - name: insert the driver into the kernel modules 88x2bu
   command: insmod  /lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtl88x2bu/88x2bu.ko
   ignore_errors: yes
+  register: changed2
   when: (not('"88x2bu" in driver_b1.stdout') and driver_2b.stdout)
 
 - name: finish the module dependancies
   command: depmod
   ignore_errors: yes
-  when: (('"8812au" in driver_a1.stdout') or ('"88x2bu" in driver_b1.stdout'))
+  when: changed1.changed or changed2.changed
 
 - name: Copy over the script to test for drivers in realtime.  We may need them for the alternate kernel
   copy:
