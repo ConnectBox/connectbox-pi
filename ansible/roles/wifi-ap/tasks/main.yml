@@ -19,6 +19,15 @@
     mode: 0644
   register: etc_hostapd_hostapd_conf
 
+- name: Copy default hostapd 
+  template:
+    src: etc_default_hostapd_hostapd.conf.j2
+    dest: /etc/default/hostapd
+    owner: root
+    group: root
+    mode: 0644
+  register: etc_default_hostapd_hostapd_conf
+
 # wifi-configurator is used on configure_hostapd.sh
 - name: Make wifi-configurator virtualenv directory
   file:
@@ -35,7 +44,7 @@
   shell: ls {{ wifi_configurator_virtualenv_dir }}/lib
   register: python_ver
 
-- name: Python ver debug
+- name: Python_ver debug
   debug:
     msg: "Python version is: {{ python_ver.stdout }}"
 
