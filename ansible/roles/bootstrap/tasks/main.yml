@@ -899,7 +899,7 @@
     state: directory
     path: /usr/local/connectbox/test
     mode: 0755
-    when: CM4_present
+  when: CM4_present
 
 - name: copy test file RW_AT.py
   copy:
