@@ -320,12 +320,12 @@
   args:
     chdir: "{{ RPi_GPIO_path }}"
   register: compile_out
-  when: (connectbox_os != "raspbian") and (setup_file_exists.stat.exists)   # it will not exsist if we have come through here already
+  when: (connectbox_os != "raspbian") and (setup_file_exists.stat.exists)   # it will not exist if we have come through here already
 
 - name: show results of compile if it failed 
   debug:
     msg: compile_out.stdout
-  when: compile_out.rc
+  when: (connectbox_os != "raspbian") and (setup_file_exists.stat.exists) and compile_out.rc
 
 - name: Install RPi.GPIO for Buster buildcd 
   command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.0"

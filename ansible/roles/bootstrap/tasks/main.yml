@@ -323,6 +323,12 @@
     path: /etc/modules-load.d/g_mass_storage.conf
     state: absent
 
+- name: Enable 10/100baseT on CM4
+  copy:
+    src: ethtool
+    dest: /etc/network/if-pre-up.d/ethtool
+  when: CM4_present
+
 - name: print out reboot status
   debug:
     msg: "Reboot status is: {{ reboot_required }} "
@@ -891,7 +897,7 @@
 - name: Make connectbox test directory
   file:
     state: directory
-    path: /usr/local/connectbox/tes
+    path: /usr/local/connectbox/test
     mode: 0755
 
 - name: copy test file RW_AT.py
@@ -929,12 +935,6 @@
     replace: "baudrate=20"
     after: 'type = "linuxspi"'
     before: "# some ultra"
-  when: CM4_present
-
-- name: Enable 10/100baseT on CM4
-  copy:
-    src: ethtool
-    dest: /etc/network/if-pre-up.d/ethtool
   when: CM4_present
 
 - name: Remove build tools
