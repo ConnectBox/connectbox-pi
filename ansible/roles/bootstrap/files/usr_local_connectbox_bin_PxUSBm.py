@@ -435,13 +435,14 @@ def ESSID_Check(b, restart):
 # it will return a 1 if the ESSID is present and 0 otherwise
     global first_time
     global DEBUG
+    global SSID
 
     if DEBUG > 3: print("Started ESSID check")
-    process = Popen("iwconfig", shell=True, stdout=PIPE, stderr=PIPE)          # now well check for an ip address on the AP
+    process = Popen("iwconfig", shell=True, stdout=PIPE, stderr=PIPE)            # now well check for an ip address on the AP
     stdout, stderr = process.communicate()
-    net_stats = str(stdout).split("wlan")                                       #split up iwconfig by wlan so the first wlan status is in net_stats[1]
+    net_stats = str(stdout).split("wlan")                                        #split up iwconfig by wlan so the first wlan status is in net_stats[1]
     if ((len(net_stats) ==1) or (not "ESSID:" in net_stats[int(b)+1])):          #if we didn't find a " or no ESSID then we will try a down/up sequence for the wlan
-      if DEBUG: print("did iwconfig but no ESSID present "+net_stats[int(b)+1])
+      print("did iwconfig but no ESSID present "+net_stats[int(b)+1])
       if restart:
           process = Popen("systemctl restart hostapd.service", shell=True, stdout=PIPE, stderr=PIPE) # lets restart hostapd and see if we can get our ESSID
           stdout, stderr = process.communicate()
@@ -464,15 +465,27 @@ def ESSID_Check(b, restart):
           elif len(net_stats) != 1: return(1)
           else: return(0)
       else: return(0)
-    elif(len(net_stats) != 1):
+    elif(len(net_stats) != 1):                      # we have one or more WLANs
+      x = net_stats[int(b)+1].find("ESSID:")
+      a = net_stats[int(b)+1][(x+6):].lstrip()      #get the starting of the SSID but clear preceeding blanks
+      y = a.find(" ")                               #find the real SSID
+      if ( x >= 0 and y >= 0 ):
+          a = a[0:(y)]                              #get the substring which is the Brand part only of the ESSID for this device
+          print("The ESSID is: "+a)
+      else:
+          a = '""'
+          print('The ESSID is: ""')
+      if not((SSID in a) and (a != '""')):         #We didn't find the right SSID in ESSID
+          first_time = True
+          print("were setting firstime true to restart hostapd and dnsmasq as ")
       if first_time:
-        if DEBUG: print("executed restart of dnsmasq for Firstime")
-        process = Popen("systemctl restart hostapd", shell=True, stdout=PIPE, stderr=PIPE)
-        stdout, stderr = process.communicate()
-        process = Popen("systemctl restart dnsmasq", shell=True, stdout=PIPE, stderr=PIPE)
-        stdout, stderr = process.communicate()
-        time.sleep(5)
-        first_time = False
+          if DEBUG: print("executed restart of dnsmasq for Firstime")
+          process = Popen("systemctl restart hostapd", shell=True, stdout=PIPE, stderr=PIPE)
+          stdout, stderr = process.communicate()
+          process = Popen("systemctl restart dnsmasq", shell=True, stdout=PIPE, stderr=PIPE)
+          stdout, stderr = process.communicate()
+          time.sleep(5)
+          first_time = False
       return(1)
     else:
       if DEBUG: print("we had net_stat =1 from iwconfig, so no information")
@@ -915,9 +928,11 @@ if __name__ == "__main__":
     global ifdownap
     global first_time
     global DEBUG
+    global SSID
 
 
     DEBUG = 0
+    SSID=""
 
     first_time=True
     stop_hostapd=False
@@ -964,8 +979,25 @@ if __name__ == "__main__":
         f.write(a)
         f.close()
         os.sync()
+    x = brand.find('"Brand":')
+    a = brand[(x+8):]
+    y = a.find(",")
+    if (x>0 and y>0 and y>x):
+         SSID = a[0:(y-1)]                     #we now have the brand part of the ESSID
+    else:
+        SSID = ""
 
-    if 'CM' in brand:                       #Now we determine what brand to work with
+    x=SSID.find('"')                          #Remove all the quotation marks around the  SSID
+    while ( x >= 0 and len(SSID)>0):
+      if x > 0:
+        SSID = SSID[0:(x-1)]
+      else:
+        SSID = SSID[(x+1):]
+      x=SSID.find('"')
+    
+    print("SSID from file is now: "+SSID)
+
+    if 'CM' in brand:                         #Now we determine what brand to work with
         rpi_platform=True
         PI_stat=True
         OP_stat=False
