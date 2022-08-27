@@ -431,6 +431,8 @@ def IP_Check(b, restart):
        stdout, stderr = process.communicate()
        process = Popen("ifup wlan"+chr(b), shell = True, stdout=PIPE, stderr = PIPE) 
        stdout, stderr = process.communicate()
+       process = Popen("systemctl restart hostapd", shell = True, stdout=PIPE, stderr=PIPE)
+       stdout, stderr = process.communicate()
        process = Popen("ifconfig", shell = True, stdout=PIPE, stderr = PIPE) 
        stdout, stderr = process.communicate()
        net_stats = str(stdout).split("wlan")
@@ -457,7 +459,7 @@ def ESSID_Check(b, restart):
     process = Popen("iwconfig", shell=True, stdout=PIPE, stderr=PIPE)            # now well check for an ip address on the AP
     stdout, stderr = process.communicate()
     net_stats = str(stdout).split("wlan")                                        #split up iwconfig by wlan so the first wlan status is in net_stats[1]
-    if ((len(net_stats) ==1) or (not "ESSID:" in net_stats[int(b)+1])):          #if we didn't find a " or no ESSID then we will try a down/up sequence for the wlan
+    if ((len(net_stats) ==1) or (not "IEEE 802.11gn ESSID:" in net_stats[int(b)+1])):          #if we didn't find a " or no ESSID then we will try a down/up sequence for the wlan
       logging.info("did iwconfig but no ESSID present "+net_stats[int(b)+1])
       if restart:
           logging.info("We wil attempt to restart the serviceds to get the ESSID")
@@ -476,7 +478,7 @@ def ESSID_Check(b, restart):
           process = Popen("iwconfig", shell=True, stdout=PIPE, stderr=PIPE)	# we will check after the restart if we have an ESSID
           stdout, stderr = process.communicate()
           net_stats = str(stdout).split("wlan")
-          if (len(net_stats) ==1 or (not "ESSID:" in net_stats[int(b)+1])):
+          if (len(net_stats) ==1 or (not "IEEE 802.11gn ESSID:" in net_stats[int(b)+1])):
             logging.info("Restarted hostapd and still didn't get the ESSID "+net_stats[int(b)+1])
             return(1)
           elif len(net_stats) != 1: return(1)
@@ -656,8 +658,6 @@ def NetworkCheck():
 # if we don't find the AP name in AP then lets try to restart the hostapd service
 
   b = apwifi[(len(apwifi)-1):]                                          # b contains the AP wifi character (0, 1, 2, .....)
-  ifdownap = "ifdown "+apwifi
-  ifupap = "ifup "+apwifi
   if clientwifi=="":
     c = chr(int(b)+1+ord("0"))
   else:
@@ -1068,6 +1068,8 @@ if __name__ == "__main__":
         f.close()
         clientwifi =  wifi.partition("ClientIF=")[2].split("\n")[0]
         apwifi = wifi.partition("AccessPointIF=")[2].split("\n")[0]
+        ifupap = "ifup "+apwifi
+        ifdown = "ifdown "+apwifi
         logging.info("Client interface is "+clientwifi)
         logging.info("AP interface is "+apwifi)
         logging.info("PxUSBm got through the  finished wifi configuration testing")
