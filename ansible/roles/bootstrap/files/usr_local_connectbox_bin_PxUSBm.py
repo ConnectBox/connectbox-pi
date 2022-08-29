@@ -467,6 +467,7 @@ def RestartWLAN(b):
   rvs = rv.decode("utf-8") 
   if ("802.11gn" in rvs):
 #    print ("WLAN IS UP!")
+    pass
 
 # if not up we need to do another restart hostapd
   else:
