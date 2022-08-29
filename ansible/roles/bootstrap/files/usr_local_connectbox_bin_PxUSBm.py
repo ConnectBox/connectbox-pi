@@ -449,6 +449,8 @@ def IP_Check(b, restart):
 def RestartWLAN(b):
   wlanx = "wlan"+str(b)
 
+  # normally a wlan restart can be done by restart hostapd, 
+  #  restart dnsmasq, ifdown, if up sequence
   cmd = "systemctl restart hostapd"
   rv = subprocess.call(cmd, shell=True)
   cmd = "systemctl restart dnsmasq"
@@ -458,6 +460,21 @@ def RestartWLAN(b):
   cmd = "ifup "+wlanx
   rv = subprocess.call(cmd, shell=True)
   time.sleep(5)
+
+# check to see if that did it...
+  cmd = "iwconfig"
+  rv = subprocess.check_output(cmd)
+  rvs = rv.decode("utf-8") 
+  if ("802.11gn" in rvs):
+#    print ("WLAN IS UP!")
+
+# if not up we need to do another restart hostapd
+  else:
+#    print("WLAN not up... we need to run hostapd")
+    cmd = "systemctl restart hostapd"
+    rv = subprocess.call(cmd, shell=True)
+#    print("hostpad... Returned value ->", rv)
+
 
 
 def ESSID_Check(b, restart):
