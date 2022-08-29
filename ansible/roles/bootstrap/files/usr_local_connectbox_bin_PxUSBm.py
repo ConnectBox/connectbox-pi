@@ -50,7 +50,7 @@ import logging
 import re
 import os
 from subprocess import Popen, PIPE
-
+import subprocess
 
 
 # globals for Partion expansion
@@ -446,6 +446,19 @@ def IP_Check(b, restart):
        else:
           return(0)
 
+def RestartWLAN(b):
+  wlanx = "wlan"+str(b)
+
+  cmd = "systemctl restart hostapd"
+  rv = subprocess.call(cmd, shell=True)
+  cmd = "systemctl restart dnsmasq"
+  rv = subprocess.call(cmd, shell=True)
+  cmd = "ifdown "+wlanx
+  rv = subprocess.call(cmd, shell=True)
+  cmd = "ifup "+wlanx
+  rv = subprocess.call(cmd, shell=True)
+  time.sleep(5)
+
 
 def ESSID_Check(b, restart):
 # this routine ESSID_check will look to see if there is an ESSID assigned to the AP
@@ -459,56 +472,39 @@ def ESSID_Check(b, restart):
     process = Popen("iwconfig", shell=True, stdout=PIPE, stderr=PIPE)            # now well check for an ip address on the AP
     stdout, stderr = process.communicate()
     net_stats = str(stdout).split("wlan")                                        #split up iwconfig by wlan so the first wlan status is in net_stats[1]
-    if ((len(net_stats) ==1) or (not "IEEE 802.11gn ESSID:" in net_stats[int(b)+1])):          #if we didn't find a " or no ESSID then we will try a down/up sequence for the wlan
+
+    #if we didn't find a " or no ESSID then we will try a down/up sequence for the wlan
+    if ((len(net_stats) ==1) or (not "IEEE 802.11gn  ESSID:" in net_stats[int(b)+1])):          
       logging.info("did iwconfig but no ESSID present "+net_stats[int(b)+1])
       if restart:
-          logging.info("We wil attempt to restart the serviceds to get the ESSID")
-          process = Popen("systemctl restart hostapd.service", shell=True, stdout=PIPE, stderr=PIPE) # lets restart hostapd and see if we can get our ESSID
-          stdout, stderr = process.communicate()
-          if "masked" in str(stdout):
-            logging.info("Well we are masked on hostapd.service, we'll try to lift that")
-            process = Popen("systemctl unmask hostapd.service", shell=True, stdout=PIPE, stderr=PIPE) # lets unmask the hostapd.
-            stdout, stderr = process.communicate()
-            process = Popen("systemctl restart hostapd.service", shell=True, stdout=PIPE, stderr=PIPE) # if we unmasked it lets restart it.
-            stdout, stderr = process.communicate()
-            if DEBUG and 'stopped' in stdout: print("tried to restart hostapd but to no luck")
-          process = Popen("systemctl restart dnsmasq", shell=True, stdout=PIPE, stderr=PIPE)
-          stdout, stderr = process.communicate()
-          time.sleep(15)
-          process = Popen("iwconfig", shell=True, stdout=PIPE, stderr=PIPE)	# we will check after the restart if we have an ESSID
-          stdout, stderr = process.communicate()
-          net_stats = str(stdout).split("wlan")
-          if (len(net_stats) ==1 or (not "IEEE 802.11gn ESSID:" in net_stats[int(b)+1])):
-            logging.info("Restarted hostapd and still didn't get the ESSID "+net_stats[int(b)+1])
-            return(1)
-          elif len(net_stats) != 1: return(1)
-          else: return(0)
-      else: return(0)
-    elif(len(net_stats) != 1):                      # we have one or more WLANs
+        RestartWLAN(b)
+      return (0)      # we have restarted but have no info
+
+    # else, we have one or more WLANs... check to see if the ESSID and SSID match
+    elif(len(net_stats) != 1):                      
       x = net_stats[int(b)+1].find("ESSID:")
       a = net_stats[int(b)+1][(x+6):].lstrip()      #get the starting of the SSID but clear preceeding blanks
       y = a.find(" ")                               #find the real SSID
       if ( x >= 0 and y >= 0 ):
-          a = a[0:(y)]                              #get the substring which is the Brand part only of the ESSID for this device
+          a = a[0:(y)] 
+          a = a.replace('"','')                     #get the substring which is the Brand part only of the ESSID for this device
           logging.info("The ESSID is: "+a)
       else:
           a = '""'
           logging.info('The ESSID is: ""')
+
+# check if ESSID and SSID match
       if not((SSID in a) and (a != '""')):         #We didn't find the right SSID in ESSID
           first_time = True
           logging.info("were setting firstime true to restart hostapd and dnsmasq as ESSID and SSID didn't match")
+# we have a valid ESSID / SSID match... no need to do anything.
+      else:
+          first_time = False 
+          return (1)   
       if first_time:
-          if DEBUG: print("executed restart of dnsmasq for Firstime")
-          process = Popen("systemctl restart hostapd", shell=True, stdout=PIPE, stderr=PIPE)
-          stdout, stderr = process.communicate()
-          process = Popen("systemctl restart dnsmasq", shell=True, stdout=PIPE, stderr=PIPE)
-          stdout, stderr = process.communicate()
-          time.sleep(5)
-          first_time = False
-      return(1)
-    else:
-      if DEBUG: print("we had net_stat =1 from iwconfig, so no information")
-      return(0)
+        RestartWLAN(b)
+        first_time = False
+        return(0)
 
 
 def NetworkCheck():
@@ -613,7 +609,7 @@ def NetworkCheck():
         logging.info("Failed to unmask hostapd")
         hostapd_running=False
   else:
-    if net_stats.find("Loaded loaded") >= 0:                            #if hostapd is loaded: loaded it may not be running
+    if net_stats.find("Loaded: loaded") >= 0:                            #if hostapd is loaded: loaded it may not be running
       if net_stats.find("Active: active") <0:
         if net_stats.find("Failed to start") >0:                        # we found that hostapd is not running and failed to start.  likely due to a leftover run file on an improper shutdown
           # likely we can't start becasue of an old run file.
@@ -997,7 +993,7 @@ if __name__ == "__main__":
         f.close()
         os.sync()
     x = brand.find('"Brand":')
-    a = brand[(x+8):]
+    a = brand[(x+10):]             # x+8 takes us to what is RIGHT after Brand: which starts with space quote
     y = a.find(",")
     if (x>0 and y>0 and y>x):
          SSID = a[0:(y-1)]                     #we now have the brand part of the ESSID
@@ -1006,10 +1002,7 @@ if __name__ == "__main__":
 
     x=SSID.find('"')                          #Remove all the quotation marks around the  SSID
     while ( x >= 0 and len(SSID)>0):
-      if x > 0:
-        SSID = SSID[0:(x-1)]
-      else:
-        SSID = SSID[(x+1):]
+      SSID = SSID.replace('"','')
       x=SSID.find('"')
     
     logging.info("SSID from file is now: "+SSID)
@@ -1083,7 +1076,7 @@ if __name__ == "__main__":
           if "brcfmac" in wifid[1]:         # if we are using the built in wifi for AP then we cancle the PI_stat so we don't expect an ESSID
             PI_stat = False
             logging.info("PxUSBM cancled the PI_status not expecting an ESSID on a RPI unit.")
-        x = 99
+        x = 70    # give time for network to come up before trying to fix it
 
 
         while (x == x):                         # main loop that we live in for life of running
