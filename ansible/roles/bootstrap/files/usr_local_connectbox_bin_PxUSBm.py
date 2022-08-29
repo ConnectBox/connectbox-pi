@@ -1094,7 +1094,7 @@ if __name__ == "__main__":
           if "brcfmac" in wifid[1]:         # if we are using the built in wifi for AP then we cancle the PI_stat so we don't expect an ESSID
             PI_stat = False
             logging.info("PxUSBM cancled the PI_status not expecting an ESSID on a RPI unit.")
-        x = 70    # give time for network to come up before trying to fix it
+        x = 95    # give time for network to come up before trying to fix it
 
 
         while (x == x):                         # main loop that we live in for life of running
