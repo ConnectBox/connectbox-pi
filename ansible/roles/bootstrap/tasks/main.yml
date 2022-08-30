@@ -230,7 +230,7 @@
     upgrade: yes
     update_cache: yes
     state: fixed
-    register: dist_upgraded
+  register: dist_upgraded
 
 
 - name: Check the changes to see if we need to reboot
