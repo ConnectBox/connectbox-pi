@@ -155,11 +155,12 @@
   ignore_errors: yes
   when: not (List_output.failed)
 
-- name: check for rtl88xxxu
-  shell: echo  "true"
-  register: driver_x
-  ignore_errors: yes
-  when: ('"rtl8xxxu" in List_output.stdout') and (connectbox_os != 'raspbian') 
+# Commented out as this driver does not work for the 8812
+#- name: check for rtl88xxxu
+#  shell: echo  "true"
+#  register: driver_x
+#  ignore_errors: yes
+#  when: ('"rtl8xxxu" in List_output.stdout') and (connectbox_os != 'raspbian') 
   
 - name: check for rtl8812au
   shell: echo "true"
