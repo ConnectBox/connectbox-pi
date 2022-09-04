@@ -163,19 +163,19 @@
 #  when: ('List_output.stdout.find("rtl8xxxu") >= 0') and (connectbox_os != 'raspbian') 
   
 - name: check for rtl8812au
-  shell: echo "true"
+  shell: echo ('List_output.stdout.find("rtl88XXau") > 0' or 'List_output.stdout.find("rtl8812au") >0')
   register: driver_a
   ignore_errors: yes
   when: ('List_output.stdout.find("rtl88XXau") > 0' or 'List_output.stdout.find("rtl8812au") >0')
 
 - name: check for rtl88xbu
-  shell: echo "true"
+  shell: echo ('List_output.stdout.find("rtl88xbu") > 0')
   register: driver_b
   ignore_errors: yes
   when: ('List_output.stdout.find("rtl88xbu") > 0')
 
 - name: check for rtl88x2bu
-  shell: echo "true"
+  shell: echo ('List_output.stdout.find("rtl88x2bu") > 0')
   register: driver_2b
   ignore_errors: yes
   when: ('List_output.stdout.find("rtl88x2bu") > 0')
@@ -190,25 +190,25 @@
   shell: dmesg -H | grep -G 88..au
   register: driver_a1
   ignore_errors: yes
-  when: ((not driver_a.stdout | bool) and (not driver_x.stdout | bool)) 
+  when: ((not driver_a.stdout > 0) and (not driver_x.stdout | bool)) 
 
 - name: lets check for the 8812bu driver
   shell: dmesg -H | grep -G 88.2bu
   register: driver_b1
   ignore_errors: yes
-  when: ((not driver_b.stdout | bool) and (not driver_x.stdout |bool) and (not driver_2b.stdout |bool))
+  when: ((not driver_b.stdout > 0) and (not driver_x.stdout |bool) and (not driver_2b.stdout > 0))
 
 - name: Insert the driver into the kernel modules 8812au
   command: insmod  /lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtl8812au/8812au.ko
   ignore_errors: yes
   register: changed1
-  when: (('driver_a1.stdout.find("8812au") == -1') and (driver_a.stdout == 'true'))
+  when: (('driver_a1.stdout.find("8812au") == -1') and (driver_a.stdout > 0))
 
 - name: insert the driver into the kernel modules 88x2bu
   command: insmod  /lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtl88x2bu/88x2bu.ko
   ignore_errors: yes
   register: changed2
-  when: (('driver_b1.stdout.find("88x2bu") == -1') and (driver_2b.stdout == 'true'))
+  when: (('driver_b1.stdout.find("88x2bu") <= 0') and (driver_2b.stdout > 0))
 
 - name: finish the module dependancies
   command: depmod
@@ -222,7 +222,7 @@
     owner: root
     group: root
     mode: '0777'
-  when: (('driver_a1.stdout.find("8812au") >= 0') or ('driver_b1.stdout.find("88x2bu") >= 0)'))
+  when: (('driver_a1.stdout.find("8812au") > 0') or ('driver_b1.stdout.find("88x2bu") > 0)'))
 
 # This line was moved to bootstrap/tasks/main.yml since two edits don't work 
 # See Add items to rc.local in bootstrap.
@@ -238,13 +238,13 @@
 - name: Create a variable based on the results of the finds for compile_a
   command: echo 'true'
   register: compile_a
-  when: not (('driver_a1.stdout.find("8812au") > 0') or ('driver_a1.stdout.find("88xxau") > 0') or (driver_a.stdout == 'true') or (driver_x.stdout == 'true'))
+  when: not (('driver_a1.stdout.find("8812au") > 0') or ('driver_a1.stdout.find("88xxau") > 0') or (driver_a.stdout > 0) or (driver_x.stdout > 0))
 
 
 - name: Create a variable based on the results ofthe finds for compile_b
   command: echo 'true'
   register: compile_b
-  when: not (('driver_b1.stdout.find("88x2bu") > 0') or ('driver_b1.stdout.find("88x2b") >0') or (driver_b.stdout == 'true') or (driver_2b.stdout == "true") or (driver_x.stdout == 'true'))
+  when: not (('driver_b1.stdout.find("88x2bu") > 0') or ('driver_b1.stdout.find("88x2b") >0') or (driver_b.stdout > 0) or (driver_2b.stdout > 0) or (driver_x.stdout > 0))
 
 # Note we have already upgraded the OS to the lattest in role bootstrap
 # now we just install the current OS build tools
