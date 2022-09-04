@@ -146,7 +146,7 @@
   when: not found_drivers.failed
 
 - name: check for exsisting drivers in os 
-  shell: "ls /lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/"
+  shell: "ls -R /lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/"
   register: List_output
   ignore_errors: true
 
@@ -166,19 +166,19 @@
   shell: echo "true"
   register: driver_a
   ignore_errors: yes
-  when: ('List_output.stdout.find("rtl88XXau") >= 0' or 'List_output.stdout.find("rtl8812au") >=0')
+  when: ('List_output.stdout.find("rtl88XXau") > 0' or 'List_output.stdout.find("rtl8812au") >0')
 
 - name: check for rtl88xbu
   shell: echo "true"
   register: driver_b
   ignore_errors: yes
-  when: ('List_output.stdout.find("rtl88xbu") >= 0')
+  when: ('List_output.stdout.find("rtl88xbu") > 0')
 
 - name: check for rtl88x2bu
   shell: echo "true"
   register: driver_2b
   ignore_errors: yes
-  when: ('List_output.stdout.find("rtl88x2bu") >= 0')
+  when: ('List_output.stdout.find("rtl88x2bu") > 0')
 
 # The following throws error: 'dict object' has no attribute 'stdout'
 #- name: Let the user know that we found the drivers
@@ -238,13 +238,13 @@
 - name: Create a variable based on the results of the finds for compile_a
   command: echo 'true'
   register: compile_a
-  when: not (('driver_a1.stdout.find("8812au") >= 0') or ('driver_a1.stdout.find("88xxau") >= 0') or (driver_a.stdout == 'true') or (driver_x.stdout == 'true'))
+  when: not (('driver_a1.stdout.find("8812au") > 0') or ('driver_a1.stdout.find("88xxau") > 0') or (driver_a.stdout == 'true') or (driver_x.stdout == 'true'))
 
 
 - name: Create a variable based on the results ofthe finds for compile_b
   command: echo 'true'
   register: compile_b
-  when: not (('driver_b1.stdout.find("88x2bu") >= 0') or ('driver_b1.stdout.find("88x2b") >=0') or (driver_b.stdout == 'true') or (driver_2b.stdout == "true") or (driver_x.stdout == 'true'))
+  when: not (('driver_b1.stdout.find("88x2bu") > 0') or ('driver_b1.stdout.find("88x2b") >0') or (driver_b.stdout == 'true') or (driver_2b.stdout == "true") or (driver_x.stdout == 'true'))
 
 # Note we have already upgraded the OS to the lattest in role bootstrap
 # now we just install the current OS build tools
