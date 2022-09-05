@@ -251,10 +251,10 @@
 
 - debug:
     msg: "We need to compile the 8812au drivers"
-  when: compile_a | bool
+  when: compile_a.stdout | bool
 - debug:
     msg: "We need to compile the 88x2bu driver"
-  when: compile_b | bool
+  when: compile_b.stdout | bool
 
 - name: apt install build tools
   apt:
@@ -265,7 +265,7 @@
     - libssl-dev
     state: present
   ignore_errors: yes
-  when: (compile_a | bool ) or ( compile_b | bool)
+  when: (compile_a.stdout | bool ) or ( compile_b.stdout | bool)
 
 - name: apt install raspberrypi-kernel-headers
   apt:
@@ -273,7 +273,7 @@
     - raspberrypi-kernel-headers
     state: present
   ignore_errors: yes
-  when: ((connectbox_os == "raspbian") and ((compile_b | bool ) or ( compile_a | bool)))
+  when: ((connectbox_os == "raspbian") and ((compile_b.stdout | bool ) or ( compile_a.stdout | bool)))
 
 # or apt-get install linux-headers-$(uname -r)
 - name: apt install linux-headers-current-sunxi
@@ -282,7 +282,7 @@
     - linux-headers-current-sunxi
     state: present
   ignore_errors: yes
-  when: ((connectbox_os != "raspbian") and ((compile_b | bool ) or ( compile_a | bool )))
+  when: ((connectbox_os != "raspbian") and ((compile_b.stdout | bool ) or ( compile_a.stdout | bool )))
 
 - name: Copy over 8812au-install script for Raspian
   copy:
@@ -290,14 +290,14 @@
     dest: /tmp/8812au-install.sh
     mode: "+x"
   ignore_errors: yes
-  when: compile_a | bool
+  when: compile_a.stdout | bool
 
 - name: Compile the 8812au driver for Raspbian or NEO
   command:
      chdir: /tmp
      cmd: "sh 8812au-install.sh"
   ignore_errors: yes
-  when: compile_a | bool
+  when: compile_a.stdout | bool
 
 - name: Copy over 88x2bu-install script for Raspian
   copy:
@@ -305,7 +305,7 @@
     dest: /tmp/88x2bu-install.sh
     mode: "+x"
   ignore_errors: yes
-  when: compile_b | bool
+  when: compile_b.stdout | bool
 
 - name: Fetch the compiled 8812au driver to control machine
   fetch:
@@ -314,14 +314,14 @@
     fail_on_missing: yes
     flat: yes
   ignore_errors: yes
-  when: compile_a | bool
+  when: compile_a.stdout |bool
 
 - name: Compile the 88x2bu driver for Raspbian or NEO
   command:
      chdir: /tmp
      cmd: "sh 88x2bu-install.sh"
   ignore_errors: yes
-  when: compile_b | bool
+  when: compile_b.stdout | bool
 
 - name: Fetch the compiled 8812bu driver to control machine
   fetch:
@@ -330,7 +330,7 @@
     fail_on_missing: yes
     flat: yes
   ignore_errors: yes
-  when: compile_b | bool
+  when: compile_b.stdout | bool
 
 - name: Remove headers for raspbian
   apt:
@@ -338,7 +338,7 @@
     - raspberrypi-kernel-headers
     state: absent
   ignore_errors: yes
-  when: (((compile_a | bool ) or ( compile_b | bool)) and (connectbox_os == "raspbian"))
+  when: (((compile_a.stdout | bool ) or ( compile_b.stdout | bool)) and (connectbox_os == "raspbian"))
 
 # or remove linux-headers-$(uname -r)
 - name: apt install linux-headers-current-sunxi
@@ -347,7 +347,7 @@
     - linux-headers-current-sunxi
     state: absent
   ignore_errors: yes
-  when: ((connectbox_os != "raspbian") and  ((compile_a |bool ) or ( compile_b | bool )))
+  when: ((connectbox_os != "raspbian") and  ((compile_a.stdout |bool ) or ( compile_b.stdout | bool )))
 
 - name: remove build tools
   apt:
@@ -359,7 +359,7 @@
     - raspbewrrypi-kernel-headers
     state: absent
   ignore_errors: yes
-  when:  (compile_a | bool ) or ( compile_b | bool )
+  when:  (compile_a.stdout | bool ) or ( compile_b.stdout | bool )
 
 # Note: this is not a handler because we need the network configuration in
 # effect before proceeding with the wifi-ap and firewall roles, which will
