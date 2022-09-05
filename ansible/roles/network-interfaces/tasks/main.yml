@@ -238,13 +238,13 @@
 - name: Create a variable based on the results of the finds for compile_a
   command: echo 'true'
   register: compile_a
-  when: not (('driver_a1.stdout.find("8812au") > 0' |bool) or ('driver_a1.stdout.find("88xxau") > 0' |bool) or (driver_a |bool) or (driver_x |bool))
+  when: not (('driver_a1.stdout.find("8812au") <= 0' |bool) or ('driver_a1.stdout.find("88xxau") <= 0' |bool) or (driver_a |bool) or (driver_x |bool))
 
 
 - name: Create a variable based on the results ofthe finds for compile_b
   command: echo 'true'
   register: compile_b
-  when: not (('driver_b1.stdout.find("88x2bu") > 0' |bool) or ('driver_b1.stdout.find("88x2b") >0' |bool) or (driver_b |bool) or (driver_2b |bool) or (driver_x |bool))
+  when: not (('driver_b1.stdout.find("88x2bu") <= 0' |bool) or ('driver_b1.stdout.find("88x2b") <= 0' |bool) or (driver_b |bool) or (driver_2b |bool) or (driver_x |bool))
 
 # Note we have already upgraded the OS to the lattest in role bootstrap
 # now we just install the current OS build tools
