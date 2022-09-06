@@ -222,7 +222,7 @@
     owner: root
     group: root
     mode: '0777'
-  when: (('driver_a1.stdout.find("8812au") > 0' |bool) or ('driver_b1.stdout.find("88x2bu") > 0)' |bool))
+  when: (('driver_a1.stdout.find("8812au") <= 0' |bool) or ('driver_b1.stdout.find("88x2bu") <= 0)' |bool))
 
 # This line was moved to bootstrap/tasks/main.yml since two edits don't work 
 # See Add items to rc.local in bootstrap.
