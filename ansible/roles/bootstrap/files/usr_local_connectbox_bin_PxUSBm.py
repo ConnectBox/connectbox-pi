@@ -451,14 +451,15 @@ def RestartWLAN(b):
 
   # normally a wlan restart can be done by restart hostapd, 
   #  restart dnsmasq, ifdown, if up sequence
-  cmd = "systemctl restart hostapd"
-  rv = subprocess.call(cmd, shell=True)
-  cmd = "systemctl restart dnsmasq"
-  rv = subprocess.call(cmd, shell=True)
+
   cmd = "ifdown "+wlanx
   rv = subprocess.call(cmd, shell=True)
   cmd = "ifup "+wlanx
   rv = subprocess.call(cmd, shell=True)
+  cmd = "systemctl restart hostapd"
+  rv = subprocess.call(cmd, shell=True)
+  cmd = "systemctl restart dnsmasq"
+  rv = subprocess.call(cmd, shell=True)  
   time.sleep(5)
 
 # check to see if that did it...
@@ -679,8 +680,6 @@ def NetworkCheck():
 
   #check the ESSID and if its not there try to restart the hostapd/dnsmasq
   if not hostapd_running:
-    res = os.popen(ifdownap)
-    res.close()
     if not(ESSID_Check(b, True)):
       logging.info("still couldn't get ESSID on retaRT OF Hostapd")
       if DEBUG: print("Couldn't get hostapd upd and running in startup and now even with ifdownap")
@@ -911,7 +910,8 @@ def Revision():
       elif revision== "c03114": version="PI 4B 4GB 1.4"
       elif revision== "d03114": version="PI 4B 8GB 1.4"
       elif revision== "902120": version="PI Z2W 512MB 1.0-"
-      elif revision== "b03140": version="CM4 2GB 1.0"
+      elif revision== "b03140": version="CM4 1GB 1.0"
+      elif revision== "c03140": version="CM4 2GB 1.0"
       elif revision== "d03140": version="CM4 8GB 1.0"
       elif revision== "0000": version="NEO NANOPI 1GB 1.1"
       elif revision== "4" : version="OrangePi Zero 2"
@@ -1080,7 +1080,7 @@ if __name__ == "__main__":
         clientwifi =  wifi.partition("ClientIF=")[2].split("\n")[0]
         apwifi = wifi.partition("AccessPointIF=")[2].split("\n")[0]
         ifupap = "ifup "+apwifi
-        ifdown = "ifdown "+apwifi
+        ifdownap = "ifdown "+apwifi
         logging.info("Client interface is "+clientwifi)
         logging.info("AP interface is "+apwifi)
         logging.info("PxUSBm got through the  finished wifi configuration testing")
