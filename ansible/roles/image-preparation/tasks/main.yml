@@ -110,7 +110,7 @@
   apt:
 # (looping deprecated in 2.11)
 #    name: "{{ item }}"
-    name: ['bash-completion', 'command-not-found', 'dnsutils', 'dosfstools', 'html2text', 'file', 'fping', 'htop', 'iotop', 'man-db', 'screen', 'stress', 'sysbench', 'usbutils', 'vim', 'vim-runtime']
+    name: ['bash-completion', 'command-not-found', 'dnsutils', 'dosfstools', 'html2text', 'file', 'fping', 'htop', 'iotop', 'man-db', 'screen', 'stress', 'sysbench',  'vim', 'vim-runtime']
     state: absent
     purge: yes
     autoremove: yes

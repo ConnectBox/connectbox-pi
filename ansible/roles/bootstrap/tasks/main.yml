@@ -901,7 +901,7 @@
 
 - name: install other needed python libraries
   pip:
-    name: json, smbus2
+    name: [ json, smbus2 ] 
     executable: pip3
   ignore_errors: yes
 
