@@ -185,7 +185,9 @@ def mountCheck():
             # SSH Enabler
             os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/.connectbox/enable-ssh && (/bin/systemctl is-active ssh.service || /bin/systemctl enable ssh.service && /bin/systemctl start ssh.service)'")
             # upgrade enabler
-            os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/.connectbox/upgrade/upgrade.py && (/bin/cp -r /media/usb0/.connectbox/upgrade/* /tmp) && /usr/bin/python3 /tmp/upgrade.py'")
+            os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/.connectbox/upgrade/upgrade.py && (/bin/cp -r /media/usb0/.connectbox/upgrade/* /tmp)'")
+            # run the upgrade if it exsists
+            os.system("/bin/sh -c '/usr/bin/test -f /tmp/upgrade.py && (/usr/bin/python3 /tmp/upgrade.py'")
             # Moodle Course Loader
             os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/*.mbz && /usr/bin/php /var/www/moodle/admin/cli/restore_courses_directory.php /media/usb0/' >/tmp/restore_courses_directory.log 2>&1 &")
             # Enhanced Content Load
@@ -414,7 +416,7 @@ def IP_Check(b, restart):
                process = Popen("ifconfig", shell = True, stdout=PIPE, stderr=PIPE)       #back to checking for an IP4 addresss
                stdout, stderr = process.communicate()
                net_stats = str(stdout).split("wlan")
-               if len(net_stats)> (int(b)+1):
+               if len(net_stats) >= (int(b)+1):
                  if (not "inet" in net_stats[int(b)+1]):
                    if DEBUG: print("did ifdown/ifup and still don't have an IP address "+net_stats[int(b)+1])
                    return(0)
@@ -436,7 +438,7 @@ def IP_Check(b, restart):
        process = Popen("ifconfig", shell = True, stdout=PIPE, stderr = PIPE) 
        stdout, stderr = process.communicate()
        net_stats = str(stdout).split("wlan")
-       if len(net_stats) > (int(b)+1):
+       if len(net_stats) >= (int(b)+1):
           if (not "inet" in net_stats[int(b)+1]):
               logging.info("After the ifup/ifdown we still didn't get an IP address")
               return(0)
@@ -674,7 +676,10 @@ def NetworkCheck():
 
   b = apwifi[(len(apwifi)-1):]                                          # b contains the AP wifi character (0, 1, 2, .....)
   if clientwifi=="":
-    c = chr(int(b)+1+ord("0"))
+    if str(b) >= "1":                                                   # if b > 0 then the c is lower
+      c = chr(int(b)-1+ord("0"))
+    else:
+      c = chr(int(b)+1+ord("0"))
   else:
     c = clientwifi[(len(clientwifi)-1):]                                 # c contains the client wifi character (0, 1, 2, ...) if there was none then its one higher than AP
 
