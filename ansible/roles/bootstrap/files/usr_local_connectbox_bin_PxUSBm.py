@@ -84,7 +84,8 @@ def mountCheck():
     # loc is the USBx element
     #total is the toal number of mounts currently
     #Brand is thee name of the host branding eg: ConnectBox
-
+    # run the upgrade if it exsists
+    os.system("/bin/sh -c '/usr/bin/test -f /tmp/upgrade.py && (/usr/bin/python3 /tmp/upgrade.py)'")
     try:
          f = open("/usr/local/connectbox/brand.txt", "r")
          a = f.read()
@@ -186,8 +187,6 @@ def mountCheck():
             os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/.connectbox/enable-ssh && (/bin/systemctl is-active ssh.service || /bin/systemctl enable ssh.service && /bin/systemctl start ssh.service)'")
             # upgrade enabler
             os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/.connectbox/upgrade/upgrade.py && (/bin/cp -r /media/usb0/.connectbox/upgrade/* /tmp)'")
-            # run the upgrade if it exsists
-            os.system("/bin/sh -c '/usr/bin/test -f /tmp/upgrade.py && (/usr/bin/python3 /tmp/upgrade.py'")
             # Moodle Course Loader
             os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/*.mbz && /usr/bin/php /var/www/moodle/admin/cli/restore_courses_directory.php /media/usb0/' >/tmp/restore_courses_directory.log 2>&1 &")
             # Enhanced Content Load
