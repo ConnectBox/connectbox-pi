@@ -85,7 +85,17 @@ def mountCheck():
     #total is the toal number of mounts currently
     #Brand is thee name of the host branding eg: ConnectBox
     # run the upgrade if it exsists
-    os.system("/bin/sh -c '/usr/bin/test -f /tmp/upgrade.py && (/usr/bin/python3 /tmp/upgrade.py)'")
+    try:
+      f = open("/tmp/upgrade.py","r")
+      f.close()
+      p = subprocess.run(['/usr/bin/python3', '/tmp/upgrade.py'])
+      if p.returncode !=0:
+          print("We failed on the spawn")
+      else: 
+           print("Spawn complete")
+      time.sleep(5)
+    except:
+      pass
     try:
          f = open("/usr/local/connectbox/brand.txt", "r")
          a = f.read()
@@ -165,6 +175,11 @@ def mountCheck():
             k += 1
           a = ord('0')+k
           if DEBUG > 2: print("end of loop were going to use location "+str(j)+" and ord "+chr(a))
+          print("mount point is "+e.group())
+          if e.group()[len(e.group()-2)] >= "k":
+            # we have aproblem our mount point is to high.  we need to do a reboot.
+#            os.system("/usr/sbin/reboot")
+            time.sleep(20)    #This ends here.
 # Now we know we need to do a mount and have found the lowest mount point to use in (a)
           if not (os.path.exists("/media/usb"+chr(a))):  #if the /mount/usbx isn't there create it
             res = os.system("mkdir /media/usb"+chr(a))
@@ -937,8 +952,8 @@ def Revision():
           logging.info("revision of hardware is : "+l)
           y = len(l)
           if y > 0:
-            if l == "Orange Pi Zero 2":
-              version = l
+            if ((l == "Orange Pi Zero2") or (l == "Orange Pi Zero 2") or (l == "OrangePi Zero2")):
+              version = "OrangePiZero2"
             else:
               version = l
         return(version)
@@ -989,7 +1004,7 @@ if __name__ == "__main__":
       OP_stat = False
 
     if (version != "Unknown") and (version != "Error"):
-      if version.find("Orange Pi Zero 2")>=0: version  = "OZ2 "
+      if version.find("OrangePiZero2")>=0: version  = "OZ2 "
       elif version.find("Orange") >=0: version = "OP? "
     # see if we are NEO or CM
       x = version[3:].find(" ")

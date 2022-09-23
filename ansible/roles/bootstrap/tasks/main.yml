@@ -352,7 +352,7 @@
 
 - name: Install PHP if this is an OrangePi Zero2 
   apt:
-    name: PHP
+    name: php
     state: present 
   when: OZ2_present
 
