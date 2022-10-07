@@ -157,19 +157,19 @@
 
 - name: Install prerequesitst for Pillow build (!raspbian & (bullseye or buster))
   apt:
-    name: ['python3-dev', 'python3-setuptools', 'libtiff5-dev', 'libjpeg62-turbo-dev', 'libjpeg62-turbo', 'libopenjp2-7-dev', 'libopenjp2-7', 'zlib1g-dev', 'zlib1g', 'libfreetype6-dev', 'libfreetype6', 'liblcms2-dev', 'libwebp-dev', 'tcl8.6-dev', 'tk8.6-dev', 'python3-tk', 'libharfbuzz-dev', 'libfribidi-dev', 'libxcb1-dev', 'libtiff5' ]
+    name: ['python3-dev', 'python3-setuptools', 'libtiff5-dev', 'libjpeg62-turbo-dev', 'libjpeg62-turbo', 'libopenjp2-7-dev', 'libopenjp2-7', 'zlib1g-dev', 'zlib1g', 'libfreetype6-dev', 'libfreetype6', 'liblcms2-dev', 'libwebp-dev', 'tcl8.6-dev', 'tk8.6-dev', 'python3-tk', 'libharfbuzz-dev', 'libfribidi-dev', 'libxcb1-dev', 'libtiff5']
     state: present
   when: connectbox_os != 'raspbian' and (OS_Version == 'bullseye' or OS_Version == "buster")
 
 - name: Install packages to run OLED (raspbian, !bullseye, !buster)
   apt:
-    name: [ 'libjpeg9-dev', 'python3-dev', 'libjpeg9', 'libfreetype6', 'libfreetype6-dev', 'zlib1g', 'zlib1g-dev', 'libopenjp2-7', 'libtiff5', 'lshw', 'libjpeg-dev' ]
+    name: [ 'libjpeg9-dev', 'python3-dev', 'libjpeg9', 'libfreetype6', 'libfreetype6-dev', 'zlib1g', 'zlib1g-dev', 'libopenjp2-7', 'libtiff5', 'lshw', 'libjpeg-dev', 'axp209']
     state: present
   when: connectbox_os == 'raspbian' and (OS_Version != 'bullseye' and OS_Version != 'buster')
 
 - name: install packages to run OLED (raspbian & (bullseye or buster))
   apt:
-    name: [ 'libjpeg62-turbo', 'python3-dev', 'libjpeg62-turbo-dev', 'libfreetype6', 'libfreetype6-dev', 'zlib1g', 'zlib1g-dev', 'libopenjp2-7', 'libtiff5', 'lshw']
+    name: [ 'libjpeg62-turbo', 'python3-dev', 'libjpeg62-turbo-dev', 'libfreetype6', 'libfreetype6-dev', 'zlib1g', 'zlib1g-dev', 'libopenjp2-7', 'libtiff5', 'lshw', 'axp209']
     state: present
   when: connectbox_os == 'raspbian' and (OS_Version == 'bullseye' or OS_Version == 'buster')
 
@@ -269,10 +269,6 @@
 - name: set fact for RPi_GPIO_path
   set_fact:
     RPi_GPIO_path: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/RPi.GPIO"
-
-- name: Output the path for RPI_GPIO
-  debug:
-    msg: "The path for RPi_GPIO is: {{ RPi_GPIO_path }}"
  
 # Install RPi.GPIO_NP_CB as RPi.GPIO for NEO compiling of RPi.GPIO
 # note that this was done in the ansible/group_var/all file
@@ -292,9 +288,13 @@
 
 # Hat Services Repo for NEO is set in ansible/group_vars/all by default
 
-- name: Clone the RPi.GPIO_NP_CB or OrangePi.GPIO repo to battery venv (NEO)
+- name: Clone the RPi.GPIO_NP_CB or OrangePi.GPIO repo or RPI.GPIO to battery venv (NEO)
   debug:
     msg: "the cloned directory is: {{ hat_services_repo }} to: {{ RPi_GPIO_path }}"
+
+- name: Output the path for RPI_GPIO
+  debug:
+    msg: "The path for RPi_GPIO is: {{ RPi_GPIO_path }}"
 
 - name: clone the repo for compile
   git: 
@@ -332,7 +332,7 @@
   when: OS_Version  == 'buster' and connectbox_os == 'raspbian'
 
 - name: Install RPi.GPIO for Bullseye build
-  command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.1a4"
+  command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO>=0.7.1"
   when: OS_Version == 'bullseye' and connectbox_os == 'raspbian'
 
 # With RPi.GPIO installed, we can now install the luma.core and luma.oled modules
