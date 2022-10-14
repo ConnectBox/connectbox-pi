@@ -163,13 +163,13 @@
 
 - name: Install packages to run OLED (raspbian, !bullseye, !buster)
   apt:
-    name: [ 'libjpeg9-dev', 'python3-dev', 'libjpeg9', 'libfreetype6', 'libfreetype6-dev', 'zlib1g', 'zlib1g-dev', 'libopenjp2-7', 'libtiff5', 'lshw', 'libjpeg-dev', 'axp209']
+    name: [ 'libjpeg9-dev', 'python3-dev', 'libjpeg9', 'libfreetype6', 'libfreetype6-dev', 'zlib1g', 'zlib1g-dev', 'libopenjp2-7', 'libtiff5', 'lshw', 'libjpeg-dev']
     state: present
   when: connectbox_os == 'raspbian' and (OS_Version != 'bullseye' and OS_Version != 'buster')
 
 - name: install packages to run OLED (raspbian & (bullseye or buster))
   apt:
-    name: [ 'libjpeg62-turbo', 'python3-dev', 'libjpeg62-turbo-dev', 'libfreetype6', 'libfreetype6-dev', 'zlib1g', 'zlib1g-dev', 'libopenjp2-7', 'libtiff5', 'lshw', 'axp209']
+    name: [ 'libjpeg62-turbo', 'python3-dev', 'libjpeg62-turbo-dev', 'libfreetype6', 'libfreetype6-dev', 'zlib1g', 'zlib1g-dev', 'libopenjp2-7', 'libtiff5', 'lshw']
     state: present
   when: connectbox_os == 'raspbian' and (OS_Version == 'bullseye' or OS_Version == 'buster')
 
