@@ -332,7 +332,7 @@
   when: OS_Version  == 'buster' and connectbox_os == 'raspbian'
 
 - name: Install RPi.GPIO for Bullseye build
-  command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO>=0.7.1"
+  command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.1"
   when: OS_Version == 'bullseye' and connectbox_os == 'raspbian'
 
 # With RPi.GPIO installed, we can now install the luma.core and luma.oled modules

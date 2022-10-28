@@ -176,8 +176,7 @@ def mountCheck():
           a = ord('0')+k
           if DEBUG > 2: print("end of loop were going to use location "+str(j)+" and ord "+chr(a))
           print("mount point is "+e.group())
-          if e.group()[len(e.group()-2)] >= "k":
-            # we have aproblem our mount point is to high.  we need to do a reboot.
+# we have aproblem our mount point is to high.  we need to do a reboot.
 #            os.system("/usr/sbin/reboot")
             time.sleep(20)    #This ends here.
 # Now we know we need to do a mount and have found the lowest mount point to use in (a)
@@ -1098,6 +1097,18 @@ if __name__ == "__main__":
         f.close()
         clientwifi =  wifi.partition("ClientIF=")[2].split("\n")[0]
         apwifi = wifi.partition("AccessPointIF=")[2].split("\n")[0]
+        linkfile = "/etc/systemd/network/10-"+apwifi+".link"
+        file_exists = os.path.exists("linkfile")
+        if not file_exists:
+          #We need to write the file so we don't keep swapping network options.  So get the mac address of the ap
+          wififile = '/sys/class/net/'+apwifi+'/address'
+          f = open(wififile, "r")
+          macadd=f.read()
+          f.close()
+          f = open(linkfile, "w")
+          f.write("\n[Match]\nMACAddress="+str(macadd)+"\n[Link]\nName="+str(apwifi)+"\nMACAddressPolicy=random\n")
+          f.close()
+          os.sync
         ifupap = "ifup "+apwifi
         ifdownap = "ifdown "+apwifi
         logging.info("Client interface is "+clientwifi)
