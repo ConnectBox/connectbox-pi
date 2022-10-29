@@ -178,7 +178,7 @@ def mountCheck():
           print("mount point is "+e.group())
 # we have aproblem our mount point is to high.  we need to do a reboot.
 #            os.system("/usr/sbin/reboot")
-            time.sleep(20)    #This ends here.
+          time.sleep(20)    #This ends here.
 # Now we know we need to do a mount and have found the lowest mount point to use in (a)
           if not (os.path.exists("/media/usb"+chr(a))):  #if the /mount/usbx isn't there create it
             res = os.system("mkdir /media/usb"+chr(a))

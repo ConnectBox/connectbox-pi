@@ -115,6 +115,7 @@
     purge: yes
     autoremove: yes
     update_cache: yes
+    ignore-erros: yes
 #  with_items:
 #    - bash-completion
 #    - command-not-found
