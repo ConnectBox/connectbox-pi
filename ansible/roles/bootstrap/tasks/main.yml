@@ -656,7 +656,7 @@
     src: etc_default_macchanger
     dest: /etc/default/macchanger
     owner: root 
-    gropu: root 
+    group: root 
     mode: 0644
     
 - name: Install shutdown.sh 
