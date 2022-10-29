@@ -640,8 +640,8 @@
 
 - name: Install Macchanger
   apt:
-    name: macchanger -y
-    status: present 
+    name: macchanger
+    state: present 
 
 - name: copy over configuration files 
   copy:
@@ -654,7 +654,7 @@
 - name: copy over the default interfaces macchanger affects
   copy:
     src: etc_default_macchanger
-    dest: /etc/default/d_macchanger
+    dest: /etc/default/macchanger
     owner: root 
     gropu: root 
     mode: 0644
