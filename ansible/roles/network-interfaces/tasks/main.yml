@@ -14,7 +14,7 @@
     name: network-manager
     state: stopped
     enabled: no
-  when: nm_installed_test.stdout.find('network-manager') >= 0
+  when: nm_installed_test.stdout is search('network-manager')
 
 - name: Remove NetworkManager
   apt:
@@ -160,25 +160,25 @@
 #  shell: echo  "false"
 #  register: driver_x
 #  ignore_errors: yes
-#  when: ('List_output.stdout.find("rtl8xxxu") >= 0') and (connectbox_os != 'raspbian') 
+#  when: ('List_output.stdout is search("rtl8xxxu") ) and (connectbox_os != 'raspbian') 
   
 - name: check for rtl8812au
-  shell: echo ('List_output.stdout.find("rtl88XXau") > 0' |bool or 'List_output.stdout.find("rtl8812au") >0' |bool)
+  shell: echo ('List_output.stdout is search("rtl88XXau")' |bool or 'List_output.stdout is search("rtl8812au") |bool)
   register: driver_a
   ignore_errors: yes
-  when: ('List_output.stdout.find("rtl88XXau") > 0' |bool or 'List_output.stdout.find("rtl8812au") >0' |bool)
+  when: ('List_output.stdout is search ("rtl88XXau")' |bool or 'List_output.stdout is search("rtl8812au")' |bool)
 
 - name: check for rtl88xbu
   shell: echo ('List_output.stdout.find("rtl88xbu") > 0' |bool)
   register: driver_b
   ignore_errors: yes
-  when: ('List_output.stdout.find("rtl88xbu") > 0' |bool)
+  when: ('List_output.stdout is search("rtl88xbu")' |bool)
 
 - name: check for rtl88x2bu
   shell: echo ('List_output.stdout.find("rtl88x2bu") > 0' |bool)
   register: driver_2b
   ignore_errors: yes
-  when: ('List_output.stdout.find("rtl88x2bu") > 0' |bool)
+  when: ('List_output.stdout is search("rtl88x2bu")' |bool)
 
 # The following throws error: 'dict object' has no attribute 'stdout'
 #- name: Let the user know that we found the drivers
@@ -202,13 +202,13 @@
   command: insmod  /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtl8812au/8812au.ko
   ignore_errors: yes
   register: changed1
-  when: (('driver_a1.stdout.find("8812au") <= 0' |bool) and (driver_a.stdout |bool))
+  when: (('driver_a1.stdout is not search("8812au")' |bool) and (driver_a.stdout |bool))
 
 - name: insert the driver into the kernel modules 88x2bu
   command: insmod  /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtl88x2bu/88x2bu.ko
   ignore_errors: yes
   register: changed2
-  when: (('driver_b1.stdout.find("88x2bu") <= 0' |bool) and (driver_2b.stdout |bool))
+  when: (('driver_b1.stdout is not search("88x2bu")' |bool) and (driver_2b.stdout |bool))
 
 - name: finish the module dependancies
   command: depmod
@@ -222,7 +222,7 @@
     owner: root
     group: root
     mode: '0777'
-# when: (('driver_a1.stdout.find("8812au") <= 0' |bool) or ('driver_b1.stdout.find("88x2bu") <= 0)' |bool))
+# when: (('driver_a1.stdout is not search("8812au")' |bool) or ('driver_b1.stdout is not search("88x2bu"))' |bool))
 
 # This line was moved to bootstrap/tasks/main.yml since two edits don't work 
 # See Add items to rc.local in bootstrap.
@@ -238,13 +238,13 @@
 - name: Create a variable based on the results of the finds for compile_a
   command: echo 'true'
   register: compile_a
-  when: not (('driver_a1.stdout.find("8812au") <= 0' |bool) or ('driver_a1.stdout.find("88xxau") <= 0' |bool) or (driver_a |bool) or (driver_x |bool))
+  when: not (('driver_a1.stdout is not search("8812au")' |bool) or ('driver_a1.stdout is not search("88xxau")' |bool) or (driver_a |bool) or (driver_x |bool))
 
 
 - name: Create a variable based on the results ofthe finds for compile_b
   command: echo 'true'
   register: compile_b
-  when: not (('driver_b1.stdout.find("88x2bu") <= 0' |bool) or ('driver_b1.stdout.find("88x2b") <= 0' |bool) or (driver_b |bool) or (driver_2b |bool) or (driver_x |bool))
+  when: not (('driver_b1.stdout is not search("88x2bu")' |bool) or ('driver_b1.stdout is not search("88x2b")' |bool) or (driver_b |bool) or (driver_2b |bool) or (driver_x |bool))
 
 # Note we have already upgraded the OS to the lattest in role bootstrap
 # now we just install the current OS build tools
@@ -253,6 +253,7 @@
     msg: "We need to compile the 8812au drivers"
 
   when: compile_a.stdout |bool
+
 - debug:
     msg: "We need to compile the 88x2bu driver"
   when: compile_b.stdout |bool
@@ -342,7 +343,6 @@
     fail_on_missing: yes
     flat: yes
   ignore_errors: yes
-
   when: compile_b.stdout |bool
 
 
