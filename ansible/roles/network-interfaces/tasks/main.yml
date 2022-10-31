@@ -155,30 +155,28 @@
   ignore_errors: yes
   when: not (List_output.failed)
 
-# Commented out as this driver does not work for the 8812
-#- name: check for rtl88xxxu
-#  shell: echo  "false"
-#  register: driver_x
-#  ignore_errors: yes
-#  when: ('List_output.stdout is search("rtl8xxxu") ) and (connectbox_os != 'raspbian') 
-  
+- name: cleanup list_output
+  ansible.builtin.set_fact:
+    listoutput:  "{{ List_output.stdout }}"
+
+
 - name: check for rtl8812au
-  shell: echo ('List_output.stdout is search("rtl88XXau")' |bool or 'List_output.stdout is search("rtl8812au") |bool)
+  shell: echo ('true' |bool )
   register: driver_a
   ignore_errors: yes
-  when: ('List_output.stdout is search ("rtl88XXau")' |bool or 'List_output.stdout is search("rtl8812au")' |bool)
+  when: ('"rtl88XXau" in listoutput' or '"rtl8812au" in listoutput')
 
 - name: check for rtl88xbu
-  shell: echo ('List_output.stdout.find("rtl88xbu") > 0' |bool)
+  shell: echo ("true" |bool) 
   register: driver_b
   ignore_errors: yes
-  when: ('List_output.stdout is search("rtl88xbu")' |bool)
+  when: ('"rtl88xbu" in listoutput')
 
 - name: check for rtl88x2bu
-  shell: echo ('List_output.stdout.find("rtl88x2bu") > 0' |bool)
+  shell: echo ("true" | bool)
   register: driver_2b
   ignore_errors: yes
-  when: ('List_output.stdout is search("rtl88x2bu")' |bool)
+  when: ('"rtl88x2bu" in listoutput')
 
 # The following throws error: 'dict object' has no attribute 'stdout'
 #- name: Let the user know that we found the drivers
@@ -190,25 +188,25 @@
   shell: dmesg -H | grep -G 88..au
   register: driver_a1
   ignore_errors: yes
-  when: ((not driver_a.stdout |bool) and (not driver_x.stdout | bool)) 
+  when: (not (driver_a or driver_x)) 
 
 - name: lets check for the 8812bu driver
   shell: dmesg -H | grep -G 88.2bu
   register: driver_b1
   ignore_errors: yes
-  when: ((not driver_b.stdout |bool) and (not driver_x.stdout |bool) and (not driver_2b.stdout |bool))
+  when: ( not(driver_b or driver_x or driver_2b))
 
 - name: Insert the driver into the kernel modules 8812au
   command: insmod  /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtl8812au/8812au.ko
   ignore_errors: yes
   register: changed1
-  when: (('driver_a1.stdout is not search("8812au")' |bool) and (driver_a.stdout |bool))
+  when: ('"8812au" in driver_a1.stdout' or driver_a)
 
 - name: insert the driver into the kernel modules 88x2bu
   command: insmod  /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtl88x2bu/88x2bu.ko
   ignore_errors: yes
   register: changed2
-  when: (('driver_b1.stdout is not search("88x2bu")' |bool) and (driver_2b.stdout |bool))
+  when: ('"88x2bu" in driver_b1.stdout' or driver_2b)
 
 - name: finish the module dependancies
   command: depmod
@@ -236,15 +234,15 @@
 #  when: not aws_instance
 
 - name: Create a variable based on the results of the finds for compile_a
-  command: echo 'true'
+  command: echo ('true' |bool)
   register: compile_a
-  when: not (('driver_a1.stdout is not search("8812au")' |bool) or ('driver_a1.stdout is not search("88xxau")' |bool) or (driver_a |bool) or (driver_x |bool))
+  when: not (('"8812au" in driver_a1.stdout') or ('"88xxau" in driver_a1.stdout') or driver_a or driver_x)
 
 
 - name: Create a variable based on the results ofthe finds for compile_b
   command: echo 'true'
   register: compile_b
-  when: not (('driver_b1.stdout is not search("88x2bu")' |bool) or ('driver_b1.stdout is not search("88x2b")' |bool) or (driver_b |bool) or (driver_2b |bool) or (driver_x |bool))
+  when: not (('"88x2bu" in driver_b1.stdout') or ('"88x2b" in driver_b1.stdout') or driver_b  or driver_2b or driver_x)
 
 # Note we have already upgraded the OS to the lattest in role bootstrap
 # now we just install the current OS build tools
@@ -252,15 +250,12 @@
 - debug:
     msg: "We need to compile the 8812au drivers"
 
-  when: compile_a.stdout |bool
+  when: compile_a
 
 - debug:
     msg: "We need to compile the 88x2bu driver"
-  when: compile_b.stdout |bool
+  when: compile_b
 
-- debug:
-    msg: "We need to compile the 88x2bu driver"
-  when: compile_b.stdout | bool
 
 - name: apt install build tools
   apt:
@@ -272,7 +267,7 @@
     state: present
   ignore_errors: yes
 
-  when: (compile_a.stdout |bool ) or ( compile_b.stdout |bool)
+  when: (compile_a or compile_b)
 
 
 - name: apt install raspberrypi-kernel-headers
@@ -281,7 +276,7 @@
     - raspberrypi-kernel-headers
     state: present
   ignore_errors: yes
-  when: ((connectbox_os == "raspbian") and ((compile_b.stdout | bool ) or ( compile_a.stdout | bool)))
+  when: ((connectbox_os == "raspbian") and (compile_b or compile_a))
 
 # or apt-get install linux-headers-$(uname -r)
 - name: apt install linux-headers-current-sunxi
@@ -290,7 +285,7 @@
     - linux-headers-current-sunxi
     state: present
   ignore_errors: yes
-  when: ((connectbox_os != "raspbian") and ((compile_b.stdout | bool ) or ( compile_a.stdout | bool )))
+  when: ((connectbox_os != "raspbian") and (compile_b or compile_a))
 
 - name: Copy over 8812au-install script for Raspian
   copy:
@@ -299,7 +294,7 @@
     mode: "+x"
   ignore_errors: yes
 
-  when: compile_a.stdout |bool
+  when: compile_a
 
 
 - name: Compile the 8812au driver for Raspbian or NEO
@@ -307,7 +302,7 @@
      chdir: /tmp
      cmd: "sh 8812au-install.sh"
   ignore_errors: yes
-  when: compile_a.stdout |bool
+  when: compile_a
 
 
 - name: Copy over 88x2bu-install script for Raspian
@@ -316,7 +311,7 @@
     dest: /tmp/88x2bu-install.sh
     mode: "+x"
   ignore_errors: yes
-  when: compile_b.stdout |bool
+  when: compile_b
 
 
 - name: Fetch the compiled 8812au driver to control machine
@@ -326,14 +321,14 @@
     fail_on_missing: yes
     flat: yes
   ignore_errors: yes
-  when: compile_a.stdout |bool
+  when: compile_a
 
 - name: Compile the 88x2bu driver for Raspbian or NEO
   command:
      chdir: /tmp
      cmd: "sh 88x2bu-install.sh"
   ignore_errors: yes
-  when: compile_b.stdout |bool
+  when: compile_b
 
 
 - name: Fetch the compiled 8812bu driver to control machine
@@ -343,7 +338,7 @@
     fail_on_missing: yes
     flat: yes
   ignore_errors: yes
-  when: compile_b.stdout |bool
+  when: compile_b
 
 
 - name: Remove headers for raspbian
@@ -352,8 +347,7 @@
     - raspberrypi-kernel-headers
     state: absent
   ignore_errors: yes
-
-  when: (((compile_a.stdout |bool ) or ( compile_b.stdout |bool)) and (connectbox_os == "raspbian"))
+  when: ((compile_a or compile_b) and (connectbox_os == "raspbian"))
 
 # or remove linux-headers-$(uname -r)
 - name: apt install linux-headers-current-sunxi
@@ -363,7 +357,7 @@
     state: absent
   ignore_errors: yes
 
-  when: ((connectbox_os != "raspbian") and  ((compile_a.stdout |bool ) or ( compile_b.stdout |bool )))
+  when: ((connectbox_os != "raspbian") and  (compile_a or compile_b))
 
 
 - name: remove build tools
@@ -376,7 +370,7 @@
     - raspbewrrypi-kernel-headers
     state: absent
   ignore_errors: yes
-  when:  (compile_a.stdout |bool ) or ( compile_b.stdout |bool )
+  when:  (compile_a or compile_b)
 
 
 # Note: this is not a handler because we need the network configuration in
