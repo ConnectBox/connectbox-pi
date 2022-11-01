@@ -159,6 +159,9 @@
   ansible.builtin.set_fact:
     listoutput:  "{{ List_output.stdout }}"
 
+- debug:
+    msg: "builtin driver are:\n {{ listoutput }}"
+
 
 - name: check for rtl8812au
   shell: echo ('true' |bool )
@@ -197,13 +200,13 @@
   when: ( not(driver_b or driver_x or driver_2b))
 
 - name: Insert the driver into the kernel modules 8812au
-  command: insmod  /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtl8812au/8812au.ko
+  command: insmod  /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtl8812au/8812au.ko*
   ignore_errors: yes
   register: changed1
-  when: ('"8812au" in driver_a1.stdout' or driver_a)
+  when: ('"8812au.ko" in driver_a1.stdout' or driver_a)
 
 - name: insert the driver into the kernel modules 88x2bu
-  command: insmod  /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtl88x2bu/88x2bu.ko
+  command: insmod  /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtl88x2bu/88x2bu.ko*
   ignore_errors: yes
   register: changed2
   when: ('"88x2bu" in driver_b1.stdout' or driver_2b)
@@ -220,7 +223,7 @@
     owner: root
     group: root
     mode: '0777'
-# when: (('driver_a1.stdout is not search("8812au")' |bool) or ('driver_b1.stdout is not search("88x2bu"))' |bool))
+# when: (('"8812au" not in driver_a1.stdout') or ("88x2bu" not in 'driver_b1.stdout')) 
 
 # This line was moved to bootstrap/tasks/main.yml since two edits don't work 
 # See Add items to rc.local in bootstrap.
@@ -236,13 +239,13 @@
 - name: Create a variable based on the results of the finds for compile_a
   command: echo ('true' |bool)
   register: compile_a
-  when: not (('"8812au" in driver_a1.stdout') or ('"88xxau" in driver_a1.stdout') or driver_a or driver_x)
+  when: (('"8812au" not in driver_a1.stdout') and ('"88xxau" not in driver_a1.stdout') and not driver_a and not driver_x)
 
 
 - name: Create a variable based on the results ofthe finds for compile_b
   command: echo 'true'
   register: compile_b
-  when: not (('"88x2bu" in driver_b1.stdout') or ('"88x2b" in driver_b1.stdout') or driver_b  or driver_2b or driver_x)
+  when: (('"88x2bu" not in driver_b1.stdout') and ('"88x2b" not in driver_b1.stdout') and not driver_b and not driver_2b and not driver_x)
 
 # Note we have already upgraded the OS to the lattest in role bootstrap
 # now we just install the current OS build tools
@@ -266,7 +269,6 @@
     - libssl-dev
     state: present
   ignore_errors: yes
-
   when: (compile_a or compile_b)
 
 
@@ -293,7 +295,6 @@
     dest: /tmp/8812au-install.sh
     mode: "+x"
   ignore_errors: yes
-
   when: compile_a
 
 
@@ -314,6 +315,13 @@
   when: compile_b
 
 
+- name: Compile the 88x2bu driver for Raspbian or NEO
+  command:
+     chdir: /tmp
+     cmd: "sh 88x2bu-install.sh"
+  ignore_errors: yes
+  when: compile_b
+
 - name: Fetch the compiled 8812au driver to control machine
   fetch:
     src: /tmp/rtl8812au*/88x12au.ko 
@@ -322,13 +330,6 @@
     flat: yes
   ignore_errors: yes
   when: compile_a
-
-- name: Compile the 88x2bu driver for Raspbian or NEO
-  command:
-     chdir: /tmp
-     cmd: "sh 88x2bu-install.sh"
-  ignore_errors: yes
-  when: compile_b
 
 
 - name: Fetch the compiled 8812bu driver to control machine
