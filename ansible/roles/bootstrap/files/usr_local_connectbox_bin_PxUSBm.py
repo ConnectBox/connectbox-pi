@@ -411,6 +411,8 @@ def IP_Check(b, restart):
      global ifdownap
      global DEBUG
 
+     b = int(b)
+
      if DEBUG > 3: print("Started IP check")
      process = Popen("ifconfig", shell = True, stdout=PIPE, stderr=PIPE)       #back to checking for an IP4 addresss
      stdout, stderr = process.communicate()
@@ -436,19 +438,18 @@ def IP_Check(b, restart):
                  else:
                    return(1)
                else:
-                 return(0)
             return(0)
         else:
           return(1)
      else:
        logging.info("Tried checking the IP address of the AP but it was not present in ifconfig, so had to do ifup/ifdown")
-       process = Popen("ifdown wlan"+chr(b), shell = True, stdout=PIPE, stderr = PIPE)  #We didn't have the wlan in ifconfig so we need an up/down
+       process = Popen(("ifdown wlan"+chr(b)), shell=False, stdout=PIPE, stderr=PIPE)  #We didn't have the wlan in ifconfig so we need an up/down
        stdout, stderr = process.communicate()
-       process = Popen("ifup wlan"+chr(b), shell = True, stdout=PIPE, stderr = PIPE) 
+       process = Popen(("ifup wlan"+chr(b)), shell=False, stdout=PIPE, stderr=PIPE) 
        stdout, stderr = process.communicate()
        process = Popen("systemctl restart hostapd", shell = True, stdout=PIPE, stderr=PIPE)
        stdout, stderr = process.communicate()
-       process = Popen("ifconfig", shell = True, stdout=PIPE, stderr = PIPE) 
+       process = Popen("ifconfig", shell=False, stdout=PIPE, stderr=PIPE) 
        stdout, stderr = process.communicate()
        net_stats = str(stdout).split("wlan")
        if len(net_stats) >= (int(b)+1):
@@ -687,7 +688,7 @@ def NetworkCheck():
 # We have finished the individual tests for networking.services, hostapd and dnsmasq and all are working to the best of our ability
 # if we don't find the AP name in AP then lets try to restart the hostapd service
 
-  b = apwifi[(len(apwifi)-1):]                                          # b contains the AP wifi character (0, 1, 2, .....)
+  b = int(apwifi[(len(apwifi)-1):])                                     # b contains the AP wifi character (0, 1, 2, .....)
   if clientwifi=="":
     if str(b) >= "1":                                                   # if b > 0 then the c is lower
       c = chr(int(b)-1+ord("0"))
