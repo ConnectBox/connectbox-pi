@@ -13,11 +13,14 @@
 package=macchanger
 
 . /etc/default/${package}
+
 LOGFILE=/var/log/${package}.log
+
 if [ "$ENABLE_ON_POST_UP_DOWN" != "true" ]; then
     echo "disabled in /etc/default/${package}" >> $LOGFILE
     exit
 fi
+
 echo "IFACE = $IFACE" >> $LOGFILE
 
 # quit if we're called for the loopback
