@@ -645,8 +645,8 @@
 
 - name: copy over configuration files 
   copy:
-    src: etc_network_if-pre-up.d_macchanger
-    dest: /etc/network/if-pre-up.d/macchange
+    src: etc_macchanger_ifupdown.sh
+    dest: /etc/macchange/
     owner: root 
     group: root 
     mode: 0644  

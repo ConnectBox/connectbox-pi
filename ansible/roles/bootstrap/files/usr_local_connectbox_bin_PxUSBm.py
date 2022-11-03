@@ -51,7 +51,8 @@ import re
 import os
 from subprocess import Popen, PIPE
 import subprocess
-
+import io
+import json
 
 # globals for Partion expansion
 progress_file = '/usr/local/connectbox/expand_progress.txt'
@@ -70,7 +71,6 @@ d=["","","","","","","","","","","","","","","","","","","","","","","","","",""
 global net_stat
 net_stat = 1
 global Brand
-Brand = ""
 
 
 def mountCheck():
@@ -97,16 +97,50 @@ def mountCheck():
     except:
       pass
     try:
-         f = open("/usr/local/connectbox/brand.txt", "r")
-         a = f.read()
+         f = open(brand_file, mode="r", encoding = 'utf-8')
+         brand = json.loads(f.read())
          f.close()
     except:
-         a =  ""
-    d = a.split('"')
-    Brand = str(d[3])
-    c = a.split('usb0NoMount":')
-    a = str(c[1])
-    if a[0] == "1":
+      version = Revision()
+      details  = {'Brand':"Connectbox", \
+        'enhancedInterfaceLogo': 'connectbox_logo.png', \
+        'Image':"", \
+        'Font': '27', \
+        'pos_x': '6', \
+        'pos_y': '0', \
+        'Device_type': version, \
+        "usb0NoMount": '0', \
+        "lcd_pages_main": '1',\
+        "lcd_pages_info": '1',\
+        "lcd_pages_battery": '1',\
+        "lcd_pages_multi_bat": '1',\
+        "lcd_pages_stats_hour_one": '1',\
+        "lcd_pages_stats_hour_two": '1',\
+        "lcd_pages_stats_day_one": "1",\
+        "lcd_pages_stats_day_two": "1",\
+        "lcd_pages_stats_week_one": "1",\
+        "lcd_pages_stats_week_two": "1",\
+        "lcd_pages_stats_month_one": "1",\
+        "lcd_pages_stats_month_two": "1",\
+        "Enable_MassStorage": "",\
+        "g_device": "g_serial",\
+        "otg": "none",\
+        "server_url": "", \
+        "server_authorization": "", \
+        "server_sitename": "", \
+        "server_siteadmin_name": "", \
+        "server_siteadmin_email": "", \
+        "server_siteadmin_phone": "", \
+        "server_siteadmin_country": "" \
+        }
+      f = open(brand_file, mode='w', encoding = 'utf-8')
+      f.write(json.dumps(details));
+      f.close
+      f = open(brand_file, mode="r", encoding = "utf-8")
+      brand = json.loads(f.read())
+      Brand = brand
+    a = brand['usb0NoMount']
+    if a == "1":
       return
     total = 0
     j = 0                   #mount iterator looking for unmounted devices
@@ -417,9 +451,9 @@ def IP_Check(b, restart):
      process = Popen("ifconfig", shell = True, stdout=PIPE, stderr=PIPE)       #back to checking for an IP4 addresss
      stdout, stderr = process.communicate()
      net_stats = str(stdout).split("wlan")
-     a = str(net_stats[int(b)+1][0])
-     if ((len(net_stats) >= (int(b)+1)) and (a == str(b))):
-        if (not "inet" in net_stats[int(b)+1]):
+     a = str(net_stats[b+1][0])
+     if ((len(net_stats) >= (b+1)) and (a == str(b))):
+        if (not "inet" in net_stats[b+1]):
             if DEBUG: print("IP Check and no IP detected for "+net_stats[int(b)+1])
             if restart:
                process = Popen(ifdownap, shell=True, stdout=PIPE, stderr=PIPE)
@@ -431,14 +465,16 @@ def IP_Check(b, restart):
                process = Popen("ifconfig", shell = True, stdout=PIPE, stderr=PIPE)       #back to checking for an IP4 addresss
                stdout, stderr = process.communicate()
                net_stats = str(stdout).split("wlan")
-               if len(net_stats) >= (int(b)+1):
-                 if (not "inet" in net_stats[int(b)+1]):
+               if len(net_stats) >= (b+1):
+                 if (not "inet" in net_stats[b+1]):
                    if DEBUG: print("did ifdown/ifup and still don't have an IP address "+net_stats[int(b)+1])
                    return(0)
                  else:
                    return(1)
                else:
-            return(0)
+                 return(0)
+            else:
+              return(0)
         else:
           return(1)
      else:
@@ -452,7 +488,7 @@ def IP_Check(b, restart):
        process = Popen("ifconfig", shell=False, stdout=PIPE, stderr=PIPE) 
        stdout, stderr = process.communicate()
        net_stats = str(stdout).split("wlan")
-       if len(net_stats) >= (int(b)+1):
+       if len(net_stats) >= (b+1):
           if (not "inet" in net_stats[int(b)+1]):
               logging.info("After the ifup/ifdown we still didn't get an IP address")
               return(0)
@@ -475,13 +511,13 @@ def RestartWLAN(b):
   cmd = "systemctl restart hostapd"
   rv = subprocess.call(cmd, shell=True)
   cmd = "systemctl restart dnsmasq"
-  rv = subprocess.call(cmd, shell=True)  
+  rv = subprocess.call(cmd, shell=True)
   time.sleep(5)
 
 # check to see if that did it...
   cmd = "iwconfig"
   rv = subprocess.check_output(cmd)
-  rvs = rv.decode("utf-8") 
+  rvs = rv.decode("utf-8")
   if ("802.11gn" in rvs):
 #    print ("WLAN IS UP!")
     pass
@@ -509,14 +545,14 @@ def ESSID_Check(b, restart):
     net_stats = str(stdout).split("wlan")                                        #split up iwconfig by wlan so the first wlan status is in net_stats[1]
 
     #if we didn't find a " or no ESSID then we will try a down/up sequence for the wlan
-    if ((len(net_stats) ==1) or (not "IEEE 802.11gn  ESSID:" in net_stats[int(b)+1])):          
+    if ((len(net_stats) ==1) or (not "IEEE 802.11gn  ESSID:" in net_stats[int(b)+1])):
       logging.info("did iwconfig but no ESSID present "+net_stats[int(b)+1])
       if restart:
         RestartWLAN(b)
       return (0)      # we have restarted but have no info
 
     # else, we have one or more WLANs... check to see if the ESSID and SSID match
-    elif(len(net_stats) != 1):                      
+    elif(len(net_stats) != 1):
       x = net_stats[int(b)+1].find("ESSID:")
       a = net_stats[int(b)+1][(x+6):].lstrip()      #get the starting of the SSID but clear preceeding blanks
       y = a.find(" ")                               #find the real SSID
@@ -935,7 +971,7 @@ def Revision():
       elif revision== "0000": version="NEO NANOPI 1GB 1.1"
       elif revision== "4" : version="OrangePi Zero 2"
       else:
-        version="Unknown" 
+        version="Unknown"
       return version
     else:
       # we have hit somthing we don't know
@@ -991,13 +1027,47 @@ if __name__ == "__main__":
     version = Revision()                    # Get the version of hardware were running on
     logging.info("PxUSBm Starting revision is "+version)
     try: 
-      f = open(brand_file,"r")
-      brand = f.read()
+      f = open(brand_file, mode="r", encoding='utf-8')
+      brand = json.loads( f.read() )
       f.close
     except:
-      brand = ""
-      f = open(brand_file, "w")
-      f.write(brand);
+      f = open(brand_file, mode="w", encoding = 'utf-8')
+      details  = {'Brand':"Connectbox", \
+        'enhancedInterfaceLogo': 'connectbox_logo.png', \
+        'Image':"", \
+        'Font': '27', \
+        'pos_x': '6', \
+        'pos_y': '0', \
+        'Device_type': version, \
+        "usb0NoMount": '0', \
+        "lcd_pages_main": '1',\
+        "lcd_pages_info": '1',\
+        "lcd_pages_battery": '1',\
+        "lcd_pages_multi_bat": '1',\
+        "lcd_pages_stats_hour_one": '1',\
+        "lcd_pages_stats_hour_two": '1',\
+        "lcd_pages_stats_day_one": "1",\
+        "lcd_pages_stats_day_two": "1",\
+        "lcd_pages_stats_week_one": "1",\
+        "lcd_pages_stats_week_two": "1",\
+        "lcd_pages_stats_month_one": "1",\
+        "lcd_pages_stats_month_two": "1",\
+        "Enable_MassStorage": "",\
+        "g_device": "g_serial",\
+        "otg": "none",\
+        "server_url": "", \
+        "server_authorization": "", \
+        "server_sitename": "", \
+        "server_siteadmin_name": "", \
+        "server_siteadmin_email": "", \
+        "server_siteadmin_phone": "", \
+        "server_siteadmin_country": "" \
+        }
+      f.write(json.dumps(details))
+      f.close
+      f.open(brand_file, mode="r", encoding='utf8')
+      brand = json.loads(f.read())
+      Brand = brand
       f.close
       rpi_platform=False
       PI_stat = False
@@ -1013,53 +1083,42 @@ if __name__ == "__main__":
       else:
           a = version[0:4].rstrip()
       logging.info("Major type: "+a)
-      if brand.find(a)<=0:                    # Make sure the brand file is what we expect as were on this hardware.
-        f = open(brand_file, "w")
-        x = brand.find('"Device_type":')
-        y = brand[(x+14):].find(',')
-        logging.info("Writing new brand file entry at:",x,y)
-        a = brand[0:(x+14)]+' "'+a+'"'+brand[(x+14+y):]
+      if brand["Device_type"].find(a)<=0:                    # Make sure the brand file is what we expect as were on this hardware.
+        f = open(brand_file, mode="w", encoding = 'utf-8')
+        brand["Device_type"] = '"'+a+'"'
         if a.find("CM")>0 :
-          x = a.find('"lcd_pages_multi_bat": ')
-          if x>0: a=a[0:(x+22)] + '1' + a[(x+24):]
+          brand["lcd_pages_multi_bat"] = "'"+"1"+"'"
         else:
-          x = a.find('"lcd_pages_multi_bat": ')
-          if x>0: a=a[0:(x+22)] + '0' + a[x(+24):]
-        logging.info("final text is: "+a)
-        f.write(a)
+          brand["lcd_pages_multi_bat"] = "'"+"0"+"'"
+        f.write(json.dumps(brand))
         f.close()
         os.sync()
-    x = brand.find('"Brand":')
-    a = brand[(x+10):]             # x+8 takes us to what is RIGHT after Brand: which starts with space quote
-    y = a.find(",")
-    if (x>0 and y>0 and y>x):
-         SSID = a[0:(y-1)]                     #we now have the brand part of the ESSID
+        SSID = brand["Brand"]
     else:
-        SSID = ""
-
+        SSID = "ABC"
     x=SSID.find('"')                          #Remove all the quotation marks around the  SSID
     while ( x >= 0 and len(SSID)>0):
       SSID = SSID.replace('"','')
       x=SSID.find('"')
-    
+
     logging.info("SSID from file is now: "+SSID)
 
-    if 'CM' in brand:                         #Now we determine what brand to work with
+    if 'CM' in brand["Device_type"]:                         #Now we determine what brand to work with
         rpi_platform=True
         PI_stat=True
         OP_stat=False
 
-    if "PI" in brand:
+    if "PI" in brand["Device_type"]:
         rpi_platform=True
         PI_stat=True
         OP_stat = False
 
-    if "NEO" in brand:
+    if "NEO" in brand["Device_type"]:
         rpi_platform=False
         PI_stat=False
         OP_stat=False
 
-    if "OZ2" in brand:
+    if "OZ2" in brand["Device_type"]:
         rpi_platform = False
         PI_stat=False
         OP_stat =True
