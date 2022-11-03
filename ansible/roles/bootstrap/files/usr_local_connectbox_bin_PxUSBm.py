@@ -417,9 +417,9 @@ def IP_Check(b, restart):
      process = Popen("ifconfig", shell = True, stdout=PIPE, stderr=PIPE)       #back to checking for an IP4 addresss
      stdout, stderr = process.communicate()
      net_stats = str(stdout).split("wlan")
-     a = str(net_stats[int(b)+1][0])
-     if ((len(net_stats) >= (int(b)+1)) and (a == str(b))):
-        if (not "inet" in net_stats[int(b)+1]):
+     a = str(net_stats[b+1][0])
+     if ((len(net_stats) >= (b+1)) and (a == str(b))):
+        if (not "inet" in net_stats[b+1]):
             if DEBUG: print("IP Check and no IP detected for "+net_stats[int(b)+1])
             if restart:
                process = Popen(ifdownap, shell=True, stdout=PIPE, stderr=PIPE)
@@ -431,14 +431,16 @@ def IP_Check(b, restart):
                process = Popen("ifconfig", shell = True, stdout=PIPE, stderr=PIPE)       #back to checking for an IP4 addresss
                stdout, stderr = process.communicate()
                net_stats = str(stdout).split("wlan")
-               if len(net_stats) >= (int(b)+1):
-                 if (not "inet" in net_stats[int(b)+1]):
+               if len(net_stats) >= (b+1):
+                 if (not "inet" in net_stats[b+1]):
                    if DEBUG: print("did ifdown/ifup and still don't have an IP address "+net_stats[int(b)+1])
                    return(0)
                  else:
                    return(1)
                else:
-            return(0)
+                 return(0)
+            else:
+              return(0)
         else:
           return(1)
      else:
@@ -452,7 +454,7 @@ def IP_Check(b, restart):
        process = Popen("ifconfig", shell=False, stdout=PIPE, stderr=PIPE) 
        stdout, stderr = process.communicate()
        net_stats = str(stdout).split("wlan")
-       if len(net_stats) >= (int(b)+1):
+       if len(net_stats) >= (b+1):
           if (not "inet" in net_stats[int(b)+1]):
               logging.info("After the ifup/ifdown we still didn't get an IP address")
               return(0)

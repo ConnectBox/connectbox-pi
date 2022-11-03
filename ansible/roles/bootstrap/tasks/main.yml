@@ -643,14 +643,6 @@
     name: macchanger
     state: present 
 
-- name: copy over configuration files 
-  copy:
-    src: etc_network_if-pre-up.d_macchanger
-    dest: /etc/network/if-pre-up.d/macchanger
-    owner: root 
-    group: root 
-    mode: 0644  
-
 - name: copy over the default interfaces macchanger affects
   copy:
     src: etc_default_macchanger
