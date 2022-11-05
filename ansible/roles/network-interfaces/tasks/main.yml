@@ -243,7 +243,7 @@
 
 
 - name: Create a variable based on the results ofthe finds for compile_b
-  command: echo 'true'
+  command: echo ('true' |bool)
   register: compile_b
   when: (('"88x2bu" not in driver_b1.stdout') and ('"88x2b" not in driver_b1.stdout') and not driver_b and not driver_2b and not driver_x)
 

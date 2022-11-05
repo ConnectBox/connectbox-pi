@@ -24,6 +24,12 @@ else
     sed -i 's/CONFIG_PLATFORM_I386_PC = y/CONFIG_PLATFORM_I386_PC = n/g' Makefile
     sed -i 's/CONFIG_PLATFORM_ARM_RPI = n/CONFIG_PLATFORM_ARM_RPI = y/g' Makefile
     sed -i 's/CONFIG_POWER_SAVING = y/CONFIG_POWER_SAVING = n/g' Makefile
+		printf 'we check for 64 bit architecture $(uname -m)"
+	if [ ("aarch64" in ($uname -m)) ]
+	then
+	  ./ARM64_RPI.sh
+	  echo ("we ran ARM64_RPI.sh")
+	fi 
     if [ -f install.sh ];
     then
       printf "using install.sh\n"
