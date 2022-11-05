@@ -260,6 +260,10 @@
   when: compile_b
 
 
+- debug:
+    msg: "connectbox_os is {{ connectbox_os }}"
+
+
 - name: apt install build tools
   apt:
     pkg:
@@ -270,7 +274,6 @@
     state: present
   ignore_errors: yes
   when: (compile_a or compile_b)
-
 
 - name: apt install raspberrypi-kernel-headers
   apt:
@@ -306,7 +309,7 @@
   when: compile_a
 
 
-- name: Copy over 88x2bu-install script for Raspian
+- name: Copy over 88x2bu-install script
   copy:
     src: 88x2bu-install.sh
     dest: /tmp/88x2bu-install.sh
@@ -357,7 +360,6 @@
     - linux-headers-current-sunxi
     state: absent
   ignore_errors: yes
-
   when: ((connectbox_os != "raspbian") and  (compile_a or compile_b))
 
 
