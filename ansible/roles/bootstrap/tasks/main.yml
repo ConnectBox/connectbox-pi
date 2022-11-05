@@ -658,6 +658,11 @@
     owner: root 
     group: root 
     mode: 0644
+
+- name: remove the if-pre-up.d/macchanger file
+  file:
+    path: /etc/network/if-pre-up.d/macchanger
+    state: absent    
     
 - name: Install shutdown.sh 
   copy:
