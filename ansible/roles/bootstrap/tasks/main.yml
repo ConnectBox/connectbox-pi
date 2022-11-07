@@ -18,10 +18,21 @@
 
 ###########################################
 
-- name: change the connectbox_os name if we are running on a PI 
-    var:
-      connectbox_os = "raspbian"
-  when: ('Raspberry Pi' in machine_type['stdout_lines'])
+- name: Get the machine type to check for RPI
+  set_fact:
+    frustrate: '{{ frustrated }}'
+  vars:
+    frustrated: "{{ (machine_type['stdout_lines'][0].find('Raspberry Pi') >=0 ) }}"
+
+- debug:
+    msg: "Variable pulled on machine was Raspberry Pi: {{ frustrate }}"
+
+- name: change the connectbox_os name if we are running on a PI
+  set_fact:
+    connectbox_os: "{{ happy9 }}"
+  vars:
+    happy9: "raspbian"
+  when: frustrate
 
 # Raspberry Pi partitioning for building via Ansible
 - name: Get Name of SD card
