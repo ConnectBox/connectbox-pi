@@ -167,49 +167,49 @@
   shell: echo ('true' |bool )
   register: driver_a
   ignore_errors: yes
-  when: ('"rtl88XXau" in listoutput' or '"rtl8812au" in listoutput')
+  when: (("rtl88XXau" in listoutput) or ("rtl8812au" in listoutput))
 
 - name: check for rtl88xbu
   shell: echo ("true" |bool) 
   register: driver_b
   ignore_errors: yes
-  when: ('"rtl88xbu" in listoutput')
+  when: ("rtl88xbu" in listoutput)
 
 - name: check for rtl88x2bu
   shell: echo ("true" | bool)
   register: driver_2b
   ignore_errors: yes
-  when: ('"rtl88x2bu" in listoutput')
+  when: ("rtl88x2bu" in listoutput)
 
-# The following throws error: 'dict object' has no attribute 'stdout'
-#- name: Let the user know that we found the drivers
-#  debug:
-#    msg: We found the drivers already compiled on the system for some kernels
-#  when: (driver_x.stdout or driver_a.stdout or driver_b.stdout or driver_2b.stdout)
+ The following throws error: 'dict object' has no attribute 'stdout'
+- name: Let the user know that we found the drivers
+  debug:
+    msg: We found the drivers already compiled on the system for some kernels
+  when: (driver_a or driver_b or driver_2b)
 
 - name: lets check for exsisting 8812au driver
   shell: dmesg -H | grep -G 88..au
   register: driver_a1
   ignore_errors: yes
-  when: (not (driver_a or driver_x)) 
+  when: ((not driver_a) or (not driver_x)) 
 
 - name: lets check for the 8812bu driver
   shell: dmesg -H | grep -G 88.2bu
   register: driver_b1
   ignore_errors: yes
-  when: ( not(driver_b or driver_x or driver_2b))
+  when: (( not driver_b ) or ( not driver_x)  or (not driver_2b))
 
 - name: Insert the driver into the kernel modules 8812au
   command: insmod  /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtl8812au/8812au.ko*
   ignore_errors: yes
   register: changed1
-  when: ('"8812au.ko" in driver_a1.stdout' or driver_a)
+  when: (("8812au.ko" in driver_a1.stdout') or (driver_a))
 
 - name: insert the driver into the kernel modules 88x2bu
   command: insmod  /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtl88x2bu/88x2bu.ko*
   ignore_errors: yes
   register: changed2
-  when: ('"88x2bu" in driver_b1.stdout' or driver_2b)
+  when: (("88x2bu" in driver_b1.stdout') or ( driver_2b ))
 
 - name: finish the module dependancies
   command: depmod
@@ -239,20 +239,19 @@
 - name: Create a variable based on the results of the finds for compile_a
   command: echo ('true' |bool)
   register: compile_a
-  when: (('"8812au" not in driver_a1.stdout') and ('"88xxau" not in driver_a1.stdout') and not driver_a and not driver_x)
+  when: (("8812au" not in driver_a1.stdout) and ("88xxau" not in driver_a1.stdout) and not driver_a and not driver_x)
 
 
 - name: Create a variable based on the results ofthe finds for compile_b
   command: echo ('true' |bool)
   register: compile_b
-  when: (('"88x2bu" not in driver_b1.stdout') and ('"88x2b" not in driver_b1.stdout') and not driver_b and not driver_2b and not driver_x)
+  when: (("88x2bu" not in driver_b1.stdout) and ("88x2b" not in driver_b1.stdout) and not driver_b and not driver_2b and not driver_x)
 
 # Note we have already upgraded the OS to the lattest in role bootstrap
 # now we just install the current OS build tools
 
 - debug:
     msg: "We need to compile the 8812au drivers"
-
   when: compile_a
 
 - debug:
@@ -333,7 +332,6 @@
     flat: yes
   ignore_errors: yes
   when: compile_a
-
 
 - name: Fetch the compiled 8812bu driver to control machine
   fetch:
