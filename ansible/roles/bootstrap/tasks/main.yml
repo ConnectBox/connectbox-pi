@@ -14,8 +14,14 @@
     owner: www-data
     group: www-data
     mode: 0775
+  when: (build_moodle == True)
 
 ###########################################
+
+- name: change the connectbox_os name if we are running on a PI 
+    var:
+      connectbox_os = "raspbian"
+  when: ('Raspberry Pi' in machine_type['stdout_lines'])
 
 # Raspberry Pi partitioning for building via Ansible
 - name: Get Name of SD card
@@ -141,6 +147,7 @@
 
 - debug:
     msg: "search for NEO PI present : {{ NEO_present }}" 
+
  
 - name: setup use of old-style interface names for predictability across devices
   file:
