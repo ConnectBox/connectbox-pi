@@ -19,15 +19,15 @@ else
     # alternate github repository is https://github.com/aircrack-ng/rtl8812au
     sudo ln -s linux $(uname -r)
     sudo ln -s /usr/src/linux-headers-$(uname -r) /lib/modules/$(uname -r)/build
-    printf "\nyou running version %s\n', "$(uname -r)"
+    printf "\nyou running version"+"$(uname -r)\n"
     cd ./8812au-20210629/
     sed -i 's/CONFIG_PLATFORM_I386_PC = y/CONFIG_PLATFORM_I386_PC = n/g' Makefile
     sed -i 's/CONFIG_PLATFORM_ARM_RPI = n/CONFIG_PLATFORM_ARM_RPI = y/g' Makefile
     sed -i 's/CONFIG_POWER_SAVING = y/CONFIG_POWER_SAVING = n/g' Makefile
 		printf 'we check for 64 bit architecture $(uname -m)"
-	if ["aarch64" -eq $(uname -m)) ]
+	if ["aarch64" == $(uname -m)) ]
 	then
-	  ./ARM64_RPI.sh
+	  ./ARM64_RPI.shlsl
 	  echo "we ran ARM64_RPI.sh"
 	fi 
     if [ -f install.sh ];
@@ -44,7 +44,6 @@ else
       sudo cp 8812au.ko /lib/modules/$(uname -r)/kernel/drivers/net/wireless/
       sudo depmod
     fi
-    rm -r ./8812au-20210629
   fi
 fi 
 sleep 2
