@@ -146,39 +146,35 @@
   when: not found_drivers.failed
 
 - name: check for exsisting drivers in os 
-  shell: ("ls -R /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/").stdout
+  shell: "ls -R /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/"
   register: List_output
   ignore_errors: true
 
-- debug:
-    msg: 'Output of driver search is :\n {{ List_output.stdout }}'
-  ignore_errors: yes
-  when: not (List_output.failed)
-
 - name: cleanup list_output
   ansible.builtin.set_fact:
-    listoutput:  "{{ List_output }}"
+    listoutput:  "{{ List_output.stdout }}"
 
 - debug:
     msg: "builtin driver are:\n {{ listoutput }}"
 
-- name: Get the machine type to check for RPI
+- name: Get the drives we care about to see if they exsists.
   set_fact:
     rtl88XXd : '{{ rtl88XXdriver }}'
     rtl8812d : '{{ rtl8812driver }}'
     rtl88xbd : '{{ rtl88x2budriver }}'
     rtl88xcd : '{{ rtl88x2cudriver }}'
   vars:
-    rtl88XXdriver: "{{ (listoutput['stdout_lines'][0].find('rtl88XXau') >=0 ) }}"
-    rtl8812driver: "{{ (listoutput['stdout_lines'][0].find('rtl8812au') >=0 ) }}"
-    rtl88xdriver: "{{ (listoutput['stdout_lines'][0].find('rtl88xbu') >=0 ) }}"
-    rtl88x2budriver: "{{ (listoutput['stdout_lines'][0].find('rtl88X2bu') >=0 ) }}"
-    rtl88x2cudriver: "{{ (listoutput['stdout_lines'][0].find('rtl88X2cu') >=0 ) }}"
+    rtl88XXdriver: "{{ (listoutput.find('rtl88XXau') >=0 ) }}"
+    rtl8812driver: "{{ (listoutput.find('rtl8812au') >=0 ) }}"
+    rtl88xbudriver: "{{ (listoutput.find('rtl88xbu') >=0 ) }}"
+    rtl88x2budriver: "{{ (listoutput.find('rtl88X2bu') >=0 ) }}"
+    rtl88x2cudriver: "{{ (listoutput.find('rtl88X2cu') >=0 ) }}"
 - debug:
     msg: "Variable pulled ListOutput rtl88XXdriver: {{ rtl88XXdriver }}"
     msg: "variable pulled listoutput rtl8812driver: {{ rtl8812driver }}"
-    msg: "variable pulled listoutput rtlXbudriver: {{ rtlX2driver }}"
-    msg: "variable pulled listoutput rtlx2budriver: {{ rtl88x2driver }}"
+    msg: "variable pulled listoutput rtlXbudriver: {{ rtlX2budriver }}"
+    msg: "variable pulled listoutput rtlx2budriver: {{ rtl88x2budriver }}"
+    msg: "variable pullle listoutput rtlx2cudriver: {{ rtl88x2cudriver }}"
 
 - name: check for rtl8812au
   shell: echo ('true' |bool )
@@ -190,18 +186,18 @@
   shell: echo ("true" |bool).stdout
   register: driver_b
   ignore_errors: yes
-  when: (rtl88xdriver)
+  when: (rtl88xbudriver)
 
 - name: check for rtl88x2bu
   shell: echo ("true" | bool).stdout
   register: driver_2b
   ignore_errors: yes
-  when: (rtl88xbudriver)
+  when: (rtl88x2budriver)
 
 - name: check for rtl88x2cu 
   shell: echo ("true"| bool).stdout 
   register: driver_2c
-  when: (rtl88xcudriver)
+  when: (rtl88x2cudriver)
   
 - name: Let the user know that we found the drivers
   debug:
