@@ -110,13 +110,13 @@
 
 - name: Register the release number
   shell:
-    cmd: (uname -r)
+    cmd: (uname -r).stdout
   register: kernel_num
 
 
 - name: give the current kernel number
   debug:
-    msg: "Current Kernel # is: {{ kernel_num.stdout }}"
+    msg: "Current Kernel # is: {{ kernel_num }}"
 
 - name: set the default values for variables for drivers
   ansible.builtin.set_fact:
@@ -131,8 +131,8 @@
 
 - name: Check for drivers that already exisist and we compiled for this release
   copy:
-    src: "{{ kernel_num.stdout }}/"
-    dest: "/usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/"
+    src: "{{ kernel_num }}/"
+    dest: "/usr/lib/modules/{{ kernel_num }}/kernel/drivers/net/wireless/"
     owner: root
     group: root
     mode: '0644'
@@ -146,7 +146,7 @@
   when: not found_drivers.failed
 
 - name: check for exsisting drivers in os 
-  shell: "ls -R /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/"
+  shell: ("ls -R /usr/lib/modules/{{ kernel_num }}/kernel/drivers/net/wireless/").stdout
   register: List_output
   ignore_errors: true
 
@@ -157,43 +157,65 @@
 
 - name: cleanup list_output
   ansible.builtin.set_fact:
-    listoutput:  "{{ List_output.stdout }}"
+    listoutput:  "{{ List_output }}"
 
 - debug:
     msg: "builtin driver are:\n {{ listoutput }}"
 
+- name: Get the machine type to check for RPI
+  set_fact:
+    rtl88XXd : '{{ rtl88XXdriver }}'
+    rtl8812d : '{{ rtl8812driver }}'
+    rtl88xbd : '{{ rtl88x2budriver }}'
+    rtl88xcd : '{{ rtl88x2cudriver }}'
+  vars:
+    rtl88XXdriver: "{{ (listoutput['stdout_lines'][0].find('rtl88XXau') >=0 ) }}"
+    rtl8812driver: "{{ (listoutput['stdout_lines'][0].find('rtl8812au') >=0 ) }}"
+    rtl88xdriver: "{{ (listoutput['stdout_lines'][0].find('rtl88xbu') >=0 ) }}"
+    rtl88x2budriver: "{{ (listoutput['stdout_lines'][0].find('rtl88X2bu') >=0 ) }}"
+    rtl88x2cudriver: "{{ (listoutput['stdout_lines'][0].find('rtl88X2cu') >=0 ) }}"
+- debug:
+    msg: "Variable pulled ListOutput rtl88XXdriver: {{ rtl88XXdriver }}"
+    msg: "variable pulled listoutput rtl8812driver: {{ rtl8812driver }}"
+    msg: "variable pulled listoutput rtlXbudriver: {{ rtlX2driver }}"
+    msg: "variable pulled listoutput rtlx2budriver: {{ rtl88x2driver }}"
 
 - name: check for rtl8812au
-  shell: echo ('true' |bool )
+  shell: echo ('true' |bool ).stdout
   register: driver_a
   ignore_errors: yes
-  when: (("rtl88XXau" in listoutput) or ("rtl8812au" in listoutput))
+  when: ((rtl88XXdriver) or (rtl8812driver))
 
 - name: check for rtl88xbu
-  shell: echo ("true" |bool) 
+  shell: echo ("true" |bool).stdout
   register: driver_b
   ignore_errors: yes
-  when: ("rtl88xbu" in listoutput)
+  when: (rtl88xdriver)
 
 - name: check for rtl88x2bu
-  shell: echo ("true" | bool)
+  shell: echo ("true" | bool).stdout
   register: driver_2b
   ignore_errors: yes
-  when: ("rtl88x2bu" in listoutput)
+  when: (rtl88xbudriver)
 
+- nname: check for rtl88x2cu 
+  shell: echo ("true"| bool).stdout 
+  register: driver_2c
+  when: (rtl88xcudriver)
+  
 - name: Let the user know that we found the drivers
   debug:
     msg: We found the drivers already compiled on the system for some kernels
   when: (driver_a or driver_b or driver_2b)
 
 - name: lets check for exsisting 8812au driver
-  shell: dmesg -H | grep -G 88..au
+  shell: (dmesg -H | grep -G 88..au).stdout
   register: driver_a1
   ignore_errors: yes
   when: ((not driver_a) or (not driver_x)) 
 
 - name: lets check for the 8812bu driver
-  shell: dmesg -H | grep -G 88.2bu
+  shell: (dmesg -H | grep -G 88.2bu).stdout
   register: driver_b1
   ignore_errors: yes
   when: (( not driver_b ) or ( not driver_x)  or (not driver_2b))
@@ -202,13 +224,13 @@
   command: insmod  /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtl8812au/8812au.ko*
   ignore_errors: yes
   register: changed1
-  when: (("8812au.ko" in driver_a1.stdout') or (driver_a))
+  when: (('"8812au.ko" in driver_a1') or (driver_a))
 
 - name: insert the driver into the kernel modules 88x2bu
   command: insmod  /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtl88x2bu/88x2bu.ko*
   ignore_errors: yes
   register: changed2
-  when: (("88x2bu" in driver_b1.stdout') or ( driver_2b ))
+  when: (('"88x2bu" in driver_b1') or ( driver_2b ))
 
 - name: finish the module dependancies
   command: depmod
@@ -222,7 +244,7 @@
     owner: root
     group: root
     mode: '0777'
-# when: (('"8812au" not in driver_a1.stdout') or ("88x2bu" not in 'driver_b1.stdout')) 
+# when: (('"8812au" not in driver_a1') or ("88x2bu" not in 'driver_b1')) 
 
 # This line was moved to bootstrap/tasks/main.yml since two edits don't work 
 # See Add items to rc.local in bootstrap.
@@ -236,15 +258,15 @@
 #  when: not aws_instance
 
 - name: Create a variable based on the results of the finds for compile_a
-  command: echo ('true' |bool)
+  command: echo ('true' |bool).stdout
   register: compile_a
-  when: (("8812au" not in driver_a1.stdout) and ("88xxau" not in driver_a1.stdout) and not driver_a and not driver_x)
+  when: (("8812au" not in driver_a1) and ("88xxau" not in driver_a1) and not driver_a and not driver_x)
 
 
 - name: Create a variable based on the results ofthe finds for compile_b
-  command: echo ('true' |bool)
+  command: echo ('true' |bool).stdout
   register: compile_b
-  when: (("88x2bu" not in driver_b1.stdout) and ("88x2b" not in driver_b1.stdout) and not driver_b and not driver_2b and not driver_x)
+  when: (("88x2bu" not in driver_b1) and ("88x2b" not in driver_b1) and not driver_b and not driver_2b and not driver_x)
 
 # Note we have already upgraded the OS to the lattest in role bootstrap
 # now we just install the current OS build tools
