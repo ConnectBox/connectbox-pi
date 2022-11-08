@@ -188,7 +188,7 @@
   when: (rtl88XXd or rtl8812d or rtl88xbd or rtl88x2bd or rtl88x2cd)
 
 - name: Lets get the dmesg and check for exsisting installed driver 
-  shell: dmesg -H
+  command: dmesg -H
   register: dmesgout
 
 - name: Normazlie the output 
