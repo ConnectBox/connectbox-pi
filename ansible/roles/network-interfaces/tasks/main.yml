@@ -275,7 +275,7 @@
 - name: Create a variable based on the results of the finds of compile_c
   command: echo ('true' |bool).stdout
   register: compile_c
-  when: (not 88x2cdp) and (not rtl88x2cd) and (not rtl88x2cd) and (not rtl88XXd)
+  when: (not 88x2cdp) and (not rtl88x2cd) and (not rtl8812cdp) and (not rtl88XXd)
 
 # Note we have already upgraded the OS to the lattest in role bootstrap
 # now we just install the current OS build tools
