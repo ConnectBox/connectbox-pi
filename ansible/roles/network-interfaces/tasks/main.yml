@@ -188,49 +188,70 @@
   when: (rtl88XXd or rtl8812d or rtl88xbd or rtl88x2bd or rtl88x2cd)
 
 - name: Lets get the dmesg and check for exsisting installed driver 
-  shell: (dmesg -H).stdout
+  shell: dmesg -H
   register: dmesgout
+
+- name: Normazlie the output 
+  ansible.builtin.set_fact:
+    dmesgoutput:  "{{ dmesgout.stdout }}"  
+
+- name: Get the drives we care about to see if they exsists.
+  set_fact:
+    rtl88XXd-p : '{{ rtl88XXdriver-p }}'
+    rtl8812d-p : '{{ rtl8812driver-p }}'
+    rtl88xbd-p : '{{ rtl88xbudriver-p }}'
+    rtl88x2bd-p : '{{ rtl88x2budriver-p }}'
+    rtl88x2cd-p : '{{ rtl88x2cudriver-p }}'
+    rtl8812cd-p : '{{ rtl8812cudriver-p }}'
+  vars:
+    rtl88XXdriver-p : "{{ (dmesgoutput.find('rtl88XXau') >=0 ) }}"
+    rtl8812driver-p : "{{ (dmesgoutput.find('rtl8812au') >=0 ) }}"
+    rtl88xbudriver-p : "{{ (dmesgoutput.find('rtl88xbu') >=0 ) }}"
+    rtl88x2budriver-p : "{{ (dmesgoutput.find('rtl88X2bu') >=0 ) }}"
+    rtl88x2cudriver-p : "{{ (dmesgoutput.find('rtl88X2cu') >=0 ) }}"
+    rtl8812cudriver-p : "{{ (dmesgoutput.find('rtl8812cu') >=0 ) }}"
+
 
 - name: lets check for exsisting 8812au driver
   shell: echo ("true" |bool)
   register: driver_a1
   ignore_errors: yes
-  when: ((not rtl8812d) or (not rtl88XXd)) and (('"8812au" in dmesgout') or ('"88x2au" in dmesgout'))
+  when: ((not rtl8812d) or (not rtl88XXd)) and (rtl88XXd-p or rtl8812d-p)
 
 - name: lets check for the 8812bu driver
   shell: echo ("true" |bool)
   register: driver_b1
   ignore_errors: yes
-  when: ((not rtl88xbd ) or ( not rtl88XXd) or (not rtl88x2bd)) and (('"88xxbu" in dmesgout') or ('"8812bu" in dmesgout') or ('"88x2bu" in dmesgout'))
+  when: ((not rtl88xbd ) or ( not rtl88XXd) or (not rtl88x2bd)) and (rtl88XXd-p or rtl88xbd-p or rtl88x2bd-p)
 
 - name: lets check for the 8812cu driver
   shell: echo ("true" |bool)
   register: driver_c1
   ignore_errors: yes
-  when: (( not rtl88x2cd ) or ( not rtl88XXd)) and (('"88xxcu" in dmesgout') or ('"88x2cu in dmesgout') or ('"8812cu in dmesgout'))
+  when: (( not rtl88x2cd ) or ( not rtl88XXd)) and (rtl88XXd-p or rtl88x2cd-p or rtl8812cd-p)
 
 - name: Insert the driver into the kernel modules 8812au
   command: insmod  /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtl8812au/8812au.ko*
   ignore_errors: yes
   register: changed1
-  when: (('"8812au.ko" in driver_a1.stdout') or (rtl8812d))
+  when: (rtl8812d-p or rtl8812d)
 
 - name: insert the driver into the kernel modules 88x2bu
   command: insmod  /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtl88x2bu/88x2bu.ko*
   ignore_errors: yes
   register: changed2
-  when: (('"88x2bu" in driver_b1.stdout') or ( rtl88x2bd ))
+  when: (rtl88x2bd-p or  rtl88x2bd )
 
 - name: insert the driver into the kernel modules 88x2cu
   command: insmod  /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtl88x2cu/88x2cu.ko*
   ignore_errors: yes
-  register: changed2
-  when: (('"88x2cu" in driver_c1.stdout') or ( rtl88x2cd ))
+  register: changed3
+  when: (rtl88x2cd-p) or  rtl88x2cd)
 
 - name: finish the module dependancies
   command: depmod
   ignore_errors: yes
-  when: changed1.changed or changed2.changed
+  when: changed1.changed or changed2.changed or changed3.changed
 
 - name: Copy over the script to test for drivers in realtime.  We may need them for the alternate kernel
   copy:
@@ -243,18 +264,18 @@
 - name: Create a variable based on the results of the finds for compile_a
   command: echo ('true' |bool).stdout
   register: compile_a
-  when: (('"8812au" not in driver_a1.stdout') and ('"88xxau" not in driver_a1.stdout') and not rtl8812d and not rtl88XXd)
+  when: (not rtl88xbd-p) and (not rtl88XXd-p) and not rtl8812d and not rtl88XXd)
 
 
 - name: Create a variable based on the results ofthe finds for compile_b
   command: echo ('true' |bool).stdout
   register: compile_b
-  when: (('"88x2bu" not in driver_b1.stdout') and ('"88x2b" not in driver_b1.stdout') and not rtl88xbd and not rtl88x2bd and not rtl88XXd)
+  when: (not rtl88x2bd-p) and (not rtl88XXd-p) and (not rtl88xdb-p) and (not rtl88x2bd) and (not rtl88XXd) and (not rtl88xdb)
 
 - name: Create a variable based on the results of the finds of compile_c
   command: echo ('true' |bool).stdout
   register: compile_c
-  when: (('"8812cu" not in driver_c1.stdout') and ('"88x2c" not in driver_c1.stdout') and not rtl88x2cd and not rtl88XXd)
+  when: (not 88x2cd-p) and (not rtl88x2cd) and (not rtl88x2cd) and (not rtl88XXd)
 
 # Note we have already upgraded the OS to the lattest in role bootstrap
 # now we just install the current OS build tools
