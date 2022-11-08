@@ -168,9 +168,17 @@
 
 - debug:
     msg: "Variable pulled Listoutput rtl88xxdriver: {{ rtl88XXd }}"
+
+- debug:
     msg: "variable pulled listoutput rtl8812driver: {{ rtl8812d }}"
+
+- debug:    
     msg: "variable pulled listoutput rtlXbudriver: {{ rtl88xbd }}"
+
+- debug:
     msg: "variable pulled listoutput rtlx2budriver: {{ rtl88x2bd }}"
+    
+- debug:   
     msg: "variable pullle listoutput rtlx2cudriver: {{ rtl88x2cd }}"
 
   
