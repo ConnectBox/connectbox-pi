@@ -333,7 +333,7 @@
   when: compile_c
 
 - name: Compile the 8812cu driver via script for raspbian or neo 
-  commnad:
+  command:
      chdir: /temp 
      cmd: "sh 8812cu-install.sh"
   ignore_errors: yes
