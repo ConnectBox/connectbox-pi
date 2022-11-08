@@ -240,7 +240,7 @@
   when: (('"88x2bu" not in driver_b1.stdout') and ('"88x2b" not in driver_b1.stdout') and not rtl88xbd and not rtl88x2bd and not rtl88XXd)
 
 - name: Create a variable based on the results of the finds of compile_c
-  command echo ('true' |bool).stdout
+  command: echo ('true' |bool).stdout
   register: compile_c
   when: (('"8812cu" not in driver_c1.stdout') and ('"88x2c" not in driver_c1.stdout') and not rtl88x2cd and not rtl88XXd)
 
