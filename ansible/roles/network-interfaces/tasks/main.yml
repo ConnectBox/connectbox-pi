@@ -270,7 +270,7 @@
 - name: Create a variable based on the results ofthe finds for compile_b
   command: echo ('true' |bool).stdout
   register: compile_b
-  when: (not rtl88x2bdp) and (not rtl88XXdp) and (not rtl88xbdp) and (not rtl88x2bd) and (not rtl88XXd) and (not rtl88xdb)
+  when: (not rtl88x2bdp) and (not rtl88XXdp) and (not rtl88xbdp) and (not rtl88x2bd) and (not rtl88XXd) and (not rtl88xbd)
 
 - name: Create a variable based on the results of the finds of compile_c
   command: echo ('true' |bool).stdout
