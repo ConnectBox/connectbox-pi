@@ -177,7 +177,7 @@
 
 - debug:
     msg: "variable pulled listoutput rtlx2budriver: {{ rtl88x2bd }}"
-    
+
 - debug:   
     msg: "variable pullle listoutput rtlx2cudriver: {{ rtl88x2cd }}"
 
@@ -187,23 +187,27 @@
     msg: We found the drivers already compiled on the system for some kernels
   when: (rtl88XXd or rtl8812d or rtl88xbd or rtl88x2bd or rtl88x2cd)
 
+- name: Lets get the dmesg and check for exsisting installed driver 
+  shell: (dmesg -H).stdout
+  register dmesgout
+
 - name: lets check for exsisting 8812au driver
-  shell: (dmesg -H | grep -G 88..au)
+  shell: echo ("true" |bool)
   register: driver_a1
   ignore_errors: yes
-  when: ((not rtl8812d) or (not rtl88XXd) 
+  when: ((not rtl8812d) or (not rtl88XXd)) and (('"8812au" in dmesgout') or ('"88x2au" in dmesgout'))
 
 - name: lets check for the 8812bu driver
-  shell: (dmesg -H | grep -G 88.2bu).stdout
+  shell: echo ("true" |bool)
   register: driver_b1
   ignore_errors: yes
-  when: ((not rtl88xbd ) or ( not rtl88XXd)  or (not rtl88x2bd)) 
+  when: ((not rtl88xbd ) or ( not rtl88XXd) or (not rtl88x2bd)) and (('"88xxbu" in dmesgout') or ('"8812bu" in dmesgout') or ('"88x2bu" in dmesgout'))
 
 - name: lets check for the 8812cu driver
-  shell: (dmesg -H | grep -G 88.2cu).stdout
+  shell: echo ("true" |bool)
   register: driver_c1
   ignore_errors: yes
-  when: (( not rtl88x2cd ) or ( not rtl88XXd))
+  when: (( not rtl88x2cd ) or ( not rtl88XXd)) and (('"88xxcu" in dmesgout') or ('"88x2cu in dmesgout') or ('"8812cu in dmesgout'))
 
 - name: Insert the driver into the kernel modules 8812au
   command: insmod  /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtl8812au/8812au.ko*
