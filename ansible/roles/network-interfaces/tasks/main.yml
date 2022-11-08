@@ -164,7 +164,7 @@
     rtl8812d : '{{ rtl8812driver }}'
     rtl88xbd : '{{ rtl88xbudriver }}'
     rtl88x2bd : '{{ rtl88x2budriver }}'
-    rtl88xcd : '{{ rtl88x2cudriver }}'
+    rtl88x2cd : '{{ rtl88x2cudriver }}'
   vars:
     rtl88XXdriver: "{{ (listoutput.find('rtl88XXau') >=0 ) }}"
     rtl8812driver: "{{ (listoutput.find('rtl8812au') >=0 ) }}"
