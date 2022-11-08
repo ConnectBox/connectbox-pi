@@ -177,7 +177,7 @@
 - name: Let the user know that we found the drivers
   debug:
     msg: We found the drivers already compiled on the system for some kernels
-  when: (rtl88XXd or rtl8812d or rtl88Xbd or rtl88x2bd or rtl88x2cd)
+  when: (rtl88XXd or rtl8812d or rtl88xbd or rtl88x2bd or rtl88x2cd)
 
 - name: lets check for exsisting 8812au driver
   shell: (dmesg -H | grep -G 88..au)
