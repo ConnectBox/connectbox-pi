@@ -189,7 +189,7 @@
 
 - name: Lets get the dmesg and check for exsisting installed driver 
   shell: (dmesg -H).stdout
-  register dmesgout
+  register: dmesgout
 
 - name: lets check for exsisting 8812au driver
   shell: echo ("true" |bool)
