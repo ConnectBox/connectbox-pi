@@ -9,7 +9,7 @@ else
     printf "Skipping the RTL8812au driver as it is integrated into the kernel\n"
   else
     printf "Compiling the RTL8812au driver then installing\n"
-    reboot = "yes"
+    reboot = "no"
     if [ -d ./8812au-20210629 ];
     then
       printf "Destination git directory already exsists\n"
@@ -25,9 +25,9 @@ else
     sed -i 's/CONFIG_PLATFORM_ARM_RPI = n/CONFIG_PLATFORM_ARM_RPI = y/g' Makefile
     sed -i 's/CONFIG_POWER_SAVING = y/CONFIG_POWER_SAVING = n/g' Makefile
 	printf "we check for 64 bit architecture $(uname -m)"
-	if [ $(uname -m) == "aarch64" ]
+	if [ ($(uname -m) == "aarch64") ]
 	then
-	  ./ARM64_RPI.shlsl
+	  sh ARM64_RPI.sh
 	  echo "we ran ARM64_RPI.sh"
 	fi 
     if [ -f install.sh ];
