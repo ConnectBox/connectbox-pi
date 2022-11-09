@@ -26,21 +26,14 @@ else
     printf 'you running version%s\n' "$(uname -r)"
 	printf 'your running version%s\n' "$(uname -m)"
     cd ./rtw88-usb/
-    if [ -f install.sh ];
-    then
-      printf "using install.sh\n"
-      sudo chmod +x install.sh
-      sudo sh ./install.sh
-    else
-      printf "using Makefile to build\n"
-      sudo make -j4
-      sudo make install
-      printf 'Make is complete ready to install\n'
-      sudo insmod rtw88.ko
-	  sudo insmod rtwusb.ko
-      sudo cp *.ko /lib/modules/$(uname -r)/kernel/drivers/net/wireless/
-      sudo depmod
-    fi
+    printf "using Makefile to build\n"
+    sudo make -j4
+    sudo make install
+    printf 'Make is complete ready to install\n'
+    sudo insmod rtw88.ko
+	sudo insmod rtwusb.ko
+    sudo cp *.ko /lib/modules/$(uname -r)/kernel/drivers/net/wireless/
+    sudo depmod
     rm -r ./rtw88-usb
   fi
 fi
