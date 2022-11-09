@@ -123,6 +123,13 @@
     compile_a : false
     compile_b : false
     compile_c : false
+    driver_a1 : false
+    driver_b1 : false
+    driver_c1 : false 
+    changed1 : false
+    changed2 : false
+    changed3 : false
+    changed4 : false
 
 - name: Check for drivers that already exisist and we compiled for this release
   copy:
@@ -175,7 +182,7 @@
     msg: "variable pulled listoutput rtl8812driver: {{ rtl8812d }}"
 
 - debug:
-    msg: " variable pulled listoutput rtw88driver: {{ rtw88driver }}"
+    msg: "variable pulled listoutput rtw88driver: {{ rtw88d }}"
 
 - debug:    
     msg: "variable pulled listoutput rtlXbudriver: {{ rtl88xbd }}"
@@ -190,7 +197,7 @@
 - name: Let the user know that we found the drivers
   debug:
     msg: We found the drivers already compiled on the system for some kernels
-  when: (rtl88XXd or rtl8812d or rtl88xbd or rtl88x2bd or rtl88x2cd)
+  when: (rtl88XXd or rtl8812d or rtl88xbd or rtl88x2bd or rtl88x2cd or rtw88d)
 
 - name: Lets get the dmesg and check for exsisting installed driver 
   command: dmesg -H
@@ -213,7 +220,7 @@
     rtl88XXdriverp : "{{ (dmesgoutput.find('88XXau') >=0 ) }}"
     rtl8812driverp : "{{ (dmesgoutput.find('8812au') >=0 ) }}"
     rtl88xbudriverp : "{{ (dmesgoutput.find('88xbu') >=0 ) }}"
-    rtw88dpdriverp : "{{ dmesgoutput.find('rtw88') >=0 ) }}"
+    rtw88dpdriverp : "{{ (dmesgoutput.find('rtw88') >=0 ) }}"
     rtl88x2budriverp : "{{ (dmesgoutput.find('88X2bu') >=0 ) }}"
     rtl88x2cudriverp : "{{ (dmesgoutput.find('88X2cu') >=0 ) }}"
     rtl8812cudriverp : "{{ (dmesgoutput.find('8812cu') >=0 ) }}"
@@ -241,13 +248,13 @@
   command: insmod  /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtl8812au/8812au.ko*
   ignore_errors: yes
   register: changed1
-  when: (rtl8812dp or rtl8812d)
+  when: driver_a1
 
 - name: insert the driver into the kernel modules 88x2bu
   command: insmod  /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtl88x2bu/88x2bu.ko*
   ignore_errors: yes
   register: changed2
-  when: (rtl88x2bdp or rtl88x2bd )
+  when: (rtl88x2dp or rtl88XXdp or rtl88x2bdp)
 
 - name: insert the driver into the kernel modules 88x2cu
   command: insmod  /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtl88x2cu/88x2cu.ko*
@@ -258,7 +265,9 @@
 - name: Insert the driver into the kernel module rtw88 
   command: insmod /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtw88.ko 
   command: insmod /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/usb.ko 
+  ignore_erros: yes
   register: changed4
+  when: (rtw88dp)
 
 - name: finish the module dependancies
   command: depmod
@@ -311,6 +320,13 @@
 
 - debug:
     msg: "we need to compile the rtw88 driver"
+  when: compile_d
+
+- name: If we have rtw88 to compile then we don't compile 88x2bu or 8812cu 
+  command: echo ('false' |bool).stdout
+  register: compile_b
+  command: echo ('false' |bool).stdout
+  register: compile_c
   when: compile_d
 
 - debug:
