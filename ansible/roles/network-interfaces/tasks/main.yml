@@ -160,11 +160,11 @@
     rtl88x2bd : '{{ rtl88x2budriver }}'
     rtl88x2cd : '{{ rtl88x2cudriver }}'
   vars:
-    rtl88XXdriver: "{{ (listoutput.find('rtl88XXau') >=0 ) }}"
-    rtl8812driver: "{{ (listoutput.find('rtl8812au') >=0 ) }}"
-    rtl88xbudriver: "{{ (listoutput.find('rtl88xbu') >=0 ) }}"
-    rtl88x2budriver: "{{ (listoutput.find('rtl88X2bu') >=0 ) }}"
-    rtl88x2cudriver: "{{ (listoutput.find('rtl88X2cu') >=0 ) }}"
+    rtl88XXdriver: "{{ (listoutput.find('88XXau') >=0 ) }}"
+    rtl8812driver: "{{ (listoutput.find('8812au') >=0 ) }}"
+    rtl88xbudriver: "{{ (listoutput.find('88xbu') >=0 ) }}"
+    rtl88x2budriver: "{{ (listoutput.find('88X2bu') >=0 ) }}"
+    rtl88x2cudriver: "{{ (listoutput.find('88X2cu') >=0 ) }}"
 
 - debug:
     msg: "Variable pulled Listoutput rtl88xxdriver: {{ rtl88XXd }}"
@@ -204,12 +204,12 @@
     rtl88x2cdp : '{{ rtl88x2cudriverp }}'
     rtl8812cdp : '{{ rtl8812cudriverp }}'
   vars:
-    rtl88XXdriverp : "{{ (dmesgoutput.find('rtl88XXau') >=0 ) }}"
-    rtl8812driverp : "{{ (dmesgoutput.find('rtl8812au') >=0 ) }}"
-    rtl88xbudriverp : "{{ (dmesgoutput.find('rtl88xbu') >=0 ) }}"
-    rtl88x2budriverp : "{{ (dmesgoutput.find('rtl88X2bu') >=0 ) }}"
-    rtl88x2cudriverp : "{{ (dmesgoutput.find('rtl88X2cu') >=0 ) }}"
-    rtl8812cudriverp : "{{ (dmesgoutput.find('rtl8812cu') >=0 ) }}"
+    rtl88XXdriverp : "{{ (dmesgoutput.find('88XXau') >=0 ) }}"
+    rtl8812driverp : "{{ (dmesgoutput.find('8812au') >=0 ) }}"
+    rtl88xbudriverp : "{{ (dmesgoutput.find('88xbu') >=0 ) }}"
+    rtl88x2budriverp : "{{ (dmesgoutput.find('88X2bu') >=0 ) }}"
+    rtl88x2cudriverp : "{{ (dmesgoutput.find('88X2cu') >=0 ) }}"
+    rtl8812cudriverp : "{{ (dmesgoutput.find('8812cu') >=0 ) }}"
 
 
 - name: lets check for exsisting 8812au driver
