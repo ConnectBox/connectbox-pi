@@ -166,14 +166,14 @@
     rtw88d : '{{ rtw88driver }}'
     rtl88xbd : '{{ rtl88xbudriver }}'
     rtl88x2bd : '{{ rtl88x2budriver }}'
-    rtl88x2cd : '{{ rtl88x2cudriver }}'
+    rtl8821cd : '{{ rtl8821cudriver }}'
   vars:
     rtl88XXdriver: "{{ (listoutput.find('88XXau') >=0 ) }}"
     rtl8812driver: "{{ (listoutput.find('8812au') >=0 ) }}"
     rtw88driver: "{{ (listoutput.find('rtw88' ) >=0 ) }}"
     rtl88xbudriver: "{{ (listoutput.find('88xbu') >=0 ) }}"
-    rtl88x2budriver: "{{ (listoutput.find('88X2bu') >=0 ) }}"
-    rtl88x2cudriver: "{{ (listoutput.find('88X2cu') >=0 ) }}"
+    rtl88x2budriver: "{{ (listoutput.find('88x2bu') >=0 ) }}"
+    rtl88x2cudriver: "{{ (listoutput.find('8821cu') >=0 ) }}"
 
 - debug:
     msg: "Variable pulled Listoutput rtl88xxdriver: {{ rtl88XXd }}"
@@ -185,19 +185,19 @@
     msg: "variable pulled listoutput rtw88driver: {{ rtw88d }}"
 
 - debug:    
-    msg: "variable pulled listoutput rtlXbudriver: {{ rtl88xbd }}"
+    msg: "variable pulled listoutput rtlX88xbudriver: {{ rtl88xbd }}"
 
 - debug:
-    msg: "variable pulled listoutput rtlx2budriver: {{ rtl88x2bd }}"
+    msg: "variable pulled listoutput rtl88x2budriver: {{ rtl88x2bd }}"
 
 - debug:   
-    msg: "variable pullle listoutput rtlx2cudriver: {{ rtl88x2cd }}"
+    msg: "variable pullle listoutput rtlx2cudriver: {{ rtl8821cd }}"
 
   
 - name: Let the user know that we found the drivers
   debug:
     msg: We found the drivers already compiled on the system for some kernels
-  when: (rtl88XXd or rtl8812d or rtl88xbd or rtl88x2bd or rtl88x2cd or rtw88d)
+  when: (rtl88XXd or rtl8812d or rtl88xbd or rtl88x2bd or rtl8821cd or rtw88d)
 
 - name: Lets get the dmesg and check for exsisting installed driver 
   command: dmesg -H
@@ -242,7 +242,7 @@
   shell: echo ("true" |bool)
   register: driver_c1
   ignore_errors: yes
-  when: (( rtl88x2cd ) or ( rtl88XXd) or (rtw88d) or (rtl88XXdp) or (rtw88dp) or (rtl88x2cdp) or (rtl8821cdp))
+  when: (( rtl88x2cd ) or ( rtl88XXd) or (rtw88d) or (rtl8821cd) or (rtl88XXdp) or (rtw88dp) or (rtl88x2cdp) or (rtl8821cdp))
 
 - name: Insert the driver into the kernel modules 8812au
   command: insmod  /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtl8812au/8812au.ko*
@@ -260,7 +260,7 @@
   command: insmod  /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtl88x2cu/88x21cu.ko*
   ignore_errors: yes
   register: changed3
-  when: (rtl88x2cdp or rtl88x2cd or rtl8821cdp)
+  when: (rtl88x2cdp  or rtl8821cdp)
 
 #- name: Insert the driver into the kernel module rtw88 
 #  command: insmod /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtw88.ko 
@@ -304,7 +304,7 @@
 - name: Create a variable based on the results of the finds of compile_c
   command: echo ('true' |bool).stdout
   register: compile_c
-  when: ((not rtl88x2cdp) and (not rtl88x2cd) and (not rtl8821cdp) and (not rtl88XXd)) 
+  when: ((not rtl88x2cdp) and (not rtl8821cd) and (not rtl8821cdp) and (not rtl88XXd)) 
 
 # Note we have already upgraded the OS to the lattest in role bootstrap
 # now we just install the current OS build tools
