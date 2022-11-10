@@ -400,7 +400,7 @@
 
 - name: Compile the 8812cu driver via script for raspbian or neo 
   command:
-     chdir: /temp 
+     chdir: /tmp 
      cmd: "sh 88x2cu-install.sh"
   ignore_errors: yes
   when: compile_c

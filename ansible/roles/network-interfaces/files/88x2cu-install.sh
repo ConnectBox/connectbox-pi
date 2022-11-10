@@ -18,16 +18,16 @@ else
     fi
     sudo ln -s linux $(uname -r)
     sudo ln -s /usr/src/linux-headers-$(uname -r) /lib/modules/$(uname -r)/build
-    printf 'you running version%s\n' "$(uname -r)"
+    printf '\nyour running version $(uname -r) \n'
     cd ./rtl8821CU/
     sed -i 's/CONFIG_PLATFORM_I386_PC = y/CONFIG_PLATFORM_I386_PC = n/g' Makefile
     sed -i 's/CONFIG_PLATFORM_ARM_RPI = n/CONFIG_PLATFORM_ARM_RPI = y/g' Makefile
-	if [ $(uname -m) == "aarch64" ]
-	then
-	  sed -i 's/CONFIG_PLATFORM_ARM_RPI = y/CONFIG_PLATFORM_ARM_RPI = n/g' Makefile
-	  sed -9 's/CONFIG_PLATFORM_ARM64_RPI = n/CONFIG_PLATFORM_ARM64_RPI = y/g' Makefile
-	  printf ' We changed to 64bit compile '
-	fi 
+    if [ $(uname -m) == "aarch64" ]
+    then
+      sed -i 's/CONFIG_PLATFORM_ARM_RPI = y/CONFIG_PLATFORM_ARM_RPI = n/g' Makefile
+	    sed -i 's/CONFIG_PLATFORM_ARM64_RPI = n/CONFIG_PLATFORM_ARM64_RPI = y/g' Makefile
+	    printf ' We changed to 64bit compile \n'
+	  fi 
     if [ -f install.sh ];
     then
       printf "using install.sh\n"
