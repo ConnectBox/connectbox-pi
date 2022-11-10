@@ -287,7 +287,7 @@
     mode: '0777'
 
 - name: Create a variable based on the results of the finds for compile_a
-  command: echo ('true' |bool).stdout
+  command: echo ('true').stdout
   register: compile_a
   when: (not rtl88xbdp) and (not rtl88XXdp) and (not rtl8812dp) and (not rtl88XXdp)
 
@@ -297,17 +297,20 @@
 #  when: (not rtw88d) and (not rtw88dp)
 
 - name: Create a variable based on the results ofthe finds for compile_b
-  command: echo ('true' |bool).stdout
+  command: echo ('true').stdout
   register: compile_b
   when: ((not rtl88x2bdp) and (not rtl88XXdp) and (not rtl88xbdp) and (not rtl88x2bd) and (not rtl88XXd) and (not rtl88xbd)) 
 
 - name: Create a variable based on the results of the finds of compile_c
-  command: echo ('true' |bool).stdout
+  command: echo ('true').stdout
   register: compile_c
   when: ((not rtl88x2cdp) and (not rtl8821cd) and (not rtl8821cdp) and (not rtl88XXd)) 
 
 # Note we have already upgraded the OS to the lattest in role bootstrap
 # now we just install the current OS build tools
+
+- debug:
+    msg: "outputs of compiles are a: {{ compile_a }}, b: {{ compile_b }}, c: {{ compile_c }} \n"
 
 - debug:
     msg: "We need to compile the 8812au drivers"
