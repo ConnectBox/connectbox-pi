@@ -38,11 +38,11 @@ else
       sudo make -j4
       sudo make install
       printf 'Make is complete ready to install\n'
-      sudo insmod 88x2cu.ko
-      sudo cp 88x2cu.ko /lib/modules/$(uname -r)/kernel/drivers/net/wireless/
+      sudo insmod 8821cu.ko
+      sudo cp 8821cu.ko /lib/modules/$(uname -r)/kernel/drivers/net/wireless/
       sudo depmod
     fi
-    rm -r ./88x2cu
+    rm -r ./8821CU
   fi
 fi
 
