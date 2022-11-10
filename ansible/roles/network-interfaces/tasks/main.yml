@@ -311,15 +311,15 @@
 
 - debug:
     msg: "We need to compile the 8812au drivers"
-  when: compile_a.true
+  when: compile_a
 
 - debug:
     msg: "We need to compile the 88x2bu driver"
-  when: compile_b.true
+  when: compile_b
 
 - debug:
     msg: "we need to compile the 8811cu drivers"
-  when: compile_c.true
+  when: compile_c
 
 #- debug:
 #    msg: "we need to compile the rtw88 driver"
@@ -339,7 +339,7 @@
     - libssl-dev
     state: present
   ignore_errors: yes
-  when: (compile_a.true or compile_b.true or compile_c.true)
+  when: (compile_a or compile_b or compile_c)
 
 - name: apt install raspberrypi-kernel-headers
   apt:
@@ -347,7 +347,7 @@
     - raspberrypi-kernel-headers
     state: present
   ignore_errors: yes
-  when: ((connectbox_os == "raspbian") and (compile_b.true or compile_a.true or compile_c.true))
+  when: ((connectbox_os == "raspbian") and (compile_b or compile_a or compile_c))
 
 # or apt-get install linux-headers-$(uname -r)
 - name: apt install linux-headers-current-sunxi
@@ -356,7 +356,7 @@
     - linux-headers-current-sunxi
     state: present
   ignore_errors: yes
-  when: ((connectbox_os != "raspbian") and (compile_b.true or compile_a.true or compile_c.true))
+  when: ((connectbox_os != "raspbian") and (compile_b or compile_a or compile_c))
 
 
 - name: Copy over 8812au-install script for Raspian
@@ -365,14 +365,14 @@
     dest: /tmp/8812au-install.sh
     mode: "+x"
   ignore_errors: yes
-  when: compile_a.true
+  when: compile_a
 
 - name: Compile the 8812au driver for Raspbian or NEO
   command:
      chdir: /tmp
      cmd: "sh 8812au-install.sh"
   ignore_errors: yes
-  when: compile_a.true
+  when: compile_a
 
 
 - name: Copy over 88x2bu-install script
@@ -381,14 +381,14 @@
     dest: /tmp/88x2bu-install.sh
     mode: "+x"
   ignore_errors: yes
-  when: compile_b.true
+  when: compile_b
 
 - name: Compile the 88x2bu driver for Raspbian or NEO
   command:
      chdir: /tmp
      cmd: "sh 88x2bu-install.sh"
   ignore_errors: yes
-  when: compile_b.true
+  when: compile_b
 
 
 - name: Copy over 88x2cu.install script
@@ -397,14 +397,14 @@
     dest: /tmp/88x2cu-install.sh 
     mode: "+x"
   ignore_errors: yes
-  when: compile_c.true
+  when: compile_c
 
 - name: Compile the 8812cu driver via script for raspbian or neo 
   command:
      chdir: /tmp 
      cmd: "sh 88x2cu-install.sh"
   ignore_errors: yes
-  when: compile_c.true
+  when: compile_c
 
 #- name: Copy over rtw88.install script
 #  copy:
@@ -446,7 +446,7 @@
     - raspberrypi-kernel-headers
     state: absent
   ignore_errors: yes
-  when: ((compile_a.true or compile_b.true or compile_c.true) and (connectbox_os == "raspbian"))
+  when: ((compile_a or compile_b or compile_c) and (connectbox_os == "raspbian"))
 
 # or remove linux-headers-$(uname -r)
 - name: apt install linux-headers-current-sunxi
@@ -455,7 +455,7 @@
     - linux-headers-current-sunxi
     state: absent
   ignore_errors: yes
-  when: ((connectbox_os != "raspbian") and  (compile_a.true or compile_b.true or compile_c.true))
+  when: ((connectbox_os != "raspbian") and  (compile_a or compile_b or compile_c))
 
 
 - name: remove build tools
@@ -468,18 +468,16 @@
     - raspbewrrypi-kernel-headers
     state: absent
   ignore_errors: yes
-  when:  (compile_a.true or compile_b.true or compile_c.true)
+  when:  (compile_a or compile_b or compile_c)
 
 - name: remove links
   command: sudo rm /lib/modules/$(uname -r)/build
   ignore_errors: yes
-  when:  (compile_a.true or compile_b.true or compile_c.true)
 
 - name: remove links
   command: then sudo rm /tmp/$(uname -r)
   ignore_errors: yes
-  when:  (compile_a.true or compile_b.true or compile_c.true)
-  
+
 # Note: this is not a handler because we need the network configuration in
 # effect before proceeding with the wifi-ap and firewall roles, which will
 # otherwise fail if not.
