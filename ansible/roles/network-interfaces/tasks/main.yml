@@ -262,16 +262,16 @@
   register: changed3
   when: (rtl88x2cdp or rtl88x2cd)
 
-- name: Insert the driver into the kernel module rtw88 
-  command: insmod /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtw88.ko 
-  ignore_errors: yes
-  register: changed4
-  when: (rtw88dp)
+#- name: Insert the driver into the kernel module rtw88 
+#  command: insmod /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtw88.ko 
+#  ignore_errors: yes
+#  register: changed4
+#  when: (rtw88dp)
 
-- name: Insert the usb driver into the kernel module rtw88
-  command: insmod /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/usb.ko 
-  ignore_errors: yes
-  when: (rtw88dp)
+#- name: Insert the usb driver into the kernel module rtw88
+#  command: insmod /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/usb.ko 
+#  ignore_errors: yes
+#  when: (rtw88dp)
 
 - name: finish the module dependancies
   command: depmod
@@ -291,10 +291,10 @@
   register: compile_a
   when: (not rtl88xbdp) and (not rtl88XXdp) and (not rtl8812d) and (not rtl88XXd)
 
-- name: Create a variable based on the result of the finds for compile_d
-  command: echo ('true' |bool).stdout
-  register: compile_d
-  when: (not rtw88d) and (not rtw88dp)
+#- name: Create a variable based on the result of the finds for compile_d
+#  command: echo ('true' |bool).stdout
+#  register: compile_d
+#  when: (not rtw88d) and (not rtw88dp)
 
 - name: Create a variable based on the results ofthe finds for compile_b
   command: echo ('true' |bool).stdout
@@ -319,19 +319,13 @@
   when: compile_b
 
 - debug:
-    msg: "we need to compile the 8812cu drivers"
+    msg: "we need to compile the 8811cu drivers"
   when: compile_c
 
-- debug:
-    msg: "we need to compile the rtw88 driver"
-  when: compile_d
+#- debug:
+#    msg: "we need to compile the rtw88 driver"
+#  when: compile_d
 
-- name: If we have rtw88 to compile then we don't compile 88x2bu or 8812cu 
-  command: echo ('false' |bool).stdout
-  register: compile_b
-  command: echo ('false' |bool).stdout
-  register: compile_c
-  when: compile_d
 
 - debug:
     msg: "connectbox_os is {{ connectbox_os }}"
@@ -409,24 +403,24 @@
 - name: Compile the 8812cu driver via script for raspbian or neo 
   command:
      chdir: /temp 
-     cmd: "sh 8812cu-install.sh"
+     cmd: "sh 88x2cu-install.sh"
   ignore_errors: yes
   when: compile_c
 
-- name: Copy over rtw88.install script
-  copy:
-    src: rtw88-usb-install.sh 
-    dest: /tmp/rtw88-install.sh 
-    mode: "+x"
-  ignore_errors: yes
-  when: compile_d
+#- name: Copy over rtw88.install script
+#  copy:
+#    src: rtw88-usb-install.sh 
+#    dest: /tmp/rtw88-install.sh 
+#    mode: "+x"
+#  ignore_errors: yes
+#  when: compile_d
 
-- name: Compile the rtw88 driver via script for raspbian or neo 
-  command:
-     chdir: /temp 
-     cmd: "sh rtw88-usb-install.sh"
-  ignore_errors: yes
-  when: compile_d
+#- name: Compile the rtw88 driver via script for raspbian or neo 
+#  command:
+#     chdir: /temp 
+#     cmd: "sh rtw88-usb-install.sh"
+#  ignore_errors: yes
+#  when: compile_d
 
 #- name: Fetch the compiled 8812au driver to control machine
 #  fetch:
