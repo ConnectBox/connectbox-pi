@@ -23,4 +23,12 @@ else
   echo "88x2bu module already loaded"
 fi
 
-
+if [ ${#var2} -lt 5 ]							#Check if we have 88x2bu loaded
+then
+  echo "Loading 88x2cu"
+  insmod /usr/lib/$( uname -r)/kernel/net/wirless/88x2cu		#We found nothing so try to load this versions 88x2bu
+  modprobe 88x2cu
+  depmod -A
+else
+  echo "88x2cu module already loaded"
+fi

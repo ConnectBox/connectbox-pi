@@ -264,9 +264,13 @@
 
 - name: Insert the driver into the kernel module rtw88 
   command: insmod /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtw88.ko 
-  command: insmod /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/usb.ko 
-  ignore_erros: yes
+  ignore_errors: yes
   register: changed4
+  when: (rtw88dp)
+
+- name: Insert the usb driver into the kernel module rtw88
+  command: insmod /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/usb.ko 
+  ignore_errors: yes
   when: (rtw88dp)
 
 - name: finish the module dependancies
