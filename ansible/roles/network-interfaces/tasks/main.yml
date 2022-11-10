@@ -230,19 +230,19 @@
   shell: echo ("true" |bool)
   register: driver_a1
   ignore_errors: yes
-  when: ((rtl8812d) or (rtl88XXd)) or (rtl88XXdp or rtl8812dp)
+  when: ((rtl8812d) or (rtl88XXd) or (rtl88XXdp) or (rtl8812dp))
 
 - name: lets check for the 8812bu driver
   shell: echo ("true" |bool)
   register: driver_b1
   ignore_errors: yes
-  when: ((rtl88xbd ) or ( rtl88XXd) or (rtw88d) or (rtl88x2bd)) or (rtl88XXdp or rtl88xbdp or rtw88dp or rtl88x2bdp)
+  when: ((rtl88xbd ) or (rtl88XXd) or (rtw88d) or (rtl88x2bd) or (rtl88XXdp) or (rtl88xbdp) or (rtw88dp) or (rtl88x2bdp))
 
 - name: lets check for the 8821cu driver
   shell: echo ("true" |bool)
   register: driver_c1
   ignore_errors: yes
-  when: (( rtl88x2cd ) or ( rtl88XXd) or (rtw88d)) or  (rtl88XXdp or rtw88dp or rtl88x2cdp or rtl8821cdp)
+  when: (( rtl88x2cd ) or ( rtl88XXd) or (rtw88d) or (rtl88XXdp) or (rtw88dp) or (rtl88x2cdp) or (rtl8821cdp))
 
 - name: Insert the driver into the kernel modules 8812au
   command: insmod  /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtl8812au/8812au.ko*
@@ -289,7 +289,7 @@
 - name: Create a variable based on the results of the finds for compile_a
   command: echo ('true' |bool).stdout
   register: compile_a
-  when: (not rtl88xbdp) and (not rtl88XXdp) and (not rtl8812d) and (not rtl88XXd)
+  when: (not rtl88xbdp) and (not rtl88XXdp) and (not rtl8812dp) and (not rtl88XXdp)
 
 #- name: Create a variable based on the result of the finds for compile_d
 #  command: echo ('true' |bool).stdout
@@ -299,11 +299,12 @@
 - name: Create a variable based on the results ofthe finds for compile_b
   command: echo ('true' |bool).stdout
   register: compile_b
-  when: (not rtl88x2bdp) and (not rtl88XXdp) and (not rtl88xbdp) and (not rtl88x2bd) and (not rtl88XXd) and (not rtl88xbd) 
+  when: ((not rtl88x2bdp) and (not rtl88XXdp) and (not rtl88xbdp) and (not rtl88x2bd) and (not rtl88XXd) and (not rtl88xbd)) 
+
 - name: Create a variable based on the results of the finds of compile_c
   command: echo ('true' |bool).stdout
   register: compile_c
-  when: (not rtl88x2cdp) and (not rtl88x2cd) and (not rtl8821cdp) and (not rtl88XXd) 
+  when: ((not rtl88x2cdp) and (not rtl88x2cd) and (not rtl8821cdp) and (not rtl88XXd)) 
 
 # Note we have already upgraded the OS to the lattest in role bootstrap
 # now we just install the current OS build tools
@@ -469,6 +470,13 @@
   ignore_errors: yes
   when:  (compile_a or compile_b or compile_c)
 
+- name: remove links
+  command: sudo rm /lib/modules/$(uname -r)/build
+  ignore_errors: yes
+
+- name: remove links
+  command: then sudo rm /tmp/$(uname -r)
+  ignore_errors: yes
 
 # Note: this is not a handler because we need the network configuration in
 # effect before proceeding with the wifi-ap and firewall roles, which will

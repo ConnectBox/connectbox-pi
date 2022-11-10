@@ -43,6 +43,7 @@ else
       sudo insmod 8812au.ko
       sudo cp 8812au.ko /lib/modules/$(uname -r)/kernel/drivers/net/wireless/
       sudo depmod
+      rm -r ../8812a8-20210629
     fi
   fi
 fi 
@@ -51,8 +52,4 @@ sleep 2
 if [ -n "$reboot" ];
 then
   printf "system will need to be rebooted\n"
-fi
-if [ -f /lib/modules/$(uname -r)/build ]; then sudo rm /lib/modules/$(uname -r)/build
-fi
-if [ -f ../$(uname -r) ]; then sudo rm ../$(uname -r)
 fi

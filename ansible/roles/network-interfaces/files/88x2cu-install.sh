@@ -9,7 +9,7 @@ else
     printf "Skipping the rtl88x2cu driver as it is already integrated into the kernel\n"
   else
     printf "Compiling the RTL88x2cu driver then installing\n"
-    reboot = "yes"
+    reboot = "no"
     if [ -d ./rtl88x2cu];
     then
       printf "Destination git directory already exsists\n"
@@ -42,15 +42,11 @@ else
       sudo cp 8821cu.ko /lib/modules/$(uname -r)/kernel/drivers/net/wireless/
       sudo depmod
     fi
-    rm -r ./8821CU
+    rm -r ../8821CU
   fi
 fi
 
 if [ -n "$reboot" ];
 then
   printf "system will need to be rebooted\n"
-fi
-if [ -f /lib/modules/$(uname -r)/build ]; then sudo rm /lib/modules/$(uname -r)/build
-fi
-if [ -f ../$(uname -r) ]; then sudo rm ../$(uname -r)
 fi
