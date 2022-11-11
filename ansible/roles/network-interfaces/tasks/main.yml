@@ -166,14 +166,14 @@
     rtw88d : '{{ rtw88driver }}'
     rtl88xbd : '{{ rtl88xbudriver }}'
     rtl88x2bd : '{{ rtl88x2budriver }}'
-    rtl8821cd : '{{ rtl8821cudriver }}'
+    rtl8852ad : '{{ rtl8852audriver }}'
   vars:
     rtl88XXdriver: "{{ (listoutput.find('88XXau') >=0 ) }}"
     rtl8812driver: "{{ (listoutput.find('8812au') >=0 ) }}"
     rtw88driver: "{{ (listoutput.find('rtw88' ) >=0 ) }}"
     rtl88xbudriver: "{{ (listoutput.find('88xbu') >=0 ) }}"
     rtl88x2budriver: "{{ (listoutput.find('88x2bu') >=0 ) }}"
-    rtl8821cudriver: "{{ (listoutput.find('8821cu') >=0 ) }}"
+    rtl8852audriver: "{{ (listoutput.find('8852au') >=0 ) }}"
 
 - debug:
     msg: "Variable pulled Listoutput rtl88xxdriver: {{ rtl88XXd }}"
@@ -191,13 +191,13 @@
     msg: "variable pulled listoutput rtl88x2budriver: {{ rtl88x2bd }}"
 
 - debug:   
-    msg: "variable pullle listoutput rtlx2cudriver: {{ rtl8821cd }}"
+    msg: "variable pulled listoutput rtl52audriver: {{ rtl8852ad }}"
 
   
 - name: Let the user know that we found the drivers
   debug:
     msg: We found the drivers already compiled on the system for some kernels
-  when: (rtl88XXd or rtl8812d or rtl88xbd or rtl88x2bd or rtl8821cd or rtw88d)
+  when: (rtl88XXd or rtl8812d or rtl88xbd or rtl88x2bd or rtl8852ad or rtw88d)
 
 - name: Lets get the dmesg and check for exsisting installed driver 
   command: dmesg -H
@@ -214,16 +214,14 @@
     rtl88xbdp : '{{ rtl88xbudriverp }}'
     rtw88dp   : '{{ rtw88dpdriverp }}'
     rtl88x2bdp : '{{ rtl88x2budriverp }}'
-    rtl88x2cdp : '{{ rtl88x2cudriverp }}'
-    rtl8821cdp : '{{ rtl8821cudriverp }}'
+    rtl8852adp : '{{ rtl8852audriverp }}'
   vars:
     rtl88XXdriverp : "{{ (dmesgoutput.find('88XXau') >=0 ) }}"
     rtl8812driverp : "{{ (dmesgoutput.find('8812au') >=0 ) }}"
     rtl88xbudriverp : "{{ (dmesgoutput.find('88xbu') >=0 ) }}"
     rtw88dpdriverp : "{{ (dmesgoutput.find('rtw88') >=0 ) }}"
     rtl88x2budriverp : "{{ (dmesgoutput.find('88x2bu') >=0 ) }}"
-    rtl88x2cudriverp : "{{ (dmesgoutput.find('88x2cu') >=0 ) }}"
-    rtl8821cudriverp : "{{ (dmesgoutput.find('8821cu') >=0 ) }}"
+    rtl8852audriverp : "{{ (dmesgoutput.find('8852au') >=0 ) }}"
 
 
 - name: lets check for exsisting 8812au driver
@@ -238,11 +236,11 @@
   ignore_errors: yes
   when: ((rtl88xbd ) or (rtl88XXd) or (rtw88d) or (rtl88x2bd) or (rtl88XXdp) or (rtl88xbdp) or (rtw88dp) or (rtl88x2bdp))
 
-- name: lets check for the 8821cu driver
+- name: lets check for the 8852au driver
   shell: echo ("true" |bool)
   register: driver_c1
   ignore_errors: yes
-  when: (( rtl88x2cd ) or (rtl88XXd) or (rtw88d) or (rtl8821cd) or (rtl88XXdp) or (rtw88dp) or (rtl88x2cdp) or (rtl8821cdp))
+  when: ((rtl8852ad) or  (rtl8852adp))
 
 - name: Insert the driver into the kernel modules 8812au
   command: insmod  /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtl8812au/8812au.ko*
@@ -256,11 +254,11 @@
   register: changed2
   when: (rtl88x2dp or rtl88XXdp or rtl88x2bdp)
 
-- name: insert the driver into the kernel modules 8821cu
-  command: insmod  /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtl88x2cu/88x21cu.ko*
+- name: insert the driver into the kernel modules 8852au
+  command: insmod  /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/realtek/rtw89/8852au.ko*
   ignore_errors: yes
   register: changed3
-  when: (rtl88x2cdp  or rtl8821cdp)
+  when: (rtl8852adp)
 
 #- name: Insert the driver into the kernel module rtw88 
 #  command: insmod /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtw88.ko 
@@ -304,7 +302,7 @@
 - name: Create a variable based on the results of the finds of compile_c
   command: echo ('true').stdout
   register: compile_c
-  when: ((not rtl88x2cdp) and (not rtl8821cd) and (not rtl8821cdp) and (not rtl88XXd)) 
+  when: ((not rtl8852ad) and (not rtl8852adp)) 
 
 # Note we have already upgraded the OS to the lattest in role bootstrap
 # now we just install the current OS build tools
@@ -321,7 +319,7 @@
   when: (compile_b.changed)
 
 - debug:
-    msg: "we need to compile the 8811cu drivers"
+    msg: "we need to compile the 8852au drivers"
   when: (compile_c.changed)
 
 #- debug:
@@ -397,18 +395,18 @@
   when: (compile_b.changed)
 
 
-- name: Copy over 88x2cu.install script
+- name: Copy over 8852au.install script
   copy:
-    src: 88x2cu-install.sh 
-    dest: /tmp/88x2cu-install.sh 
+    src: 8852au-install.sh 
+    dest: /tmp/8852au-install.sh 
     mode: "+x"
   ignore_errors: yes
   when: (compile_c.changed)
 
-- name: Compile the 8812cu driver via script for raspbian or neo 
+- name: Compile the 8852au driver via script for raspbian or neo 
   command:
      chdir: /tmp 
-     cmd: "sh 88x2cu-install.sh"
+     cmd: "sh 8852au-install.sh"
   ignore_errors: yes
   when: (compile_c.changed)
 
