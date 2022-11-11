@@ -1,14 +1,14 @@
 #!/usr/bin/bash
  
-if [ -f /lib/modules/$(uname -r)/kernel/drivers/net/wireless/88x2cu.ko ];
+if [ -f /lib/modules/$(uname -r)/kernel/drivers/net/wireless/8852au.ko ];
 then
-  printf "Driver rtl8812cu already exists\n"
+  printf "Driver rtl8832au already exists\n"
 else
   if [ -d /lib/modules/$(uname -r)/kernel/drivers/net/wireless/realtek/rtw89 ];
   then
-    printf "Skipping the rtl8852cu driver as it is already integrated into the kernel\n"
+    printf "Skipping the rtl8852au/rtl8832au driver as it is already integrated into the kernel\n"
   else
-    printf "Compiling the RTL8852qu driver then installing\n"
+    printf "Compiling the rtl8852au/RTL8832au driver then installing\n"
     reboot = "no"
     if [ -d ./rtl8852au];
     then
@@ -19,7 +19,7 @@ else
     sudo ln -s linux $(uname -r)
     sudo ln -s /usr/src/linux-headers-$(uname -r) /lib/modules/$(uname -r)/build
     printf '\nyour running version $(uname -r) \n'
-    cd ./rtl8821CU/
+    cd ./rtl8852au/
     sed -i 's/CONFIG_PLATFORM_I386_PC = y/CONFIG_PLATFORM_I386_PC = n/g' Makefile
     sed -i 's/CONFIG_PLATFORM_NV_TK1_UBUNTU = n/CONFIG_PLATFORM_NV_TK1_UBUNTU = y/g' Makefile
 #    if [ $(uname -m) == "aarch64" ]
