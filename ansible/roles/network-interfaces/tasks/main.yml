@@ -314,15 +314,15 @@
 
 - debug:
     msg: "We need to compile the 8812au drivers"
-  when: (compile_a == 'true')
+  when: (compile_a.changed)
 
 - debug:
     msg: "We need to compile the 88x2bu driver"
-  when: (compile_b == 'true')
+  when: (compile_b.changed)
 
 - debug:
     msg: "we need to compile the 8811cu drivers"
-  when: (compile_c == 'true')
+  when: (compile_c.changed)
 
 #- debug:
 #    msg: "we need to compile the rtw88 driver"
