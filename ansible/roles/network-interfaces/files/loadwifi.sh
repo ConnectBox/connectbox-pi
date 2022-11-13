@@ -2,7 +2,7 @@
 
 var1=$( modprobe -c | grep 8812au )
 var2=$( modprobe -c | grep 88x2bu )
-var3=$( modprobe -c | grep 8821cu )
+var3=$( modprobe -c | grep 8852au )
 
 if [ ${#var1} -lt 5 ]							#Check if we have 8812au loaded
 then
@@ -26,10 +26,10 @@ fi
 
 if [ ${#var3} -lt 5 ]							#Check if we have 88x2bu loaded
 then
-  echo "Loading 8821cu"
-  insmod /usr/lib/$( uname -r)/kernel/net/wirless/8821cu		#We found nothing so try to load this versions 88x2bu
-  modprobe 8821cu
+  echo "Loading 8852au"
+  insmod /usr/lib/$( uname -r)/kernel/net/wirless/8852au		#We found nothing so try to load this versions 88x2bu
+  modprobe 8852au
   depmod -A
 else
-  echo "88x2cu module already loaded"
+  echo "8852au module already loaded"
 fi
