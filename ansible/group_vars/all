@@ -137,6 +137,6 @@ firewall_v4_group_rules:
     - -A INPUT -p udp --dport mdns -j ACCEPT
   400 allow web traffic:
     - -A INPUT -p tcp --dport http -j ACCEPT
-  500 allow ssl traffic
+  500 allow ssl traffic:
     - -A INPUT -p tcp --dport https -j ACCEPT
 	
