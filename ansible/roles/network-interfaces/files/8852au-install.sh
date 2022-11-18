@@ -42,7 +42,7 @@ else
       sudo cp 8852au.ko /lib/modules/$(uname -r)/kernel/drivers/net/wireless/
       sudo depmod
     fi
-    rm -r ../rtl8852au
+    rm -r /tmp/rtl8852au
   fi
 fi
 

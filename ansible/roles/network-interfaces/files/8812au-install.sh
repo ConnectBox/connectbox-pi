@@ -43,7 +43,7 @@ else
       sudo insmod 8812au.ko
       sudo cp 8812au.ko /lib/modules/$(uname -r)/kernel/drivers/net/wireless/
       sudo depmod
-      rm -r ../8812a8-20210629
+      rm -r /tmp/8812a8-20210629
     fi
   fi
 fi 

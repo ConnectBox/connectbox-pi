@@ -37,7 +37,7 @@ else
       sudo cp 88x2bu.ko /lib/modules/$(uname -r)/kernel/drivers/net/wireless/
       sudo depmod
     fi
-    rm -r ../88x2bu
+    rm -r /tmp/88x2bu
   fi
 fi
 
