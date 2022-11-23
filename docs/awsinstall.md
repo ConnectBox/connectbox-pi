@@ -7,6 +7,6 @@ These videos will demonstrate how to build The Well on an AWS instance for devel
 * Initialize SSH using your key: https://www.loom.com/share/fb2e8c0e1811442bb2189762f061101d?sharedAppSource=personal_library
 * Run Ansible to install The Well software onto AWS instance: https://www.loom.com/share/ca558202c06047c687c6bdbb8366fa80?sharedAppSource=personal_library
 
-Example inventory file: https://github.com/RT-coding-team/connectbox-pi/blob/master/ansible/inventory.example
+Example inventory file: https://github.com/ConnectBox/connectbox-pi/blob/master/ansible/inventory.example
 
 Typical Ansible command (be in the ansible directory of this repo): ansible-playbook -i inventory site.yml 
