@@ -57,8 +57,6 @@ connectbox_default_hostname: Connectbox
 lcd_brand: connectbox_default_hostname
 
 
-moodle_blockcontent: |
-       <h1>Welcome To {{ connectbox_default_hostname }}</h1>This content may be changed in Moodle or changed in the build by updating the value in group_vars/all
 mdl_external_token: "{{ lookup('password', '/dev/null length=32 chars=ascii_letters,digits') }}"
 
 connectbox_log_dir: /var/log/connectbox
@@ -74,8 +72,6 @@ hat_services_repo: https://github.com/ConnectBox/RPi.GPIO_NP_CB
 # for Orange PI this is https://github.com/ConnectBox/OPI.GPIO originally from github.com/eutim/OPi.GPIO
 oz2_services_repo: https://github.com/ConnectBox/RPi.GPIO
 hat_service_repo_rev: "HEAD"
-moodle_repo: 'https://github.com/RT-coding-team/the-well-moodle310.git'
-moodle_repo_rev: "HEAD"
 sample_content_repo: https://github.com/ConnectBox/connectbox-sample-content.git
 sample_repo_rev: "HEAD"
 
