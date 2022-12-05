@@ -7,14 +7,14 @@
     mode: 0755
 
 # Needs to happen prior to partitioning
-- name: Create moodledata directory that Moodle requires for all its functions
-  file:
-    state: directory
-    path: /var/www/moodledata/
-    owner: www-data
-    group: www-data
-    mode: 0775
-  when: (build_moodle == True)
+#- name: Create moodledata directory that Moodle requires for all its functions
+#  file:
+#    state: directory
+#    path: /var/www/moodledata/
+#    owner: www-data
+#    group: www-data
+#    mode: 0775
+#  when: (build_moodle == True)
 
 ###########################################
 

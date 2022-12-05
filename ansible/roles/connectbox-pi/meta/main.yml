@@ -6,9 +6,9 @@ dependencies:
   - { role: network-interfaces, when: not aws_instance }
   - { role: wifi-ap, when: not aws_instance }
   - { role: mikegleasonjr.firewall, when: not aws_instance }
-  - { role: php, when: build_moodle}
-  - { role: ansible-postgresql, when: build_moodle}
-  - { role: moodle, when: build_moodle}
+#  - { role: php, when: build_moodle}
+#  - { role: ansible-postgresql, when: build_moodle}
+#  - { role: moodle, when: build_moodle}
   - { role: enhanced-content, when: enhanced_interface}
   - nginx
   - captive-portal

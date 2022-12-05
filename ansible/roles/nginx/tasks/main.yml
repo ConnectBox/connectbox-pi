@@ -70,17 +70,17 @@
     - { src: "{{ nginx_vhost_file_static_site }}.j2", dest: "{{ nginx_vhost_file_static_site }}" }
     - { src: "{{ nginx_vhost_file_icon_only }}.j2", dest: "{{ nginx_vhost_file_icon_only }}" }
 
-- name: Copy vhost config for Moodle
-  template:
-    src: "{{ item.src }}"
-    dest: "{{ nginx_available_vhosts_path }}/{{ item.dest }}"
-    mode: 0644
-    owner: root
-    group: root
-  notify: restart nginx
-  with_items:
-    - { src: "{{ nginx_vhost_file_moodle }}.j2", dest: "{{ nginx_vhost_file_moodle }}" }
-  when: build_moodle
+#- name: Copy vhost config for Moodle
+#  template:
+#    src: "{{ item.src }}"
+#    dest: "{{ nginx_available_vhosts_path }}/{{ item.dest }}"
+#    mode: 0644
+#    owner: root
+#    group: root
+#  notify: restart nginx
+#  with_items:
+#    - { src: "{{ nginx_vhost_file_moodle }}.j2", dest: "{{ nginx_vhost_file_moodle }}" }
+#  when: build_moodle
   
 - name: Create nginx active vhost symlink for captive portal vhost
   file:
@@ -89,14 +89,14 @@
     state: link
     force: yes
 
-- name: Create nginx active vhost symlink for Moodle vhost
-  file:
-    src: "{{ nginx_available_vhosts_path }}/{{ nginx_vhost_file_moodle }}"
-    dest: "{{ nginx_enabled_vhosts_path }}/{{ nginx_vhost_file_moodle }}"
-    state: link
-    force: yes
-  notify: restart nginx
-  when: build_moodle
+#- name: Create nginx active vhost symlink for Moodle vhost
+#  file:
+#    src: "{{ nginx_available_vhosts_path }}/{{ nginx_vhost_file_moodle }}"
+#    dest: "{{ nginx_enabled_vhosts_path }}/{{ nginx_vhost_file_moodle }}"
+#    state: link
+#    force: yes
+#  notify: restart nginx
+#  when: build_moodle
 
 - name: Create nginx active vhost symlink for ENHANCED interface
   file:

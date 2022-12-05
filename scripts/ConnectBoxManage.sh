@@ -6,11 +6,11 @@
 
 VERSION=0.1.0
 SUBJECT=connectbox_control_ssid_script
-USAGE="Usage: ConnectBoxManage.sh -dhv [get|set|check] [ssid|channel|wpa-passphrase|hostname|staticsite|password|ui-config|client-ssid|client-wifipassword|client-wificountry|wifi-info|wifi-restart|is-moodle|course-download|courseusb|openwell-download|openwellusb|brand] <value>"
+USAGE="Usage: ConnectBoxManage.sh -dhv [get|set|check] [ssid|channel|wpa-passphrase|hostname|staticsite|password|ui-config|client-ssid|client-wifipassword|client-wificountry|wifi-info|wifi-restart|course-download|courseusb|openwell-download|openwellusb|brand] <value>"
 HOSTAPD_CONFIG="/etc/hostapd/hostapd.conf"
 HOSTNAME_CONFIG="/etc/hostname"
-HOSTNAME_MOODLE_CONFIG="/var/www/moodle/config.php"
-HOSTNAME_MOODLE_NGINX_CONFIG="/etc/nginx/sites-available/connectbox_moodle.conf"
+# HOSTNAME_MOODLE_CONFIG="/var/www/moodle/config.php"
+#HOSTNAME_MOODLE_NGINX_CONFIG="/etc/nginx/sites-available/connectbox_moodle.conf"
 HOSTS_CONFIG="/etc/hosts"
 BRAND_CONFIG="/usr/local/connectbox/brand.txt"
 NGINX_CONFIG="/etc/nginx/sites-enabled/vhosts.conf"
@@ -567,16 +567,16 @@ function set_hostname () {
       # Update brand.txt
       sed -i 's/\"$host_name\"/\"$val\"/g' $BRAND_CONFIG 2>&1 | logger -t $(basename $0)
 
-      if [ ${PIPESTATUS[0]} -eq 0 ]
-      then
-      	sed -i "s/$host_name/$val/g" $HOSTNAME_MOODLE_CONFIG 2>&1 | logger -t $(basename $0)
-  		sed -i "s/$host_name/$val/g" $HOSTNAME_MOODLE_NGINX_CONFIG 2>&1 | logger -t $(basename $0)
-        reload_nginx
-        systemctl restart avahi-daemon
-        success
-      else
-        failure
-      fi
+#      if [ ${PIPESTATUS[0]} -eq 0 ]
+#      then
+#      	sed -i "s/$host_name/$val/g" $HOSTNAME_MOODLE_CONFIG 2>&1 | logger -t $(basename $0)
+#  		sed -i "s/$host_name/$val/g" $HOSTNAME_MOODLE_NGINX_CONFIG 2>&1 | logger -t $(basename $0)
+#        reload_nginx
+#        systemctl restart avahi-daemon
+#        success
+#      else
+#        failure
+#      fi
     else
       failure
     fi
@@ -585,62 +585,62 @@ function set_hostname () {
   fi
 }
 
-##############################
-# Added by Derek Maxson 20210616
-function set_hostname_moodle_nginx () {
-  if [[ -z "${val// }" ]]; then
-    echo "Missing hostname value"
-    exit 1;
-  fi
+###############################
+## Added by Derek Maxson 20210616
+#function set_hostname_moodle_nginx () {
+#  if [[ -z "${val// }" ]]; then
+#    echo "Missing hostname value"
+#    exit 1;
+#  fi
 
-  backup_hostname_config
-  backup_hosts_config
+#  backup_hostname_config
+#  backup_hosts_config
 
-  # Update the hostname in the hostname config
-  if [ $DEBUG == 1 ]; then
-    echo "Updating hostname to '$val'"
-  fi
+#  # Update the hostname in the hostname config
+#  if [ $DEBUG == 1 ]; then
+#    echo "Updating hostname to '$val'"
+#  fi
 
-  host_name=`cat $HOSTNAME_CONFIG`
+#  host_name=`cat $HOSTNAME_CONFIG`
 
-  # Update HOSTNAME_MOODLE_NGINX_CONFIG
+#  # Update HOSTNAME_MOODLE_NGINX_CONFIG
 
-  if [ ${PIPESTATUS[0]} -eq 0 ]
-    then
-	  success
-    else
-	  failure
-  fi
-}
+#  if [ ${PIPESTATUS[0]} -eq 0 ]
+#    then
+#	  success
+#    else
+#	  failure
+#  fi
+#}
 
-##############################
-# Added by Derek Maxson 20210616
-function set_hostname_moodle_config_php () {
-  if [[ -z "${val// }" ]]; then
-    echo "Missing hostname value"
-    exit 1;
-  fi
+###############################
+## Added by Derek Maxson 20210616
+#function set_hostname_moodle_config_php () {
+#  if [[ -z "${val// }" ]]; then
+#    echo "Missing hostname value"
+#    exit 1;
+#  fi
 
-  backup_hostname_config
-  backup_hosts_config
+#  backup_hostname_config
+#  backup_hosts_config
 
-  # Update the hostname in the hostname config
-  if [ $DEBUG == 1 ]; then
-    echo "Updating hostname to '$val'"
-  fi
+#  # Update the hostname in the hostname config
+#  if [ $DEBUG == 1 ]; then
+#    echo "Updating hostname to '$val'"
+#  fi
 
-  host_name=`cat $HOSTNAME_CONFIG`
+#  host_name=`cat $HOSTNAME_CONFIG`
 
-  # Update HOSTNAME_MOODLE_CONFIG
-  sed -i "s/$host_name/$val/g" $HOSTNAME_MOODLE_CONFIG 2>&1 | logger -t $(basename $0)
+#  # Update HOSTNAME_MOODLE_CONFIG
+#  sed -i "s/$host_name/$val/g" $HOSTNAME_MOODLE_CONFIG 2>&1 | logger -t $(basename $0)
 
-  if [ ${PIPESTATUS[0]} -eq 0 ]
-    then
-	  success
-    else
-	  failure
-  fi
-}
+#  if [ ${PIPESTATUS[0]} -eq 0 ]
+#    then
+#	  success
+#    else
+#	  failure
+#  fi
+#}
 
 function get_channel () {
   local channel=`grep '^channel=' $HOSTAPD_CONFIG | cut -d"=" -f2`
@@ -758,13 +758,14 @@ function get_wifi_info() {
   iwconfig
 }
 
-# Added by Derek Maxson 20220128
+## Added by Derek Maxson 20220128
 function get_is_moodle() {
-  if [ -f "/var/www/moodle/index.php" ]; then
-    echo '1'
-  else 
-    echo '0'
-  fi
+  echo '0'
+#  if [ -f "/var/www/moodle/index.php" ]; then
+#    echo '1'
+#  else 
+#    echo '0'
+#  fi
 }
 
 # Added by Derek Maxson 20210616
@@ -774,11 +775,11 @@ function set_course_download () {
   success
 }
 
-# Added by Derek Maxson 20211108
-function course_usb () {
-  sudo /usr/bin/php /var/www/moodle/admin/cli/restore_courses_directory.php /media/usb0/ | logger -t $(basename $0)
-  success
-}
+## Added by Derek Maxson 20211108
+#function course_usb () {
+#  sudo /usr/bin/php /var/www/moodle/admin/cli/restore_courses_directory.php /media/usb0/ | logger -t $(basename $0)
+#  success
+#}
 
 # Added by Derek Maxson 20211104
 function set_openwell_download () {
