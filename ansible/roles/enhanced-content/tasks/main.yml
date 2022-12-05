@@ -172,7 +172,7 @@
 - name: Copy MMI loader to /usr/local/connectbox/bin
   get_url:
     # was: https://raw.githubusercontent.com/RT-coding-team/mediainterface/main/mmiloader.py
-    url: https://github.com/ConnectBox/mediainterface/blob/main/main/mmiloader.py
+    url: https://raw.githubusercontent.com/connectbox/mediainterface/main/mmiloader.py
     dest: /usr/local/connectbox/bin/enhancedInterfaceUSBLoader.py
     owner: _connectbox
     group: _connectbox
@@ -181,7 +181,7 @@
 - name: Copy MMI loader to /usr/local/connectbox/bin
   get_url:
     # was: https://raw.githubusercontent.com/RT-coding-team/mediainterface/main/lazyLoader.py
-    url: https://github.com/ConnectBox/mediainterface/blob/main/main/lazyLoader.py
+    url: https://raw.githubusercontent.com/connectbox/mediainterface/main/lazyLoader.py
     dest: /usr/local/connectbox/bin/lazyLoader.py
     owner: _connectbox
     group: _connectbox

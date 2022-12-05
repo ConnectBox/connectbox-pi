@@ -363,8 +363,8 @@
 - name: Reboot device for changes to take effect
   reboot:
     post_reboot_delay: 35
-    connect_timeout: 45
-    reboot_timeout: 60
+    connect_timeout: 90
+    reboot_timeout: 120
   when: (reboot_required and (confirm_reboot.user_input | bool)) or (confirm_reboot.user_input | bool)
   tags: reboot1
 
