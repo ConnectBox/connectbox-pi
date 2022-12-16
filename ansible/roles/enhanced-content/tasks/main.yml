@@ -114,9 +114,9 @@
 - name: setup connectbox-manage as safe.directory
   git_config:
     name: connectbox-manage
-    repo: https://githuyb.com/ConnectBox/connectbox-manage.git
+    repo: https://github.com/ConnectBox/connectbox-manage.git
     scope: global
-    value: add safe.directory
+    value: add safe.directory connectbox-manage.git
 
 
 - name: Get connectbox-manage repo from https://github.com/ConnectBox/connectbox-manage.git
