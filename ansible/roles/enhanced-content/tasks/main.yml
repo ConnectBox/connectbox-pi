@@ -111,6 +111,14 @@
   debug:
     msg: "we loaded version {{ pm2_ver.stdout }} of PM2"
 
+- name: setup connectbox-manage as safe.directory
+  git:_config:
+    name: connectbox-manage
+    repo: https://githuyb.com/ConnectBox/connectbox-manage.git
+    scope: global
+    value: add safe.directory
+
+
 - name: Get connectbox-manage repo from https://github.com/ConnectBox/connectbox-manage.git
   git:
     # was: https://github.com/RT-coding-team/connectbox-manage.git
