@@ -112,7 +112,7 @@
     msg: "we loaded version {{ pm2_ver.stdout }} of PM2"
 
 - name: setup connectbox-manage as safe.directory
-  git:_config:
+  git_config:
     name: connectbox-manage
     repo: https://githuyb.com/ConnectBox/connectbox-manage.git
     scope: global
