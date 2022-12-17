@@ -314,6 +314,13 @@ def do_resize2fs(rpi_platform):
     out = out.decode('utf-8') 
     m = p.search(out)
     FS = m.group()
+    if str(FS)[(len(str(FS))-1):]>str("0"):
+        if DEBUG: print("resize2fs complete...")
+        f = open(progress_file, "w")
+        f.write("resize2fs_done")
+        f.close()
+        os.sync()
+        return()       
 
     # we have the FS string, so build the command and run it
     if rpi_platform == True:
@@ -369,6 +376,12 @@ def do_fdisk(rpi_platform):
 
   # change from binary to string
     respString = response.decode('utf-8')
+    if respString.find("/dev/mmcblk0p5"):
+      f = open(progress_file, "w")
+      f.write("fdisk_done")
+      f.close()
+      os.sync()
+      retun()
 
 #   for CM4, we get one line beginning /dev/mmcblk0p1, 
 #   and one line beginning /dev/mmcblk0p2 ... this is the line that we are looking for 
