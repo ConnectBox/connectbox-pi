@@ -118,6 +118,7 @@
     dest: /var/www/enhanced/connectbox-manage
     clone: yes
     update: yes
+  ignore_errors: yes
 
 - name: Run npm to install dependencies for connectbox-manage
   community.general.npm:
