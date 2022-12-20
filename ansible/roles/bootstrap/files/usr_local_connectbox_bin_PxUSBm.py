@@ -1145,7 +1145,7 @@ if __name__ == "__main__":
         if file_exists == False:
             do_fdisk(rpi_platform)             # this ends in reboot() so won't return
             continue
-        else: 
+        else:
             f = open(progress_file, "r")
             progress = f.read()
             f.close()
@@ -1165,7 +1165,11 @@ if __name__ == "__main__":
           continue 
 
         f.close()
-        f = open("/usr/local/connectbox/wificonf.txt", "r")
+        try:
+            f = open("/usr/local/connectbox/wificonf.txt", "r")
+        except:
+            time.sleep(3)
+            continue
         wifi = f.read()
         f.close()
         clientwifi =  wifi.partition("ClientIF=")[2].split("\n")[0]

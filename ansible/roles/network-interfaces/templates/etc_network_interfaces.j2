@@ -24,7 +24,7 @@ iface {{ client_facing_if }} inet static
     #  with the address means it can respond to ICMP and http and indeed anything
     #  else we want without a DNAT rule for each. A complete REDIRECT instead of
     #  DNAT affects DHCP.
-    up ip addr add {{ non_private_captive_portal_ip }}/24 dev $IFACE label $IFACE:0
+    up ip addr add {{ non_private_captive_portal_ip }}/24 dev {{ client_facing_if }} label {{ client_facing_if }}:0
     # dnsmasq does not always answer DHCP requests after wifi unplug/replug
     #  so we manage it's start and stop here. We always expect wlan0 to be
     #  running on a functioning system, so this dependency on wlan0 is not
