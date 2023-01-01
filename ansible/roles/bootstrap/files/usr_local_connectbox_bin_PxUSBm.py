@@ -59,18 +59,30 @@ progress_file = '/usr/local/connectbox/expand_progress.txt'
 
 # globals for USB monitoring
 global DEBUG		#Debug 1 for netowrking, 2 for summary of mounts, 3 for detail of mounts
+
 global total
 total = 0
 c=["","",""]
+
 global loc
 loc=[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]
+
 #mnt[x]>=0 where x is the usb port of the mount and mnt[x] is the line of the /dev/sdx1
 global mnt
 mnt=[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]
 d=["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""]
+
 global net_stat
 net_stat = 1
+
 global Brand
+
+global connectbox_scroll
+
+global max_partition
+max_partiton = 0
+
+
 
 
 def mountCheck():
@@ -307,11 +319,13 @@ def mountCheck():
 def do_resize2fs(rpi_platform):
 
     global DEBUG
+    global connectbox_scroll
+    global max_partition
 
 	# find the filesystem name ... like "/dev/mmcblk0p1"
     out = pexpect.run('df -h')
     p = re.compile('/dev/mmcblk[0-9]p[0-9]+')
-    out = out.decode('utf-8') 
+    out = out.decode('utf-8')
     m = p.search(out)
     FS = m.group()
     if str(FS)[(len(str(FS))-1):]>str("0"):
@@ -320,11 +334,16 @@ def do_resize2fs(rpi_platform):
         f.write("resize2fs_done")
         f.close()
         os.sync()
-        return()       
+        return()
 
     # we have the FS string, so build the command and run it
-    if rpi_platform == True:
-      FS = "/dev/mmcblk0p2"
+    if (rpi_platform == True):
+      if connectob_scroll == True: 
+        FS = "/dev/mmcblk0p"+str(max_partition)
+      else:
+        FS = "/dev/mmcblk0p2"
+    else:
+        FS = "/dev/mmcblk0p1"
     cmd = 'resize2fs ' + FS
     out = pexpect.run(cmd, timeout=600)  # 10 minutes should be enough for the resize
     out = out.decode('utf-8')
@@ -341,6 +360,8 @@ def do_resize2fs(rpi_platform):
 def do_fdisk(rpi_platform):
 
     global DEBUG
+    global connectbox_scroll
+    global max_partiton
     child = pexpect.spawn('fdisk /dev/mmcblk0', timeout = 10)
     try:
       i = child.expect(['Command (m for help)*', 'No such file or directory']) # the match is looking for the LAST thing that came up so we need the *
@@ -364,34 +385,40 @@ def do_fdisk(rpi_platform):
             if DEBUG: print("There is no /dev/mmcblk1 partiton.... kill child")
             child.kill(0)
     if i==0:
-        if DEBUG: print("Found it!")  
+        if DEBUG: print("Found it!")
   # continuing
 
   # "p" get partition info and search out the starting sector of mmcblk0p1
     child.sendline('p')
-    i = child.expect('Command (m for help)*')  
+    i = child.expect('Command (m for help)*')
   # the child.before contains all that came BEFORE we found the expected text
   #logging.info (child.before)
     response = child.before
 
   # change from binary to string
     respString = response.decode('utf-8')
-    if respString.find("/dev/mmcblk0p5"):
-      f = open(progress_file, "w")
-      f.write("fdisk_done")
-      f.close()
-      os.sync()
-      retun()
-
+    if respString.find("/dev/mmcblk0p5") >=0:
+      connectbox_scroll = True
+#      f = open(progress_file, "w")
+#      f.write("fdisk_done")
+#      f.close()
+#      os.sync()
+#      retun()
+    else: connectbox_scroll = False
 #   for CM4, we get one line beginning /dev/mmcblk0p1, 
 #   and one line beginning /dev/mmcblk0p2 ... this is the line that we are looking for 
     if rpi_platform == True:
-        p = re.compile('mmcblk[0-9]p2\s*[0-9]+')        # create a regexp to get close to the sector info - CM4
+        x = 2
+        while  respString.find("/dev/mmcblk0p"+str(x))>=0:
+            x += 1
+        x = x -1						# we will have found the last parttion then counted one more so decrement to get last partition
+        max_partition = x
+        p = re.compile('mmcblk[0-9]p'+str(x)+'\s*[0-9]+')        # create a regexp to get close to the sector info - CM4
     else:
         p = re.compile('mmcblk[0-9]p[0-9]\s*[0-9]+')    # create a regexp to get close to the sector info - NEO
 
     m = p.search(respString)    # should find "mmcblk0p1   8192" or similar, saving as object m (NEO)
-                                #  or "mmcblk0p2   532480" or similar for CM4
+                                #  or "mmcblk0p2-9   532480" or similar for CM4
     match = m.group()           # get the text of the find
     p = re.compile('\s[0-9]+')  # a new regex to find just the number from the match above
     m = p.search(match)
@@ -402,8 +429,8 @@ def do_fdisk(rpi_platform):
     child.sendline('d')
 
     if rpi_platform == True:    # CM4 has 2 partitions... select partition 2
-        i = child.expect('Partition number (1,2, default 2)*')
-        child.sendline('2')
+        i = child.expect('Partition number (1,2*')
+        child.sendline(str(x))
 
     i = child.expect('Command (m for help)*')
 # print("after delete ",child.before)
@@ -416,8 +443,8 @@ def do_fdisk(rpi_platform):
   # "p" for primary partition
     child.sendline('p')
     if rpi_platform == True:    # CM4 has 2 partitions... select partition 2
-        i = child.expect('default 2*')
-        child.sendline('2')                 # "2" for partition number 2         i = child.expect('default 2048*')
+        i = child.expect('default *')
+        child.sendline(str(x))                 # "2" for partition number 2         i = child.expect('default 2048*')
     else:
         i = child.expect('default 1*')      # "1" for partition number 1
         child.sendline('1')
@@ -461,7 +488,7 @@ def IP_Check(b, restart):
      b = int(b)
 
      if DEBUG > 3: print("Started IP check")
-     process = Popen("ifconfig", shell = True, stdout=PIPE, stderr=PIPE)       #back to checking for an IP4 addresss
+     process = Popen("ifconfig", shell = False, stdout=PIPE, stderr=PIPE)       #back to checking for an IP4 addresss
      stdout, stderr = process.communicate()
      net_stats = str(stdout).split("wlan")
      a = str(net_stats[b+1][0])
@@ -469,13 +496,13 @@ def IP_Check(b, restart):
         if (not "inet" in net_stats[b+1]):
             if DEBUG: print("IP Check and no IP detected for "+net_stats[int(b)+1])
             if restart:
-               process = Popen(ifdownap, shell=True, stdout=PIPE, stderr=PIPE)
+               process = Popen(ifdownap, shell=False, stdout=PIPE, stderr=PIPE)
                stdout, stderr = process.communicate()
                time.sleep(5)
-               process = Popen(ifupap, shell=True, stdout=PIPE, stderr=PIPE)
+               process = Popen(ifupap, shell=False, stdout=PIPE, stderr=PIPE)
                stdout, stderr = process.communicate()
                time.sleep(20)
-               process = Popen("ifconfig", shell = True, stdout=PIPE, stderr=PIPE)       #back to checking for an IP4 addresss
+               process = Popen("ifconfig", shell = False, stdout=PIPE, stderr=PIPE)       #back to checking for an IP4 addresss
                stdout, stderr = process.communicate()
                net_stats = str(stdout).split("wlan")
                if len(net_stats) >= (b+1):
@@ -496,7 +523,7 @@ def IP_Check(b, restart):
        stdout, stderr = process.communicate()
        process = Popen(("ifup wlan"+chr(b)), shell=False, stdout=PIPE, stderr=PIPE) 
        stdout, stderr = process.communicate()
-       process = Popen("systemctl restart hostapd", shell = True, stdout=PIPE, stderr=PIPE)
+       process = Popen("systemctl restart hostapd", shell = False, stdout=PIPE, stderr=PIPE)
        stdout, stderr = process.communicate()
        process = Popen("ifconfig", shell=False, stdout=PIPE, stderr=PIPE) 
        stdout, stderr = process.communicate()
@@ -553,7 +580,7 @@ def ESSID_Check(b, restart):
     global SSID
 
     if DEBUG > 3: print("Started ESSID check")
-    process = Popen("iwconfig", shell=True, stdout=PIPE, stderr=PIPE)            # now well check for an ip address on the AP
+    process = Popen("iwconfig", shell=False, stdout=PIPE, stderr=PIPE)            # now well check for an ip address on the AP
     stdout, stderr = process.communicate()
     net_stats = str(stdout).split("wlan")                                        #split up iwconfig by wlan so the first wlan status is in net_stats[1]
 
@@ -583,12 +610,31 @@ def ESSID_Check(b, restart):
           logging.info("were setting firstime true to restart hostapd and dnsmasq as ESSID and SSID didn't match")
 # we have a valid ESSID / SSID match... no need to do anything.
       else:
-          first_time = False 
-          return (1)   
+          first_time = False
+          return (1)
       if first_time:
         RestartWLAN(b)
         first_time = False
         return(0)
+
+
+def dbCheck():
+
+
+       process = Popen("systemctl status mysql", shell = False, stdout=PIPE, stderr=PIPE)
+       stdout, stderr = process.communicate()
+       if stdout.find("active (running) since")>=0:
+          return(0)
+       else:
+          process = Popen("systemctl restart mysql", shell = False, stdout=PIPE, stderr=PIPE)
+          stdout, stderr = process.communicate()
+          process = Popen("systemctl status mysql", shell = False, stdout=PIPE, stderr=PIPE)
+          stdout, stderr = process.communicate()
+          if stdout.find("active (running) since")>= 0:
+              return(0)
+       return(1)
+
+
 
 
 def NetworkCheck():
@@ -829,7 +875,7 @@ def NetworkCheck():
           if net_stats.find("down") >= 0 :                                # if its down lets try to raise it
             if areadyconf.find(netx) < 0 :                                # Were checking to see if we should leave this network alone
                 cmd = "ifup "+netx
-                process = Popen([cmd],shell=True, stdout=PIPE, stderr=PIPE)
+                process = Popen([cmd],shell=False, stdout=PIPE, stderr=PIPE)
                 (output, error) = process.communicate()
                 process.terminate()
                 if str(error).find("already configured")>=0:
@@ -1028,11 +1074,11 @@ if __name__ == "__main__":
     global first_time
     global DEBUG
     global SSID
-
+    global connectbox_scroll
 
     DEBUG = 0
     SSID=""
-
+    connectbox_scroll=False
     first_time=True
     stop_hostapd=False
     areadyconf= ""
@@ -1145,7 +1191,7 @@ if __name__ == "__main__":
         if file_exists == False:
             do_fdisk(rpi_platform)             # this ends in reboot() so won't return
             continue
-        else:
+        else: 
             f = open(progress_file, "r")
             progress = f.read()
             f.close()
@@ -1165,11 +1211,7 @@ if __name__ == "__main__":
           continue 
 
         f.close()
-        try:
-            f = open("/usr/local/connectbox/wificonf.txt", "r")
-        except:
-            time.sleep(3)
-            continue
+        f = open("/usr/local/connectbox/wificonf.txt", "r")
         wifi = f.read()
         f.close()
         clientwifi =  wifi.partition("ClientIF=")[2].split("\n")[0]
@@ -1208,6 +1250,7 @@ if __name__ == "__main__":
           if not os.path.exists("/usr/local/connectbox/PauseMount"):
              if DEBUG > 3: print("PxUSBm Going to start the mount Check")
              mountCheck()                   # Do a usb check to see if we have any inserted or removed.
+             if connectbox_scroll: dbCheck()
           if (x % 100) == 0:
              if DEBUG > 3: print("PxUSBm Goiing to do a Network check")
              NetworkCheck()                 # Check the network functioning and fix anythig we find in error.
