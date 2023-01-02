@@ -1,4 +1,4 @@
-# {{ ansible_managed }}
+# Ansible managed
 #
 # interfaces(5) file used by ifup(8) and ifdown(8)
 
@@ -10,28 +10,28 @@ iface lo inet loopback
 allow-hotplug eth0
 iface eth0 inet dhcp
 
-allow-hotplug {{ client_facing_if }}
-iface {{ client_facing_if }} inet static
+allow-hotplug wlan0
+iface wlan0 inet static
     hostapd /etc/hostapd/hostapd.conf
-    address {{ client_facing_if_ip_address }}
-    netmask {{ client_facing_if_netmask }}
+    address 10.129.0.1
+    netmask 255.255.0.0
     # Need to set locale because our standard locale settings cause problems with
     #  click, and I don't want to fix that right now. See:
     #  https://click.palletsprojects.com/en/7.x/python3/
-    pre-up LC_ALL=C.UTF-8 LANG=C.UTF-8 {{ wifi_configurator_virtualenv_dir}}/bin/wifi_configurator --set-country-code
+    pre-up LC_ALL=C.UTF-8 LANG=C.UTF-8 /usr/local/connectbox/wifi_configurator_venv/bin/wifi_configurator --set-country-code
     # Add an extra address to answer captive portal non-private range traffic
     # We were DNAT'ing port 80 traffic previously, but having a real interface
     #  with the address means it can respond to ICMP and http and indeed anything
     #  else we want without a DNAT rule for each. A complete REDIRECT instead of
     #  DNAT affects DHCP.
-    up ip addr add {{ non_private_captive_portal_ip }}/24 dev {{ client_facing_if }} label {{ client_facing_if }}:0
+    up ip addr add 172.217.3.174/24 dev $IFACE label $IFACE:0
     # dnsmasq does not always answer DHCP requests after wifi unplug/replug
     #  so we manage it's start and stop here. We always expect wlan0 to be
     #  running on a functioning system, so this dependency on wlan0 is not
     #  a problem.
     post-up systemctl start dnsmasq
     pre-down systemctl stop dnsmasq
-    down ip addr del {{ non_private_captive_portal_ip }}/24 dev $IFACE label $IFACE:0
+    down ip addr del 172.217.3.174/24 dev $IFACE label $IFACE:0
 
 # To add local wifi connectivity, substitue your wifi ssid and password (below)
 #  (Leave these lines uncommented even if you don't want internet connectivity 
@@ -39,10 +39,10 @@ iface {{ client_facing_if }} inet static
 
 #CLIENTIF#
 
-auto {{ eth_facing_if }}
-allow-hotplug {{ eth_facing_if }}
-iface {{ eth_facing_if }} inet dhcp
+auto wlan1
+allow-hotplug wlan1
+iface wlan1 inet dhcp
 wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf
 iface default inet dhcp
-    pre-up rm /var/run/wpa_supplicant/{{ eth_facing_if }}
+    pre-up rm /var/run/wpa_supplicant/wlan1
 
