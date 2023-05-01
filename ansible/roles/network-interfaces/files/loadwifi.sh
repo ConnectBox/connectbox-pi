@@ -1,17 +1,17 @@
 #! /bin/bash
 
-var1=$( modprobe -c | grep 8812au )
+var1=$( modprobe -c | grep 88XXau )
 var2=$( modprobe -c | grep 88x2bu )
 var3=$( modprobe -c | grep 8852au )
 
 if [ ${#var1} -lt 5 ]							#Check if we have 8812au loaded
 then
-  echo "Loading 8812au"
-  insmod /usr/lib/modules/$( uname -r)/kernel/drivers/net/wireless/8812au		#We found nothing so try to load this versions 8812au
-  modprobe 8812au
+  echo "Loading 88XXau"
+  insmod /usr/lib/modules/$( uname -r)/kernel/drivers/net/wireless/88XXau		#We found nothing so try to load this versions 8812au
+  modprobe 88XXau
   depmod -A
 else
-  echo "8812au module already loaded"
+  echo "88XXau module already loaded"
 fi
 
 if [ ${#var2} -lt 5 ]							#Check if we have 88x2bu loaded
