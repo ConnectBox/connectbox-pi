@@ -1146,9 +1146,9 @@ if __name__ == "__main__":
         f = open(brand_file, mode="w", encoding = 'utf-8')
         brand["Device_type"] = '"'+a+'"'
         if a.find("CM")>0 :
-          brand["lcd_pages_multi_bat"] = "'"+"1"+"'"
+          brand["lcd_pages_multi_bat"] = "1"
         else:
-          brand["lcd_pages_multi_bat"] = "'"+"0"+"'"
+          brand["lcd_pages_multi_bat"] = "0"
         f.write(json.dumps(brand))
         f.close()
         os.sync()
