@@ -147,7 +147,7 @@ def mountCheck():
         "lcd_pages_admin": 0,\
         "Enable_MassStorage": "",\
         "g_device": "g_serial",\
-        "otg": "none",\
+        "otg": 0,\
         "server_url": "", \
         "server_authorization": "", \
         "server_sitename": "", \
@@ -1136,7 +1136,7 @@ if __name__ == "__main__":
         "lcd_pages_admin": 0,\
         "Enable_MassStorage": "",\
         "g_device": "g_serial",\
-        "otg": "none",\
+        "otg": 0,\
         "server_url": "", \
         "server_authorization": "", \
         "server_sitename": "", \
