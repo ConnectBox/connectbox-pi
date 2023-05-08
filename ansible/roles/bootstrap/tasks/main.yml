@@ -861,6 +861,12 @@
     dest: /usr/local/connectbox/brand.txt
     mode: '0666'
 
+- name: Save original brand.txt template
+  template:
+    src: brand_txt.j2
+    dest: /usr/local/connectbox/brand.j2
+    mode: '0666'
+
 - name: Check for device_type CM4
   replace:
     path: /usr/local/connectbox/brand.txt
