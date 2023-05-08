@@ -125,8 +125,8 @@ def mountCheck():
           a = version[0:4].rstrip()
 
       details  = {'Brand':"Connectbox", \
-        'enhancedInterfaceLogo': 'connectbox_logo.png', \
-        'Image':"", \
+        'enhancedInterfaceLogo':"", \
+        'Image': 'connectbox_logo.png', \
         'Font': 27, \
         'pos_x': 6, \
         'pos_y': 0, \
