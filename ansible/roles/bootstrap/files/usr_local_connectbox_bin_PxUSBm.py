@@ -114,26 +114,37 @@ def mountCheck():
          f.close()
     except:
       version = Revision()
+      if (version != "Unknown") and (version != "Error"):
+        if version.find("OrangePiZero2")>=0: version  = "OZ2 "
+        elif version.find("Orange") >=0: version = "OP? "
+    # see if we are NEO or CM
+        x = version[3:].find(" ")
+        if x >= 0:
+          a = version[0:x+3].rstrip()
+        else:
+          a = version[0:4].rstrip()
+
       details  = {'Brand':"Connectbox", \
         'enhancedInterfaceLogo': 'connectbox_logo.png', \
         'Image':"", \
-        'Font': '27', \
-        'pos_x': '6', \
-        'pos_y': '0', \
-        'Device_type': version, \
-        "usb0NoMount": '0', \
-        "lcd_pages_main": '1',\
-        "lcd_pages_info": '1',\
-        "lcd_pages_battery": '1',\
-        "lcd_pages_multi_bat": '1',\
-        "lcd_pages_stats_hour_one": '1',\
-        "lcd_pages_stats_hour_two": '1',\
-        "lcd_pages_stats_day_one": "1",\
-        "lcd_pages_stats_day_two": "1",\
-        "lcd_pages_stats_week_one": "1",\
-        "lcd_pages_stats_week_two": "1",\
-        "lcd_pages_stats_month_one": "1",\
-        "lcd_pages_stats_month_two": "1",\
+        'Font': 27, \
+        'pos_x': 6, \
+        'pos_y': 0, \
+        'Device_type': a, \
+        "usb0NoMount": 0, \
+        "lcd_pages_main": 1,\
+        "lcd_pages_info": 1,\
+        "lcd_pages_battery": 1,\
+        "lcd_pages_multi_bat": 0,\
+        "lcd_pages_stats_hour_one": 1,\
+        "lcd_pages_stats_hour_two": 1,\
+        "lcd_pages_stats_day_one": 1,\
+        "lcd_pages_stats_day_two": 1,\
+        "lcd_pages_stats_week_one": 1,\
+        "lcd_pages_stats_week_two": 1,\
+        "lcd_pages_stats_month_one": 1,\
+        "lcd_pages_stats_month_two": 1,\
+        "lcd_pages_admin": 0,\
         "Enable_MassStorage": "",\
         "g_device": "g_serial",\
         "otg": "none",\
@@ -1084,6 +1095,17 @@ if __name__ == "__main__":
     areadyconf= ""
 
     version = Revision()                    # Get the version of hardware were running on
+    if (version != "Unknown") and (version != "Error"):
+      if version.find("OrangePiZero2")>=0: version  = "OZ2 "
+      elif version.find("Orange") >=0: version = "OP? "
+    # see if we are NEO or CM
+      x = version[3:].find(" ")
+      if x >= 0:
+          a = version[0:x+3].rstrip()
+      else:
+          a = version[0:4].rstrip()
+
+
     logging.info("PxUSBm Starting revision is "+version)
     try: 
       f = open(brand_file, mode="r", encoding='utf-8')
@@ -1092,25 +1114,26 @@ if __name__ == "__main__":
     except:
       f = open(brand_file, mode="w", encoding = 'utf-8')
       details  = {'Brand':"Connectbox", \
-        'enhancedInterfaceLogo': 'connectbox_logo.png', \
-        'Image':"", \
-        'Font': '27', \
-        'pos_x': '6', \
-        'pos_y': '0', \
-        'Device_type': version, \
-        "usb0NoMount": '0', \
-        "lcd_pages_main": '1',\
-        "lcd_pages_info": '1',\
-        "lcd_pages_battery": '1',\
-        "lcd_pages_multi_bat": '1',\
-        "lcd_pages_stats_hour_one": '1',\
-        "lcd_pages_stats_hour_two": '1',\
-        "lcd_pages_stats_day_one": "1",\
-        "lcd_pages_stats_day_two": "1",\
-        "lcd_pages_stats_week_one": "1",\
-        "lcd_pages_stats_week_two": "1",\
-        "lcd_pages_stats_month_one": "1",\
-        "lcd_pages_stats_month_two": "1",\
+        'enhancedInterfaceLogo': "", \
+        'Image':'connectbox_logo.png', \
+        'Font': 27, \
+        'pos_x': 6, \
+        'pos_y': 0, \
+        'Device_type': a, \
+        "usb0NoMount": 0, \
+        "lcd_pages_main": 1,\
+        "lcd_pages_info": 1,\
+        "lcd_pages_battery": 1,\
+        "lcd_pages_multi_bat": 0,\
+        "lcd_pages_stats_hour_one": 1,\
+        "lcd_pages_stats_hour_two": 1,\
+        "lcd_pages_stats_day_one": 1,\
+        "lcd_pages_stats_day_two": 1,\
+        "lcd_pages_stats_week_one": 1,\
+        "lcd_pages_stats_week_two": 1,\
+        "lcd_pages_stats_month_one": 1,\
+        "lcd_pages_stats_month_two": 1,\
+        "lcd_pages_admin": 0,\
         "Enable_MassStorage": "",\
         "g_device": "g_serial",\
         "otg": "none",\
@@ -1124,7 +1147,7 @@ if __name__ == "__main__":
         }
       f.write(json.dumps(details))
       f.close
-      f.open(brand_file, mode="r", encoding='utf8')
+      f = open(brand_file, mode="r", encoding='utf8')
       brand = json.loads(f.read())
       Brand = brand
       f.close
@@ -1133,22 +1156,14 @@ if __name__ == "__main__":
       OP_stat = False
 
     if (version != "Unknown") and (version != "Error"):
-      if version.find("OrangePiZero2")>=0: version  = "OZ2 "
-      elif version.find("Orange") >=0: version = "OP? "
-    # see if we are NEO or CM
-      x = version[3:].find(" ")
-      if x >= 0:
-          a = version[0:x+3].rstrip()
-      else:
-          a = version[0:4].rstrip()
       logging.info("Major type: "+a)
       if brand["Device_type"].find(a)<=0:                    # Make sure the brand file is what we expect as were on this hardware.
         f = open(brand_file, mode="w", encoding = 'utf-8')
         brand["Device_type"] = '"'+a+'"'
         if a.find("CM")>0 :
-          brand["lcd_pages_multi_bat"] = "1"
+          brand["lcd_pages_multi_bat"] = 1
         else:
-          brand["lcd_pages_multi_bat"] = "0"
+          brand["lcd_pages_multi_bat"] = 0
         f.write(json.dumps(brand))
         f.close()
         os.sync()
@@ -1254,6 +1269,19 @@ if __name__ == "__main__":
           if (x % 100) == 0:
              if DEBUG > 3: print("PxUSBm Goiing to do a Network check")
              NetworkCheck()                 # Check the network functioning and fix anythig we find in error.
+
+# add check for /etc/wpa_supplicant/wpa_supplicant.conf for country=<blank>
+          wpa_File = '/etc/wpa_supplicant/wpa_supplicant.conf'
+          f = open(wpa_File, mode="r", encoding='utf-8')
+          filedata=f.read()
+          f.close()
+
+          if 'country=\n' in filedata:
+            filedata = filedata.replace('country=\n', 'country=US\n')
+            with open(wpa_File, 'w') as f:
+              f.write(filedata)
+              f.close()              
+
           x += 1
           time.sleep(3)
 
