@@ -440,7 +440,7 @@ def do_fdisk(rpi_platform):
     child.sendline('d')
 
     if rpi_platform == True:    # CM4 has 2 partitions... select partition 2
-        i = child.expect('Partition number (1,2*')
+        i = child.expect('Partition number')
         child.sendline(str(x))
 
     i = child.expect('Command (m for help)*')
