@@ -188,7 +188,7 @@ def mountCheck():
             else:     #We just unmounted usb0 so we need to rerun the enhanced interfaceUSB loader
                       # Run these functions on mount -- added 20211111
               # Enhanced Content Load
-              os.system("/usr/bin/python3 /usr/local/connectbox/bin/enhancedInterfaceUSBLoader.py >/tmp/enhancedInterfaceUSBLoader.log 2>&1 &")
+              os.system("/usr/bin/python3 /usr/local/connectbox/bin/mmiloader.py >/tmp/loadContent.log 2>&1 &")
             loc[j]=-1
             mnt[j] = -1
             j += 1
@@ -261,7 +261,7 @@ def mountCheck():
 #            # Moodle Course Loader
 #            os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/*.mbz && /usr/bin/php /var/www/moodle/admin/cli/restore_courses_directory.php /media/usb0/' >/tmp/restore_courses_directory.log 2>&1 &")
             # Enhanced Content Load
-            os.system("/usr/bin/python3 /usr/local/connectbox/bin/enhancedInterfaceUSBLoader.py >/tmp/enhancedInterfaceUSBLoader.log 2>&1 &")
+            os.system("/usr/bin/python3 /usr/local/connectbox/bin/mmiloader.py >/tmp/loadContent.log 2>&1 &")
         else:                                               #True if we are mounted, check for usb(?).
           if ('usb' in d[i]):                               #we need to register a mount or make sure it is
             a = d[i].partition('usb')

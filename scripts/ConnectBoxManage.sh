@@ -799,7 +799,7 @@ function openwell_usb () {
 	  sudo rm /tmp/openwell.zip >/dev/null 2>&1  
 	  success
 	else
-	  python /usr/local/connectbox/bin/enhancedInterfaceUSBLoader.py | logger -t $(basename $0) &
+	  python /usr/local/connectbox/bin/mmiLoader.py | logger -t $(basename $0) &
 	  success
 	fi
 }
