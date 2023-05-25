@@ -56,9 +56,6 @@ dtparam=i2c_arm=on
 # Enable audio (loads snd_bcm2835)
 dtparam=audio=on
 
-# force use of XHCI USB 2 controller on USB-C connector
-otg_mode=1
-
 # force eeprom read set to 0 to dissable boot from trying to read Hat eeproms
 force_eeprom_read=0
 
@@ -70,6 +67,7 @@ max_framebuffers=2
 dtoverlay=sdtweak,overclock_50=100
 # set boloader delay to 0 seconds
 boot_delay=0
+arm_boost=1
 
 
 [cm4]
@@ -81,8 +79,15 @@ dtoverlay=sdtweak,overclock_50=100
 boot_delay=0
 dtparam=spi=on
 dtparam=ant2
+# force use of XHCI USB 2 controller on USB-C connector
+otg_mode=1
+
+[pi3]
+# Enable DRM VC4 V3D driver on top of the dispmanx display stack
+dtoverlay=vc4-kms-v3d
+max_framebuffers=2
 
 [all]
-#dtoverlay=vc4-fkms-v3d
 #dissable bluetooth on all systems
 dtoverlay=disable-bt
+display_auto_detect
