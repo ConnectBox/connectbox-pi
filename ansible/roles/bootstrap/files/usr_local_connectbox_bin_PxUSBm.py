@@ -100,12 +100,26 @@ def mountCheck():
     try:
       f = open("/tmp/upgrade.py","r")
       f.close()
-      p = subprocess.run(['/usr/bin/python3', '/tmp/upgrade.py'])
+      p = subprocess.run(['/usr/bin/python3', '/tmp/upgrade.py', stdout=PIPE, stderr=stdout, capture_output=True])
       if p.returncode !=0:
           print("We failed on the spawn")
       else: 
            print("Spawn complete")
-      time.sleep(5)
+      time.sleep(10)
+      outdata, errdata = Popen.communicate()
+      if len(outdata)> 0:
+        try:
+          print("We ran the python upgrade script with output")
+          f = open("/media/usb0/.connectbox/upgrade/output.txt")
+          f.write(outdata)
+          f.close()
+          os.sync()
+        except:
+          print("We ran the python upgrade script but no output")
+    except:
+      pass
+    try:
+      p = subprocess.run(['rm", "/tmp/upgrade.py'])
     except:
       pass
     try:
