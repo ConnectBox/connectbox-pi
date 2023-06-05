@@ -348,20 +348,18 @@ def do_resize2fs(rpi_platform):
     global max_partition
 
 	# find the filesystem name ... like "/dev/mmcblk0p1"
-    out = pexpect.run('df -h')
-    p = re.compile('/dev/mmcblk[0-9]p[0-9]+')
-    out = out.decode('utf-8')
-    m = p.search(out)
-    FS = m.group()
-    if str(FS)[(len(str(FS))-1):]>str("0"):
-        if DEBUG: print("resize2fs complete...")
-        f = open(progress_file, "w")
-        f.write("resize2fs_done")
-        f.close()
-        os.sync()
-        return()
-
-    # we have the FS string, so build the command and run it
+#    out = pexpect.run('df -h')
+#    p = re.compile('/dev/mmcblk[0-9]p[0-9]+')
+#    out = out.decode('utf-8')
+#    m = p.search(out)
+#    FS = m.group()
+#    if str(FS)[(len(str(FS))-1):]>str("0"):
+#        if DEBUG: print("resize2fs complete...")
+#        f = open(progress_file, "w")
+#        f.write("resize2fs_done")
+#        f.close()
+#        os.sync()
+#        return()
     if (rpi_platform == True):
       if connectob_scroll == True: 
         FS = "/dev/mmcblk0p"+str(max_partition)
@@ -498,6 +496,7 @@ def do_fdisk(rpi_platform):
     f.write("fdisk_done")
     f.close()
     os.sync()
+    # Disk is now the right size but the OS hasn't necessarily used it.
     logging.info( "PxUSBm is rebooting after fdisk changed")
     os.system('shutdown -r now')
 
@@ -1103,7 +1102,7 @@ if __name__ == "__main__":
 
     DEBUG = 0
     SSID=""
-    connectbox_scroll=False
+    connectbox_scroll=Falsef
     first_time=True
     stop_hostapd=False
     areadyconf= ""
