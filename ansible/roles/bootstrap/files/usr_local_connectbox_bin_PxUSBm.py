@@ -100,7 +100,7 @@ def mountCheck():
     try:
       f = open("/tmp/upgrade.py","r")
       f.close()
-      p = subprocess.run(['/usr/bin/python3', '/tmp/upgrade.py', stdout=PIPE, stderr=stdout, capture_output=True])
+      p = subprocess.run(['/usr/bin/python3', '/tmp/upgrade.py'], stdout=PIPE, stderr=stdout, capture_output=True)
       if p.returncode !=0:
           print("We failed on the spawn")
       else: 
@@ -361,7 +361,7 @@ def do_resize2fs(rpi_platform):
 #        os.sync()
 #        return()
     if (rpi_platform == True):
-      if connectob_scroll == True: 
+      if connectbox_scroll == True: 
         FS = "/dev/mmcblk0p"+str(max_partition)
       else:
         FS = "/dev/mmcblk0p2"
@@ -1102,7 +1102,7 @@ if __name__ == "__main__":
 
     DEBUG = 0
     SSID=""
-    connectbox_scroll=Falsef
+    connectbox_scroll=False
     first_time=True
     stop_hostapd=False
     areadyconf= ""
