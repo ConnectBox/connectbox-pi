@@ -499,6 +499,7 @@ def do_fdisk(rpi_platform):
     # Disk is now the right size but the OS hasn't necessarily used it.
     logging.info( "PxUSBm is rebooting after fdisk changed")
     os.system('shutdown -r now')
+    return()
 
 
 def IP_Check(b, restart):
@@ -597,7 +598,6 @@ def RestartWLAN(b):
     return(0)  #Error in length or reply compared to expectation
 
 
-
 def ESSID_Check(b, restart):
 # this routine ESSID_check will look to see if there is an ESSID assigned to the AP
 # you pass this routine the wlan character and  if you want to attempt a restart of hostapd if no ESSID a restart value of True
@@ -638,7 +638,7 @@ def ESSID_Check(b, restart):
 # we have a valid ESSID / SSID match... no need to do anything.
       else:
           first_time = False
-          return (1)
+          return(1)
       if first_time:
         RestartWLAN(b)
         first_time = False
