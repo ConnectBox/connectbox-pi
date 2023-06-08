@@ -581,17 +581,20 @@ def RestartWLAN(b):
 # check to see if that did it...
   cmd = "iwconfig"
   rv = subprocess.check_output(cmd)
-  rvs = rv.decode("utf-8")
-  if ("802.11gn" in rvs):
-#    print ("WLAN IS UP!")
-    pass
-
+  rvs = rv.decode("utf-8").split("wlan")
+  if (len(rvs) >= (b+1)):
+    if ("802.11gn" in rvs[b+1]):
+#     print ("WLAN IS UP!")
+      return(1)
 # if not up we need to do another restart hostapd
+    else:
+#     print("WLAN not up... we need to run hostapd")
+      cmd = "systemctl restart hostapd"
+      rv = subprocess.call(cmd, shell=True)
+#      print("hostpad... Returned value ->", rv)
+      return(rv)
   else:
-#    print("WLAN not up... we need to run hostapd")
-    cmd = "systemctl restart hostapd"
-    rv = subprocess.call(cmd, shell=True)
-#    print("hostpad... Returned value ->", rv)
+    return(0)  #Error in length or reply compared to expectation
 
 
 
@@ -659,6 +662,67 @@ def dbCheck():
        return(1)
 
 
+def check_flags(b, restart):
+# check flags will check for run status of the interface flags.  EG: 4099 not running vs 4163 which is running
+
+     global ifupap
+     global ifdownap
+     global DEBUG
+
+     b = int(b)
+
+     if DEBUG > 3: print("Started check_flags")
+     process = Popen("ifconfig", shell = False, stdout=PIPE, stderr=PIPE)       #back to checking for an IP4 addresss
+     stdout, stderr = process.communicate()
+     net_stats = str(stdout).split("wlan")
+     if (len(net_stats) <= b+1):
+        if (not "flag=4163" in net_stats[int(b)+1]):
+          logging.info("did ifconfig but no flag=4163 present "+net_stats[int(b)+1])
+          if DEBUG: print("did ifconfig but no flag=4163 presently")
+          if restart:
+            if (RestartWLAN(b)):
+              process = Popen("iwconfig", shell = False, stdout = PIPE, stderr=PIPE)
+              stdout, stderr = process.communicate()
+              net_stats = str(stdout).split("wlan")
+              if (len(net_stats) <= (b+1)):
+                if (not "flag=4163" in net_stats[int(b)+1]):
+                  #we restarted and rechecked and don't have a run flag
+                  return (0)      # we have restarted but have no run flag
+                else:
+                  return(1)       # were up and running
+              else:
+                return(0)         # our response didn't match our expectations of # wlan ports
+            else:
+              return(0)           #we had an error on Restart and not running
+          return(0)
+        return(1)                 #were up and running 
+      return(0)                   #our response weas different than the port expectations
+     
+
+
+
+def IP_Check(b, restart):
+# IP_Check will check for an IP address on the AP and optionally try an ifdown/ifup if restart = True
+# this routine returns 1 if the ip address is found.
+
+     global ifupap
+     global ifdownap
+     global DEBUG
+
+     b = int(b)
+
+     if DEBUG > 3: print("Started IP check")
+     process = Popen("ifconfig", shell = False, stdout=PIPE, stderr=PIPE)       #back to checking for an IP4 addresss
+     stdout, stderr = process.communicate()
+     net_stats = str(stdout).split("wlan")
+     if (len(net_stats) >= b+1):
+        a = str(net_stats[b+1])
+        if ("inet " in a):
+          return(1)
+        else:
+          return(0)
+      else:
+        return(0)
 
 
 def NetworkCheck():
@@ -837,22 +901,35 @@ def NetworkCheck():
          if (not IP_Check(b,True)):
            valid_IP=False
            if DEBUG: print("have a PI version with no extra WIFI modules cant get IP address")
-           logging.info("have PI version with no extra WIFI modules can't get an IP address for AP")
+           if (check_flags(b,True)):
+              logging.info("have PI version with no extra WIFI modules and no IP address for AP or runn flag not set")
+           else:
+              logging.info("have a PI version and now have a good run flag but still no IP")
          else:
            valid_IP=True
-           if (not ESSID_Check(b, True)):
+           if (not check_flags(b,True)):
              valid_ESSID=False
-             if DEBUG: print("weve done our best to bring up the AP since this is a PI with no other WIFI modules")
+             if DEBUG: print("weve done our best to bring up the AP since this is a PI with no other WIFI modules but not running flag")
              logging.info("weve done our best to bring up the AP since this is  a PI with no other WIFI modules")
            else:
-             valid_ESSID=True
+             valid_ESSID=True   # since we have a running status we assume we have the right ESSID for this pi
       else:
         if (not IP_Check(b, True)):					# now well check for an ip address on the AP
           valid_IP=False
           if (not ESSID_Check(b, True)):				# Ok so we couldn't get the interface up but now we reset hostapd so lets try an up/downn again
-            valid_ESSID=False 
-            if DEBUG: print("We cant get an ESSID and we didn't get an IP.... what to do?")
-            logging.info("We can't get an ESSID and we didn't get and IP..... what to do?")
+            if (check_flags(b,False):
+                valid_ESSID=False 
+                if DEBUG: print("We cant get an ESSID and we didn't get an IP.... what to do?")
+                logging.info("We can't get an ESSID and we didn't get and IP..... what to do?")
+            else:
+                if (PI_stat):
+                    valid_ESSID=True          # OK so we are a Pi it will never have a valide ESSID but were running so we assume were ok
+                    if DEBUG: print("We are a pi and we are running so we assume were ok")
+                    logging.info("We are a pi and we are running so we assume were ok")
+                else:
+                    valid_ESSID=False
+                    if DEBUG: print("We are unable to get a valid_ESSID")
+                    logging.info("We are unable to get a valid_ESSIDF")
           else:								#this time we got an IP but still don't have an ESSID so try an up/down again
             valid_ESSID=True
             if (not IP_Check(b, True)):					#We check for an IP address now that we have an  ESSID
@@ -863,11 +940,27 @@ def NetworkCheck():
               valid_IP=True
         else:
           valid_IP=True
-          if valid_ESSID==False:
-            if (not ESSID_Check(b, True)):
-              valid_ESSID=False
-              stop_hostapd=True						#we have tried three times so were going to  hope were up.
-            else: valid_ESSID=True
+          if (not PI_stat):
+            if valid_ESSID==False:
+                if (not ESSID_Check(b, True)):
+                    valid_ESSID=False
+                    stop_hostapd=True						#we have tried three times so were going to  hope were up.
+                    if DEBUG: print("Weve given up we tried three times and cant get a valid ESSID")
+                    logging.info("weve given up since we have tried 3 times and cant get and ESSID")
+                else:
+                    valid_ESSID=True
+                    if DEBUG: print("we think were ok since got an ESSID on our last try")
+                    logging.info("we think were ok since we got an ESSID on our last try")
+          else:
+            if (not check_flags(b,True)):
+                valid_ESSID=False
+                stop_hostapd=True               #we have tried three times so were going to hope were up
+                if DEBUG: print("we think were ok since got an ESSID on our last try")
+                logging.info("we think were ok since we got an ESSID on our last try")
+            else: 
+                valid_ESSID=True                #Since were a pi we know we dont'get an ESSID but were running flag true.  We think were up
+                if DEBUG: print("we think were ok since were a pi and know we won't get an ESSID but were running on our last try")
+                logging.info("we think were ok since were a pi and know we won't get an ESSID but were running on our last try")
     else:
       valid_ESSID=True 
       if (not IP_Check(b, True)):					#Check to make sure we have an ip now that we have an ESSID
@@ -876,22 +969,29 @@ def NetworkCheck():
          logging.info("We have an ESSID but we couldn't get an IP address... what to do?")
       else: valid_IP=True						#We got a valid ESSID the first time and got a valid IP
   else:
-    if (not ESSID_Check(b,False)):
-      valid_ESSID=False
+    if (not PI_stat):
+      if (not ESSID_Check(b,False)):
+          valid_ESSID=False
+      else:
+          valid_ESSID=True									#were here because were a PI and have not other WIFI's so just check the IP address
     else:
-      valid_ESSID=True									#were here because were a PI and have not other WIFI's so just check the IP address
+      if (not check_flags(b,False)):
+          valid_ESSID=False
+      else:
+          valid_ESSID=True                  #were a pi so we knonw we wont get an ESSID but we are up and running by flags
     if (not IP_Check(b,True)):
       valid_IP=False
     else:
       valid_IP=True
 
   if valid_IP and valid_ESSID and hostapd_running and network_running and DEBUG: print("AP up and running ok")
-  elif DEBUG: print("Not everything is clean: IP, ESSID, hostapd, network, stop_hostapd ",valid_IP, valid_ESSID, hostapd_running, network_running, stop_hostapd)
+  else:
+    if DEBUG: print("Not everything is clean: IP, ESSID, hostapd, network, stop_hostapd ",valid_IP, valid_ESSID, hostapd_running, network_running, stop_hostapd)
   res = os.popen("ls /sys/class/net")
   SysNetworks = res.read().split()
   res.close()
   for netx in SysNetworks:                                                # Look at each interface
-    if netx != "":
+    if (netx != ""):
       try:
           process = os.popen("cat /sys/class/net/"+netx+"/operstate")     #check the operational state of all interfaces
           net_stats = process.read()
@@ -1284,17 +1384,15 @@ if __name__ == "__main__":
              NetworkCheck()                 # Check the network functioning and fix anythig we find in error.
 
 # add check for /etc/wpa_supplicant/wpa_supplicant.conf for country=<blank>
-          wpa_File = '/etc/wpa_supplicant/wpa_supplicant.conf'
-          f = open(wpa_File, mode="r", encoding='utf-8')
-          filedata=f.read()
-          f.close()
-
-          if 'country=\n' in filedata:
-            filedata = filedata.replace('country=\n', 'country=US\n')
-            with open(wpa_File, 'w') as f:
-              f.write(filedata)
-              f.close()              
-
+            wpa_File = '/etc/wpa_supplicant/wpa_supplicant.conf'
+            f = open(wpa_File, mode="r", encoding='utf-8')
+            filedata=f.read()
+            f.close()
+            if 'country=\n' in filedata:
+              filedata = filedata.replace('country=\n', 'country=US\n')
+              with open(wpa_File, 'w') as f:
+                f.write(filedata)
+                f.close()              
           x += 1
           time.sleep(3)
 
