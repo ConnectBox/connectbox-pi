@@ -592,7 +592,8 @@ def RestartWLAN(b):
     cmd = "systemctl restart hostapd"
     rv = subprocess.call(cmd, shell=True)
 #    print("hostpad... Returned value ->", rv)
-
+    return(rv)
+  return(0)
 
 
 def ESSID_Check(b, restart):
