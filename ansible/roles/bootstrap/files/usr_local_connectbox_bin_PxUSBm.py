@@ -675,7 +675,7 @@ def check_flags(b, restart):
      process = Popen("ifconfig", shell = False, stdout=PIPE, stderr=PIPE)       #back to checking for an IP4 addresss
      stdout, stderr = process.communicate()
      net_stats = str(stdout).split("wlan")
-     if (len(net_stats) <= b+1):
+    if (len(net_stats) <= b+1):
         if (not "flag=4163" in net_stats[int(b)+1]):
           logging.info("did ifconfig but no flag=4163 present "+net_stats[int(b)+1])
           if DEBUG: print("did ifconfig but no flag=4163 presently")
@@ -696,7 +696,7 @@ def check_flags(b, restart):
               return(0)           #we had an error on Restart and not running
           return(0)
         return(1)                 #were up and running 
-      return(0)                   #our response weas different than the port expectations
+    return(0)                   #our response weas different than the port expectations
      
 
 
@@ -721,7 +721,7 @@ def IP_Check(b, restart):
           return(1)
         else:
           return(0)
-      else:
+     else:
         return(0)
 
 
@@ -917,7 +917,7 @@ def NetworkCheck():
         if (not IP_Check(b, True)):					# now well check for an ip address on the AP
           valid_IP=False
           if (not ESSID_Check(b, True)):				# Ok so we couldn't get the interface up but now we reset hostapd so lets try an up/downn again
-            if (check_flags(b,False):
+            if check_flags(b,False):
                 valid_ESSID=False 
                 if DEBUG: print("We cant get an ESSID and we didn't get an IP.... what to do?")
                 logging.info("We can't get an ESSID and we didn't get and IP..... what to do?")
@@ -1380,8 +1380,8 @@ if __name__ == "__main__":
              mountCheck()                   # Do a usb check to see if we have any inserted or removed.
              if connectbox_scroll: dbCheck()
           if (x % 100) == 0:
-             if DEBUG > 3: print("PxUSBm Goiing to do a Network check")
-             NetworkCheck()                 # Check the network functioning and fix anythig we find in error.
+            if DEBUG > 3: print("PxUSBm Goiing to do a Network check")
+            NetworkCheck()                 # Check the network functioning and fix anythig we find in error.
 
 # add check for /etc/wpa_supplicant/wpa_supplicant.conf for country=<blank>
             wpa_File = '/etc/wpa_supplicant/wpa_supplicant.conf'
@@ -1392,7 +1392,22 @@ if __name__ == "__main__":
               filedata = filedata.replace('country=\n', 'country=US\n')
               with open(wpa_File, 'w') as f:
                 f.write(filedata)
-                f.close()              
+                f.close() 
+            f = open("/usr/local/connectbox/brand.txt")
+            filedata=f.read()
+            f.close()             
+            if '"usb0NoMount":1,'in filedata:
+              print("usb0NoMount:1 in brand.txt")
+              if not os.path.exists("/usr/local/connectbox/PauseMount"):
+                print("well were going to add PauseMount")
+                process = Popen("touch '/usr/local/connectbox/PauseMount'", shell = False, stdout=PIPE, stderr=PIPE)
+                stdout, stderr = process.communicate()
+            else:
+              print("no usb0NoMount:1 in brand.txt")
+              if os.path.exists("/usr/local/connectbox/PauseMount"):
+                print("well were going to remove PauseMount")
+                process = Popen("rm '/usr/local/connectbox/PauseMount'", shell=False , stdout=PIPE, stderr=PIPE)
+                stdout, stderr = process.communicate()
           x += 1
           time.sleep(3)
 
