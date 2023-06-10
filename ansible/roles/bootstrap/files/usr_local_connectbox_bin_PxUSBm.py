@@ -1200,7 +1200,7 @@ if __name__ == "__main__":
     global SSID
     global connectbox_scroll
 
-    DEBUG = 0
+    DEBUG = 4
     SSID=""
     connectbox_scroll=False
     first_time=True
@@ -1264,6 +1264,7 @@ if __name__ == "__main__":
       brand = json.loads(f.read())
       Brand = brand
       f.close
+      NoMountUSB = brand.find('"usb0NoMount:1')
       rpi_platform=False
       PI_stat = False
       OP_stat = False
@@ -1375,14 +1376,13 @@ if __name__ == "__main__":
 
 
         while (x == x):                         # main loop that we live in for life of running
-          if not os.path.exists("/usr/local/connectbox/PauseMount"):
+          if not NoMountUSB:
              if DEBUG > 3: print("PxUSBm Going to start the mount Check")
              mountCheck()                   # Do a usb check to see if we have any inserted or removed.
              if connectbox_scroll: dbCheck()
           if (x % 100) == 0:
-            if DEBUG > 3: print("PxUSBm Goiing to do a Network check")
+            if DEBUG > 3: print("PxUSBm Goiing to do a Network check"+str(time()))
             NetworkCheck()                 # Check the network functioning and fix anythig we find in error.
-
 # add check for /etc/wpa_supplicant/wpa_supplicant.conf for country=<blank>
             wpa_File = '/etc/wpa_supplicant/wpa_supplicant.conf'
             f = open(wpa_File, mode="r", encoding='utf-8')
@@ -1396,18 +1396,7 @@ if __name__ == "__main__":
             f = open("/usr/local/connectbox/brand.txt")
             filedata=f.read()
             f.close()             
-            if '"usb0NoMount":1,'in filedata:
-              print("usb0NoMount:1 in brand.txt")
-              if not os.path.exists("/usr/local/connectbox/PauseMount"):
-                print("well were going to add PauseMount")
-                process = Popen("touch '/usr/local/connectbox/PauseMount'", shell = False, stdout=PIPE, stderr=PIPE)
-                stdout, stderr = process.communicate()
-            else:
-              print("no usb0NoMount:1 in brand.txt")
-              if os.path.exists("/usr/local/connectbox/PauseMount"):
-                print("well were going to remove PauseMount")
-                process = Popen("rm '/usr/local/connectbox/PauseMount'", shell=False , stdout=PIPE, stderr=PIPE)
-                stdout, stderr = process.communicate()
+            NoMountUSB = filedata.find('"usb0NoMount:1')
           x += 1
           time.sleep(3)
 
