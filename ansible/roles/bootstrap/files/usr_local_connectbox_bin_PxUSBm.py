@@ -675,7 +675,7 @@ def check_flags(b, restart):
      process = Popen("ifconfig", shell = False, stdout=PIPE, stderr=PIPE)       #back to checking for an IP4 addresss
      stdout, stderr = process.communicate()
      net_stats = str(stdout).split("wlan")
-    if (len(net_stats) <= b+1):
+     if (len(net_stats) <= b+1):
         if (not "flag=4163" in net_stats[int(b)+1]):
           logging.info("did ifconfig but no flag=4163 present "+net_stats[int(b)+1])
           if DEBUG: print("did ifconfig but no flag=4163 presently")
@@ -696,7 +696,7 @@ def check_flags(b, restart):
               return(0)           #we had an error on Restart and not running
           return(0)
         return(1)                 #were up and running 
-    return(0)                   #our response weas different than the port expectations
+     return(0)                   #our response weas different than the port expectations
      
 
 
@@ -1260,14 +1260,15 @@ if __name__ == "__main__":
         }
       f.write(json.dumps(details))
       f.close
-      f = open(brand_file, mode="r", encoding='utf8')
-      brand = json.loads(f.read())
-      Brand = brand
-      f.close
-      NoMountUSB = brand.find('"usb0NoMount:1')
-      rpi_platform=False
-      PI_stat = False
-      OP_stat = False
+    f = open(brand_file, mode="r", encoding='utf8')
+    brand = json.loads(f.read())
+    Brand = brand
+    f.close
+#    NoMountUSB = brand.find('"usb0NoMount:1')
+    NoMountUSB = brand.get("usb0NoMount") == 1   # Note: brand is type dict, so no "find" method
+    rpi_platform=False
+    PI_stat = False
+    OP_stat = False
 
     if (version != "Unknown") and (version != "Error"):
       logging.info("Major type: "+a)
@@ -1381,7 +1382,7 @@ if __name__ == "__main__":
              mountCheck()                   # Do a usb check to see if we have any inserted or removed.
              if connectbox_scroll: dbCheck()
           if (x % 100) == 0:
-            if DEBUG > 3: print("PxUSBm Goiing to do a Network check"+str(time()))
+            if DEBUG > 3: print("PxUSBm Goiing to do a Network check"+time.asctime())
             NetworkCheck()                 # Check the network functioning and fix anythig we find in error.
 # add check for /etc/wpa_supplicant/wpa_supplicant.conf for country=<blank>
             wpa_File = '/etc/wpa_supplicant/wpa_supplicant.conf'
