@@ -573,29 +573,45 @@ def RestartWLAN(b):
   rv = subprocess.call(cmd, shell=True)
   cmd = "ifup "+wlanx
   rv = subprocess.call(cmd, shell=True)
+  time.sleep(5)
+  if check_ifconfig(b) == 1:
+    return(1)   # wlanx is up 
+
+# else we continue
   cmd = "systemctl restart hostapd"
   rv = subprocess.call(cmd, shell=True)
   cmd = "systemctl restart dnsmasq"
   rv = subprocess.call(cmd, shell=True)
   time.sleep(5)
-
-# check to see if that did it...
-  cmd = "iwconfig"
-  rv = subprocess.check_output(cmd)
-  rvs = rv.decode("utf-8").split("wlan")
-  if (len(rvs) >= (b+1)):
-    if ("802.11gn" in rvs[b+1]):
-#     print ("WLAN IS UP!")
-      return(1)
-# if not up we need to do another restart hostapd
-    else:
+  if check_ifconfig(b) == 1:
+      return(1)   # wlanx is up 
+#    else:
 #     print("WLAN not up... we need to run hostapd")
-      cmd = "systemctl restart hostapd"
-      rv = subprocess.call(cmd, shell=True)
+#      cmd = "systemctl restart hostapd"
+#      rv = subprocess.call(cmd, shell=True)
 #      print("hostpad... Returned value ->", rv)
-      return(rv)
+#      return(rv)
   else:
     return(0)  #Error in length or reply compared to expectation
+
+
+def check_ifconfig(b):
+
+  wlanx = "wlan"+str(b)
+# check to see if that did it...
+  cmd = "ifconfig"
+  rv = subprocess.check_output(cmd)
+  rvs = rv.decode("utf-8").split(wlanx)
+
+  if (len(rvs) >= 2):       # rvs is an array split on wlanx
+    wlanx_flags = rvs[1].split("flags=4163")
+    if (len(wlanx_flags)) > 1:
+      # we are up
+      return(1)
+    else:
+      return 0  
+
+
 
 
 def ESSID_Check(b, restart):
