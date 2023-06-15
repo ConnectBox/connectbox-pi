@@ -1393,27 +1393,28 @@ if __name__ == "__main__":
 
 
         while (x == x):                         # main loop that we live in for life of running
-          if not NoMountUSB:
+          if (NoMountUSB <= 0):
              if DEBUG > 3: print("PxUSBm Going to start the mount Check")
              mountCheck()                   # Do a usb check to see if we have any inserted or removed.
              if connectbox_scroll: dbCheck()
-          if (x % 100) == 0:
+           if ((x % 10)==0):
             if DEBUG > 3: print("PxUSBm Goiing to do a Network check"+time.asctime())
-            NetworkCheck()                 # Check the network functioning and fix anythig we find in error.
+            if (not check_ifconfig(b)):
+                NetworkCheck()                 # Check the network functioning and fix anythig we find in error.
 # add check for /etc/wpa_supplicant/wpa_supplicant.conf for country=<blank>
             wpa_File = '/etc/wpa_supplicant/wpa_supplicant.conf'
             f = open(wpa_File, mode="r", encoding='utf-8')
-            filedata=f.read()
+              filedata=f.read()
             f.close()
             if 'country=\n' in filedata:
-              filedata = filedata.replace('country=\n', 'country=US\n')
-              with open(wpa_File, 'w') as f:
+                filedata = filedata.replace('country=\n', 'country=US\n')
+                open(wpa_File, 'w') as f:
                 f.write(filedata)
                 f.close() 
             f = open("/usr/local/connectbox/brand.txt")
             filedata=f.read()
             f.close()             
-            NoMountUSB = filedata.find('"usb0NoMount:1')
+            NoMountUSB = str(filedata).find('usb0NoMount": 1')
           x += 1
           time.sleep(3)
 
