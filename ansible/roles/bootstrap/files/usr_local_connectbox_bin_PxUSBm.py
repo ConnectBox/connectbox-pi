@@ -887,7 +887,7 @@ def NetworkCheck():
 # We have finished the individual tests for networking.services, hostapd and dnsmasq and all are working to the best of our ability
 # if we don't find the AP name in AP then lets try to restart the hostapd service
 
-  b = int(apwifi[(len(apwifi)-1):])                                     # b contains the AP wifi character (0, 1, 2, .....)
+  b = int(apwifi[len(apwifi)-1])                                     # b contains the AP wifi character (0, 1, 2, .....)
   if clientwifi=="":
     if str(b) >= "1":                                                   # if b > 0 then the c is lower
       c = chr(int(b)-1+ord("0"))
@@ -1379,10 +1379,11 @@ if __name__ == "__main__":
         logging.info("Client interface is "+clientwifi)
         logging.info("AP interface is "+apwifi)
         logging.info("PxUSBm got through the  finished wifi configuration testing")
+        b =apwifi[len(apwifi)-1]
+
         if PI_stat:                         # if we are a PI were going to chekc the driver of the AP to see how to function.
           process = Popen("lshw -C Network", shell=True, stdout=PIPE, stderr=PIPE)
           stdout, stderr = process.communicate()
-          b =apwifi[(len(apwifi)-1):]
           wifi = str(stdout).split("wlan")
           wifid= str(wifi[int(b)+1]).split("driver=")
           if DEBUG: print(wifid[1])
@@ -1392,24 +1393,25 @@ if __name__ == "__main__":
         x = 95    # give time for network to come up before trying to fix it
 
 
+
         while (x == x):                         # main loop that we live in for life of running
           if (NoMountUSB <= 0):
              if DEBUG > 3: print("PxUSBm Going to start the mount Check")
              mountCheck()                   # Do a usb check to see if we have any inserted or removed.
              if connectbox_scroll: dbCheck()
-           if ((x % 10)==0):
+          if ((x % 10)==0):
             if DEBUG > 3: print("PxUSBm Goiing to do a Network check"+time.asctime())
             if (not check_ifconfig(b)):
                 NetworkCheck()                 # Check the network functioning and fix anythig we find in error.
 # add check for /etc/wpa_supplicant/wpa_supplicant.conf for country=<blank>
             wpa_File = '/etc/wpa_supplicant/wpa_supplicant.conf'
             f = open(wpa_File, mode="r", encoding='utf-8')
-              filedata=f.read()
+            filedata=f.read()
             f.close()
             if 'country=\n' in filedata:
                 filedata = filedata.replace('country=\n', 'country=US\n')
-                open(wpa_File, 'w') as f:
-                f.write(filedata)
+                with open(wpa_File, 'w') as f:
+                  f.write(filedata)
                 f.close() 
             f = open("/usr/local/connectbox/brand.txt")
             filedata=f.read()
