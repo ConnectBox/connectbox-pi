@@ -91,6 +91,7 @@
       # This fires up the WLAN0 on Pi
       /usr/local/connectbox/bin/wlan0.pl &
   when: (not aws_instance) and (connectbox_os != "armbian") and (connectbox_os != 'ubuntu') and (not OZ2_present)
+  ignore_errors:
 
 # name: create directory /etc/dhcp/etc_dhcp_dhclient-enter-hooks
 - file: 
