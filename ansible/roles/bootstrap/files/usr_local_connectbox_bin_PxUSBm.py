@@ -574,7 +574,7 @@ def RestartWLAN(b):
   cmd = "ifup "+wlanx
   rv = subprocess.call(cmd, shell=True)
   time.sleep(5)
-  if check_ifconfig(b) == 1:
+  if check_iwconfig(b) == 1:
     return(1)   # wlanx is up 
 
 # else we continue
@@ -583,7 +583,7 @@ def RestartWLAN(b):
   cmd = "systemctl restart dnsmasq"
   rv = subprocess.call(cmd, shell=True)
   time.sleep(5)
-  if check_ifconfig(b) == 1:
+  if check_iwconfig(b) == 1:
       return(1)   # wlanx is up 
 #    else:
 #     print("WLAN not up... we need to run hostapd")
@@ -595,16 +595,19 @@ def RestartWLAN(b):
     return(0)  #Error in length or reply compared to expectation
 
 
-def check_ifconfig(b):
+def check_iwconfig(b):
+# run iwconfig parameter and check for "Mode:Master"
+# if found return 1 to indicate the wlan associated with the AP is up
+#  else, return a 0
 
   wlanx = "wlan"+str(b)
 # check to see if that did it...
-  cmd = "ifconfig"
+  cmd = "iwconfig"
   rv = subprocess.check_output(cmd)
   rvs = rv.decode("utf-8").split(wlanx)
 
-  if (len(rvs) >= 2):       # rvs is an array split on wlanx
-    wlanx_flags = rvs[1].split("flags=4163")
+  if (len(rvs) >= 2):       # rvs is an array split on wlanx    
+    wlanx_flags = rvs[1].split("Mode:Master")
     if (len(wlanx_flags)) > 1:
       # we are up
       return(1)
@@ -1401,7 +1404,7 @@ if __name__ == "__main__":
              if connectbox_scroll: dbCheck()
           if ((x % 10)==0):
             if DEBUG > 3: print("PxUSBm Goiing to do a Network check"+time.asctime())
-            if (not check_ifconfig(b)):
+            if (not check_iwconfig(b)):
                 NetworkCheck()                 # Check the network functioning and fix anythig we find in error.
 # add check for /etc/wpa_supplicant/wpa_supplicant.conf for country=<blank>
             wpa_File = '/etc/wpa_supplicant/wpa_supplicant.conf'
