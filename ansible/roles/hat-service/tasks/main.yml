@@ -200,7 +200,6 @@
     name: ['Pillow==6.2.1', 'psutil']
     state: present
     virtualenv: "{{ hat_service_virtualenv_dir }}"
-    extra_args: --exists-action ignore
 
 
 - name: determine python version
