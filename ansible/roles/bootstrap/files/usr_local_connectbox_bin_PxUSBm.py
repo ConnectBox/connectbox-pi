@@ -718,32 +718,6 @@ def check_flags(b, restart):
      return(0)                   #our response weas different than the port expectations
      
 
-
-
-def IP_Check(b, restart):
-# IP_Check will check for an IP address on the AP and optionally try an ifdown/ifup if restart = True
-# this routine returns 1 if the ip address is found.
-
-     global ifupap
-     global ifdownap
-     global DEBUG
-
-     b = int(b)
-
-     if DEBUG > 3: print("Started IP check")
-     process = Popen("ifconfig", shell = False, stdout=PIPE, stderr=PIPE)       #back to checking for an IP4 addresss
-     stdout, stderr = process.communicate()
-     net_stats = str(stdout).split("wlan")
-     if (len(net_stats) >= b+1):
-        a = str(net_stats[b+1])
-        if ("inet " in a):
-          return(1)
-        else:
-          return(0)
-     else:
-        return(0)
-
-
 def NetworkCheck():
 
   # the ap is the access point wlan in the form of wlan0 or wlan1
@@ -1170,7 +1144,7 @@ def Revision():
       elif revision== "b03140": version="CM4 1GB 1.0"
       elif revision== "c03140": version="CM4 2GB 1.0"
       elif revision== "d03140": version="CM4 8GB 1.0"
-      elif revision== "0000": version="NEO NANOPI 1GB 1.1"
+      elif revision== "0000": version="NEO NANOPI"
       elif revision== "4" : version="OrangePi Zero 2"
       else:
         version="Unknown"
