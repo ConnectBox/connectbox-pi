@@ -202,7 +202,7 @@ def mountCheck():
             else:     #We just unmounted usb0 so we need to rerun the enhanced interfaceUSB loader
                       # Run these functions on mount -- added 20211111
               # Enhanced Content Load
-              os.system("/usr/bin/python3 /usr/local/connectbox/bin/mmiloader.py >/tmp/loadContent.log 2>&1 &")
+              os.system("/usr/bin/python3 /usr/local/connectbox/bin/mmiLoader.py >/tmp/loadContent.log 2>&1 &")
             loc[j]=-1
             mnt[j] = -1
             j += 1
@@ -271,11 +271,11 @@ def mountCheck():
             # SSH Enabler
             os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/.connectbox/enable-ssh && (/bin/systemctl is-active ssh.service || /bin/systemctl enable ssh.service && /bin/systemctl start ssh.service)'")
             # upgrade enabler
-            os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/.connectbox/upgrade/upgrade.py && (/bin/cp -r /media/usb0/.connectbox/upgrade/* /tmp)'")
+            os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/.connectbox/upgrade/upgrade.py && ((/bin/cp -r /media/usb0/.connectbox/update* /tmp)  && (/bin/cp -r /media/usb0/.connectbox/upgrade* /tmp) && (python3 /tmp/upgrade/upgrade.py))'")
 #            # Moodle Course Loader
 #            os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/*.mbz && /usr/bin/php /var/www/moodle/admin/cli/restore_courses_directory.php /media/usb0/' >/tmp/restore_courses_directory.log 2>&1 &")
             # Enhanced Content Load
-            os.system("/usr/bin/python3 /usr/local/connectbox/bin/mmiloader.py >/tmp/loadContent.log 2>&1 &")
+            os.system("/usr/bin/python3 /usr/local/connectbox/bin/mmiLoader.py >/tmp/loadContent.log 2>&1 &")
         else:                                               #True if we are mounted, check for usb(?).
           if ('usb' in d[i]):                               #we need to register a mount or make sure it is
             a = d[i].partition('usb')
@@ -1193,7 +1193,7 @@ if __name__ == "__main__":
     global SSID
     global connectbox_scroll
 
-    DEBUG = 4
+    DEBUG = 0
     SSID=""
     connectbox_scroll=False
     first_time=True
