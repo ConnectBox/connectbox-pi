@@ -1,5 +1,3 @@
-
-
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -97,31 +95,6 @@ def mountCheck():
     #total is the toal number of mounts currently
     #Brand is thee name of the host branding eg: ConnectBox
     # run the upgrade if it exsists
-    try:
-      f = open("/tmp/upgrade.py","r")
-      f.close()
-      p = subprocess.run(['/usr/bin/python3', '/tmp/upgrade.py'], stdout=PIPE, stderr=stdout, capture_output=True)
-      if p.returncode !=0:
-          print("We failed on the spawn")
-      else: 
-           print("Spawn complete")
-      time.sleep(10)
-      outdata, errdata = Popen.communicate()
-      if len(outdata)> 0:
-        try:
-          print("We ran the python upgrade script with output")
-          f = open("/media/usb0/.connectbox/upgrade/output.txt")
-          f.write(outdata)
-          f.close()
-          os.sync()
-        except:
-          print("We ran the python upgrade script but no output")
-    except:
-      pass
-    try:
-      p = subprocess.run(['rm", "/tmp/upgrade.py'])
-    except:
-      pass
     try:
          f = open(brand_file, mode="r", encoding = 'utf-8')
          brand = json.loads(f.read())
@@ -271,8 +244,11 @@ def mountCheck():
             # SSH Enabler
             os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/.connectbox/enable-ssh && (/bin/systemctl is-active ssh.service || /bin/systemctl enable ssh.service && /bin/systemctl start ssh.service)'")
             # upgrade enabler
-            os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/.connectbox/upgrade/upgrade.py && ((/bin/cp -r /media/usb0/.connectbox/update* /tmp)  && (/bin/cp -r /media/usb0/.connectbox/upgrade* /tmp) && (python3 /tmp/upgrade/upgrade.py))'")
-#            # Moodle Course Loader
+            if (os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/.connectbox/upgrade/upgrade.py'")) == 0:
+              print("starting the upgrade process\n")
+              logging.info("starting the upgrade process")
+              os.system("python3 /media/usb0/.connectbox/upgrade/upgrade.py")
+            # Moodle Course Loader
 #            os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/*.mbz && /usr/bin/php /var/www/moodle/admin/cli/restore_courses_directory.php /media/usb0/' >/tmp/restore_courses_directory.log 2>&1 &")
             # Enhanced Content Load
             os.system("/usr/bin/python3 /usr/local/connectbox/bin/mmiLoader.py >/tmp/loadContent.log 2>&1 &")
@@ -1193,7 +1169,7 @@ if __name__ == "__main__":
     global SSID
     global connectbox_scroll
 
-    DEBUG = 0
+    DEBUG = 4
     SSID=""
     connectbox_scroll=False
     first_time=True
