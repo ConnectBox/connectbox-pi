@@ -277,14 +277,6 @@
   ignore_errors: yes
   when: changed1.changed or changed2.changed or changed3.changed or changed4.changed 
 
-- name: Copy over the script to test for drivers in realtime.  We may need them for the alternate kernel
-  copy:
-    src: loadwifi.sh 
-    dest: /usr/local/connectbox/bin/
-    owner: root
-    group: root
-    mode: '0777'
-
 - name: Create a variable based on the results of the finds for compile_a
   command: echo ('true').stdout
   register: compile_a
