@@ -478,6 +478,9 @@ def do_fdisk(rpi_platform):
     return()
 
 
+
+# possible DEPRICATE... only called by NetworkCheck() (which is Depricated at the moment)
+
 def IP_Check(b, restart):
 # IP_Check will check for an IP address on the AP and optionally try an ifdown/ifup if restart = True
 # this routine returns 1 if the ip address is found.
@@ -539,6 +542,9 @@ def IP_Check(b, restart):
        else:
           return(0)
 
+
+# possible DEPRICATE... only called by ESSID_Check (only called by NetworkCheck()... which is Depricated at the moment)
+
 def RestartWLAN(b):
   wlanx = "wlan"+str(b)
 
@@ -571,6 +577,8 @@ def RestartWLAN(b):
     return(0)  #Error in length or reply compared to expectation
 
 
+# called by main()
+
 def check_iwconfig(b):
 # run iwconfig parameter and check for "Mode:Master"
 # if found return 1 to indicate the wlan associated with the AP is up
@@ -592,6 +600,8 @@ def check_iwconfig(b):
 
 
 
+
+# possible DEPRICATE... only called by NetworkCheck() (which is Depricated at the moment)
 
 def ESSID_Check(b, restart):
 # this routine ESSID_check will look to see if there is an ESSID assigned to the AP
@@ -641,8 +651,6 @@ def ESSID_Check(b, restart):
 
 
 def dbCheck():
-
-
        process = Popen("systemctl status mysql", shell = False, stdout=PIPE, stderr=PIPE)
        stdout, stderr = process.communicate()
        if stdout.find("active (running) since")>=0:
@@ -656,6 +664,9 @@ def dbCheck():
               return(0)
        return(1)
 
+
+
+# possible DEPRICATE... only called by NetworkCheck() (which is Depricated at the moment)
 
 def check_flags(b, restart):
 # check flags will check for run status of the interface flags.  EG: 4099 not running vs 4163 which is running
@@ -692,7 +703,9 @@ def check_flags(b, restart):
           return(0)
         return(1)                 #were up and running 
      return(0)                   #our response weas different than the port expectations
-     
+ 
+
+# possible DEPRICATE... was in main()... commented out
 
 def NetworkCheck():
 
@@ -722,7 +735,7 @@ def NetworkCheck():
   if file_exists == True:
     process = os.popen("ls /var/run/network/*.pid")
     net_stats = process.read()
-    process.close9()
+    process.close()
     if ("ïfdown" in net_stats) or ("ifup" in net_stats):                  # if we are in the process of bring up or down wait.
       return;
 
@@ -1151,6 +1164,385 @@ def Revision():
     return "Error"
 
 
+
+
+# getNetworkClass() ported from connectbox-hat-service / cli.py
+
+def getNetworkClass():
+    # this module is designed to get the available interfaces and define which interface is the client facing one and which is the
+    # network facing interface.  The client interface is the AP interface and is based on either RTL8812AU or RTL8812BU or RTL88192U  The
+    # network facing interface will use the on board BMC wifi module as long as an AP module is present.  If no AP module is present it will become
+    # the AP although this is not optimal.  But this is useful for modules such as the RaspberryPi Zero W.
+
+#    global progress_file
+    netwk=[]
+    res = ""
+    a = ""
+    b = ""
+#    logging.debug("starting the get network class tool of cli.py on the battery page")
+    res = os.popen("lshw -c Network").read()
+    i=3
+    if "wlan" in res:
+        r = res.split("wlan")
+        while i > 1:
+            if len(r) <= 1:
+                a == ""
+            else:
+                a = r[1][0]
+            if a != "":
+                if r[1].find("driver="):
+                    b = r[1].split("driver=")[1].split(" ")[0]             #Split out the driver from the configuration line
+                    netwk.append([a,b])                                    #add the wlan# and driver to the list
+                    logging.info("found wlan driver combo, wlan"+a+" driver: "+b)
+                    a = ""
+                    b = ""
+                else:
+                    b = "none"
+            i = len(r)                                              #slice out the [0 and 1] sections of the split
+            res = ""
+            while i>1:
+                r[len(r)-i] = r[len(r)-i+1]
+                i -=1
+            s = r.pop(len(r)-1)                                       #remove the last item in the list
+            i = len(r)
+    logging.info("We finished the wlan lookup and are now going to edit the files.")
+    AP = ""                                                         #access point interface
+    CI = ""                                                         #client interface
+    rbt = 0                                                         #reboot set to no
+    if len(netwk) == 1:                                             #only one wlan interface AP only
+        a = netwk[0][0]
+        b = netwk[0][1]
+        logging.info("single interface wlan"+a+" with driver "+b)
+        # now we need to update the files for a single AP and no client
+        AP = a;
+
+    elif len(netwk) > 1:                                            #multiple wlan's so both AP and client interfaces
+        logging.info("wlan"+netwk[0][0]+" with driver "+netwk[0][1])
+        logging.info("wlan"+netwk[1][0]+" with driver "+netwk[1][1])
+            # we have an rtl driver on this first wlan
+        if "rtl88" in netwk[0][1]:                                  #if we have an rtl on the first wlan we will use it for AP
+            AP = netwk[0][0]
+            CI = netwk[1][0]
+            #regardless of what we have there since its RTL-X we will use it for AP since we have no others
+        if "rtl88" in netwk[1][1]:                                  #if we have an rtl on the second wlan we will use it for AP
+            AP = netwk[1][0]                                    #interface 2 has the rtl and will be AP
+            CI = netwk[0][0]                                    #interface 1 is on board or other andd will be the client side for network
+
+        logging.info("AP will be: wlan"+AP+" ethernet facing is: wlan"+CI)
+        if len(netwk) >=3:
+            logging.info("we have more interfaces so they must be manually managed") # if we have more than 2 interfaces then they must be manually managed. rbt = fixfiles(AP,CI) #Go for fixing all the file entries 
+# --- REBOOT (more than 2 interfaces... how to handle??) ---
+            return(1)
+
+    else:                                                           # we don't have even 1 interface
+        logging.info("We have no wlan interfaces we can't function this way, rebooting to try to find the device")
+# --- REBOOT (no interfaces... maybe we missed one... how to handle??) ---
+        return(1)
+
+
+    res = os.popen("ip link show "+AP).read()
+    x = res.find("permaddr:")
+    if ( x > 0 ):
+        addr = res[(x+9):(x+26)]
+    else:
+         x = res.find("link/ether")
+         if (x > 0):
+             addr = res[(x+11):(x+27)]
+         else:
+             addr = 0
+    if (addr > 0):
+    # now that we have the AP file lets setup the /etc/systemd/network/10-wlanX.link file
+         d = "/etc/systemd/network/10-"+AP+".link"
+         try:
+             f = open(d,'r')
+             f.close()
+         except:
+             f = open(d, "w")
+             f.write("\n[Match]\nMACAddress="+dap+"\n[Link]\nName="+AP+"\nMACAddressPolicy=random\n")
+             f.close()
+             os.sync()
+             res=os.popen("update-initramfs -u")
+             os.sync()
+
+# with 1 or 2 interfaces we will always get to here with knowlege of AP and CI wlan's
+# Now check to make sure our AP/CI pair agree with wificonfig.txt
+
+    rbt = fixfiles(AP,CI)     # Do any necessary fixing of the file entries
+
+    f = open(progress_file, "w")
+    f.write("rewrite_netfiles_done")
+    f.close()
+    os.sync()
+
+# here do: ifdown AP, ifup AP, ifconfig AP down, ifconfig AP up
+    os.system("ifdown wlan"+AP)
+    os.system("ifup wlan"+AP)
+    os.system("ifconfig wlan"+AP+" down")
+    os.system("ifconfig wlan"+AP+" up")
+    os.system("ifdown wlan"+CI)
+    os.system("ifup wlan"+CI)
+    os.system("ifconfig wlan"+CI+" down")
+    os.system("ifconfig wlan"+CI+" up")
+    os.system("ifdown eth0")
+    os.system("ifup eth0")
+    os.system("ifconfig eth0 down")
+    os.system("ifconfig eth0 up")
+
+
+# --- signal from fixfiles() for a reboot (necessary ??)
+    return(rbt)
+
+
+
+
+
+# fixFiles(a,c) was ported from connectbox-hat-service/cli.py
+
+def fixfiles(a, c):
+# This function is called to fix the files and restart the network daemons (if neeeded) 
+#    based on what we have loaded.  
+#  variable a: (AP) represents the Wlan that will serve as the Access point.  
+#  variable c: (CI) is the ethernet interface which may or may not be there.
+#  (Note: the values of a and c are numbers only.)
+
+# Entering here, we have a wificonfig.txt file which reflects status of previous power on...
+#  and the status of all files to support that. If the lshw reveals the same situation,
+#  we can safely just return without updating any files. If, however, the lshw reveals something
+#  different, we need to make appropriate changes to files and restart the services
+#  (It ISN'T clear that we need to reboot though... )
+
+#  At the end of this function, wificonf.txt is written and reflects the settings in ALL required files
+#   so if it is correct is wificonfig.txt, the supporting files are correct.
+
+    logging.debug("Entering fix files")
+
+    at = ""
+    ct = ["","",""]
+    try:
+        f = open("/usr/local/connectbox/wificonf.txt", 'r')
+        at = f.read()
+        ct = at.split("\n")
+        f.close()
+    except:
+        pass
+    logging.info("wificonf.txt holds "+ct[0]+" and "+ct[1]+" for detected paramaters (AP, Client) "+a+" and "+c)
+    
+    if ("AccessPointIF=wlan"+ a) == ct[0] and (("ClientIF=wlan"+ c == ct[1] and c!="") | (c == "" and ct[1] == "ClientIF=")):
+        logging.info("Skipped file reconfiguration as the configuration is the same")
+#        os.system("ifup wlan"+a)   # restart wlan ... other restarts needed??n
+
+# if wificonfig.txt agrees with info from lshw we can continue without changing anything
+        return(0)          
+
+# if NOT, we cook the files and will restart the services with 
+    res = os.system("systemctl stop networking.service")
+    res = os.system("systemctl stop hostapd")
+    res = os.system("systemctl stop dnsmasq")
+    res = os.system("systemctl stop dhcpcd")
+
+# we only come here if we need to adjust the network settings
+# Lets start with the /etc/network/interface folder
+    f = open('/etc/network/interfaces.j2','r', encoding='utf-8')
+    g = open('/etc/network/interfaces.tmp','w', encoding='utf-8')
+    x = 0
+    skip_rest = 0
+    l = ""
+    n = ""
+    for y,l in enumerate(f):
+        if skip_rest == 0:
+            if '#CLIENTIF#' in l:       # #CLIENTIF# signals the end of AP and start of CI section
+                x = 1                   #  signals we are in the ClientInterface section
+            if 'wlan' in l:
+                m = l.split('wlan')
+                while (len(m)>1):
+
+                    if x == 0:              # processing AP directives (this number is 0 until the CLIENTIF word is seen)
+                         m[0] = m[0]+'wlan'+a                     #insert the AP wlan
+#                    logging.debug("on interface line were setting $1: "+n)
+                    else:                   # We are processing Client Interface directives
+                        if c=="":
+                            m[0] = '#'+m[0]+'wlan'+str(int(a)+1)
+                        else:
+                            if "#" == m[0][0]:
+                                while m[0][1]=="#":             #take out any extra comment lines
+# ?? colon in the next statement??
+                                    m[0]=m[0][1:]
+                                if len(m[0])<30:
+# ?? colon in the next statement??                                    
+                                    m[0] = m[0][1:]             #if the line is not a real command line but a comment then take out the # in front ssince we have C
+                        m[0] = m[0]+'wlan'+c
+
+                    while m[1][0].isnumeric():
+# ?? colon in next line??
+                        m[1] = m[1][1:]                        #Remove numeric characters
+                    z=1
+                    m[0]=m[0]+m[1]
+                    while z < (len(m)-1):
+                        m[z]=m[z+1]
+                        z += 1
+                    m.pop()
+                n = str(m[0])
+            else:                           # all lines of the enumerate of interfaces.j2 which DON'T contain 'wlan'
+                if x>0:                     # we are done with AccessPoint directives... on to Client Interface directives
+                    if c == "":
+                        skip_rest=1         #if we hit here and have no client ie: c="" then we skip the rest fo the file
+                    if l != "\n" and c =="":
+                        l = "#" + l            # if for some reason we don't have a #ClIENTIF# reverence theen we comment out all of the client if c=""   
+                n = str(l)
+            g.write(n)
+
+    g.flush()
+    f.close()
+    g.close()
+    logging.debug("we have finished the temp /etc/network/interfaces.tmp file")
+# Now we are done with the /etc/netowrk/interface  file
+# Lets work on the dnsmask.conf file
+
+    f = open('/etc/dnsmasq.conf','r', encoding='utf-8')
+    g = open('/etc/dnsmasq.tmp','w', encoding='utf-8')
+    x = 0
+    l = ""
+    n = ""
+    for y,l in enumerate(f):
+        if 'interface=wlan' in l:
+             m = l.split('interface=wlan')
+             n = str(m[0]+'interface=wlan'+a)
+#             logging.debug("on dnsmasq were setting $1: "+n)
+             x += 1
+             while m[1][0].isnumeric():
+                   m[1] = m[1][1:]
+             n = str(n + m[1])
+        else:
+             n = str(l)
+        g.write(n)
+
+    g.flush()
+    f.close()
+    g.close()
+    logging.debug("We have finished the temp /etc/dnsmasq.tmp file")
+# Now we are done with the /etc/dnsmasq.conf file
+# lets move onto the hostapd.conf file
+
+    f = open('/etc/hostapd/hostapd.conf','r', encoding='utf-8')
+    g = open('/etc/hostapd/hostapd.tmp','w', encoding='utf-8')
+    x = 0
+    n = ""
+    for y,l in enumerate(f):
+        if 'interface=wlan' in l:
+             m = l.split('interface=wlan')
+             n = str(m[0]+'interface=wlan'+a)
+#             logging.debug("on hostapd were setting $1: "+n)
+             x += 1
+             while m[1][0].isnumeric():
+                   m[1] = m[1][1:]
+             n = str(n + m[1])
+        else:
+             n = str(l)
+        g.write(n)
+
+    g.flush()
+    f.close()
+    g.close()
+    logging.debug("We have finished the temp /etc/hostapd/hostapd.tmp file")
+
+# Nowe we need to exclude the AP from Wpa_supplicant control
+
+    f = open('/etc/dhcpcd.conf','r', encoding='utf-8')
+    g = open('/etc/dhcpcd.tmp','w', encoding='utf-8')
+    x = 0
+    n = ""
+    for y,l in enumerate(f):
+        if 'wlan' in l:
+            if 'denyinterfaces' in l:
+                 m = l.split('denyinterfaces wlan')
+                 if c=="":
+                    n = str(m[0] + "\n")
+                 else:
+                    n = str(m[0]+"denyinterfaces wlan" + c + "\n")
+#             logging.debug("on dhcpcd.conf were setting $1: "+n)
+                 x += 1
+            else:
+                 m = l.split('interface wlan')
+                 n = str(m[0]+'interface wlan' + a + "\n" )
+                 x += 1
+        else:
+             n = str(l)
+        g.write(n)
+
+    g.flush()
+    f.close()
+    g.close()
+    logging.debug("We have finished the temp /etc/dhcpcd.tmp file")
+
+#  Now lets make sure we write out the configuration for future
+#  (wificonf.txt reflects contents of all files which might need changes)
+    try:
+        f = open("/usr/local/connectbox/wificonf.txt", 'w')
+        f.write("AccessPointIF=wlan"+ a +"\n")
+        if c=="":
+            f.write("ClientIF="+"\n")
+        else:
+            f.write("ClientIF=wlan"+ c +"\n")
+        f.write("####END####\n")
+        f.flush()
+        f.close()
+    except:
+        pass
+
+    os.system("sync")           #we will ensure we clear all files and pending write data
+
+# Now we are done with the network/interface.tmp, dnsmasq.tmp and hostapd.tmp file creations time to put them into action.
+
+    if a != "":
+         logging.info("taking interface down wlan"+a)
+         os.system("ifdown wlan"+a)
+
+    if c != "":
+         logging.info("taking interface down wlan"+c)
+         os.system("ifdown wlan"+c)
+    time.sleep(10)
+
+#    logging.info("We have taken the interfaces down now")
+    os.system("mv /etc/network/interfaces /etc/network/interfaces.bak")
+    os.system("mv /etc/hostapd/hostapd.conf /etc/hostapd/hostapd.bak")
+    os.system("mv /etc/dnsmasq.conf /etc/dnsmasq.bak")
+    os.system("mv /etc/dhcpcd.conf /etc/dhcpcd.bak")
+
+    os.system("cp /etc/hostapd/hostapd.tmp /etc/hostapd/hostapd.conf")
+    os.system("cp /etc/dnsmasq.tmp /etc/dnsmasq.conf")
+    os.system("cp /etc/network/interfaces.tmp /etc/network/interfaces")
+    os.system("cp /etc/dhcpcd.tmp /etc/dhcpcd.conf")
+
+    os.system("systemctl daemon-reload")             #we reload all the daemons since we changed the config.
+    time.sleep(5)
+
+    logging.info("We have completed the file copies and daemon-reload")
+#    logging.info("we will reboot to setup the new interfaces")
+
+    return (0)      # do not reboot
+
+#    return(1) # we want to reboot after this since we need to reload all the kernel drivers
+
+def get_AP():
+    f = open("/usr/local/connectbox/wificonf.txt", "r")
+    wifi = f.read()
+    f.close()
+    apwifi = wifi.partition("AccessPointIF=")[2].split("\n")[0]
+    AP = int(apwifi.split("wlan")[1])
+    return(AP)
+
+def check_eth0():
+  process = Popen("ifconfig", shell=False, stdout=PIPE, stderr=PIPE)
+  stdout, stderr = process.communicate()
+  net_stats = str(stdout).split("eth0")   # look for eth0 in ifconfig output
+  if (len(net_stats)==1):     # eth0 not found... restart eth0
+    os.system("ifdown eth0")
+    os.system("ifup eth0")
+    os.system("ifconfig eth0 down")
+    os.system("ifconfig eth0 up")
+  return(0)  
+
+
 if __name__ == "__main__":
 
 # First handle the partition expansion
@@ -1233,11 +1625,15 @@ if __name__ == "__main__":
     brand = json.loads(f.read())
     Brand = brand
     f.close
+
 #    NoMountUSB = brand.find('"usb0NoMount:1')
     NoMountUSB = brand.get("usb0NoMount") == 1   # Note: brand is type dict, so no "find" method
     rpi_platform=False
     PI_stat = False
     OP_stat = False
+
+
+# -- sort out the SSID
 
     if (version != "Unknown") and (version != "Error"):
       logging.info("Major type: "+a)
@@ -1261,7 +1657,7 @@ if __name__ == "__main__":
 
     logging.info("SSID from file is now: "+SSID)
 
-    if 'CM' in brand["Device_type"]:                         #Now we determine what brand to work with
+    if 'CM' in brand["Device_type"]:             #Now we determine what brand to work with
         rpi_platform=True
         PI_stat=True
         OP_stat=False
@@ -1300,62 +1696,44 @@ if __name__ == "__main__":
 
 # Once partition expansion is complete, handle the ongoing monitor of USB
 
-        # we get through when neo-battery-shutdown is runningps
-        logging.info("PxUSBm got through the neo-battery-shutdown running test")
+# Major revision... remove the network testing from the module cli.py in connectbox-hat-service
+#  and do a rewrite of those functions here.
+#  Generally, the proposed logic is:
+#    - ifdown wlan0
+#    - ifdown wlan1
+#    - lshw -c network  // find which wlan is associated with mac 60:23:a4
+#    - write the controlling files (/etc/network/interfaces, ++?) with the appropriate
+#       wlan associations
+#    - ifup wlan0
+#    - ifup wlan1
+#    - ifconfig and iwconfig to check if we are working
+# --------- and so we begin ---------
 
-        # were going to hold until we have the initial tasks completed.  We can continue once we have network files written by cli.py in neo-battery-shutdown service
-        if (not "rewrite_netfiles_done" in progress and not "running" in progress):
-          f.close()                         #close the file and wait
-          time.sleep(3)                     #wait 3 seconds then check the progress again.
-          continue 
 
-        f.close()
-        f = open("/usr/local/connectbox/wificonf.txt", "r")
-        wifi = f.read()
-        f.close()
-        clientwifi =  wifi.partition("ClientIF=")[2].split("\n")[0]
-        apwifi = wifi.partition("AccessPointIF=")[2].split("\n")[0]
-        linkfile = "/etc/systemd/network/10-"+apwifi+".link"
-        file_exists = os.path.exists("linkfile")
-        if not file_exists:
-          #We need to write the file so we don't keep swapping network options.  So get the mac address of the ap
-          wififile = '/sys/class/net/'+apwifi+'/address'
-          f = open(wififile, "r")
-          macadd=f.read()
-          f.close()
-          f = open(linkfile, "w")
-          f.write("\n[Match]\nMACAddress="+str(macadd)+"\n[Link]\nName="+str(apwifi)+"\nMACAddressPolicy=random\n")
-          f.close()
-          os.sync
-        ifupap = "ifup "+apwifi
-        ifdownap = "ifdown "+apwifi
-        logging.info("Client interface is "+clientwifi)
-        logging.info("AP interface is "+apwifi)
-        logging.info("PxUSBm got through the  finished wifi configuration testing")
-        b =apwifi[len(apwifi)-1]
+# Call function to read lshw -c network and sort out whether we have correct association of
+#  wlanx to the 8812au wifi module... check to see if the AP and CI agree with wificonfig.txt...
+#  fix the required network file if needed... restart the wlan's
 
-        if PI_stat:                         # if we are a PI were going to chekc the driver of the AP to see how to function.
-          process = Popen("lshw -C Network", shell=True, stdout=PIPE, stderr=PIPE)
-          stdout, stderr = process.communicate()
-          wifi = str(stdout).split("wlan")
-          wifid= str(wifi[int(b)+1]).split("driver=")
-          if DEBUG: print(wifid[1])
-          if "brcfmac" in wifid[1]:         # if we are using the built in wifi for AP then we cancle the PI_stat so we don't expect an ESSID
-            PI_stat = False
-            logging.info("PxUSBM cancled the PI_status not expecting an ESSID on a RPI unit.")
+        getNetworkClass()  # calls fixfiles() if required
+
         x = 95    # give time for network to come up before trying to fix it
-
-
 
         while (x == x):                         # main loop that we live in for life of running
           if (NoMountUSB <= 0):
              if DEBUG > 3: print("PxUSBm Going to start the mount Check")
              mountCheck()                   # Do a usb check to see if we have any inserted or removed.
              if connectbox_scroll: dbCheck()
+
+          if ((x % 3)==0):
+          # check to see if AP is still active
+            AP = get_AP()
+            if (not check_iwconfig(AP)):
+              getNetworkClass()
+            check_eth0()      # make sure eth0 is up  
+   
           if ((x % 10)==0):
-            if DEBUG > 3: print("PxUSBm Goiing to do a Network check"+time.asctime())
-            if (not check_iwconfig(b)):
-                NetworkCheck()                 # Check the network functioning and fix anythig we find in error.
+            if DEBUG > 3: print("PxUSBm Going to do a Network check"+time.asctime())
+
 # add check for /etc/wpa_supplicant/wpa_supplicant.conf for country=<blank>
             wpa_File = '/etc/wpa_supplicant/wpa_supplicant.conf'
             f = open(wpa_File, mode="r", encoding='utf-8')
@@ -1366,10 +1744,14 @@ if __name__ == "__main__":
                 with open(wpa_File, 'w') as f:
                   f.write(filedata)
                 f.close() 
+
+# check to see if brand.txt variable usb0NoMount has changed
             f = open("/usr/local/connectbox/brand.txt")
             filedata=f.read()
             f.close()             
             NoMountUSB = str(filedata).find('usb0NoMount": 1')
+
+# loop            
           x += 1
           time.sleep(3)
 
