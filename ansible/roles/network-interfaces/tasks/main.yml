@@ -403,40 +403,6 @@
   ignore_errors: yes
   when: (compile_c.changed)
 
-#- name: Copy over rtw88.install script
-#  copy:
-#    src: rtw88-usb-install.sh 
-#    dest: /tmp/rtw88-install.sh 
-#    mode: "+x"
-#  ignore_errors: yes
-#  when: compile_d
-
-#- name: Compile the rtw88 driver via script for raspbian or neo 
-#  command:
-#     chdir: /temp 
-#     cmd: "sh rtw88-usb-install.sh"
-#  ignore_errors: yes
-#  when: compile_d
-
-#- name: Fetch the compiled 8812au driver to control machine
-#  fetch:
-#    src: /tmp/rtl8812au*/88x12au.ko 
-#    dest: "~/connectbox/connectbox-tools/{{ kernel_num }}_8812au.ko"
-#    fail_on_missing: yes
-#    flat: yes
-#  ignore_errors: yes
-#  when: compile_a
-
-#- name: Fetch the compiled 8812bu driver to control machine
-#  fetch:
-#    src: /tmp/rtl88x2bu*/88x12bu.ko 
-#    dest: "~/connectbox/connectbox-tools/{{ kernel_num }}_8812bu.ko"
-#    fail_on_missing: yes
-#    flat: yes
-#  ignore_errors: yes
-#  when: compile_b
-
-
 - name: Remove headers for raspbian
   apt:
     pkg:
