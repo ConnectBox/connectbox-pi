@@ -1168,11 +1168,14 @@ def Revision():
 
 # getNetworkClass() ported from connectbox-hat-service / cli.py
 
-def getNetworkClass():
+def getNetworkClass(level):
     # this module is designed to get the available interfaces and define which interface is the client facing one and which is the
     # network facing interface.  The client interface is the AP interface and is based on either RTL8812AU or RTL8812BU or RTL88192U  The
     # network facing interface will use the on board BMC wifi module as long as an AP module is present.  If no AP module is present it will become
     # the AP although this is not optimal.  But this is useful for modules such as the RaspberryPi Zero W.
+
+    # variable "level" defines the severity of the attempted fix to make all interfaces (eth0, wlan0, wlan1) functional.
+    # A level = 1 is least severe.
 
 #    global progress_file
     netwk=[]
@@ -1208,7 +1211,6 @@ def getNetworkClass():
     logging.info("We finished the wlan lookup and are now going to edit the files.")
     AP = ""                                                         #access point interface
     CI = ""                                                         #client interface
-    rbt = 0                                                         #reboot set to no
     if len(netwk) == 1:                                             #only one wlan interface AP only
         a = netwk[0][0]
         b = netwk[0][1]
@@ -1230,44 +1232,50 @@ def getNetworkClass():
 
         logging.info("AP will be: wlan"+AP+" ethernet facing is: wlan"+CI)
         if len(netwk) >=3:
-            logging.info("we have more interfaces so they must be manually managed") # if we have more than 2 interfaces then they must be manually managed. rbt = fixfiles(AP,CI) #Go for fixing all the file entries 
-# --- REBOOT (more than 2 interfaces... how to handle??) ---
-            return(1)
+            logging.info("we have more interfaces so they must be manually managed") # if we have more than 2 interfaces then they must be manually managed. 
+# --- no files changed (more than 2 interfaces... how to handle??) ---
+            return(0)
 
     else:                                                           # we don't have even 1 interface
         logging.info("We have no wlan interfaces we can't function this way, rebooting to try to find the device")
-# --- REBOOT (no interfaces... maybe we missed one... how to handle??) ---
-        return(1)
+# --- no files changed (no interfaces... maybe we missed one... how to handle??) ---
+        return(0)
 
 
-    res = os.popen("ip link show "+AP).read()
-    x = res.find("permaddr:")
-    if ( x > 0 ):
-        addr = res[(x+9):(x+26)]
-    else:
-         x = res.find("link/ether")
-         if (x > 0):
-             addr = res[(x+11):(x+27)]
-         else:
-             addr = 0
-    if (addr > 0):
-    # now that we have the AP file lets setup the /etc/systemd/network/10-wlanX.link file
-         d = "/etc/systemd/network/10-"+AP+".link"
-         try:
-             f = open(d,'r')
-             f.close()
-         except:
-             f = open(d, "w")
-             f.write("\n[Match]\nMACAddress="+dap+"\n[Link]\nName="+AP+"\nMACAddressPolicy=random\n")
-             f.close()
-             os.sync()
-             res=os.popen("update-initramfs -u")
-             os.sync()
+# the following statement will fail because "AP" should be "wlan"+AP
+#  so it hasn't been doing anything in the past (and hasn't been missed)
+#  We will comment out this section but leave it in place incase it later proves useful
+#    res = os.popen("ip link show "+AP).read()
+#    x = res.find("permaddr:")
+#    if ( x > 0 ):
+#        addr = res[(x+9):(x+26)]
+#    else:
+#         x = res.find("link/ether")
+#         if (x > 0):
+#             addr = res[(x+11):(x+27)]
+#         else:
+#             addr = 0
+#    if (addr > 0):
+#    # now that we have the AP file lets setup the /etc/systemd/network/10-wlanX.link file
+#         d = "/etc/systemd/network/10-"+AP+".link"
+#         try:
+#             f = open(d,'r')
+#             f.close()
+#         except:
+#             f = open(d, "w")
+#             f.write("\n[Match]\nMACAddress="+dap+"\n[Link]\nName="+AP+"\nMACAddressPolicy=random\n")
+#             f.close()
+#             os.sync()
+#             res=os.popen("update-initramfs -u")
+#             os.sync()
 
 # with 1 or 2 interfaces we will always get to here with knowlege of AP and CI wlan's
 # Now check to make sure our AP/CI pair agree with wificonfig.txt
 
-    rbt = fixfiles(AP,CI)     # Do any necessary fixing of the file entries
+    files_changed = fixfiles(AP,CI)     # Do any necessary fixing of the file entries - 
+                                        #  return(1) indicates files changed and daemons restarted
+    if files_changed == 1:
+      level = 2                         # if files were changed, we need to do the full up/down package
 
     f = open(progress_file, "w")
     f.write("rewrite_netfiles_done")
@@ -1275,22 +1283,30 @@ def getNetworkClass():
     os.sync()
 
 # here do: ifdown AP, ifup AP, ifconfig AP down, ifconfig AP up
+#  Might speed this up if we selectively address CI based on files_changed result...
+
+    if level == 2:                  # do the full up/down package (these take some time... especially CI)
+      os.system("ifdown wlan"+CI)
+      os.system("ifup wlan"+CI)
+
+# the following go pretty quick and may/should bring us up if the wlans didn't trade during boot
     os.system("ifdown wlan"+AP)
     os.system("ifup wlan"+AP)
     os.system("ifconfig wlan"+AP+" down")
     os.system("ifconfig wlan"+AP+" up")
-    os.system("ifdown wlan"+CI)
-    os.system("ifup wlan"+CI)
-    os.system("ifconfig wlan"+CI+" down")
-    os.system("ifconfig wlan"+CI+" up")
+
     os.system("ifdown eth0")
     os.system("ifup eth0")
     os.system("ifconfig eth0 down")
     os.system("ifconfig eth0 up")
 
+    os.system("ifconfig wlan"+CI+" down")
+    os.system("ifconfig wlan"+CI+" up")
+
+
 
 # --- signal from fixfiles() for a reboot (necessary ??)
-    return(rbt)
+    return(files_changed)
 
 
 
@@ -1307,9 +1323,9 @@ def fixfiles(a, c):
 
 # Entering here, we have a wificonfig.txt file which reflects status of previous power on...
 #  and the status of all files to support that. If the lshw reveals the same situation,
-#  we can safely just return without updating any files. If, however, the lshw reveals something
+#  we can safely just return without updating any files (return(0)). If, however, the lshw reveals something
 #  different, we need to make appropriate changes to files and restart the services
-#  (It ISN'T clear that we need to reboot though... )
+#  (changed files indicated by return(1))
 
 #  At the end of this function, wificonf.txt is written and reflects the settings in ALL required files
 #   so if it is correct is wificonfig.txt, the supporting files are correct.
@@ -1519,9 +1535,8 @@ def fixfiles(a, c):
     logging.info("We have completed the file copies and daemon-reload")
 #    logging.info("we will reboot to setup the new interfaces")
 
-    return (0)      # do not reboot
+    return (1)      # indicates files were changed
 
-#    return(1) # we want to reboot after this since we need to reload all the kernel drivers
 
 def get_AP():
     f = open("/usr/local/connectbox/wificonf.txt", "r")
@@ -1698,23 +1713,18 @@ if __name__ == "__main__":
 
 # Major revision... remove the network testing from the module cli.py in connectbox-hat-service
 #  and do a rewrite of those functions here.
-#  Generally, the proposed logic is:
-#    - ifdown wlan0
-#    - ifdown wlan1
+#  Generally, the logic is:
 #    - lshw -c network  // find which wlan is associated with mac 60:23:a4
-#    - write the controlling files (/etc/network/interfaces, ++?) with the appropriate
-#       wlan associations
-#    - ifup wlan0
-#    - ifup wlan1
-#    - ifconfig and iwconfig to check if we are working
-# --------- and so we begin ---------
-
+#    - test lshw results against wificonf.txt
+#      - if DIFFERENT, write the controlling files (/etc/network/interfaces, ++?) with the appropriate
+#         wlan associations, ifdown/ifup/ifconfig down/ifconfig up for wlan0, wlan1, eth0
+#      - if SAME, only do ifconfig down/ifconfig up for wlan0, wlan1, eth0 (faster)
 
 # Call function to read lshw -c network and sort out whether we have correct association of
 #  wlanx to the 8812au wifi module... check to see if the AP and CI agree with wificonfig.txt...
 #  fix the required network file if needed... restart the wlan's
 
-        getNetworkClass()  # calls fixfiles() if required
+        getNetworkClass(1)  # Note: calls fixfiles() if required... the (1) signals minimal ifconfig down/up
 
         x = 95    # give time for network to come up before trying to fix it
 
@@ -1727,8 +1737,10 @@ if __name__ == "__main__":
           if ((x % 3)==0):
           # check to see if AP is still active
             AP = get_AP()
-            if (not check_iwconfig(AP)):
-              getNetworkClass()
+            AP_up = check_iwconfig(AP)  # returns 1 if up
+            if (not AP_up):
+              getNetworkClass(1)       # try to fix the problem (shouldn't get here normally)
+
             check_eth0()      # make sure eth0 is up  
    
           if ((x % 10)==0):
