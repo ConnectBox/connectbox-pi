@@ -702,14 +702,6 @@ def getNetworkClass(level):
     os.sync()
 
 # here do: ifdown AP, ifup AP, ifconfig AP down, ifconfig AP up
-#  Might speed this up if we selectively address CI based on files_changed result...
-
-#    if level == 2:                  # do the full up/down package (these take some time... especially CI)
-    if check_CI():                # only do down/up if wpa_supplicant.conf shows connection to CI
-      os.system("ifdown wlan"+CI)
-      os.system("ifup wlan"+CI)
-      os.system("ifconfig wlan"+CI+" down")
-      os.system("ifconfig wlan"+CI+" up")
 
 # the following go pretty quick and may/should bring us up if the wlans didn't trade during boot
     os.system("ifdown wlan"+AP)
@@ -721,6 +713,17 @@ def getNetworkClass(level):
     os.system("ifup eth0")
     os.system("ifconfig eth0 down")
     os.system("ifconfig eth0 up")
+
+# only do down/up if wpa_supplicant.conf shows connection to CI
+#  OR if the wlan(CI) isn't showing up in an ifconfig
+# Note: we do this AFTER the AP and eth0 down/ups to speed up AP startup as the CI startup
+#        can happen while AP work is being done
+                                        
+    if check_CI() or check_wlan_CI(CI):   
+      os.system("ifdown wlan"+CI)
+      os.system("ifup wlan"+CI)
+      os.system("ifconfig wlan"+CI+" down")
+      os.system("ifconfig wlan"+CI+" up")
 
 
 
@@ -986,6 +989,15 @@ def check_eth0():
     os.system("ifconfig eth0 down")
     os.system("ifconfig eth0 up")
   return(0)  
+
+def check_wlan_CI(CI):
+  process = Popen("ifconfig", shell=False, stdout=PIPE, stderr=PIPE)
+  stdout, stderr = process.communicate()
+  net_stats = str(stdout).split("wlan"+str(CI))   # look for wlan(CI) in ifconfig output
+  if (len(net_stats)==1):     # wlan(CI) not found - return 1
+    return(1) 
+  else:
+    return(0)                 # wlan(CI) found... return 0
 
 
 if __name__ == "__main__":
