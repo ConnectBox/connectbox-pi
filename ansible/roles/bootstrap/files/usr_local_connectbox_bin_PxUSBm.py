@@ -1018,7 +1018,7 @@ if __name__ == "__main__":
     global SSID
     global connectbox_scroll
 
-    DEBUG = 4
+    DEBUG = 0
     SSID=""
     connectbox_scroll=False
     first_time=True
