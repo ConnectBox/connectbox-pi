@@ -673,9 +673,17 @@ def getNetworkClass(level):
             AP = netwk[0][0]
             CI = netwk[1][0]
             #regardless of what we have there since its RTL-X we will use it for AP since we have no others
-        if "rtl88" in netwk[1][1]:                                  #if we have an rtl on the second wlan we will use it for AP
+        elif "rtl88" in netwk[1][1]:                                  #if we have an rtl on the second wlan we will use it for AP
             AP = netwk[1][0]                                    #interface 2 has the rtl and will be AP
             CI = netwk[0][0]                                    #interface 1 is on board or other andd will be the client side for network
+        elif "brcmfmac" in netwk[0][1]:
+            AP = netwk[1][0]
+            CI = netwk[0][0]
+        else:
+            AP = netwk[0][0]
+            CI = netwk[1][0]
+            
+
 
         logging.info("AP will be: wlan"+AP+" ethernet facing is: wlan"+CI)
         if len(netwk) >=3:
