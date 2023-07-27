@@ -317,7 +317,7 @@ def mountCheck():
 
 
 
-def do_resize2fs(rpi_platform):
+def do_resize2fs(rpi_platform, rp3_platform):
 
     global DEBUG
     global connectbox_scroll
@@ -336,7 +336,10 @@ def do_resize2fs(rpi_platform):
 #        f.close()
 #        os.sync()
 #        return()
-    if (rpi_platform == True):
+    if (rm3_platform == True):
+      FS = "/dev/mmcblk1p"+str(max_partition)
+
+    elif (rpi_platform == True):
       if connectbox_scroll == True: 
         FS = "/dev/mmcblk0p"+str(max_partition)
       else:
@@ -356,12 +359,16 @@ def do_resize2fs(rpi_platform):
         os.system('shutdown -r now')
 
 
-def do_fdisk(rpi_platform):
+def do_fdisk(rpi_platform, rm3_platform):
 
     global DEBUG
     global connectbox_scroll
-    global max_partiton
-    child = pexpect.spawn('fdisk /dev/mmcblk0', timeout = 10)
+    global max_partition
+    if not (rm3_platform):
+      child = pexpect.spawn('fdisk /dev/mmcblk0', timeout = 10)
+    else:
+      child = pexpect.spawn('fdisk /dev/mmcblk1', timeout = 10)
+
     try:
       i = child.expect(['Command (m for help)*', 'No such file or directory']) # the match is looking for the LAST thing that came up so we need the *
     except:
@@ -371,16 +378,17 @@ def do_fdisk(rpi_platform):
 
   # the value of i is the reference to which of the [] arguments was found
     if i==1:
-        if DEBUG: print("There is no /dev/mmcblk0 partition... ")
+        if DEBUG: print("There is no /dev/mmcblk expected partition... ")
         child.kill(0)
-        child = pexpect.spawn("fdisk /dev/mmcblk1", timeout = 10)
-        try:
-           i = child.expect(['Command(m for help)*', 'No such file or directory'])
-        except:
-           if DEBUG: print("Exception thrown during fdisk")
-           if DEBUG: print("debug info:")
-           if DEBUG: print(str(child))
-        if i==1:
+        if not (rm3_platform):
+          child = pexpect.spawn("fdisk /dev/mmcblk1", timeout = 10)
+          try:
+            i = child.expect(['Command(m for help)*', 'No such file or directory'])
+          except:
+            if DEBUG: print("Exception thrown during fdisk")
+            if DEBUG: print("debug info:")
+            if DEBUG: print(str(child))
+          if i==1:
             if DEBUG: print("There is no /dev/mmcblk1 partiton.... kill child")
             child.kill(0)
     if i==0:
@@ -409,10 +417,19 @@ def do_fdisk(rpi_platform):
     if rpi_platform == True:
         x = 2
         while  respString.find("/dev/mmcblk0p"+str(x))>=0:
-            x += 1
+          x += 1
         x = x -1						# we will have found the last parttion then counted one more so decrement to get last partition
         max_partition = x
         p = re.compile('mmcblk[0-9]p'+str(x)+'\s*[0-9]+')        # create a regexp to get close to the sector info - CM4
+    if rm3_platform == True:
+        x = 2
+        while  respString.find("/dev/mmcblk1p"+str(x))>=0:
+          x += 1
+        x = x -1            # we will have found the last parttion then counted one more so decrement to get last partition
+        max_partition = x
+        p = re.compile('mmcblk[0-9]p'+str(x)+'\s*[0-9]+')        # create a regexp to get close to the sector info - CM4
+    
+
     else:
         p = re.compile('mmcblk[0-9]p[0-9]\s*[0-9]+')    # create a regexp to get close to the sector info - NEO
 
@@ -427,27 +444,30 @@ def do_fdisk(rpi_platform):
   # "d" for delete the partition
     child.sendline('d')
 
-    if rpi_platform == True:    # CM4 has 2 partitions... select partition 2
+    if rpi_platform or rm3_platform:    # CM4 & RM3 has 2 partitions... select partition 2
         i = child.expect('Partition number')
         child.sendline(str(x))
-
     i = child.expect('Command (m for help)*')
 # print("after delete ",child.before)
 
   # "n" for new partition
     child.sendline('n')
-    i = child.expect('(default p):*')
-# print("after new ",child.before)
-
-  # "p" for primary partition
-    child.sendline('p')
-    if rpi_platform == True:    # CM4 has 2 partitions... select partition 2
+    if rm3_platform:
+      i = child.expect('default 2')
+      child.sendline(str(x))
+      i = child.expect('First sector')
+    else:  
+      i = child.expect('(default p):*')
+      # "p" for primary partition
+      child.sendline('p')
+      if rpi_platform:    # CM4 has 2 partitions... select partition 2
         i = child.expect('default *')
         child.sendline(str(x))                 # "2" for partition number 2         i = child.expect('default 2048*')
-    else:
-        i = child.expect('default 1*')      # "1" for partition number 1
-        child.sendline('1')
-        i = child.expect('default 2048*')
+# print("after new ",child.before)
+      else:
+          i = child.expect('default 1*')      # "1" for partition number 1
+          child.sendline('1')
+          i = child.expect('default 2048*')
 # logging.info (child.before)
 
   # send the startSector number
@@ -469,7 +489,7 @@ def do_fdisk(rpi_platform):
 
     logging.info("exiting the fdisk program... now reboot")
     f = open(progress_file, "w")
-    f.write("fdisk_done")
+    f.write("fdisk_done   maxp="+str(max_partition))
     f.close()
     os.sync()
     # Disk is now the right size but the OS hasn't necessarily used it.
@@ -526,11 +546,13 @@ def Revision():
   try:
     f = open('/proc/cpuinfo','r')
     for line in f:
-      if "Revision" in line:
+      if 'Radxa CM3 IO' in line: revision = "RM3"
+      elif "Revision" in line:
         logging.info("revision of hardware is: "+line)
         x = line.find(":")
         y = len(line)-1
         revision = line[(x+2):y]
+  
     f.close()
  
     if len(revision) != 0:
@@ -582,6 +604,7 @@ def Revision():
       elif revision== "d03140": version="CM4 8GB 1.0"
       elif revision== "0000": version="NEO NANOPI"
       elif revision== "4" : version="OrangePi Zero 2"
+      elif revision== "RM3" : version="Rock CM3"
       else:
         version="Unknown"
       return version
@@ -1037,6 +1060,7 @@ if __name__ == "__main__":
     if (version != "Unknown") and (version != "Error"):
       if version.find("OrangePiZero2")>=0: version  = "OZ2 "
       elif version.find("Orange") >=0: version = "OP? "
+      elif version.find("Rock CM3") >=0: version = "RM3 "
     # see if we are NEO or CM
       x = version[3:].find(" ")
       if x >= 0:
@@ -1094,6 +1118,7 @@ if __name__ == "__main__":
 #    NoMountUSB = brand.find('"usb0NoMount:1')
     NoMountUSB = brand.get("usb0NoMount") == 1   # Note: brand is type dict, so no "find" method
     rpi_platform=False
+    rm3_platform=False
     PI_stat = False
     OP_stat = False
 
@@ -1105,10 +1130,7 @@ if __name__ == "__main__":
       if brand["Device_type"].find(a)<=0:                    # Make sure the brand file is what we expect as were on this hardware.
         f = open(brand_file, mode="w", encoding = 'utf-8')
         brand["Device_type"] = '"'+a+'"'
-        if a.find("CM")>0 :
-          brand["lcd_pages_multi_bat"] = 1
-        else:
-          brand["lcd_pages_multi_bat"] = 0
+        brand["lcd_pages_multi_bat"] = 0
         f.write(json.dumps(brand))
         f.close()
         os.sync()
@@ -1141,6 +1163,12 @@ if __name__ == "__main__":
         rpi_platform = False
         PI_stat=False
         OP_stat =True
+
+    if "RM3" in brand["Device_type"]:
+        rpi_platform = False
+        rm3_platform=True
+        PI_stat= False
+        OP_stat=False   
     if DEBUG > 3: print("Our device is type RPI platform:"+str(rpi_platform)+" and PI itself:"+str(PI_stat)+" and  Orange PI:"+str(OP_stat))
     net_stat = 1
 
@@ -1149,14 +1177,16 @@ if __name__ == "__main__":
         # Sort out how far we are in the partition expansion process
         file_exists = os.path.exists(progress_file)
         if file_exists == False:
-            do_fdisk(rpi_platform)             # this ends in reboot() so won't return
+            do_fdisk(rpi_platform, rm3_platform)             # this ends in reboot() so won't return
             continue
         else: 
             f = open(progress_file, "r")
             progress = f.read()
             f.close()
             if "fdisk_done" in progress:
-                do_resize2fs(rpi_platform)     # this ends in reboot() so won't return
+                maxp = progress.split("maxp=")
+                max_partition = maxp[1][0]
+                do_resize2fs(rpi_platform, rm3_platform)     # this ends in reboot() so won't return
                 continue
 
 # Once partition expansion is complete, handle the ongoing monitor of USB

@@ -4,6 +4,9 @@
   register: v4_script
   when: firewall_v4_configure
 
+- name: Fix invalid parameter errors
+  command: "update-alternatives --set iptables /usr/sbin/iptables-legacy"  
+
 - name: Load v4 rules
   command: /etc/iptables.v4.generated
   register: v4_script_load_result

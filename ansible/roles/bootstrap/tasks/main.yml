@@ -380,7 +380,18 @@
     dest: /etc/dnsmasq.conf
   when: (OS_Version == 'focal') and  ( ansible_os_family|lower == 'debian') and (connectbox_os == 'ubuntu') and not OZ2_present
 
-- name: Copy over hte ATTiny.bat file
+
+- name: Install fdisk 
+  apt:
+    name: fdisk
+    state: present
+
+- name: Install crda 
+  apt:
+    name: crda    
+    state: present
+
+- name: Copy over the ATTiny.bat file
   copy:
     src: ATTiny.bat
     dest: /usr/bin/ATTiny.bat 

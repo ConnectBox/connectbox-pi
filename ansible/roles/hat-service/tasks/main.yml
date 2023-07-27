@@ -266,6 +266,8 @@
     virtualenv: "{{ hat_service_virtualenv_dir }}"
   when: connectbox_os == "raspbian" 
 
+
+# GPIO Version selection begins here....
 - name: set fact for RPi_GPIO_path
   set_fact:
     RPi_GPIO_path: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/RPi.GPIO"
@@ -296,6 +298,8 @@
   debug:
     msg: "The path for RPi_GPIO is: {{ RPi_GPIO_path }}"
 
+
+## For NEO or OPi we must download the source and manually compile here
 - name: clone the repo for compile
   git: 
     repo: "{{ hat_services_repo }}"
@@ -304,7 +308,7 @@
     update: yes
     force: yes
   ignore_errors: yes
-  when: connectbox_os != "raspbian"
+  when: (connectbox_os != "raspbian") and (connectbox_os != "debian")
 
 - name: check for setup.python
   stat:
@@ -320,20 +324,24 @@
   args:
     chdir: "{{ RPi_GPIO_path }}"
   register: compile_out
-  when: (connectbox_os != "raspbian") and (setup_file_exists.stat.exists)   # it will not exist if we have come through here already
+  when: (connectbox_os != "raspbian") and (connectbox_os != "debian") and (setup_file_exists.stat.exists)   # it will not exist if we have come through here already
 
 - name: show results of compile if it failed 
   debug:
     msg: compile_out.stdout
-  when: (connectbox_os != "raspbian") and (setup_file_exists.stat.exists) and compile_out.rc
+  when: (connectbox_os != "raspbian") and (connectbox_os != "debian") and (setup_file_exists.stat.exists) and compile_out.rc
 
+
+# if we are ARE raspian OR debian, we will just install the correct RPi.GPIO
 - name: Install RPi.GPIO for Buster buildcd 
   command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.0"
-  when: OS_Version  == 'buster' and connectbox_os == 'raspbian'
+  when: OS_Version  == 'buster' and (connectbox_os == 'raspbian' or connectbox_os == 'debian')
 
 - name: Install RPi.GPIO for Bullseye build
   command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.1"
-  when: OS_Version == 'bullseye' and connectbox_os == 'raspbian'
+  when: OS_Version == 'bullseye' and (connectbox_os == 'raspbian' or connectbox_os == 'debian')
+
+
 
 # With RPi.GPIO installed, we can now install the luma.core and luma.oled modules
 #  which will use the installed RPi.GPIO 

@@ -123,6 +123,12 @@
 - name: Run npm to install dependencies for connectbox-manage
   community.general.npm:
     path: /var/www/enhanced/connectbox-manage
+  ignore_errors: yes
+
+
+- name: Re-Run npm to verify install ok after possible update in version
+  community.general.npm:
+    path: /var/www/enhanced/connectbox-manage
     
 - name: Delete existing pm2 processes
   command: "pm2 delete all"
@@ -156,6 +162,10 @@
   shell:
     cmd: "pm2 startup"
   become: true
+
+- name: Install cron package required by phonehome.python
+  command: "apt-get install cron"
+  become: true  
 
 - name: Cause phonehome.py to execute every 10 minutes via cron IF not a Moodle box  (We have different process for Moodle)
   ansible.builtin.cron:
