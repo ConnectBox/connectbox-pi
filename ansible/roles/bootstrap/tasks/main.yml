@@ -247,6 +247,7 @@
   apt: 
     upgrade: yes
     update_cache: yes
+##    allow_downgrade: yes
     state: fixed
   register: dist_upgraded
 
