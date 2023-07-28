@@ -476,7 +476,7 @@ def do_fdisk(rpi_platform, rm3_platform):
 # print("At last sector... the after is: ", child.after)
 
   # take default for last sector
-    child.sendline('')
+    child.sendline('\n')
     i = child.expect('signature*')
 
   # "N" don't remove the signature
