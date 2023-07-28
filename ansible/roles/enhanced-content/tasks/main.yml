@@ -164,8 +164,9 @@
   become: true
 
 - name: Install cron package required by phonehome.python
-  command: "apt-get install cron"
-  become: true  
+  apt:
+    name: cron
+    state: present 
 
 - name: Cause phonehome.py to execute every 10 minutes via cron IF not a Moodle box  (We have different process for Moodle)
   ansible.builtin.cron:
