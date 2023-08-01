@@ -461,7 +461,7 @@ def do_fdisk(rpi_platform, rm3_platform):
       # "p" for primary partition
       child.sendline('p')
       if rpi_platform:    # CM4 has 2 partitions... select partition 2
-        i = child.expect('default *')
+        i = child.expect('default 2*')
         child.sendline(str(x))                 # "2" for partition number 2         i = child.expect('default 2048*')
 # print("after new ",child.before)
       else:
@@ -472,7 +472,7 @@ def do_fdisk(rpi_platform, rm3_platform):
 
   # send the startSector number
     child.sendline(startSector)
-    child.expect('Last sector*')
+#    i = child.expect('Last sector*')
 # print("At last sector... the after is: ", child.after)
 
   # take default for last sector
