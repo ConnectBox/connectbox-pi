@@ -428,7 +428,7 @@ def do_fdisk(rpi_platform, rm3_platform):
         x = x -1            # we will have found the last parttion then counted one more so decrement to get last partition
         max_partition = x
         p = re.compile('mmcblk[0-9]p'+str(x)+'\s*[0-9]+')        # create a regexp to get close to the sector info - CM4
-    
+
 
     else:
         p = re.compile('mmcblk[0-9]p[0-9]\s*[0-9]+')    # create a regexp to get close to the sector info - NEO
@@ -443,40 +443,62 @@ def do_fdisk(rpi_platform, rm3_platform):
 
   # "d" for delete the partition
     child.sendline('d')
+    logging.info("delet partition")
 
     if rpi_platform or rm3_platform:    # CM4 & RM3 has 2 partitions... select partition 2
         i = child.expect('Partition number')
         child.sendline(str(x))
+        logging.info("send partiton"+str(x))
     i = child.expect('Command (m for help)*')
+    logging.info("found Command (m for help)*")
 # print("after delete ",child.before)
 
   # "n" for new partition
     child.sendline('n')
+    logging.info("Sent n for new partition")
     if rm3_platform:
+      logginig.info("looking for default 2 since were rm3_platform")
       i = child.expect('default 2')
       child.sendline(str(x))
+      logging.info("sent partition number")
       i = child.expect('First sector')
-    else:  
+      logging.info("Got First Sector question back")
+    else:
       i = child.expect('(default p):*')
+      logging.info("got back (default p):* question")
       # "p" for primary partition
       child.sendline('p')
+      logging.info("Sent the p commannd")
       if rpi_platform:    # CM4 has 2 partitions... select partition 2
+        logging.info("expecting 'default 2*' from RPI_Platform")
         i = child.expect('default 2*')
-        child.sendline(str(x))                 # "2" for partition number 2         i = child.expect('default 2048*')
+        logging.info("got the result and sending the stating sector")
+        child.sendline(str(x))                 # "2" for partition number 2
+        i = child.expect('default 2048*')
+        logging.info("Ok expected default 2048* and got it")
 # print("after new ",child.before)
       else:
+          logging.info("not rpi_Platform so expecting default 1*")
           i = child.expect('default 1*')      # "1" for partition number 1
+          logging.info("ok got it")
           child.sendline('1')
+          logging.info("sent 1st partition")
           i = child.expect('default 2048*')
+          logging.info("got default 2048* for starting sector")
 # logging.info (child.before)
 
   # send the startSector number
     child.sendline(startSector)
-#    i = child.expect('Last sector*')
+    logging.info("sent starting sector")
+    logging.info("after new starting sector came: ",child.before)
+    logging.info("then :",child.after)
+#    i = child.expect('Last*')
+    logging.info("expected Last* and got it")
 # print("At last sector... the after is: ", child.after)
 
   # take default for last sector
     child.sendline('\n')
+    logging.info("sent balnk line to take default ending sector")
     i = child.expect('signature*')
 
   # "N" don't remove the signature
@@ -511,14 +533,14 @@ def check_iwconfig(b):
   rv = subprocess.check_output(cmd)
   rvs = rv.decode("utf-8").split(wlanx)
 
-  if (len(rvs) >= 2):       # rvs is an array split on wlanx    
-    wlanx_flags = rvs[1].split("Mode:Master")
-    if (len(wlanx_flags)) > 1:
+  if (len(rvs) >= 2):       # rvs is an array split on wlanx
+    wlanx_flags = str(rvs[1]).find("Mode:Master")
+    if (wlanx_flags) >= 1:
       # we are up
       return(1)
     else:
-      return 0  
-
+      return 0
+  return(0)
 
 
 
@@ -552,9 +574,9 @@ def Revision():
         x = line.find(":")
         y = len(line)-1
         revision = line[(x+2):y]
-  
+
     f.close()
- 
+
     if len(revision) != 0:
       if str(revision)[0:0] == "0":
         revision = revision[0:3]
@@ -633,6 +655,166 @@ def Revision():
   except:
     return "Error"
 
+# setNetworkNames() is used to set names if they are not standard names for devices.
+
+def setNetworkNames():
+    # we look at the names and see if they match the standard style ethX, lo, wlanX format.  If not we create link files in
+    # /etc/systemd/network/10-networkname.link
+    # the contents of the link files will contain a short set of instructions:
+    #
+    # [Match]
+    # MACAddress=xx:xx:xx:xx:xx
+    # [Link]
+    # Name=xxxxxx
+    #
+    # where in the above the mac address is the devices fixed address and the name is in the format of eth0, eth1.... or wlan0, wlan1, wlanX.....
+    # if when we check the  names they are all in the standard format we exit.  Otherwise we check each one
+
+    logging.info("got to set network names")
+    print("Set network names")
+    netwk = []
+    ethntwk = []
+    wlanntwk = []
+    res = os.popen("lshw -c Network").read().split("*-network:")
+    x = 0
+    while ((len(res) > 0) and (x < (len(res)-1))):
+        if len(res[x+1]) > 0:
+            a = res[x+1]
+            print("value x: "+str(x)+" value off line x+1: "+res[x+1])
+            y = (a.find("logical name: "))
+            if (y > 0):
+                print("Found logical name:")
+                y = y + 14
+                b = a[y:].split("\n")
+                ntwk = b[0]
+                print("logical name: "+ntwk)
+                logging.info("Found network name of device: "+ntwk)
+                if len(ntwk) > 3:
+                    if ((ntwk[-1].isnumeric()) and  (ntwk[0:-2] in "wlan eth")):
+                        logging.info("Found port "+ntwk+" that is within our standard.")
+                        print("Found port "+ntwk+" that is within our standard")
+                        #Ok we have found a network name that is in the standard format.  We can move on.
+                        if ((ntwk[0:-1]) == 'wlan'):
+                            wlanntwk.append(ntwk[-1])
+                            print("Wlan "+ntwk[-1])
+                            x += 1
+                        elif ((ntwk[0:-1]) == 'eth'):
+                            ethntwk.append(ntwk[-1])
+                            print("Eth "+ntwk[-1])
+                            x += 1
+                        else:
+                            # we don't know what this is
+                            x += 1					# ntwk holds the name of this odd port
+                            print("Not sure what this port was "+ntwk)
+                        continue
+                    z = a.find("serial:")
+                    print("serial z value is: "+str(z))
+                    if z > 0:
+                        b = a[(z+8):].split("\n")
+                        idnt = b[0]
+                        print("Serial number eg: mac is: "+idnt)
+                        logging.info("Identifier for this network port is: "+idnt)
+                        if ((len(idnt) > 0) and (len(idnt) < 18)):
+                            #OK the name is not in the standard format and we will have to add a link file for this one.
+                            #But we will first add it to the list that needs to be done.
+                            netwk.append(tuple([ntwk,idnt]))
+                            x += 1
+                        else:
+                            #didn't have a coorrectly formated identifier in the way of a mac address
+                            logging.info("Couldn't get a mac address for port "+ntwk+" so having to skip it!")
+                            x += 1
+                    else:
+                        #There was not a serial in the network list making it impossible to get the mac address
+                        logging.info("Couldn't get a mac address for port "+ntwk+" so having to skip it!")
+                        x += 1
+                else:
+                    x += 1							#Nothing to do since name was empty
+
+            else:
+                # We couldn't find any locial name: so no interfaces
+                x += 1
+        else:
+            #The split is empty
+            x +=1
+
+# ok we have a list of network names in netwk.  If the length is > 0 we need to create the link files for the interfaces and then reboot.
+# we also have wlanntwk list of wlanX devices where the list contains the X's
+# we also have ethntwk list of ethX devicess where the list contains the X's
+
+    print("length of wlaanntwk is: "+str(len(wlanntwk))+" contents is: "+str(wlanntwk))
+    print("length of ethntwk is: "+str(len(ethntwk))+" contents is: "+str(ethntwk))
+
+
+    if (len(netwk) > 0):
+        x = 0
+        z = 0
+        while (x < len(netwk)):
+            if (netwk[x][0][0].lower() == 'e'):
+                print("our list of ethernet ports is: "+str(ethntwk))
+                #we found that we have an ethernet port that needs fixing
+                y = 0
+                while (str(y) in str(ethntwk)):
+                    y += 1
+                    while (os.path.isfile("/etc/systemd/network/"+str(y)+"0-e*.link")):
+                        y += 1                #Now we know what ethX number to give this device.
+                try:
+                    path = "/etc/systemd/network/"+str(y)+"0-"+netwk[x][0]+".link"
+                    if (not (os.path.isfile(path))):
+                        f = open(path, "w")
+                        print("writing ethernet file for "+path)
+                        b = "[Match]\nMACAddress="+netwk[x][1]+"\n[Link]\nName=eth"+str(y)+"\n"
+                        print("contents : "+b)
+                        f.write(b)
+                        ethntwk.append(y)
+                        f.close()
+                        os.sync()
+                        z = 1			#Note we have written a definition file so a reboot will be required
+                    else:
+                        print("we already have our link file for this interface")
+                except:
+                    logging.info("Couldn't write the ethernet port link file for eth"+str(y))
+                    print("couldnt write the etherent port file")
+                    f.close()
+            elif (netwk[x][0][0].lower() == 'w'):
+                #We found that we have a Wifi port that needs fixing
+                print("our list of wifi ports is: "+str(wlanntwk))
+                y = 0
+                while (str(y) in str(wlanntwk)):
+                    y += 1
+                    while (os.path.isfile("/etc/systemd/network/"+str(y)+"0-w*.link")):
+                        y += 1
+                #Now we know what wlanX number to give this device
+                try:
+                    path = "/etc/systemd/network/"+str(y)+"0-"+netwk[x][0]+".link"
+                    if (not (os.path.isfile(path))):
+                        f = open(path, "w")
+                        print("writing wifi file for "+path)
+                        b = "[Match]\nMACAddress="+netwk[x][1]+"\n[Link]\nName=wlan"+str(y)+"\n"
+                        print("contents : "+b)
+                        f.write(b)
+                        wlanntwk.append(y)
+                        f.close()
+                        os.sync()
+                        z = 1			#Note we have written a definition file so a reboot will be required
+                    else:
+                        print("we already have our link file for this interface")
+                except:
+                    logging.info("Couldn't write the wifi port link file for wlan"+str(y))
+                    print("Couldn't write the wifi port file")
+                    f.close()
+                #this is an entry we don't recognize so we ignore it
+                logging.info("Ignoring interface: "+netwk[x][0]+" with Mac address of : "+netwk[x][1])
+                print("Ignorioing interface: "+netwk[x][0]+" with mac address of : "+netwk[x][1])
+
+            x += 1				#Increment to the next entry if there is one
+
+
+        if z != 0:				# Now that were done check to see if we need to call a reboot
+            os.sync()
+            print("We wrote new files so we reboot")
+            os.system("sudo reboot")		#NOTE we will not return from here.   We will just restart.
+    return
+
 
 
 
@@ -705,7 +887,7 @@ def getNetworkClass(level):
         else:
             AP = netwk[0][0]
             CI = netwk[1][0]
-            
+
 
 
         logging.info("AP will be: wlan"+AP+" ethernet facing is: wlan"+CI)
@@ -735,28 +917,21 @@ def getNetworkClass(level):
 # here do: ifdown AP, ifup AP, ifconfig AP down, ifconfig AP up
 
 # the following go pretty quick and may/should bring us up if the wlans didn't trade during boot
-    os.system("ifdown wlan"+AP)
-    os.system("ifup wlan"+AP)
-    os.system("ifconfig wlan"+AP+" down")
-    os.system("ifconfig wlan"+AP+" up")
+    if files_changed:
+        os.system("ifdown wlan"+AP)
+        os.system("ifup wlan"+AP)
+        os.system("systemctl restart hostapd")
+        os.system("systemctl restart dhcpcd")
 
-    os.system("ifdown eth0")
-    os.system("ifup eth0")
-    os.system("ifconfig eth0 down")
-    os.system("ifconfig eth0 up")
+        os.system("ifdown eth0")
+        os.system("ifup eth0")
 
-# only do down/up if wpa_supplicant.conf shows connection to CI
-#  OR if the wlan(CI) isn't showing up in an ifconfig
 # Note: we do this AFTER the AP and eth0 down/ups to speed up AP startup as the CI startup
 #        can happen while AP work is being done
-                                        
-    if check_CI() or check_wlan_CI(CI):   
+
+    if ((check_CI()) or (check_wlan_CI(CI)) or (files_changed)):
       os.system("ifdown wlan"+CI)
       os.system("ifup wlan"+CI)
-      os.system("ifconfig wlan"+CI+" down")
-      os.system("ifconfig wlan"+CI+" up")
-
-
 
 
 # --- signal from fixfiles() for a reboot (necessary ??)
@@ -766,9 +941,9 @@ def getNetworkClass(level):
 # fixFiles(a,c) was ported from connectbox-hat-service/cli.py
 
 def fixfiles(a, c):
-# This function is called to fix the files and restart the network daemons (if neeeded) 
-#    based on what we have loaded.  
-#  variable a: (AP) represents the Wlan that will serve as the Access point.  
+# This function is called to fix the files and restart the network daemons (if neeeded)
+#    based on what we have loaded.
+#  variable a: (AP) represents the Wlan that will serve as the Access point.
 #  variable c: (CI) is the ethernet interface which may or may not be there.
 #  (Note: the values of a and c are numbers only.)
 
@@ -782,6 +957,7 @@ def fixfiles(a, c):
 #   so if it is correct is wificonfig.txt, the supporting files are correct.
 
     logging.debug("Entering fix files")
+    print("Entering fix files")
 
     at = ""
     ct = ["","",""]
@@ -793,15 +969,16 @@ def fixfiles(a, c):
     except:
         pass
     logging.info("wificonf.txt holds "+ct[0]+" and "+ct[1]+" for detected paramaters (AP, Client) "+a+" and "+c)
-    
+
     if ("AccessPointIF=wlan"+ a) == ct[0] and (("ClientIF=wlan"+ c == ct[1] and c!="") | (c == "" and ct[1] == "ClientIF=")):
         logging.info("Skipped file reconfiguration as the configuration is the same")
+        print("nothing to do")
 #        os.system("ifup wlan"+a)   # restart wlan ... other restarts needed??n
 
 # if wificonfig.txt agrees with info from lshw we can continue without changing anything
-        return(0)          
+        return(0)
 
-# if NOT, we cook the files and will restart the services with 
+# if NOT, we cook the files and will restart the services with
     res = os.system("systemctl stop networking.service")
     res = os.system("systemctl stop hostapd")
     res = os.system("systemctl stop dnsmasq")
@@ -835,7 +1012,7 @@ def fixfiles(a, c):
 # ?? colon in the next statement??
                                     m[0]=m[0][1:]
                                 if len(m[0])<30:
-# ?? colon in the next statement??                                    
+# ?? colon in the next statement??
                                     m[0] = m[0][1:]             #if the line is not a real command line but a comment then take out the # in front ssince we have C
                         m[0] = m[0]+'wlan'+c
 
@@ -982,7 +1159,7 @@ def fixfiles(a, c):
 
     os.system("systemctl daemon-reload")             #we reload all the daemons since we changed the config.
     time.sleep(5)
-
+    print("finished fix files and exiting with a 1")
     logging.info("We have completed the file copies and daemon-reload")
 #    logging.info("we will reboot to setup the new interfaces")
 
@@ -997,6 +1174,14 @@ def get_AP():
     AP = int(apwifi.split("wlan")[1])
     return(AP)
 
+def get_CI():
+    f = open("/usr/local/connectbox/wificonf.txt", "r")
+    wifi = f.read()
+    f.close()
+    ciwifi = wifi.partition("ClientIF=")[2].split("\n")[0]
+    CI = int(ciwifi.split("wlan")[1])
+    return(CI)
+
 def check_CI():
   f = open("/etc/wpa_supplicant/wpa_supplicant.conf")
   connections = f.read()
@@ -1006,7 +1191,7 @@ def check_CI():
   if "Default" in x[0]:
     return (0)        # we have no connection
   else:
-    return(1)  
+    return(1)
 
 
 
@@ -1014,21 +1199,89 @@ def check_eth0():
   process = Popen("ifconfig", shell=False, stdout=PIPE, stderr=PIPE)
   stdout, stderr = process.communicate()
   net_stats = str(stdout).split("eth0")   # look for eth0 in ifconfig output
-  if (len(net_stats)==1):     # eth0 not found... restart eth0
-    os.system("ifdown eth0")
-    os.system("ifup eth0")
-    os.system("ifconfig eth0 down")
-    os.system("ifconfig eth0 up")
-  return(0)  
+  if (len(net_stats) == 1):               # eth0 not found...  so we dont' have an issue
+      return(0)
+  x = net_stats[1].find("flags=")
+  if (x>=0):
+      y = net_stats[1].find("<")
+      if (y > (x+6)):
+          a = net_stats[1][(x+6):(y-1)]
+          if a == '4099':
+              return(0)				#were not connected so we just return ok
+          elif a == '4163':
+             if (net_stats[1].find("inet") <= 0):
+                 try:
+                     os.system("ifdown eth0")
+                     os.system("ifup eth0")
+                 except:
+                     pass
+                 process = Popen("ifconfig", shell=False, stdout=PIPE, stderr=PIPE)
+                 stdout, stderr = process.communicate()
+                 net_stats = str(stdout).split("eth0")   # look for eth0 in ifconfig output
+                 if (len(net_stats) != 1):     # eth0 not found... restart eth0
+                     x = net_stats[1].find("flags=")
+                     if (x>=0):
+                         y = net_stats[1].find("<")
+                         if (y > (x+6)):
+                             a = net_stats[1][(x+6):(y-1)]
+                             if a == '4099':
+                                 return(0)				#were not connected so we just return ok
+                             elif a == '4163':
+                                 if (net_stats[1].find("inet") <= 0):
+                                     return(1)
+                                 else:
+                                     return(0)
+                 return(1)			#all other issues we error out.
+             else:
+                 return(0)                      #we have an ip so were good to go
+          return(1)				#were in some wierd mode so we error
+      return(1)					#we cant find the flags
+  return(1)
 
 def check_wlan_CI(CI):
   process = Popen("ifconfig", shell=False, stdout=PIPE, stderr=PIPE)
   stdout, stderr = process.communicate()
   net_stats = str(stdout).split("wlan"+str(CI))   # look for wlan(CI) in ifconfig output
   if (len(net_stats)==1):     # wlan(CI) not found - return 1
-    return(1) 
+    return(1)
   else:
     return(0)                 # wlan(CI) found... return 0
+
+
+def check_stat_CI(CI):
+    if (not check_CI()):
+        return(0)	      #Were ok because we have not SSID set
+    z = 0		      #If zero we  don't do anything
+    process = Popen("ifconfig", shell=False, stdout=PIPE, stderr=PIPE)
+    stdout, stderr = process.communicate()
+    net_stats = str(stdout).split("wlan"+str(CI))
+    if len(net_stats) > 1:
+        x = net_stats[1].find("inet")
+        y = net_stats[1].find("flags")
+        if (x <= 0):  z = 1
+        if (y >= 0):
+             x = net_stats[1][(y+7):].find("<")
+             if ((x >= 0) and (x > (y+7))):
+                a = net_stats[1][(y+7):(x-1)]
+                if a != '4163': z = 1
+             else:
+                 pass
+        else:
+            z = 0		#we don't have an interface for CI
+    else:
+        z = 1
+    if (z != 0):
+        try:
+            os.system("ifdown  wlan"+str(CI))
+        except:
+            pass
+        try:
+            os.system("ifup wlan"+str(CI))
+            return(0)
+        except:
+            return(1)
+    return(0)			#Nothingg wrong we have a correct status.
+
 
 
 if __name__ == "__main__":
@@ -1055,7 +1308,7 @@ if __name__ == "__main__":
     first_time=True
     stop_hostapd=False
     areadyconf= ""
-
+    logging.info("Starting PxUSBm")
     version = Revision()                    # Get the version of hardware were running on
     if (version != "Unknown") and (version != "Error"):
       if version.find("OrangePiZero2")>=0: version  = "OZ2 "
@@ -1070,7 +1323,7 @@ if __name__ == "__main__":
 
 
     logging.info("PxUSBm Starting revision is "+version)
-    try: 
+    try:
       f = open(brand_file, mode="r", encoding='utf-8')
       brand = json.loads( f.read() )
       f.close
@@ -1168,9 +1421,12 @@ if __name__ == "__main__":
         rpi_platform = False
         rm3_platform=True
         PI_stat= False
-        OP_stat=False   
+        OP_stat=False
     if DEBUG > 3: print("Our device is type RPI platform:"+str(rpi_platform)+" and PI itself:"+str(PI_stat)+" and  Orange PI:"+str(OP_stat))
     net_stat = 1
+
+
+    print("device is RPI? "+str(rpi_platform)+" rm3_platform? "+str(rm3_platform)+" PI_stat? "+str(PI_stat)+" OP_stat? "+str(OP_stat))
 
     while (net_stat == 1):
 
@@ -1179,7 +1435,7 @@ if __name__ == "__main__":
         if file_exists == False:
             do_fdisk(rpi_platform, rm3_platform)             # this ends in reboot() so won't return
             continue
-        else: 
+        else:
             f = open(progress_file, "r")
             progress = f.read()
             f.close()
@@ -1204,10 +1460,21 @@ if __name__ == "__main__":
 #  wlanx to the 8812au wifi module... check to see if the AP and CI agree with wificonfig.txt...
 #  fix the required network file if needed... restart the wlan's
 
+# Due to the new OS's not having fixed network names anymore.  We need to check the names and set them to expected types.
+# This involves checking what the systems see's and has named them.  If necessary we create a link file to rename them and have to 
+# reboot if necessary.
+
+        logging.info("Getting Ready for Network Names and Network Class")
+        print("Getting ready for network names and neewtwork class\n")
+
+        setNetworkNames()
+        print("finished setNetworkNames")
+
         getNetworkClass(1)  # Note: calls fixfiles() if required... the (1) signals minimal ifconfig down/up
+        print("Finished get network class")
 
         x = 95    # give time for network to come up before trying to fix it
-
+        logging.info("Getting ready to start Mount Checks")
         while (x == x):                         # main loop that we live in for life of running
           if (NoMountUSB <= 0):
              if DEBUG > 3: print("PxUSBm Going to start the mount Check")
@@ -1219,10 +1486,28 @@ if __name__ == "__main__":
             AP = get_AP()
             AP_up = check_iwconfig(AP)  # returns 1 if up
             if (not AP_up):
-              getNetworkClass(1)       # try to fix the problem (shouldn't get here normally)
+              print("AP was not up and didn't  show correctly")
+              try:
+                  os.system("ifdown wlan"+str(AP))
+              except:
+                  pass
+              try:
+                  os.system("ifup wlan"+str(AP))
+              except:
+                  pass
+              if not(check_iwconfig(AP)):
+                  os.system("systemctl restart hostapd")
+                  if not(check_iwconfig(AP)):
+                     print("Still not up so having to resort to getNetworkClass")
+                     getNetworkClass(1)       # try to fix the problem (shouldn't get here normally)
 
-            check_eth0()      # make sure eth0 is up  
-   
+            check_eth0()      # make sure eth0 is up
+
+            CI = get_CI()
+            check_stat_CI(CI)
+
+            check_eth0()
+
           if ((x % 10)==0):
             if DEBUG > 3: print("PxUSBm Going to do a Network check"+time.asctime())
 
@@ -1240,10 +1525,10 @@ if __name__ == "__main__":
 # check to see if brand.txt variable usb0NoMount has changed
             f = open("/usr/local/connectbox/brand.txt")
             filedata=f.read()
-            f.close()             
+            f.close()
             NoMountUSB = str(filedata).find('usb0NoMount": 1')
 
-# loop            
+# loop
           x += 1
           time.sleep(3)
 
