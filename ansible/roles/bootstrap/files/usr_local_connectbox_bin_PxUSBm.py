@@ -96,62 +96,10 @@ def mountCheck():
     #total is the toal number of mounts currently
     #Brand is thee name of the host branding eg: ConnectBox
     # run the upgrade if it exsists
-    try:
-         f = open(brand_file, mode="r", encoding = 'utf-8')
-         brand = json.loads(f.read())
-         f.close()
-    except:
-      version = Revision()
-      if (version != "Unknown") and (version != "Error"):
-        if version.find("OrangePiZero2")>=0: version  = "OZ2 "
-        elif version.find("Orange") >=0: version = "OP? "
-    # see if we are NEO or CM
-        x = version[3:].find(" ")
-        if x >= 0:
-          a = version[0:x+3].rstrip()
-        else:
-          a = version[0:4].rstrip()
-
-      details  = {'Brand':"Connectbox", \
-        'enhancedInterfaceLogo':"", \
-        'Image': 'connectbox_logo.png', \
-        'Font': 27, \
-        'pos_x': 6, \
-        'pos_y': 0, \
-        'Device_type': a, \
-        "usb0NoMount": 0, \
-        "lcd_pages_main": 1,\
-        "lcd_pages_info": 1,\
-        "lcd_pages_battery": 1,\
-        "lcd_pages_multi_bat": 0,\
-        "lcd_pages_stats_hour_one": 1,\
-        "lcd_pages_stats_hour_two": 1,\
-        "lcd_pages_stats_day_one": 1,\
-        "lcd_pages_stats_day_two": 1,\
-        "lcd_pages_stats_week_one": 1,\
-        "lcd_pages_stats_week_two": 1,\
-        "lcd_pages_stats_month_one": 1,\
-        "lcd_pages_stats_month_two": 1,\
-        "lcd_pages_admin": 0,\
-        "Enable_MassStorage": "",\
-        "g_device": "g_serial",\
-        "otg": 0,\
-        "server_url": "", \
-        "server_authorization": "", \
-        "server_sitename": "", \
-        "server_siteadmin_name": "", \
-        "server_siteadmin_email": "", \
-        "server_siteadmin_phone": "", \
-        "server_siteadmin_country": "" \
-        }
-      f = open(brand_file, mode='w', encoding = 'utf-8')
-      f.write(json.dumps(details));
-      f.close
-      f = open(brand_file, mode="r", encoding = "utf-8")
-      brand = json.loads(f.read())
-      Brand = brand
-    a = brand['usb0NoMount']
+    a = Brand['usb0NoMount']
     if a == "1":
+      logging.info("no mount set")
+      print("no mount set")
       return
     total = 0
     j = 0                   #mount iterator looking for unmounted devices
@@ -458,7 +406,7 @@ def do_fdisk(rpi_platform, rm3_platform):
     child.sendline('n')
     logging.info("Sent n for new partition")
     if rm3_platform:
-      logging.info("looking for default 2 since were rm3_platform")
+      logginig.info("looking for default 2 since were rm3_platform")
       i = child.expect('default 2')
       child.sendline(str(x))
       logging.info("sent partition number")
@@ -957,6 +905,8 @@ def fixfiles(a, c):
 #  At the end of this function, wificonf.txt is written and reflects the settings in ALL required files
 #   so if it is correct is wificonfig.txt, the supporting files are correct.
 
+    global Brand
+
     logging.debug("Entering fix files")
     print("Entering fix files")
 
@@ -972,12 +922,16 @@ def fixfiles(a, c):
     logging.info("wificonf.txt holds "+ct[0]+" and "+ct[1]+" for detected paramaters (AP, Client) "+a+" and "+c)
 
     if ("AccessPointIF=wlan"+ a) == ct[0] and (("ClientIF=wlan"+ c == ct[1] and c!="") | (c == "" and ct[1] == "ClientIF=")):
-        logging.info("Skipped file reconfiguration as the configuration is the same")
-        print("nothing to do")
+        f = open("/etc/hostapd/hostapd.conf","r")
+        g = f.read()
+        f.close()
+        if (Brand['Brand'] in g):
+	        logging.info("Skipped file reconfiguration as the configuration is the same")
+	        print("nothing to do")
 #        os.system("ifup wlan"+a)   # restart wlan ... other restarts needed??n
 
 # if wificonfig.txt agrees with info from lshw we can continue without changing anything
-        return(0)
+        	return(0)
 
 # if NOT, we cook the files and will restart the services with
     res = os.system("/bin/systemctl stop networking.service")
@@ -1060,7 +1014,6 @@ def fixfiles(a, c):
         else:
              n = str(l)
         g.write(n)
-
     g.flush()
     f.close()
     g.close()
@@ -1082,7 +1035,11 @@ def fixfiles(a, c):
                    m[1] = m[1][1:]
              n = str(n + m[1])
         else:
-             n = str(l)
+             if 'ssid=' in l:
+                 m = l.split("ssid=")
+                 n = str(m[0]+ 'ssid=' + Brand['Brand'] + "\n")
+             else:
+                 n = str(l)
         g.write(n)
 
     g.flush()
@@ -1493,7 +1450,7 @@ if __name__ == "__main__":
     logging.info("PxUSBm Starting revision is "+version)
     try:
       f = open(brand_file, mode="r", encoding='utf-8')
-      brand = json.loads( f.read() )
+      Brand = json.loads( f.read() )
       f.close
     except:
       f = open(brand_file, mode="w", encoding = 'utf-8')
@@ -1531,13 +1488,11 @@ if __name__ == "__main__":
         }
       f.write(json.dumps(details))
       f.close
-    f = open(brand_file, mode="r", encoding='utf8')
-    brand = json.loads(f.read())
-    Brand = brand
+      f = open(brand_file, mode="r", encoding='utf8')
+      Brand = json.loads(f.read())
     f.close
 
-#    NoMountUSB = brand.find('"usb0NoMount:1')
-    NoMountUSB = brand.get("usb0NoMount") == 1   # Note: brand is type dict, so no "find" method
+    NoMountUSB = Brand["usb0NoMount"] 			   # Note: brand is type dict, so no "find" method
     rpi_platform=False
     rm3_platform=False
     PI_stat = False
@@ -1548,14 +1503,14 @@ if __name__ == "__main__":
 
     if (version != "Unknown") and (version != "Error"):
       logging.info("Major type: "+a)
-      if brand["Device_type"].find(a)<=0:                    # Make sure the brand file is what we expect as were on this hardware.
+      if Brand["Device_type"].find(a)<=0:                    # Make sure the brand file is what we expect as were on this hardware.
         f = open(brand_file, mode="w", encoding = 'utf-8')
-        brand["Device_type"] = '"'+a+'"'
-        brand["lcd_pages_multi_bat"] = 0
-        f.write(json.dumps(brand))
+        Brand["Device_type"] = '"'+a+'"'
+        Brand["lcd_pages_multi_bat"] = 0
+        f.write(json.dumps(Brand))
         f.close()
         os.sync()
-        SSID = brand["Brand"]
+        SSID = Brand["Brand"]
     else:
         SSID = "ABC"
     x=SSID.find('"')                          #Remove all the quotation marks around the  SSID
@@ -1565,27 +1520,27 @@ if __name__ == "__main__":
 
     logging.info("SSID from file is now: "+SSID)
 
-    if 'CM' in brand["Device_type"]:             #Now we determine what brand to work with
+    if 'CM' in Brand["Device_type"]:             #Now we determine what brand to work with
         rpi_platform=True
         PI_stat=True
         OP_stat=False
 
-    if "PI" in brand["Device_type"]:
+    if "PI" in Brand["Device_type"]:
         rpi_platform=True
         PI_stat=True
         OP_stat = False
 
-    if "NEO" in brand["Device_type"]:
+    if "NEO" in Brand["Device_type"]:
         rpi_platform=False
         PI_stat=False
         OP_stat=False
 
-    if "OZ2" in brand["Device_type"]:
+    if "OZ2" in Brand["Device_type"]:
         rpi_platform = False
         PI_stat=False
         OP_stat =True
 
-    if "RM3" in brand["Device_type"]:
+    if "RM3" in Brand["Device_type"]:
         rpi_platform = False
         rm3_platform=True
         PI_stat= False
@@ -1721,9 +1676,9 @@ if __name__ == "__main__":
 
 # check to see if brand.txt variable usb0NoMount has changed
             f = open("/usr/local/connectbox/brand.txt")
-            filedata=f.read()
+            Brand = json.loads( f.read() )
             f.close()
-            NoMountUSB = str(filedata).find('usb0NoMount": 1')
+            NoMountUSB = Brand["usb0NoMount"] 			   # Note: brand is type dict, so no "find" method
 
 # loop
           x += 1
