@@ -266,6 +266,31 @@
     virtualenv: "{{ hat_service_virtualenv_dir }}"
   when: connectbox_os == "raspbian" 
 
+- name: Install OPi.GPIO for RM3
+  pip:
+    name: OPi.GPIO
+    virtualenv: "{{ hat_service_virtualenv_dir }}"
+  when: connectbox_os == "debian" 
+
+- name: Make radxa directory
+  file:
+    path: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/radxa"
+    state: directory  
+
+- name: copy CM3.py
+  copy:
+   src: radxa_CM3.py
+   dest: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/radxa/CM3.py"
+  when: connectbox_os == "debian"
+
+- name: copy __init__.py to radxa
+  copy:
+   src: radxa___init__.py
+   dest: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/radxa/__init__.py"
+  when: connectbox_os == "debian"
+
+
+
 
 # GPIO Version selection begins here....
 - name: set fact for RPi_GPIO_path

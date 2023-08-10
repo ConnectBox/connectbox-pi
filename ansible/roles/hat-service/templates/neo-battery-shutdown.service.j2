@@ -1,5 +1,6 @@
 [Unit]
 Description=ConnectBox NEO Battery Shutdown Service
+After=network.target
 # pa-pulldown.service NOT required... now handled by RPi.GPIO calls
 
 [Service]

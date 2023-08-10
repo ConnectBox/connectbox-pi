@@ -247,7 +247,8 @@
   apt: 
     upgrade: yes
     update_cache: yes
-##    allow_downgrade: yes
+  ##  need to comment "allow_downgrade: yes" if this is the second pass throught the code
+    allow_downgrade: yes
     state: fixed
   register: dist_upgraded
 
@@ -959,11 +960,32 @@
     state: present
   when: CM4_present
 
-- name: install other needed python libraries
+- name: install smbus2
   pip:
-    name: [ json, smbus2 ] 
+    name: smbus2 
     executable: pip3
   ignore_errors: yes
+
+#- name: install urllib3
+#  pip:
+#    name: urllib3 
+#    executable: pip3
+
+# install urllib3 via Handler mechanism (at end of build) since it is 
+#  getting removed somewhere between here and end...
+- name: set up install of urllib3
+  debug:
+    msg: Setting up install of urllib3
+  notify:
+    - Install urllib3
+  changed_when: True
+
+
+- name: Add /usr/sbin to system-wide $PATH.
+  copy:
+    dest: /etc/profile.d/my-path.sh
+    content: 'PATH=$PATH:/usr/sbin'
+
 
 
 #- name: copy the config files

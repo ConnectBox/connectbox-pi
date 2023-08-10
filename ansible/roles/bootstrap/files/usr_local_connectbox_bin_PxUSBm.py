@@ -457,7 +457,7 @@ def do_fdisk(rpi_platform, rm3_platform):
     child.sendline('n')
     logging.info("Sent n for new partition")
     if rm3_platform:
-      logginig.info("looking for default 2 since were rm3_platform")
+      logging.info("looking for default 2 since were rm3_platform")
       i = child.expect('default 2')
       child.sendline(str(x))
       logging.info("sent partition number")
@@ -1472,6 +1472,12 @@ if __name__ == "__main__":
 
         getNetworkClass(1)  # Note: calls fixfiles() if required... the (1) signals minimal ifconfig down/up
         print("Finished get network class")
+
+# Do a restart of the neo-battery-shutdown service (only needed on first power on boot) 
+        process = os.popen('systemctl start neo-battery-shutdown')
+        process.close()
+
+# Initial boot bringup tasks are complete... MAIN LOOPING STARTS HERE....
 
         x = 95    # give time for network to come up before trying to fix it
         logging.info("Getting ready to start Mount Checks")
