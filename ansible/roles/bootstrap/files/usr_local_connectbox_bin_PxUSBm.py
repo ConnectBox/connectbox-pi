@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -51,6 +52,7 @@ from subprocess import Popen, PIPE
 import subprocess
 import io
 import json
+import sys
 
 # globals for Partion expansion
 progress_file = '/usr/local/connectbox/expand_progress.txt'
@@ -79,7 +81,6 @@ global connectbox_scroll
 
 global max_partition
 max_partiton = 0
-
 
 
 
@@ -545,14 +546,14 @@ def check_iwconfig(b):
 
 
 def dbCheck():
-       process = Popen("systemctl status mysql", shell = False, stdout=PIPE, stderr=PIPE)
+       process = Popen(["/bin/systemctl","status","mysql"], shell = False, stdout=PIPE, stderr=PIPE)
        stdout, stderr = process.communicate()
        if stdout.find("active (running) since")>=0:
           return(0)
        else:
-          process = Popen("systemctl restart mysql", shell = False, stdout=PIPE, stderr=PIPE)
+          process = Popen(["/bin/systemctl","restart","mysql"], shell = False, stdout=PIPE, stderr=PIPE)
           stdout, stderr = process.communicate()
-          process = Popen("systemctl status mysql", shell = False, stdout=PIPE, stderr=PIPE)
+          process = Popen(["/bin/systemctl","status","mysql"], shell = False, stdout=PIPE, stderr=PIPE)
           stdout, stderr = process.communicate()
           if stdout.find("active (running) since")>= 0:
               return(0)
@@ -920,8 +921,8 @@ def getNetworkClass(level):
     if files_changed:
         os.system("ifdown wlan"+AP)
         os.system("ifup wlan"+AP)
-        os.system("systemctl restart hostapd")
-        os.system("systemctl restart dhcpcd")
+        os.system("/bin/systemctl restart hostapd")
+        os.system("/bin/systemctl restart dhcpcd")
 
         os.system("ifdown eth0")
         os.system("ifup eth0")
@@ -979,10 +980,10 @@ def fixfiles(a, c):
         return(0)
 
 # if NOT, we cook the files and will restart the services with
-    res = os.system("systemctl stop networking.service")
-    res = os.system("systemctl stop hostapd")
-    res = os.system("systemctl stop dnsmasq")
-    res = os.system("systemctl stop dhcpcd")
+    res = os.system("/bin/systemctl stop networking.service")
+    res = os.system("/bin/systemctl stop hostapd")
+    res = os.system("/bin/systemctl stop dnsmasq")
+    res = os.system("/bin/systemctl stop dhcpcd")
 
 # we only come here if we need to adjust the network settings
 # Lets start with the /etc/network/interface folder
@@ -1157,7 +1158,7 @@ def fixfiles(a, c):
     os.system("cp /etc/network/interfaces.tmp /etc/network/interfaces")
     os.system("cp /etc/dhcpcd.tmp /etc/dhcpcd.conf")
 
-    os.system("systemctl daemon-reload")             #we reload all the daemons since we changed the config.
+    os.system("/bin/systemctl daemon-reload")             #we reload all the daemons since we changed the config.
     time.sleep(5)
     print("finished fix files and exiting with a 1")
     logging.info("We have completed the file copies and daemon-reload")
@@ -1179,7 +1180,10 @@ def get_CI():
     wifi = f.read()
     f.close()
     ciwifi = wifi.partition("ClientIF=")[2].split("\n")[0]
-    CI = int(ciwifi.split("wlan")[1])
+    try:
+        CI = int(ciwifi.split("wlan")[1])
+    except:
+        CI = ""
     return(CI)
 
 def check_CI():
@@ -1249,7 +1253,7 @@ def check_wlan_CI(CI):
 
 
 def check_stat_CI(CI):
-    if (not check_CI()):
+    if (check_CI() == ""):
         return(0)	      #Were ok because we have not SSID set
     z = 0		      #If zero we  don't do anything
     process = Popen("ifconfig", shell=False, stdout=PIPE, stderr=PIPE)
@@ -1283,6 +1287,161 @@ def check_stat_CI(CI):
     return(0)			#Nothingg wrong we have a correct status.
 
 
+def checkServices():		#check out the services that were supposed to start
+    print("starting Check Services")
+    logging.info("check services starting")
+    process = Popen(["/bin/systemctl",'status','networking'], shell = False, stdout=PIPE, stderr=PIPE)
+    stdout, stderr = process.communicate()
+    serva = str(stdout)
+    x = serva.find("Active: active")
+    print("looking for networking.serice : "+str(x))
+    if x < 0:
+        print("Found networking not running")
+        logging.info("Found networking not running")
+        try:
+            print("well have to retry the networking.service")
+            logging.info("well we have to retry the networking.service")
+            os.system("/bin/systemctl restart networking")			#Do the restart of networking
+        except:
+            #we failed to restart the networking service so don't know how to fix it since we have aleady reset the network files
+            return(1)
+        process = Popen(["/bin/systemctl","status","networking"], shell = False, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = process.communicate()
+        serva = str(stdout)
+        x = serva.find("Active: active")
+        print("line is: "+serva)
+        print("looking for 'Active: active' have: "+str(x))
+        if x > 0:
+            print("OK we restarted networking.serices and were running")
+            logging.info("OK we restarted the networking.service and were running")
+            pass
+        else:
+            logging.info("OK we restarted the networking.service and were not running still")
+            return(1)
+        #we will continue aas we have a working networking service
+        #We want to check the AP to make sure its up
+    else:
+        print("networking service running nicely")
+        logging.info("Networking service was running nicely")
+
+    logging.info("starting to test AP services")
+    AP = "wlan"+str(get_AP())
+    process = Popen(["/bin/systemctl",'status','ifup@'+AP], shell = False, stdout=PIPE, stderr=PIPE)
+    stdout, stderr = process.communicate()
+    serva = str(stdout)
+    x = serva.find("Active: active")
+    print("looking for ifup@AP.serice : "+AP+"and line is "+str(x))
+    if x < 0:									#we found our AP ifup service
+        print("Found the ifup@AP.service not running")
+        logging.info("Found the ifup@AP.service not running")
+        try:
+            print("Going to have to try to restart the ifup@AP.service")
+            logging.info("Going to have to try to restart the ifup@AP.service")
+            os.system("/bin/systemctl restart ifup@"+AP)
+            process = Popen(["/bin/systemctl","status","ifup@"+AP], shell=False, stdout=PIPE, stderr=PIPE)
+            stdout, stderr = process.communicate()
+            serva == str(stdout)
+            x = serva.find("Active: active")
+            if x > 0:
+                try:
+                    os.system("/bin/systemctl restart hostapd")
+                    print("Ok we have succeeded in restarting ifup@AP.serice and have restarted hostapd as well")
+                    logging.info("Ok we have succeded in restarting ifup@AP.service and have restarted hostapd as well")
+                    pass
+                except:
+                    return(1) #We failed on the restart of hostapd after restarting wlanAP
+                    logging.info("We failed on the restart of hostapd.service")
+        except:
+           logging.info("We failed on the restart of ifup@AP.service")
+           return(1)								#We errored out on the retry of starting the ifup@AP service
+
+       # If we are here then we have an ifup@AP that is loaded active and we fixed it.
+    else:
+        logging.info("We are loaded and active on ifup@AP.service")
+        print("were loaded and running on the ifup@AP.service")
+
+
+    # If we are here then we have an ifup@CI that is loaded active and we fixed it or CI is null so we skipped testing
+    # now we need to test for our last item which is eth0
+
+    logging.info("Strting the ifup@etho0.service test")
+    process = Popen(["/bin/systemctl",'status','ifup@eth0'], shell = False, stdout=PIPE, stderr=PIPE)
+    stdout, stderr = process.communicate()
+    serva = str(stdout)
+    x = serva.find("Active: active")
+    if x < 0:									#we found our AP ifup service
+        print("Ok we found the ifup@eth0.service not running")
+        logging.info("Ok we found an ifup@eth0.service not running")
+        try:
+            print("Ok were going to try restarting the ifup@eth0.service")
+            logging.info("OK we are going to try restarting the ifup@eth0.service")
+            os.system("/bin/systemctl restart ifup@eath0")
+            process = Popen(["/bin/systemctl","status","ifup@eath0"], shell=False, stdout=PIPE, stderr=PIPE)
+            stdout, stderr = process.communicate()
+            serva == str(stdout)
+            x = serva.find("Active: active")
+            if x > 0:
+                print("Well we succeeded in restarting the ifup@eth0 service")
+                logging.info("Well we succeded in restarting the ifup@eth0.service")
+                pass								#Ok we succeeded in the restart were up and running.
+            else:
+                logging.info("We didn't succeed on the restart its still down")
+                print("Well we didn't succeed on the restart of eth0 its still down")
+                return(1)
+        except:
+           logging.info("We failed on the restart attempt of ifup@eth0.service")
+           print("We failed on the restart attempt of ifupeth0.service")
+           return(1)								#We errored out on the retry of starting the ifup@AP service
+
+    else:
+       print("ifup@eth0 service was running to begin with")
+       logging.info("ifup@eth0 service was running to beging with")
+
+    # If we are here then we have an ifup@eth0.service that is loaded active and/or we fixed it.
+
+    logging.info("Starting CI services")
+    # Now we need to check status of CI
+    x = get_CI()
+    print("CI is : "+str(x))
+    if  x != "":
+        CI="wlan"+str(x)
+        print("the total CI is now: "+CI)
+        process = Popen(["/bin/systemctl",'status','ifup@'+CI], shell = False, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = process.communicate()
+        serva = str(stdout)
+        x = serva.find("Active: active")
+        print("looking for ifup@CI.serice : "+CI+"and line is "+str(x))
+        if x < 0:									#we found our AP ifup service
+            print("OK we dont have an ifup@CI.service")
+            logging.info("OK we don't have an ifup@CI.service")
+            try:
+                print("Well were going to try restarting the ifup@CI.service")
+                logging.info("Well were going to try restarting the ifup@CI.service")
+                os.system("/bin/systemctl restart ifup@"+CI)
+                process = Popen(["/bin/systemctl","status","ifup@"+CI], shell=False, stdout=PIPE, stderr=PIPE)
+                stdout, stderr = process.communicate()
+                serva == str(stdout)
+                x = serva.find("Active: active")
+                print("looking for active active have: "+str(x))
+                if x > 0:
+                    print("Ok we succeeded in the restarting of the ifup@CI.service")
+                    logging.info("OK we succeded in the restarting of the ifup@CI.service")
+            except:
+                logging.info("We failed on the retry of the ifup@CI.service")
+                print("We failed on the retry of the ifup@CI.service restart")
+                return(1)							#We errored out on the retry of starting the ifup@CI service
+        else:
+            logging.info("The ifup@CI.service is running fine so nothing to do")
+            print("The ifup@CI.service is running finel so nothiing to do")
+    else:
+        print("No CI on this device so we skip")
+        logging.info("No CI on this device ")
+
+    print("OK were done with all our testing the services should be googd at this point")
+    return(0)										#End of sequence testing were done all is well
+
+
+
 
 if __name__ == "__main__":
 
@@ -1301,6 +1460,15 @@ if __name__ == "__main__":
     global DEBUG
     global SSID
     global connectbox_scroll
+
+    print(sys.argv[0])
+    try:
+        if sys.argv[1] != "":
+            delay = int(sys.argv[1])
+        else:
+            delay = 30
+    except:
+        delay = 30
 
     DEBUG = 0
     SSID=""
@@ -1425,25 +1593,29 @@ if __name__ == "__main__":
     if DEBUG > 3: print("Our device is type RPI platform:"+str(rpi_platform)+" and PI itself:"+str(PI_stat)+" and  Orange PI:"+str(OP_stat))
     net_stat = 1
 
-
+    logging.info("device is RPI? "+str(rpi_platform)+" rm3_platform? "+str(rm3_platform)+" PI_stat? "+str(PI_stat)+" OP_stat? "+str(OP_stat))
     print("device is RPI? "+str(rpi_platform)+" rm3_platform? "+str(rm3_platform)+" PI_stat? "+str(PI_stat)+" OP_stat? "+str(OP_stat))
 
-    while (net_stat == 1):
+    # Sort out how far we are in the partition expansion process
+    file_exists = os.path.exists(progress_file)
+    if file_exists == False:
+        logging.info("PxUSBm starting the fdisk operation for expansion")
+        os.sync()
+        do_fdisk(rpi_platform, rm3_platform)             # this ends in reboot() so won't return
+    else:
+        f = open(progress_file, "r")
+        progress = f.read()
+        f.close()
+        if "fdisk_done" in progress:
+            maxp = progress.split("maxp=")
+            max_partition = maxp[1][0]
+            logging.info("PxUSBm starting the resize2fs to format full disk")
+            os.sync()
+            do_resize2fs(rpi_platform, rm3_platform)     # this ends in reboot() so won't return
 
-        # Sort out how far we are in the partition expansion process
-        file_exists = os.path.exists(progress_file)
-        if file_exists == False:
-            do_fdisk(rpi_platform, rm3_platform)             # this ends in reboot() so won't return
-            continue
         else:
-            f = open(progress_file, "r")
-            progress = f.read()
-            f.close()
-            if "fdisk_done" in progress:
-                maxp = progress.split("maxp=")
-                max_partition = maxp[1][0]
-                do_resize2fs(rpi_platform, rm3_platform)     # this ends in reboot() so won't return
-                continue
+            logging.info("PxUSBm disk and format expansion already completed")
+            print("PxUSBm disk and format expansion already completed")
 
 # Once partition expansion is complete, handle the ongoing monitor of USB
 
@@ -1464,24 +1636,49 @@ if __name__ == "__main__":
 # This involves checking what the systems see's and has named them.  If necessary we create a link file to rename them and have to 
 # reboot if necessary.
 
-        logging.info("Getting Ready for Network Names and Network Class")
-        print("Getting ready for network names and neewtwork class\n")
+    logging.info("Getting Ready for Network Names and Network Class")
+    print("Getting ready for network names and neewtwork class\n")
 
-        setNetworkNames()
-        print("finished setNetworkNames")
+    setNetworkNames()
+    print("finished setNetworkNames")
 
-        getNetworkClass(1)  # Note: calls fixfiles() if required... the (1) signals minimal ifconfig down/up
-        print("Finished get network class")
+    getNetworkClass(1)  					# Note: calls fixfiles() if required... the (1) signals minimal ifconfig down/up
+    print("Finished get network class")
 
-        x = 95    # give time for network to come up before trying to fix it
-        logging.info("Getting ready to start Mount Checks")
-        while (x == x):                         # main loop that we live in for life of running
+    print("Checking on neo-battery-shutdown")
+    x = -1
+    while x < 0:
+        process = Popen(["/bin/systemctl","status","neo-battery-shutdown"], shell=False, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = process.communicate()
+        x = str(stdout).find("Active: active (running)")
+        if x < 0:
+            logging.info("PxUSBm is restarting neo-battery-shutdown")
+            print("PxUSBm is restarting neo-battery-shutdwon")
+            process = os.popen("systemctl restart neo-battery-shutdown")
+            process.close()
+            time.sleep(5)
+    print("neo-battery-shutdown is running")
+
+    x = 95    # give time for network to come up before trying to fix it
+
+    logging.info("PAUSING PXUSBM.PY FOR THE FOLLLOWING SECONDS "+str(delay))
+    print("PUAUSING PXUSBM.PY FOR THE FOLLOWING SECONDS "+str(delay))
+    time.sleep(delay)			#Sleep for 1 min to let the interfaces come up
+    logging.info("DELAY COMPLETE STARTING CHECKING OF SERVICES!!")
+    print("DELAY COMPLETE STARTING CHECKING OF SERVICES!!")
+
+    if not (checkServices()): 			#This calls a check service routine that verifies that networking , ifup, ifdown came up and are running, otherwise
+        time.sleep(5)				#it attemtps to fix them, but we only try twice then go on.
+        checkServices()                         #we wait between attempts.
+
+    logging.info("Getting ready to start Mount Checks")
+    while (x == x):                         # main loop that we live in for life of running
           if (NoMountUSB <= 0):
              if DEBUG > 3: print("PxUSBm Going to start the mount Check")
              mountCheck()                   # Do a usb check to see if we have any inserted or removed.
              if connectbox_scroll: dbCheck()
 
-          if ((x % 3)==0):
+          if ((x % 6)==0):
           # check to see if AP is still active
             AP = get_AP()
             AP_up = check_iwconfig(AP)  # returns 1 if up
@@ -1496,7 +1693,7 @@ if __name__ == "__main__":
               except:
                   pass
               if not(check_iwconfig(AP)):
-                  os.system("systemctl restart hostapd")
+                  os.system("/bin/systemctl restart hostapd")
                   if not(check_iwconfig(AP)):
                      print("Still not up so having to resort to getNetworkClass")
                      getNetworkClass(1)       # try to fix the problem (shouldn't get here normally)
@@ -1531,5 +1728,5 @@ if __name__ == "__main__":
 # loop
           x += 1
           time.sleep(3)
-
+# end of  while loop here
 
