@@ -458,7 +458,7 @@ def do_fdisk(rpi_platform, rm3_platform):
     child.sendline('n')
     logging.info("Sent n for new partition")
     if rm3_platform:
-      logginig.info("looking for default 2 since were rm3_platform")
+      logging.info("looking for default 2 since were rm3_platform")
       i = child.expect('default 2')
       child.sendline(str(x))
       logging.info("sent partition number")
