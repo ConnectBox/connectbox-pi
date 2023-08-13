@@ -75,6 +75,15 @@
     group: root
     mode: 0644
 
+- name: apt install dhcpcd
+  apt:
+    pkg:
+    - dhcpcd5
+    state: present
+  ignore_errors: yes
+  when: connectbox_os == "armbian"
+
+
 - name: Copy over the new dhcpcd.conf files
   template:
     src: etc_dhcpcd.conf.j2
@@ -90,7 +99,7 @@
     block: |
       # This fires up the WLAN0 on Pi
       /usr/local/connectbox/bin/wlan0.pl &
-  when: (not aws_instance) and (connectbox_os != "armbian") and (connectbox_os != 'ubuntu') and (not OZ2_present)
+  when: (not aws_instance) and (connectbox_os != 'ubuntu') and (not OZ2_present)
   ignore_errors: true
 
 # name: create directory /etc/dhcp/etc_dhcp_dhclient-enter-hooks
@@ -226,25 +235,31 @@
 
 
 - name: lets check for exsisting 8812au driver
-  shell: echo ("true" |bool)
+  shell: echo (true |bool)
   register: driver_a1
   ignore_errors: yes
   when: ((rtl8812d) or (rtl88XXd) or (rtl88XXdp) or (rtl8812dp))
 
 - name: lets check for the 8812bu driver
-  shell: echo ("true" |bool)
+  shell: echo (true |bool)
   register: driver_b1
   ignore_errors: yes
   when: ((rtl88xbd ) or (rtl88XXd) or (rtw88d) or (rtl88x2bd) or (rtl88XXdp) or (rtl88xbdp) or (rtw88dp) or (rtl88x2bdp))
 
 - name: lets check for the 8852au driver
-  shell: echo ("true" |bool)
+  shell: echo (true |bool)
   register: driver_c1
   ignore_errors: yes
   when: ((rtl8852ad) or  (rtl8852adp))
 
 - name: Insert the driver into the kernel modules 8812au
   command: insmod  /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtl8812au/8812au.ko*
+  ignore_errors: yes
+  register: changed1
+  when: driver_a1
+
+- name: Insert the driver into the kernel modules 8812au (8812XX)
+  command: insmod  /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtl8812au/88XXau.ko*
   ignore_errors: yes
   register: changed1
   when: driver_a1

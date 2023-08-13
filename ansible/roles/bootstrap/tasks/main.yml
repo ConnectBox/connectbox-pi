@@ -243,7 +243,7 @@
 # We are putting the update early in the build so that we reduce the number of reboots.  This update will
 # bring the kernal up to date.  We will need this when we compile the network drivers later.
 
-- name: apt update before kernel downloads
+- name: apt update before kernel downloads (not NEO)
   apt: 
     upgrade: yes
     update_cache: yes
@@ -251,6 +251,16 @@
     allow_downgrade: yes
     state: fixed
   register: dist_upgraded
+  when: not NEO_present
+
+- name: apt update before kernel downloads (NEO)
+  apt: 
+    upgrade: yes
+    update_cache: yes
+    state: fixed
+  register: dist_upgraded
+  when: NEO_present
+
 
 
 - name: Check the changes to see if we need to reboot

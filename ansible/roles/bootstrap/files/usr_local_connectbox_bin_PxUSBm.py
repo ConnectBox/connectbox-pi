@@ -363,13 +363,7 @@ def do_fdisk(rpi_platform, rm3_platform):
     else: connectbox_scroll = False
 #   for CM4, we get one line beginning /dev/mmcblk0p1, 
 #   and one line beginning /dev/mmcblk0p2 ... this is the line that we are looking for 
-    if rpi_platform == True:
-        x = 2
-        while  respString.find("/dev/mmcblk0p"+str(x))>=0:
-          x += 1
-        x = x -1						# we will have found the last parttion then counted one more so decrement to get last partition
-        max_partition = x
-        p = re.compile('mmcblk[0-9]p'+str(x)+'\s*[0-9]+')        # create a regexp to get close to the sector info - CM4
+
     if rm3_platform == True:
         x = 2
         while  respString.find("/dev/mmcblk1p"+str(x))>=0:
@@ -378,9 +372,18 @@ def do_fdisk(rpi_platform, rm3_platform):
         max_partition = x
         p = re.compile('mmcblk[0-9]p'+str(x)+'\s*[0-9]+')        # create a regexp to get close to the sector info - CM4
 
+#    if rpi_platform == True: 
+    else:    # case for both RPi and NEO
+        x = 2
+        while  respString.find("/dev/mmcblk0p"+str(x))>=0:
+          x += 1
+        x = x -1						# we will have found the last parttion then counted one more so decrement to get last partition
+        max_partition = x
+        p = re.compile('mmcblk[0-9]p'+str(x)+'\s*[0-9]+')        # create a regexp to get close to the sector info - CM4
 
-    else:
-        p = re.compile('mmcblk[0-9]p[0-9]\s*[0-9]+')    # create a regexp to get close to the sector info - NEO
+
+#    else:
+#        p = re.compile('mmcblk[0-9]p[0-9]\s*[0-9]+')    # create a regexp to get close to the sector info - NEO
 
     m = p.search(respString)    # should find "mmcblk0p1   8192" or similar, saving as object m (NEO)
                                 #  or "mmcblk0p2-9   532480" or similar for CM4
