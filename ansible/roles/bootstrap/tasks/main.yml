@@ -270,6 +270,7 @@
 - name: print the facts of reboot needed
   debug:
     msg: "the output of dist_upgrade was {{ dist_upgraded.stdout }} and reboot required is {{ rbtreq }}"
+  ignore_errors: True
 
 - name: Auto clean the packages
   apt:
