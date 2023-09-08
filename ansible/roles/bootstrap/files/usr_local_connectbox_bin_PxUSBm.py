@@ -693,7 +693,7 @@ def setNetworkNames():
 # we also have wlanntwk list of wlanX devices where the list contains the X's
 # we also have ethntwk list of ethX devicess where the list contains the X's
 
-    print("length of wlaanntwk is: "+str(len(wlanntwk))+" contents is: "+str(wlanntwk))
+    print("length of wlanntwk is: "+str(len(wlanntwk))+" contents is: "+str(wlanntwk))
     print("length of ethntwk is: "+str(len(ethntwk))+" contents is: "+str(ethntwk))
 
 
@@ -1285,13 +1285,35 @@ def checkServices():		#check out the services that were supposed to start
         logging.info("Networking service was running nicely")
 
     logging.info("starting to test AP services")
+    process = Popen(["/bin/systemctl","status", "hostapd"], shell=False, stdout=PIPE, stderr=PIPE) 
+    stdout, stderr = process.communicate()
+    serva = str(stdout)
+    x = serva.find("Active: active")
+    if x < 0:
+      #We got here because the hostapd service is not running
+      x = serva.find("Loaded: masked")
+      if x >= 0:
+        #Ok we have encountered hostapd masked for whatever reason
+        logging.info("hostapd is masked and needs to be unmasked")
+        process = Popen(['/bin/systemctl', 'unmask', 'hostapd'], shell =False, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = process.communicate()
+        if stderr != "":
+          logging.info("tried to unmask hostapd but got an error.  Don't know what to do now.")
+      process = Popen(['/bin/systemctl', 'restart', 'hostapd'], shell=False, stdout=PIPE, stderr= PIPE)
+      stdout, stderr = process.communicate()
+      serva = str(stdout)
+      if serva.find("Active: active") >= 0:
+        logging.info("well the restart worked and is no longer masked")
+        logging.info("hostapd may still have isseus but this is good")
+      else:
+        logging.info("tried to restart Hostapd but still didn't get an active service.  Don't know what to do now.")
     AP = "wlan"+str(get_AP())
     process = Popen(["/bin/systemctl",'status','ifup@'+AP], shell = False, stdout=PIPE, stderr=PIPE)
     stdout, stderr = process.communicate()
     serva = str(stdout)
     x = serva.find("Active: active")
     print("looking for ifup@AP.serice : "+AP+"and line is "+str(x))
-    if x < 0:									#we found our AP ifup service
+    if x < 0:									#we found our AP ifup service not active
         print("Found the ifup@AP.service not running")
         logging.info("Found the ifup@AP.service not running")
         try:
