@@ -111,6 +111,7 @@ def mountCheck():
       if (mnt[j] >= 0):
         if not ('sd'+chr(mnt[j])+'1' in b):
           c = '/dev/sd' + chr(mnt[j])+'1'
+          print("unmount /dev/sd" + chr(mnt[j])+"1")
           c = 'umount '+c
           if DEBUG > 2: print("No longer present sd"+chr(mnt[j])+"1  so well "+c)
           if DEBUG > 2: print("the value of b is"+b)
@@ -120,7 +121,7 @@ def mountCheck():
             if loc[j] > ord('0'):
                process = os.popen('rmdir /media/usb'+chr(loc[j]))
                process.close()
-               if DEBUG > 2: print("Deleted the directory /media/usb",chr(loc[j]))
+               print("Deleted the directory /media/usb",chr(loc[j]))
             else:     #We just unmounted usb0 so we need to rerun the enhanced interfaceUSB loader
                       # Run these functions on mount -- added 20211111
               # Enhanced Content Load
@@ -135,6 +136,7 @@ def mountCheck():
             j += 1
         else:
         #Were here with the device still mounted
+          print("device still mounted /dev/sd"+chr(mnt[j])+"1")
           j += 1
           total += 1
       else:
@@ -200,7 +202,8 @@ def mountCheck():
             # Moodle Course Loader
 #            os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/*.mbz && /usr/bin/php /var/www/moodle/admin/cli/restore_courses_directory.php /media/usb0/' >/tmp/restore_courses_directory.log 2>&1 &")
             # Enhanced Content Load
-            os.system("/usr/bin/python3 /usr/local/connectbox/bin/mmiLoader.py >/tmp/loadContent.log 2>&1 &")
+            if os.system("/usr/bin/python3 /usr/local/connectbox/bin/mmiLoader.py >/tmp/loadContent.log 2>&1 &")< 0:
+                os.system("/usr/bin/python3 /usr/local/connectbox/bin/mmiLoader.py >/tmp/loadContent.log 2>&1 &")
         else:                                               #True if we are mounted, check for usb(?).
           if ('usb' in d[i]):                               #we need to register a mount or make sure it is
             a = d[i].partition('usb')
@@ -1152,8 +1155,10 @@ def check_CI():
   f.close()
   ci_active = connections.partition("ssid")
   x = ci_active[2].split("psk")
-  if "Default" in x[0]:
+  if "Default1" in x[1]:
     return (0)        # we have no connection
+  elif 'Default' in x[0]:
+    return (0)		#We have no SSID
   else:
     return(1)
 
@@ -1213,7 +1218,7 @@ def check_wlan_CI(CI):
 
 
 def check_stat_CI(CI):
-    if (check_CI() == ""):
+    if (check_CI() == 0):
         return(0)	      #Were ok because we have not SSID set
     z = 0		      #If zero we  don't do anything
     process = Popen("ifconfig", shell=False, stdout=PIPE, stderr=PIPE)
@@ -1384,8 +1389,8 @@ def checkServices():		#check out the services that were supposed to start
     logging.info("Starting CI services")
     # Now we need to check status of CI
     x = get_CI()
-    print("CI is : "+str(x))
-    if  x != "":
+    y = check_CI()
+    if  x != "" and y == 1:
         CI="wlan"+str(x)
         print("the total CI is now: "+CI)
         process = Popen(["/bin/systemctl",'status','ifup@'+CI], shell = False, stdout=PIPE, stderr=PIPE)
@@ -1416,7 +1421,7 @@ def checkServices():		#check out the services that were supposed to start
             logging.info("The ifup@CI.service is running fine so nothing to do")
             print("The ifup@CI.service is running finel so nothiing to do")
     else:
-        print("No CI on this device so we skip")
+        print("No CI on this device or Ci has no passwords and ssid so we skip")
         logging.info("No CI on this device ")
 
     print("OK were done with all our testing the services should be googd at this point")
@@ -1655,6 +1660,7 @@ if __name__ == "__main__":
     while (x == x):                         # main loop that we live in for life of running
           if (NoMountUSB <= 0):
              if DEBUG > 3: print("PxUSBm Going to start the mount Check")
+             print("Getting ready for mount checks "+time.asctime())
              mountCheck()                   # Do a usb check to see if we have any inserted or removed.
              if connectbox_scroll: dbCheck()
 
@@ -1662,6 +1668,7 @@ if __name__ == "__main__":
           # check to see if AP is still active
             AP = get_AP()
             AP_up = check_iwconfig(AP)  # returns 1 if up
+            print("checking AP is up "+time.asctime())
             if (not AP_up):
               print("AP was not up and didn't  show correctly")
               try:
@@ -1683,10 +1690,8 @@ if __name__ == "__main__":
             CI = get_CI()
             check_stat_CI(CI)
 
-            check_eth0()
-
           if ((x % 10)==0):
-            if DEBUG > 3: print("PxUSBm Going to do a Network check"+time.asctime())
+            print("PxUSBm Going to do a Network check"+time.asctime())
 
 # add check for /etc/wpa_supplicant/wpa_supplicant.conf for country=<blank>
             wpa_File = '/etc/wpa_supplicant/wpa_supplicant.conf'

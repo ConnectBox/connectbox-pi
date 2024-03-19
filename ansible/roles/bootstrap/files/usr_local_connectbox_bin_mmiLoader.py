@@ -10,6 +10,7 @@ import pathlib
 import shutil
 import mimetypes
 import logging
+from thumbnail import generate_thumbnail
 
 mimetypes.init()
 
@@ -209,7 +210,6 @@ for path,dirs,files in os.walk(mediaDirectory):
 		webpaths.append(path)
 		directoryType = 'collection'
 
-#########################################################################################################################################################################
 
 	##########################################################################
 	# If this directgory ends in .apk and  contains .xml files then it is considered like a webpath
@@ -220,9 +220,10 @@ for path,dirs,files in os.walk(mediaDirectory):
 		x = 0
 		while (x <= (len(files)-1)):
 			y = files[x].find(".xml")
-			print("looking for .xml file in ",thisDirectory,"file is: ",files[x],"location is: ",y)
+			if y < 0: y = files[x].find(".apk")
+			print("looking for .xml or .apk file in ",thisDirectory,"file is: ",files[x],"location is: ",y)
 			if (y > -1):
-				print("         Found XML in file, testpdir value is: ", thisDirectory, files[x])
+				print("         Found XML or APK  in file, testpdir value is: ", thisDirectory, files[x])
 				os.system('ln -s "' + thisDirectory + '/' + files[x] + '" "' + contentDirectory + '/' + language + '/xml/"')
 				try:
 					if (brand['makeArchive'] == True):
@@ -235,7 +236,6 @@ for path,dirs,files in os.walk(mediaDirectory):
 				filess ="[" + file[x] + "]"
 				print ("	WebPath: Set webpaths to true for this directory: " +thisDirectory)
 				webpaths.append(thisDirectory)
-#				webpaths.append( dirs )
 				dirs = '[' + thisDirectory + ']'
 				x = 1
 				directoryType = 'collection'
@@ -257,7 +257,6 @@ for path,dirs,files in os.walk(mediaDirectory):
 					mp3image = thisDirectory +'/'+ file
 					print("Found image in mp3 directory: ", file)
 
-#########################################################################################################################################################################
 
 
 	##########################################################################
@@ -283,8 +282,8 @@ for path,dirs,files in os.walk(mediaDirectory):
 
 		# Skip all files in a web path not named index.html because we just build an item for the index
 		if (path in webpaths):
-			if ((filename != 'index.html') and (filename != 'index.htm') and (filename.find(".xml") < 0 ) and (filename.find('.zip') < 0)):
-				print ("	Webpath file " + filename + " is not index  or *.xml or path.zip so skip")
+			if ((filename != 'index.html') and (filename != 'index.htm') and (filename.find(".xml") < 0 ) and (filename.find(".apk") < 0)  and (filename.find('.zip') < 0)):
+				print ("	Webpath file " + filename + " is not index  or *.xml or *.apk or path.zip so skip")
 				continue
 
 		# Get certain data about the file and path
@@ -316,7 +315,9 @@ for path,dirs,files in os.walk(mediaDirectory):
 				collection['image'] = 'blank.gif'				#default value but may be changed
 			f = open (templatesDirectory + "/en/data/episode.json");
 			content = json.load(f);
-			content['image'] = 'blank.gif'						#default value but may be changed
+			if (extension in '.xml, .apk'): content['image'] = 'apps.png'
+			else: content['image'] = 'blank.gif'					#default value but may be changed
+			if (directoryType == 'collection'): collection['image'] = content['image']
 		else:
 			print ("	Loading Item JSON")
 			f = open (templatesDirectory + "/en/data/item.json");
@@ -378,34 +379,39 @@ for path,dirs,files in os.walk(mediaDirectory):
 				if ('collection' in locals() or 'collection' in globals()) and ((collection['image'] == 'blank.gif') or (collection ['image'] == "")): collection['image'] = './thumbnail-' + slug + ".png"
 			else: content["image"] = 'video.png'
 			if ('collection' in locals() or 'collection' in globals()) and ((collection['image'] == 'blank.gif') or (collection ['image'] == "")): collection['image'] = "video.png"
-		# Look for thumbnail.  If there is one, use it.  If not
-		print ("	Looking For Thumbnail (.thumbnail-" + content["image"] + ") in " + mediaDirectory + '/' + language)
+
 		if ((types[extension]["mediaType"] == "image") or (mp3image != "")):
 			print ("	Since item is image, thumbnail is the same image")
 			if (types[extension]['mediaType'] == 'image'):
 				content["image"] = filename
+				print("setting content['image'] to image and creating link in contentDirectory")
 				os.system ('ln -s "'+ fullFilename + '" "' + contentDirectory + '/' + language + '/images/' + filename + '"')
 			if ('collection' in locals() or 'collection' in globals()) and (mp3image != ""):
 				mp3file =pathlib.Path(mp3image).name
 				collection['image'] = mp3file
+				print("setting collection['image'] to mp3file and creating contentDirectory link")
 				os.system ('ln -s "'+  mediaDirectory + '/' + language + '/' +mp3image + '" "' + contentDirectory + '/' + language + '/images/' + mp3file + '"')
-			elif ('collection' in locals() or 'collection' in globals()): collection['image'] = 'image.png'
+			elif ('collection' in locals() or 'collection' in globals()):
+				collection['image'] = 'image.png'
+				print("setting collection['image'] to default image.png")
 
-		if (os.path.exists(mediaDirectory + "/" + language + "/.thumbnail-" + slug + ".png")):
-			if (os.path.getsize(mediaDirectory + "/" + language + "/.thumbnail-" + slug + ".png") > 0):
-				print ("	Linking Thumbnail: " + mediaDirectory + "/" + language +  "/.thumbnail-" + slug + ".png")
-				os.system ('ln -s "'+ mediaDirectory + '/' + language + '/.thumbnail-' + slug + '.png" "' + contentDirectory + '/' + language + '/images/' + slug + '.png"')
-				if ('collection' in locals() or 'collection' in globals()):
-					if (collection['image'] == "") or (collection['image'] == 'blank.gif'): collection['image']= slug + '.png'
-					print("         Linking complete for collection['image'] as: ", collection['image'])
-				if content['image'] == "" or  content['image'] == 'blank.gif': content['image']= slug + '.png'
-				print ("        Linnk complete for content['imamge'] as:  ",content['image'])
+		if (not (content["mediaType"] in "image")):
+			# Look for thumbnail.  If there is one, use it.  If not
+			print ("	Looking For Thumbnail (.thumbnail-" + content["image"] + ") in " + mediaDirectory + '/' + language)
+			if (os.path.exists(mediaDirectory + "/" + language + "/.thumbnail-" + slug + ".png")):
+				if (os.path.getsize(mediaDirectory + "/" + language + "/.thumbnail-" + slug + ".png") > 0):
+					print ("	Linking Thumbnail: " + mediaDirectory + "/" + language +  "/.thumbnail-" + slug + ".png")
+					os.system ('ln -s "'+ mediaDirectory + '/' + language + '/.thumbnail-' + slug + '.png" "' + contentDirectory + '/' + language + '/images/' + slug + '.png"')
+					if ('collection' in locals() or 'collection' in globals()):
+						if (collection['image'] == "") or (collection['image'] == 'blank.gif'): collection['image']= slug + '.png'
+						print("         Linking complete for collection['image'] as: ", collection['image'])
+					if content['image'] == "" or  content['image'] == 'blank.gif': content['image']= slug + '.png'
+					print ("        Linnk complete for content['imamge'] as:  ",content['image'])
+				else:
+					print ("	Thumbnail exsists but is of zero length")
 			else:
-				print ("	Thumbnail exsists but is of zero length")
-		else:
-			print ("	thumbnails not found.  Using standard image")
+				print ("	thumbnails not found.  Using standard image")
 
-################################################################################################################################################################################
 
 		if ('collection' in locals() or 'collection' in globals()):
 			if (content["mediaType"] in 'audio') or faudio :
@@ -423,8 +429,8 @@ for path,dirs,files in os.walk(mediaDirectory):
 					collection['mediaType'] = "audio"
 				else:  collection['image'] = 'images.png'
 			elif (content['mediaType'].find('application') >= 0) : collection['image'] = 'apps.png'
-		else:
-			print ("Skipping Collection Image Because This is Not A Collection")
+		elif (content['image'] == "") or (content['image'] == 'blank.gif'): 
+			print ("Skipping Collection Image Because This is Not A Collection and we have no content[image]")
 			if (content["mediaType"] in 'audio'):  content['image'] = 'sound.png'
 			elif (content["mediaType"] in 'zip, 7zip, rar'):  content['image'] = 'zip.png'
 			elif (content["mediaType"] in 'document, text, docx, xlsx, pptx'):  content['image'] = 'book.png'
@@ -433,13 +439,7 @@ for path,dirs,files in os.walk(mediaDirectory):
 			elif (content['mediaType'] in 'image, img, tif, tiff, wbmp, ico, jpg, bmp, svg, svgz, webp') : content['image'] = 'images.png'
 			elif (content['mediaType'] == 'application') : content['image'] = 'apps.png'
 
-################################################################################################################################################################################
 
-		# os.system ('touch "' + mediaDirectory + '/.thumbnail-' + slug + '.png"')
-		# COMMENTED OUT 20220512 because now MMI uses icons instead of images.
-		# if (not content["image"]) :
-		#	print ("	Writing Default Icon As Content Image")
-		#	content["image"] = types[extension]["image"]
 
 		##########################################################################
 		#  Compiling Collection or Single
@@ -451,14 +451,9 @@ for path,dirs,files in os.walk(mediaDirectory):
 				collection['slug'] = 'collection-' + collection['title']
 				collection['mediaType'] = content['mediaType']
 				collection['mimeType'] = content['mimeType']
-				if content["image"] == types[extension]["image"] and content["image"] != 'blank.gif':
-					collection['image'] = content['image']
-				elif ((content['image'] != "blank.gif") and (collection['image'] == 'blank.gif')):				#now the default on creation of collection
+				if ((content['image'] != "blank.gif") and (collection['image'] == 'blank.gif')):				#now the default on creation of collection
 					collection['image'] = 'images.png'
-				else:
-                                        #  I have no idea when we get here or why
-					print("Woops we have an unknow  image state\g\g")
-					logging.info("Woops we have an uknow image state "+language+" and collection : "+collection['title'])
+				else: collection['image'] = content['image']
 			elif (collection['mediaType'] == "application" and content['mediaType'] != "application"):
 				print ("  Replacing collection content type with new value: " + content['mediaType']);
 				collection['mediaType'] = content['mediaType']
