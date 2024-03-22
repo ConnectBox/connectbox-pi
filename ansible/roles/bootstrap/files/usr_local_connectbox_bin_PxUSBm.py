@@ -1,4 +1,4 @@
-
+1
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -185,25 +185,57 @@ def mountCheck():
             b = "mount /dev/" + e.group() + " -t auto -o noatime,nodev,nosuid,sync,utf8" + " /media/usb" + chr(a)
           else:
             b = "mount /dev/" + e.group() + " -t auto -o noatime,nodev,nosuid,sync,iocharset=utf8" + " /media/usb" + chr(a)
-          res = os.system(b)
+          c = "dosfsck -a /dev/" + e.group()
+          starttime = time.time()
+          print("checking the files system before mount with: "+ c)
+          try:
+            res = os.system(c) 				#do a file system check befor the mount.  if it is corrupted we will get a system stop PxUSBm
+          except:
+            Print("Failed to do dosfsck")
+            logging.info("Failed to do Dosfsck on " + e.group())
+          print("Did "+c+"  result is: "+str(res))
+          endtime = time.time()
+          deltatime = endtime - starttime
+          print('total time was: ' + str(deltatime) + ' seconds' )
+          logging.info("Completed dosfsck in "+str(deltatime)+ "seconds")
+          print("trying to do mount: " + b)
+          try:
+            res = os.system(b)				#do the mount
+            print("Result of mount was: "+str(res))
+            logging.info("Completed mount " + b)
+          except:
+            print("mount failed result was: "+str(res))
+            logging.info("mount failed result was: "+str(res))
+            try:
+              if (res >=0):
+                res = os.system(b)
+                print("tried new mount of: "+b)
+                print("result of mount was: "+str(res))
+                logging.info("Tried second mount of "+b+" with success")
+            except:
+              logging.info("on mount of USB key errored, tryied to fix with dosfsck and the remount failed.")
+              print("on mount of USB key errored, tryied to fix with dosfsck and the remount failed, res = -1")
+              res = -1
           if DEBUG > 2: print("completed mount /dev/",e.group)
-          mnt[j]=ord(e.group()[len(e.group())-2])
-          loc[j]=a
-          total += 1
-          if a == ord('0'):
-            # Run these functions on mount -- added 20211111
-            # SSH Enabler
-            os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/.connectbox/enable-ssh && (/bin/systemctl is-active ssh.service || /bin/systemctl enable ssh.service && /bin/systemctl start ssh.service)'")
-            # upgrade enabler
-            if (os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/.connectbox/upgrade/upgrade.py'")) == 0:
-              print("starting the upgrade process\n")
-              logging.info("starting the upgrade process")
-              os.system("python3 /media/usb0/.connectbox/upgrade/upgrade.py")
+          if res >= 0:
+            mnt[j]=ord(e.group()[len(e.group())-2])
+            loc[j]=a
+            total += 1
+            print("value of a is: "+str(a))
+            if a == ord('0'):
+              # Run these functions on mount -- added 20211111
+              # SSH Enabler
+              os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/.connectbox/enable-ssh && (/bin/systemctl is-active ssh.service || /bin/systemctl enable ssh.service && /bin/systemctl start ssh.service)'")
+            # Enhanced Content Load
+              if os.system("/usr/bin/python3 /usr/local/connectbox/bin/mmiLoader.py >/tmp/loadContent.log 2>&1 &")< 0:
+                  os.system("/usr/bin/python3 /usr/local/connectbox/bin/mmiLoader.py >/tmp/loadContent.log 2>&1 &")
+              # upgrade enabler
+              if (os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/.connectbox/upgrade/upgrade.py'")) == 0:
+                print("starting the upgrade process\n")
+                logging.info("starting the upgrade process")
+                os.system("python3 /media/usb0/.connectbox/upgrade/upgrade.py")
             # Moodle Course Loader
 #            os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/*.mbz && /usr/bin/php /var/www/moodle/admin/cli/restore_courses_directory.php /media/usb0/' >/tmp/restore_courses_directory.log 2>&1 &")
-            # Enhanced Content Load
-            if os.system("/usr/bin/python3 /usr/local/connectbox/bin/mmiLoader.py >/tmp/loadContent.log 2>&1 &")< 0:
-                os.system("/usr/bin/python3 /usr/local/connectbox/bin/mmiLoader.py >/tmp/loadContent.log 2>&1 &")
         else:                                               #True if we are mounted, check for usb(?).
           if ('usb' in d[i]):                               #we need to register a mount or make sure it is
             a = d[i].partition('usb')
@@ -1599,8 +1631,9 @@ if __name__ == "__main__":
             do_resize2fs(rpi_platform, rm3_platform)     # this ends in reboot() so won't return
 
         else:
-            logging.info("PxUSBm disk and format expansion already completed")
-            print("PxUSBm disk and format expansion already completed")
+            logging.info("PxUSBm disk and format expansion already completed waiting for netfiles")
+            print("PxUSBm disk and format expansion already completed waiting for netfiles")
+
 
 # Once partition expansion is complete, handle the ongoing monitor of USB
 
@@ -1643,6 +1676,14 @@ if __name__ == "__main__":
             process.close()
             time.sleep(5)
     print("neo-battery-shutdown is running")
+
+    logging.info("PxUSBm moving to run mode")
+    f = open(progress_file, "w")
+    f.write("running")
+    f.close()
+    os.sync()
+    print("PxUSBm moving to run mode")
+
 
     x = 95    # give time for network to come up before trying to fix it
 
