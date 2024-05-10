@@ -1,4 +1,3 @@
-1
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -111,7 +110,7 @@ def mountCheck():
       if (mnt[j] >= 0):
         if not ('sd'+chr(mnt[j])+'1' in b):
           c = '/dev/sd' + chr(mnt[j])+'1'
-          print("unmount /dev/sd" + chr(mnt[j])+"1")
+          print("unmount "+c)
           c = 'umount '+c
           if DEBUG > 2: print("No longer present sd"+chr(mnt[j])+"1  so well "+c)
           if DEBUG > 2: print("the value of b is"+b)
@@ -126,17 +125,17 @@ def mountCheck():
                       # Run these functions on mount -- added 20211111
               # Enhanced Content Load
               os.system("/usr/bin/python3 /usr/local/connectbox/bin/mmiLoader.py >/tmp/loadContent.log 2>&1 &")
-            loc[j]=-1
+            loc[j]= -1
             mnt[j] = -1
             j += 1
           else:
-            if DEBUG > 2: print("Failed to " + c)
+            if DEBUG > 2: print("Failed to " + c + "So what do we do?")
             mnt[j] = -1
             loc[j] = -1
             j += 1
         else:
         #Were here with the device still mounted
-          print("device still mounted /dev/sd"+chr(mnt[j])+"1")
+          print("device still mounted /dev/sd"+chr(mnt[j])+"1 Device present")
           j += 1
           total += 1
       else:
@@ -172,7 +171,8 @@ def mountCheck():
           if DEBUG > 2: print("end of loop were going to use location "+str(j)+" and ord "+chr(a))
           print("mount point is "+e.group())
 # we have aproblem our mount point is to high.  we need to do a reboot.
-#            os.system("/usr/sbin/reboot")
+          if k > 9:
+            os.system("/usr/sbin/reboot")
           time.sleep(20)    #This ends here.
 # Now we know we need to do a mount and have found the lowest mount point to use in (a)
           if not (os.path.exists("/media/usb"+chr(a))):  #if the /mount/usbx isn't there create it
@@ -190,6 +190,14 @@ def mountCheck():
           print("checking the files system before mount with: "+ c)
           try:
             res = os.system(c) 				#do a file system check befor the mount.  if it is corrupted we will get a system stop PxUSBm
+            if res ==256:
+              print("failed to do dosfsck -a /dev/" + e.group())
+              c = "ntfsfix -d /dev/" + e.group()
+              try:
+                res = os.system(c)
+              except:
+                print("failed to do ntfsfix -f")
+                logging.info("Failed to do ntfsfix -d on "+ e.group())
           except:
             Print("Failed to do dosfsck")
             logging.info("Failed to do Dosfsck on " + e.group())
@@ -197,36 +205,43 @@ def mountCheck():
           endtime = time.time()
           deltatime = endtime - starttime
           print('total time was: ' + str(deltatime) + ' seconds' )
-          logging.info("Completed dosfsck in "+str(deltatime)+ "seconds")
+          logging.info("Completed dosfsck/ntfsfix in "+str(deltatime)+ "seconds")
+
+###################### OK now mount the key ############################################
           print("trying to do mount: " + b)
-          try:
+          try: # general fat mount
             res = os.system(b)				#do the mount
             print("Result of mount was: "+str(res))
-            logging.info("Completed mount " + b)
+            logging.info("Completed mount " + b + " result " + str(res))
           except:
-            print("mount failed result was: "+str(res))
-            logging.info("mount failed result was: "+str(res))
-            try:
-              if (res >=0):
-                res = os.system(b)
-                print("tried new mount of: "+b)
-                print("result of mount was: "+str(res))
-                logging.info("Tried second mount of "+b+" with success")
+            print("mount" + b + " failed result was: "+str(res))
+            logging.info("mount" + b + " failed result was: "+str(res))
+          if res != 0:
+####################### we didn't mount fat drive try NTFS drive #######################
+            try:   #try explicit ntfs mount
+              if (res > 0):		#if we have res > 0 then we have an error
+                 if y>= "5.15.0":
+                    b = "mount /dev/" + e.group() + "-t ntfs -0 noatime, nodev, nosuid, sync, utf8" + " /media/usb" + chr(a)
+                 else:
+                    b = "mount /dev/" + e.group() + "-t ntfs -o noatime, nodev, nosuid, sync, iocharset=utf8" + " /media/usb" + char(a) 
+                 res = os.system(b)
+                 print("tried new NTFS mount of: "+b + "result was: " + str(res))
+                 logging.info("Tried NTFS mount of "+b+" with result of "+str(res))
             except:
-              logging.info("on mount of USB key errored, tryied to fix with dosfsck and the remount failed.")
-              print("on mount of USB key errored, tryied to fix with dosfsck and the remount failed, res = -1")
+              logging.info("on NTFS  mount of USB key errored")
+              print("on NTFS mount of USB key errored,  res =" + str(res))
               res = -1
           if DEBUG > 2: print("completed mount /dev/",e.group)
           if res >= 0:
             mnt[j]=ord(e.group()[len(e.group())-2])
             loc[j]=a
             total += 1
-            print("value of a is: "+str(a))
+            print("value of a is: "+chr(a))
             if a == ord('0'):
               # Run these functions on mount -- added 20211111
               # SSH Enabler
               os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/.connectbox/enable-ssh && (/bin/systemctl is-active ssh.service || /bin/systemctl enable ssh.service && /bin/systemctl start ssh.service)'")
-            # Enhanced Content Load
+              # Enhanced Content Load
               if os.system("/usr/bin/python3 /usr/local/connectbox/bin/mmiLoader.py >/tmp/loadContent.log 2>&1 &")< 0:
                   os.system("/usr/bin/python3 /usr/local/connectbox/bin/mmiLoader.py >/tmp/loadContent.log 2>&1 &")
               # upgrade enabler
@@ -234,8 +249,12 @@ def mountCheck():
                 print("starting the upgrade process\n")
                 logging.info("starting the upgrade process")
                 os.system("python3 /media/usb0/.connectbox/upgrade/upgrade.py")
-            # Moodle Course Loader
-#            os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/*.mbz && /usr/bin/php /var/www/moodle/admin/cli/restore_courses_directory.php /media/usb0/' >/tmp/restore_courses_directory.log 2>&1 &")
+##################### The well Code on Mount ########################################## 
+             # Moodle Course Loader
+              if (Brand["Brand"] == 'TheWell'):
+                print("Running the moodel cli restore_courses_directory.php")
+                logging.info("Running the moodel cli restore_courses_directory.php")
+                os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/*.mbz && /usr/bin/php /var/www/moodle/admin/cli/restore_courses_directory.php /media/usb0/' >/tmp/restore_courses_directory.log 2>&1 &")
         else:                                               #True if we are mounted, check for usb(?).
           if ('usb' in d[i]):                               #we need to register a mount or make sure it is
             a = d[i].partition('usb')
@@ -279,6 +298,8 @@ def mountCheck():
         j +=1
       else:                   # we have a hole or are done but need to validate
         k = i+1
+
+# remove any holes in mount table
         while (k < 11) and (mnt[i] == -1):  #checking next mount to see if it is valid
           if DEBUG > 2: print("loop 5, iterate:",k,i)
           if (mnt[k] != -1):

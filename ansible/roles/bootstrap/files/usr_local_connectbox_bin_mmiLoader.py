@@ -168,13 +168,16 @@ for path,dirs,files in os.walk(mediaDirectory):
 	##########################################################################
 
 	# See if the language already exists in the directory, if not make and populate a directory from the template
-	if (not os.path.exists(contentDirectory + "/" + language)):
+	if not(os.path.exists(contentDirectory + "/" + language)):
 		print ("	Creating Directory: " + contentDirectory + "/" + language)
 		shutil.copytree(templatesDirectory + '/en', contentDirectory + "/" + language)
 		os.system ("chown -R www-data.www-data " + contentDirectory + "/" + language)
 		# Load the main.json template and populate the mains for that language.
 		f = open (templatesDirectory + "/en/data/main.json")
 		mains[language] = json.load(f)
+
+	if not( os.path.exists(contentDirectory + '/' + language)): print ('###### Were in trouble #####')
+	os.sync()
 
 	##########################################################################
 	#  See if this directory is skipped because it resides within a webPath or xml structurefor a web site content such as ./images or ./js
@@ -343,7 +346,7 @@ for path,dirs,files in os.walk(mediaDirectory):
 			content["mimeType"] = "application/zip"
 			content["title"] = os.path.basename(os.path.normpath(path))
 			content["filename"] = slug + ".zip"
-			content['image'] = "www.png"
+			if (extension in '.html'): content['image'] = "www.png"
 			if (directoryType == "collection"):
 				collection['image'] = "www.png"
 
@@ -376,7 +379,7 @@ for path,dirs,files in os.walk(mediaDirectory):
 			print ("	Thumbnail is created at: " + mediaDirectory + "/" + language + '/.thumbnail-' + slug + '.png') 
 			if (os.path.exists(mediaDirectory + "/" + language + "/.thumbnail-" + slug + ".png")):
 				content["image"] = ".thumbnail-" + slug + ".png"
-				if ('collection' in locals() or 'collection' in globals()) and ((collection['image'] == 'blank.gif') or (collection ['image'] == "")): collection['image'] = './thumbnail-' + slug + ".png"
+				if (os.path.exists(mediaDirectory + "/" + language + "/.thumbnail-" + slug + ".png")):
 			else: content["image"] = 'video.png'
 			if ('collection' in locals() or 'collection' in globals()) and ((collection['image'] == 'blank.gif') or (collection ['image'] == "")): collection['image'] = "video.png"
 
