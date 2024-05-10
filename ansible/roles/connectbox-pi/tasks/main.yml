@@ -5,6 +5,17 @@
     minute: "0,15,30,45"
     job: "curl -XDELETE http://127.0.0.1:{{ gunicorn_listen_port }}/chat/messages > /dev/null"
 
+- name: ensure PxUSBm is running
+  cron:
+    name: PxUSBM test for running
+    day: "*"
+    hour: "*"
+    minute: "*"
+    month: "*"
+    weekday: "*"
+    user: root
+    job:  "python3 /usr/local/connectbox/bin/TestPxUSBm.py > /dev/nul"
+
 - name: install access-log-analyzer
   git:
     repo: '{{ access_log_analyzer_repo }}'
