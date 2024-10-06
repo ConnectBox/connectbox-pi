@@ -549,6 +549,8 @@
 - name: Pin kernel and dtb packages NEO
   command: aptitude -q hold linux-dtb-current-sunxi linux-image-current-sunxi linux-u-boot-nanopineo-current linux-focal-root-current-nanopineo
   when: (connectbox_os == 'armbian') and NEO_present
+  ignore_errors: yes
+
 
 - name: Pin Kernel and dtb packages Orange Pi Zero 2
   command: aptitude -q hold linux-dtb-current-sunxi linux-image-current-sunxi
