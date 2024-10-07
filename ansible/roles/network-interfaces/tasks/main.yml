@@ -459,11 +459,16 @@
   when:  (compile_all.changed)
 
 - name: unmask systemd-networkd.service
+  command: systemctl unmask systemd-networkd.service
+  ignore_errors: yes
+  when: (compile_all.changed)
+
+- name: start the systemd-networkd.service
   command: systemctl start systemd-networkd.service
   ignore_errors: yes
   when: (compile_all.changed)
 
-- name: make_sure_it_starts
+- name: make_sure_it_starts_at_boot
   command: systemctl enabled systemd-networkd.service
   ignore_errors: yes
   when: (compile_all.changed)

@@ -292,8 +292,27 @@
   file:
     path: /etc/cron.d/armbian-updates
     state: absent
+  register: auto_update
+  ignore_errors: yes
   when: ansible_facts['os_family'] == 'Ubuntu' or connectbox_os == 'armbian' or (OZ2_present and ansible_distribution|lower == 'ubuntu')
 
+- name: Disable armbian auto-update type 2a 
+  ansible.builtin.replace:
+    path: /etc/apt/apt.conf.d/20auto-upgrades
+    after: 'APT::Periodic::Update-Package-List "'
+    before: '"'
+    regexp: '0'
+  ignore_errors: yes
+  when: ansible_facts['os_family'] == 'Ubuntu' or connectbox_os == 'armbian' or (OZ2_present and ansible_distribution|lower == 'ubuntu')
+
+- name: Disable armbian auto-update type 2b 
+  ansible.builtin.replace:
+    path: /etc/apt/apt.conf.d/20auto-upgrades
+    after: 'APT::Periodic::Unattended-Upgrade "'
+    before: '"'
+    regexp: '0'
+  ignore_errors: yes
+  when: ansible_facts['os_family'] == 'Ubuntu' or connectbox_os == 'armbian' or (OZ2_present and ansible_distribution|lower == 'ubuntu')
 
 - name: Disable OrangePi auto-update processes
   file:
