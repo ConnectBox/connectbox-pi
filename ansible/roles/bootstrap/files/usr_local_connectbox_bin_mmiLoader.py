@@ -47,11 +47,17 @@ try:
 except:
 	temp = 1 # There is a directory already
 
+tst = os.listdir(mediaDirectory)
+if len(tst == 0):
+	exit(0)
+
 os.system("touch " +  comsFileName) 
 
 ##########################################################################
 #  See if this directory is language folder or content
 ##########################################################################
+
+
 print ("	Check for saved.zip")
 if (os.path.isfile(mediaDirectory + "/saved.zip")):
 	print ("	Found saved.zip.  Unzipping and restoring to " + contentDirectory)
