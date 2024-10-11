@@ -47,9 +47,6 @@ try:
 except:
 	temp = 1 # There is a directory already
 
-tst = os.listdir(mediaDirectory)
-if len(tst == 0):
-	exit(0)
 
 os.system("touch " +  comsFileName) 
 
@@ -123,7 +120,7 @@ webpaths = []     # As we find web content, add here so we skip files and folder
 # Check for empty directory and write default content if empty
 if len(os.listdir(mediaDirectory) ) == 0:
 	print("Directory is empty")
-	f = open(mediaDirectory + "/connectbox.txt", "a")
+	f = open(mediaDirectory + "/content/connectbox.txt", "a")
 	f.write("<h2>Media Directory is Empty</h2> Please refer to the administration guide!")
 	f.close()
 
@@ -189,7 +186,9 @@ for path,dirs,files in os.walk(mediaDirectory):
 			logging.info ("Found a .language folder containing a valid .langage in th root contents " + language + " which is " + json.dumps(languageCodes[language]))
 			directoryType = "language"
 		else:
-			fail() # This is a placeholder to trigger the try:except to have an exception that goes to except below
+			language = "en"
+			directoryType = "language"
+
 	except:
 		print ('	NOT a Language: ' + thisDirectory)
 
