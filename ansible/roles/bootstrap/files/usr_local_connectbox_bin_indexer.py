@@ -14,7 +14,12 @@
 #	'verbose'
 #	'recursive'
 #       'filter(file filter)' for sort function
-#   process_dir(top_dir, dest_dir, config)
+#
+#  prev_index
+#	True	- we done this before so don't overwrite any START_HERE files
+#	False	- We havn't done this so move any exsisting index.html to START_HERE
+#
+#   process_dir(top_dir, dest_dir, config, prev_index)
 
 
 import datetime
@@ -26,7 +31,7 @@ from urllib.parse import quote
 DEFAULT_OUTPUT_FILE = 'index.html'
 
 
-def process_dir(top_dir, dest_dir, opts):
+def process_dir(top_dir, dest_dir, opts, prev_index):
 
     if 'filter(' in opts:
         x = opts.find('filter(')+ 6
@@ -38,20 +43,8 @@ def process_dir(top_dir, dest_dir, opts):
     index_file = ""
     index_path = os.path.join(dest_dir, DEFAULT_OUTPUT_FILE)
     output_path = os.path.join(dest_dir, "Start_Here.html")
-    if os.path.isfile(output_path):
-        x = str(output_path).find(" ")
-        y = str(output_path).find("\ ")
-        print ("output_path is: ",x,y,output_path)
-        while ((x >= 1) and (y != (x-1))):
-            output_path = str(output_path)[0:(x)]+"\ "+str(output_path)[(x+1):]
-            print ("output_path is: ",x,y,output_path)
-            y = x
-            x = str(output_path)[(x+1):].find(" ")
-            if x > 0: x = x+y+1
-            else: x = -1
-        output_path = Path(output_path)
-
-        if (os.path.isfile(index_path) and not(os.path.isfile(os.path.join(dest_dir,"START_HERE.html")))):
+    if not(os.path.isfile(output_path)):
+        if (os.path.isfile(index_path) and (not prev_index)):
             print ("moving: ",index_path," to: ",output_path)
             os.system("mv " + str(index_path) + " " +str(output_path))
 
@@ -539,9 +532,12 @@ def process_dir(top_dir, dest_dir, opts):
         if ((Path(os.path.join(top_dir, entry)).is_dir()) and ('recursive' in opts)):
             if 'verbose'in opts: print ("recursion happening, entry is: ",os.path.join(top_dir,entry))
             new_dir = Path(os.path.join(top_dir, entry))
-            if len(opts)> 0: new_opts = opts + ", recursed"
-            else: opts = 'recursed' 
-            process_dir(new_dir, new_dir, new_opts)
+            if len(opts)> 0:
+                if 'recursed' in opts:
+                    pass
+                else:  new_opts = opts + ", recursed"
+            else: opts = 'recursed'
+            process_dir(new_dir, new_dir, new_opts, prev_index)
 
         # From Python 3.6, os.access() accepts path-like objects
         if (not entry.is_symlink()) and not os.access(str(entry), os.W_OK):
@@ -644,4 +640,4 @@ def pretty_size(bytes, units=UNITS_MAPPING):
 
 if __name__ == '__main__' :
 
-      process_dir(top_dir, dest_dir, opts) 
+      process_dir(top_dir, dest_dir, opts, prev_index) 
