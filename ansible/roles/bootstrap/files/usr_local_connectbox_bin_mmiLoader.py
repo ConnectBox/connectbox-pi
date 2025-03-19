@@ -191,15 +191,17 @@ def mmiloader_code():
 	y = 0
 	while ((y < len(doesRootContainLanguage) and (len(doesRootContainLanguage) > 0))):
 		lang = doesRootContainLanguage[y]
-		print("lang is now: "+lang)
+		print ("lang is now: "+lang)
 		try:
+			print ("lang is: ",languageCodes[lang]['english'])
+
 			if len(lang) > 3: 								#Were making hard spaces on the proported language
 				print("checking language " + lang + " is NOT a valid language and will be removed from the list")
 				doesRootContainLanguage.remove(lang)
 				if y > 0: y -= 1
 
-			elif (json.dumps(doesRootContainLanguage(lang))):
-				print("checking language " + lang2 + " as a valide language",json.dumps(doesRootContainLanguage(lang)))
+			elif (languageCodes[lang]):
+				print("checking language " + lang + " as a valide language",languageCodes[lang])
 				y +=1
 				pass
 
@@ -210,7 +212,8 @@ def mmiloader_code():
 		except:
 			doesRootContainLanguage.remove(lang)
 			if y > 0: y -= 1
-			print ("We just removed " + lang + " from doesRootContainLanguage")
+			print ("We just removed " + lang + " from doesRootContainLanguage, language not found!")
+			logging.info("We just removed " + lang + " from doesRootContainLanguage, language not found!")
 
 		if y > len(doesRootContainLanguage):
 			y = y-1
@@ -224,7 +227,7 @@ def mmiloader_code():
 	else: indexed_before = False
 
 
-	print("look for extended directories")
+	print("validate language directories and/or look for .language file")
 	####################################################################################################
 	# We are going to check for file forced language .language then we'll chekc for extended directories
 	####################################################################################################
@@ -308,8 +311,8 @@ def mmiloader_code():
 			else:
 				pass										# We will process this directory as its either non root or no languages in root.
 
-		print ("finished on the languages check")
 
+		print ("** finished on the languages check, now looking at extended directories **")
 
 		##########################################################################
 		# Check for Complex file structure with multiple directories
@@ -364,7 +367,7 @@ def mmiloader_code():
 						break
 
 	if len(complex_lst)>0:											#If we have complex directories then lets save the list off
-		f = open("/usr/local/connectbox/complex_dir", "w", encoding='utf-8')
+		f = open(complex_dir, "w", encoding='utf-8')
 		json.dump(complex_lst, f)
 		f.close()
 
@@ -440,7 +443,7 @@ def mmiloader_code():
 		# See if the language already exists in the directory, if not make and populate a directory from the template
 		if (not os.path.exists(contentDirectory + "/" + language)):   					#If this language already exsists skip creating it.
 			print("Doing new language setup " + language + " **********************************")
-#			print ("	Creating Directory: " + contentDirectory + "/" + language)
+			print ("	Creating Directory: " + contentDirectory + "/" + language)
 			shutil.copytree(templatesDirectory + '/en', contentDirectory + "/" + language)
 			os.system ("chown -R www-data.www-data " + contentDirectory + "/" + language)
 			# Load the main.json template and populate the mains for that language.
@@ -463,74 +466,92 @@ def mmiloader_code():
 			if (y >= 0):
 				print ("Complex_lst found path in testpath, at : "+str(y))			#Any match is grounds for ignorning unless its index.html in the root.
 				try:
-					z = str(path)[(y+len(testPath)):]					#See if we have any subpaths after this path
-					print("ok remainder of string is: "+z)
+					d = str(path)[(y+len(testPath)):]					#See if we have any subpaths after this path
+					print("ok remainder of string is: "+d)
 				except:
-					z = ""
+					d = ""
 					print ("Hit our exception in the complex_lst test loop")
 					y = 0
-				if (z.find("/") == -1):								#by looking for a / in the tail of the path if not there then
+				if (d.find("/") == -1):								#by looking for a / in the tail of the path if not there then
 					print ("This directory is a major directory of a complex one.  skip it except for index.htm*")
 					webpaths.append(path)							#we found a subpath so make sure we get the path  in the webpaths list
 					if ("index.html" in files): directoryType = 'folders'
 					y = 1									# continue flag for testing for web elements
 					break									# stop looking in the complex_lst
-				else:
-					print ("Ok we agree this is not a major direcotry")
-					y = 0									# non continue flag testing for web elements
-					webpaths.append(path)							# since we found our path in the complex_lst we add to webpaths
+				else:	#we start with y>0
 					directoryType = ""							# were a blank directory
+					y = 0
 					break									# This path is an extension of the complex_lst path
 			else:											# Ok we didn't find this  complex_lst[x] in this path
 				y = 1										# we want to continue since we need to check for web elements
-				print("We didn't find the directory in complex_lst")
 
-		print ("our go for index.html testing value after testing directories is: "+str(y)+ "directoryType is: " + directoryType)
+		yy = y												# Were not a major directory in a complex one.
+		y = 1
+		print ("Ok we need to check if this is part of a web directory")
+		if len(webpaths) > 0:
+			print ("Testing for webpaths in this path", path, " : ",webpaths)
+			for d in webpaths:
+				x = path.find(d)
+				if x >= 0:
+					print ("Found webpath in path", x," : ",path[x:])
+					y = 0									# non continue flag testing for web elements
+					break									# We stop here since its a minor directory
+				else:  continue									# Ok this is not our path keep going
+			if ((x < 0) and (os.path.isfile(path + "/index.htm"))):					# if we didn't find our path in webpaths but we did find index.htm in the path then  we add
+				webpaths.append(path)								# since we found our path in the with index.thm we change the state of continue on next set
+				directoryType = "html"								# were a blank directory
+				y = 1										# Since we added the path lets set our continue flag to not-continue
+
+		print ("our evaluation of testing for web elements is finished we have go forward at: "+str(y)+ " , current directoryType is: " + directoryType + "yy: "+str(yy))
+
+		if ((yy == 1) and (y == 0)): y = 0								# if we have go forward on extended but not web then we don't go forward.
+		elif ((yy == 0) and (y == 1)): y = 0								# if we have go forward on webdirectory but not on extended directory we don't go forward
+		else: y = 1
+
 
 		##########################################################################
-		#  If this directory contains index.html then treat as web content
+		#  If this directory contains index.html then treat as web content  (DO NOT AFFECT Y)
 		##########################################################################
 
-		if (((os.path.isfile(path + "/index.html")) or (str(path).find('index.htm') >= 0)) and ( y > 0)):	#we have inidex.htm/l and our move forward flag y
+		if (((os.path.isfile(path + "/index.html")) or (str(files).find('index.htm') >= 0)) and ( y > 0)):	#we have inidex.html and our move forward flag y
 
 			print ("	" + path + " is web content")
-			# See if the language already exists in the directory, if not make and populate a directory from the template
 			# Make a symlink to the file on USB to display the content
 #			print ("	WebPath: Writing symlink to /html folder")
 			os.system ("ln -s '" + path + "' " + contentDirectory + "/" + language + "/html/")
 			x = 0
-
 #			print ("directoryType: ",directoryType)
+			subpath = path.replace(mediaDirectory, "")
+			print ("subpath is now: "+subpath)
 
-			if (not(os.path.isfile(mediaDirectory + ("/.webarchive-" + language + "-" + thisDirectory + ".zip").replace('--','-'))) and (os.path.isfile(mediaDirectory + '.webcompress'))):
+			if not((os.path.isfile(mediaDirectory + "/" + (".webarchive-" + language + "-" + subpath + ".zip").replace("/","-").replace('--','-'))) or (os.path.isfile(mediaDirectory + '/.NoWebcompress'))):
 
 				f = open(comsFileName, "w", encoding='utf-8')						#Update the display to show were zipping
 				f.write('Creating ZIP'+chr(10)+"File")
 				f.close()
 
-				SkipArchive = 1
 				logging.info ("Trying to archive a web file set for " + thisDirectory)
 				try:
-					print ("	WebPath: Creating web archive zip file on USB for: ",path)
+					print ("	WebPath: Creating web archive zip file on USB for: ",subpath)
 					x = 1   									#Set a flag that were creating an archive
-					shutil.make_archive(mediaDirectory +  ("/.webarchive-" + language + "-" + thisDirectory).replace('--','-'), 'zip', (path))
-#					print ("	WebPath: Linking web archive zip")
+					shutil.make_archive(mediaDirectory + "/" + (".webarchive-" + language + "-" + subpath).replace("/","-").replace('--','-'), 'zip', (path))
+					SkipArchive = 1
+					logging.info ("succeeded in finishing the zip file for .webarchvie-" + language + "-" + subpath.replace("/","-").replace("--","-")+".zip")
+#					print ("succeeded in finishing the zip file for .webarchvie-" + language + "-" + subpath.replace("/","-").replace("--","-")+".zip")
 				except:
 					print ("	Error making web archive ")
+					logging.info ("Failled to finishing the zip file for .webarchvie-" + language + "-" + subpath.replace("/","-").replace("--","-")+".zip")
 					x = 0 	 									#Clear our archive flag
-				logging.info ("succeeded in finishing the zip file")
 			else:
-				print(("webarchive already exsists /.webarchive-" + language + '-' + thisDirectory + ".zip").replace("--","-") + "or no .webarchive file in root")
-				x = 0  											#Clear our archive flag
-
+				print(("webarchive already exsists /.webarchive-" + language + '-' + subpath + ".zip").replace("/", "-").replace("--","-") + "or .Nowebarchive file in root")
+				x = 1  											#set our archive flag
 			# Re-write the display as indexing since it may have changed.
 			f = open(comsFileName, "w", encoding='utf-8')
 			f.write('Indexing USB')
 			f.close()
 
-			if x>0: os.system ("ln -s '"+ mediaDirectory + "/.webarchive-" + language + "-" + thisDirectory + ".zip'  '" + contentDirectory + "/" + language + "/html/" + thisDirectory + ".zip'".replace("--","-"))
+			if x>0: os.system (("ln -s '"+ mediaDirectory + "/.webarchive-" + language + "-" + subpath.replace("/","-") + ".zip'  '" + contentDirectory + "/" + language + "/html/" + thisDirectory + ".zip'").replace("--","-"))
 			else: print ("No webarchve is available!!")
-			print ("we think we have a web service now")
 
 			dirs = []
 			webpaths.append(path)
@@ -545,8 +566,8 @@ def mmiloader_code():
 		##########################################################################
 
 		for testPath in webpaths:
-			if ((path.find(testPath) != -1) and (not('folder' in directoryType))):				#we will have testpath in path for complexx folder  hence the test
-															#for folder in directoryType
+			if ((path.find(testPath) != -1) and (not('folder' in directoryType)) and (not((os.path.isfile(path + "/index.html")) or (str(files).find('index.htm') >= 0)) or (y <= 0))):	#we will have testpath in path for 
+															#for folder in directoryType or complexx folder, or an index.htm type file
 				print ("	Skipping web path: " + path)
 				skipWebPath = True
 		if (skipWebPath):
@@ -564,10 +585,10 @@ def mmiloader_code():
 #			print ("	WebPath: Writing symlink to /html folder")
 			os.system ("ln -s '" + path + "'  " + contentDirectory + "/" + language + "/html/")
 #			print ("    Path is equal to: " + path)
-			print("    Looking for: " + mediaDirectory + ("/.webarchive-" + language + "-" + thisDirectory + ".zip").replace('--','-'))
+			print("    Looking for: " + mediaDirectory + "/" + (".webarchive-" + language + "-" + thisDirectory + ".zip").replace('--','-'))
 
 
-			if (not os.path.isfile(mediaDirectory + ("/.webarchive-" + language + "-" + thisDirectory + ".zip").replace('--','-'))):
+			if (not os.path.isfile(mediaDirectory + "/" + (".webarchive-" + language + "-" + thisDirectory + ".zip").replace('--','-'))):
 
 				f = open(comsFileName, "w", encoding='utf-8')
 				f.write('Creating ZIP'+chr(10)+"File")
@@ -724,7 +745,7 @@ def mmiloader_code():
 
 			# Load the item template file
 			if ("collection" in directoryType):
-				print ("	Loading Collection and Episode JSON")
+				print ("** Starting a collection: Loading Collection and Episode JSON **")
 				if ('collection' not in locals() and 'collection' not in globals()):
 					f = open (templatesDirectory + "/en/data/item.json")
 					collection = json.load(f);
@@ -887,7 +908,7 @@ def mmiloader_code():
 				if (content["mediaType"] in 'audio'):  collection['image'] = 'sound.png'
 				elif ((content["mediaType"] in 'zip, gzip, gz, xz, 7z, bz2, 7zip, tar') and (collection['image'] == 'blank.gif')):  collection['image'] = 'zip.png'
 				elif ((content["mediaType"] in 'document, text, docx, xlsx, pptx') and (collection['image'] == 'blank.gif')):  collection['image'] = 'book.png'
-				elif ((content['mediaType'] in 'epub') and (collection['image']== 'blank.gif')): collection ['image'] = 'epub.png'
+				elif ((content['mediaType'] in 'epub') and (collection['image'] == 'blank.gif')): collection ['image'] = 'epub.png'
 				elif ((content['mediaType'] in 'pdf') and (collection['image'] == 'blank.gif')): collection['image'] = 'pdf.png'
 				elif ((content['mediaType'] in 'image, img, tif, tiff, wbmp, ico, jng, bmp, svg, svgz, webp, png, jpg') and (collection['image'] == 'blank.gif')): collection['image'] = 'images.png'
 				elif (content['mediaType'] in 'application') :
@@ -928,15 +949,22 @@ def mmiloader_code():
 				elif (collection['mediaType'] == "application" and content['mediaType'] != "application"):
 					print ("  Replacing collection content type with new value: " + content['mediaType'])
 					collection['mediaType'] = content['mediaType']
+				elif ((collection['mediaType'] != content['mediaType']) and (collection['image'] == 'book.png')):
+					print (" Replacing collection content type with new value: " + content['mediaType'])
+					collection['mediaType'] = content['mediaType']
+					collection['image'] = content['image']
+
 				collection["episodes"].append(content)
 				with open(contentDirectory + "/" + language + "/data/" + collection['slug'] + ".json", 'w', encoding='utf-8') as f:
 					json.dump(collection, f, ensure_ascii=False, indent=4)
+					print("** Wrote out the collection data structure: "+collection['slug']+" ***")
 				f.close()
 			else:
 				print ("	Item completed.  Writing item.json")
 				# Since there's no episodes, just copy content into item
 				# Write the item.json
 				with open(contentDirectory + "/" + language + "/data/" + slug + ".json", 'w', encoding='utf-8') as f:
+					print ("** Writing single element to item.json based on slug "+slug+" then this is appended to mains **")
 					json.dump(content, f, ensure_ascii=False, indent=4)
 				f.close()
 				mains[language]["content"].append(content)
@@ -950,15 +978,16 @@ def mmiloader_code():
 
 
 		# Wait to write collection to main.json until directory has been fully processed
-		if (('collection' in locals() or 'collection' in globals()) and directoryType == "collection"):
-			print ("	No More Episodes / Wrap up Collection for " + thisDirectory)
+		if (('collection' in locals() or 'collection' in globals()) and ("collection" in directoryType)):
+			print ("	No More Episodes / Wrap up Collection for " + thisDirectory + " by adding it to mains[language]['content'] ")
 			# slug.json has already been saved so we don't need to do that.  Just write the collection to the main.json
+			print ("***  appending the collection to mains now ***")
 			mains[language]["content"].append(collection)
 			del collection
 		# END DIRECTORY LOOP
 
 	try:
-		os.system("rm /usr/local/connectbox/complex_dir")
+		os.system("rm "+complex_dir)
 	except:
 		pass
 
@@ -1045,8 +1074,8 @@ def mmiloader_code():
 if __name__ == '__main__' :
 
 	try:
-		f = open("/tmp/creating_menus.txt", "r", encoding = "utf-8")
-		print(" Ok the complex_dir file is present. we can't try to load since system is doing something else")
+		f = open(comsFileName, "r", encoding = "utf-8")
+		print(" Ok the comsFileName file is present. we can't try to load since system is doing something else")
 		logging.info(" Skipped mmmiLoader.py since complex_dir file was present")
 		sys.exit()
 	except:
