@@ -65,7 +65,7 @@
     group: "root"
     state: touch
   register: swapcreate
-  when: connectbox_os != 'raspbian' and Swap_Val == "" 
+  when: connectbox_os != 'raspbian' 
 
 - name: fix variables if we created the swapfile
   set_fact:
@@ -83,7 +83,7 @@
   command: fallocate -l 400M /swapfile
   register: swap_result
   ignore_errors: yes
-  when: connectbox_os != "raspbian" and Swap_Val != "" and Swap_Val < '400M'
+  when: connectbox_os != "raspbian" Swap_Val < '400M'
 
 - name: show swap_result
   debug:
@@ -100,19 +100,19 @@
   file:
     path: /swapfile
     mode: 0600
-  when: connectbox_os != "raspbian" and Swap_Val != ""
+  when: connectbox_os != "raspbian"
 
 - name: make it a swapfile
   command: mkswap /swapfile
   register: command_result
   ignore_errors: yes
-  when: connectbox_os != "raspbian" and Swap_Val != ""
+  when: connectbox_os != "raspbian"
 
 - name: turn swapfile on
   command: swapon /swapfile
   register: command_result
   ignore_errors: yes 
-  when: connectbox_os != "raspbian" and Swap_Val != ""
+  when: connectbox_os != "raspbian"
 
 - name: Enable fstab change
   lineinfile:
@@ -120,7 +120,7 @@
     line: '/swapfile none swap sw,rw,auto,nodev,nosuid,size=400M,rw,sync 0 0'
     state: present
     create: yes
-  when: connectbox_os != "raspbian" and Swap_Val != ""
+  when: connectbox_os != "raspbian"
 
 - name: install aptitude
   apt:
