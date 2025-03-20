@@ -315,6 +315,7 @@
 - name: the results from the proceeding wireless
   debug:
     msg:"armbian replacement of overlays yeilded {{ regxreplace }}"
+  ignore_errors: True
 
 - name: Remove g_mass_storage device as default
   command: modprobe -r g_mass_storage
