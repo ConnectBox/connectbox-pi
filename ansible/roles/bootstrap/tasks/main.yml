@@ -307,7 +307,7 @@
 - name: Add i2c0 to /boot/armbianEnv.txt
   replace:
     path: /boot/armbianEnv.txt
-    regexp: '(overlays=)'
+    regexp: '(^overlays=.*)'
     replace: 'overlays=i2c0 usbhost0  usbhost1 cpu-clock-1.368Hz-1.3V'
   register: regxreplace
   when: (ansible_os_family == 'Ubuntu' or connectbox_os == 'armbian') and not aws_instance and not OZ2_present
@@ -315,7 +315,6 @@
 - name: the results from the proceeding wireless
   debug:
     msg:"armbian replacement of overlays yeilded {{ regxreplace }}"
-  Ignore_errors: yes
 
 - name: Remove g_mass_storage device as default
   command: modprobe -r g_mass_storage
