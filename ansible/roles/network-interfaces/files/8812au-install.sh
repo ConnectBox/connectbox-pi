@@ -10,17 +10,17 @@ else
   else
     printf "Compiling the RTL8812au driver then installing\n"
     reboot = "no"
-    if [ -d ./8812au-20210629 ];
+    if [ -d ./8812au-20210820 ];
     then
       printf "Destination git directory already exsists\n"
     else
-      git clone --depth 1 https://github.com/morrownr/8812au-20210629
+      git clone --depth 1 https://github.com/morrownr/8812au-20210820
     fi
     # alternate github repository is https://github.com/aircrack-ng/rtl8812au
     sudo ln -s linux $(uname -r)
     sudo ln -s /usr/src/linux-headers-$(uname -r) /lib/modules/$(uname -r)/build
     printf "\nyou running version"+"$(uname -r)\n"
-    cd ./8812au-20210629/
+    cd ./8812au-20210820/
     sed -i 's/CONFIG_PLATFORM_I386_PC = y/CONFIG_PLATFORM_I386_PC = n/g' Makefile
     sed -i 's/CONFIG_PLATFORM_ARM_RPI = n/CONFIG_PLATFORM_ARM_RPI = y/g' Makefile
     sed -i 's/CONFIG_POWER_SAVING = y/CONFIG_POWER_SAVING = n/g' Makefile
@@ -43,7 +43,7 @@ else
       sudo insmod 8812au.ko
       sudo cp 8812au.ko /lib/modules/$(uname -r)/kernel/drivers/net/wireless/
       sudo depmod
-      rm -r /tmp/8812a8-20210629
+      rm -r /tmp/8812a8-20210820
     fi
   fi
 fi 
