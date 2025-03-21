@@ -254,14 +254,13 @@
   register: dist_upgraded
   when: not NEO_present
 
-- name: apt update before kernel downloads (NEO)
-  apt: 
-    upgrade: yes
-    update_cache: yes
-    state: fixed
-  register: dist_upgraded
-  when: NEO_present
-
+#- name: apt update before kernel downloads (NEO)
+#  apt: 
+#    upgrade: yes
+#    update_cache: yes
+#    state: fixed
+#  register: dist_upgraded
+#  when: NEO_present
 
 
 - name: Check the changes to see if we need to reboot
