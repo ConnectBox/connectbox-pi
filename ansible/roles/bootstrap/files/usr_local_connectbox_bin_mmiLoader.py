@@ -80,6 +80,7 @@ def mmiloader_code():
 		os.mkdir(contentDirectory, mode=0o755)
 		os.system ("(cd " + contentDirectory + " && unzip " + zipFileName + ")")
 		print ("DONE")
+		time.sleep(3)
 		os.remove(comsFileName)										#Clear the display
 		exit(0)												#We finished up with restoring the data for this USB stick. exit the app.
 
