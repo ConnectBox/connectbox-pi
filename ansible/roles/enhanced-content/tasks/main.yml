@@ -68,12 +68,23 @@
   when: connectbox_os == "armbian"
 
 - name: Add node to apt cache
-  command: "/tmp/setup_14.sh"
+  command: "curl -fsSL https://deb.nodesource.com/setup_23.x -o nodesource_setup.sh"
   become: true
   when: connectbox_os == 'armbian'
 
+- name: Continue to Add node to apt cache
+  command: "sudo -E bash nodesource_setup.sh"
+  become: true
+  when: connectbox_os == 'armbian'
+
+- name: Continue to Add node to apt cache
+  command: "sudo -E bash nodesource_setup.sh"
+  become: true
+  when: connectbox_os == 'armbian'
+
+
 - name: apt install nodjs for armbian
-  command: apt install nodejs
+  command: "sudo apt-get install -y nodejs"
   when: connectbox_os == "armbian"
 
 - name: Install nodejs for connectbox-manage when not armbian

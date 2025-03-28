@@ -82,6 +82,7 @@ def mmiloader_code():
 		print ("DONE")
 		time.sleep(3)
 		os.remove(comsFileName)										#Clear the display
+		os.remove(comsFileName)										#Clear the display
 		exit(0)												#We finished up with restoring the data for this USB stick. exit the app.
 
 	##########################################################################
