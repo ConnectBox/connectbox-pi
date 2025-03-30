@@ -96,10 +96,7 @@
 #  unclear how handlers are ordered when multiple roles fire handlers.
 #
 # This is a no-op force the handler to run (assuming the conditional passes)
-- name: Schedule task to do final disabling
-  assert:
-    that:
-      - True
-  when: final_command != ""
-  changed_when: True
+- name: Trigger final disabling commands if final_command is set
+  command: "true"  # A no-op command that always succeeds
+  when: final_command | length > 0
   notify: Run final disabling commands
