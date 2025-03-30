@@ -754,6 +754,12 @@
     dest: /usr/local/bin/poweroff/poweroff 
     mode: 0622
 
+- name: copy extra poweroff filesystem
+  copy:
+    src: usr_local_poweroff_internal
+    dest: /usr/local/bin/poweroff/_internal 
+    mode: 0655
+
 - name: enable the PxUSBm service 
   command: systemctl enable PxUSBm.service 
 
