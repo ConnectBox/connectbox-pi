@@ -57,10 +57,12 @@ def mmiloader_code():
 	except:
 		pass
 
-
-	f = open(comsFileName, "w", encoding='utf-8')								#Start display showing were going to do indexxing of data
-	f.write('Indexing USB')
-	f.close()
+	try:
+		f = open(comsFileName, "w", encoding='utf-8')								#Start display showing were going to do indexxing of data
+		f.write('Indexing USB')
+		f.close()
+	except:
+		pass
 
 	try:
 		os.system("rm -r " + contentDirectory)								#Get rid of any old content data structures we may have
@@ -81,8 +83,15 @@ def mmiloader_code():
 		os.system ("(cd " + contentDirectory + " && unzip " + zipFileName + ")")
 		print ("DONE")
 		time.sleep(3)
-		os.remove(comsFileName)										#Clear the display
-		os.remove(comsFileName)										#Clear the display
+		try:
+			x = os.system("rm " + comsFileName)
+			x = os.waitstatus_to_exitcode(x)
+			while x!=0:
+				x = os.system("rm " + comsFileName)
+				x = os.waitstatus_to_exitcode(x)
+				time.sleep(1)
+		except:
+			pass											#Clear the display
 		exit(0)												#We finished up with restoring the data for this USB stick. exit the app.
 
 	##########################################################################
@@ -90,9 +99,12 @@ def mmiloader_code():
 	##########################################################################
 
 	print ("Creating content Directory")
-	f = open(comsFileName, "w", encoding='utf-8')
-	f.write('Indexing USB')											#We didn't have a valid saved.zip file so we have to create all the data
-	f.close()
+	try:
+		f = open(comsFileName, "w", encoding='utf-8')
+		f.write('Indexing USB')											#We didn't have a valid saved.zip file so we have to create all the data
+		f.close()
+	except:
+		pass	
 	try:
 		os.mkdir(contentDirectory, mode=0o755)								#Create a new content directory to store our data in
 	except:
@@ -339,9 +351,12 @@ def mmiloader_code():
 					print("FOUND MY INDEX.HTML FILE")
 					print("since this is root directory starting path it needs to go in the complex list")
 					complex_lst.append(path)
-					f = open(comsFileName, "w", encoding='utf-8')					#ndicate were dealing with complex directories
-					f.write('Highly Complex' + chr(10) + 'Filesystem')
-					f.close()
+					try:
+						f = open(comsFileName, "w", encoding='utf-8')					#ndicate were dealing with complex directories
+						f.write('Highly Complex' + chr(10) + 'Filesystem')
+						f.close()
+					except:
+						pass
 					print("Added complex root directory "+str(path))
 					### We leave math alogne and z alone ###
 					#This is our continue flag for the outer loop
@@ -360,9 +375,12 @@ def mmiloader_code():
 
 						print("ÖK we found a starting path tha needs to go into the complex list")
 						complex_lst.append(path)						#While the subdirectory is complex this shows the path is also.
-						f = open(comsFileName, "w", encoding='utf-8')				#ndicate were dealing with complex directories
-						f.write('Highly Complex' + chr(10) + 'Filesystem')
-						f.close()
+						try:
+							f = open(comsFileName, "w", encoding='utf-8')				#ndicate were dealing with complex directories
+							f.write('Highly Complex' + chr(10) + 'Filesystem')
+							f.close()
+						except:
+							pass
 
 						print("Added complex root directory "+str(path))
 						z = 1									#This is our continue flag for the outer loop
@@ -385,9 +403,12 @@ def mmiloader_code():
 	print("Finished the complex directory recursion")
 	if len(complex_lst)>0: os.system("touch " + (os.path.join(mediaDirectory, ".indexed.idx")))		#Write the file that says we have done the indexing at least once.
 
-	f = open(comsFileName, "w", encoding='utf-8')								#now that were done lets go back to our general indexing status on the screen
-	f.write("Indexing USB")
-	f.close()
+	try:
+		f = open(comsFileName, "w", encoding='utf-8')								#now that were done lets go back to our general indexing status on the screen
+		f.write("Indexing USB")
+		f.close()
+	except:
+		pass
 
 	##########################################################################
 	#  Main Loop content loop
@@ -453,9 +474,12 @@ def mmiloader_code():
 			mains[language] = json.load(f)
 			f.close()
 
-		f = open(comsFileName, "w", encoding='utf-8')							#Output to the display that were indexing this data
-		f.write('Indexing USB')
-		f.close()
+		try:
+			f = open(comsFileName, "w", encoding='utf-8')							#Output to the display that were indexing this data
+			f.write('Indexing USB')
+			f.close()
+		except:
+			pass
 
 
 		###########################################################################
@@ -528,9 +552,12 @@ def mmiloader_code():
 
 			if not((os.path.isfile(mediaDirectory + "/" + (".webarchive-" + language + "-" + subpath + ".zip").replace("/","-").replace('--','-'))) or (os.path.isfile(mediaDirectory + '/.NoWebcompress'))):
 
-				f = open(comsFileName, "w", encoding='utf-8')						#Update the display to show were zipping
-				f.write('Creating ZIP'+chr(10)+"File")
-				f.close()
+				try:
+					f = open(comsFileName, "w", encoding='utf-8')						#Update the display to show were zipping
+					f.write('Creating ZIP'+chr(10)+"File")
+					f.close()
+				except:
+					pass
 
 				logging.info ("Trying to archive a web file set for " + thisDirectory)
 				try:
@@ -548,9 +575,12 @@ def mmiloader_code():
 				print(("webarchive already exsists /.webarchive-" + language + '-' + subpath + ".zip").replace("/", "-").replace("--","-") + "or .Nowebarchive file in root")
 				x = 1  											#set our archive flag
 			# Re-write the display as indexing since it may have changed.
-			f = open(comsFileName, "w", encoding='utf-8')
-			f.write('Indexing USB')
-			f.close()
+			try:
+				f = open(comsFileName, "w", encoding='utf-8')
+				f.write('Indexing USB')
+				f.close()
+			except:
+				pass
 
 			if x>0: os.system (("ln -s '"+ mediaDirectory + "/.webarchive-" + language + "-" + subpath.replace("/","-") + ".zip'  '" + contentDirectory + "/" + language + "/html/" + thisDirectory + ".zip'").replace("--","-"))
 			else: print ("No webarchve is available!!")
@@ -592,9 +622,12 @@ def mmiloader_code():
 
 			if (not os.path.isfile(mediaDirectory + "/" + (".webarchive-" + language + "-" + thisDirectory + ".zip").replace('--','-'))):
 
-				f = open(comsFileName, "w", encoding='utf-8')
-				f.write('Creating ZIP'+chr(10)+"File")
-				f.close()
+				try:
+					f = open(comsFileName, "w", encoding='utf-8')
+					f.write('Creating ZIP'+chr(10)+"File")
+					f.close()
+				except:
+					pass
 
 				SkipArchive = 1
 
@@ -606,9 +639,12 @@ def mmiloader_code():
 					print ("	error  making web archive")
 				logging.info ("succeeded in finishing the zip file")
 
-				f = open(comsFileName, "w", encoding='utf-8')
-				f.write('Indexing USB')
-				f.close()
+				try:
+					f = open(comsFileName, "w", encoding='utf-8')
+					f.write('Indexing USB')
+					f.close()
+				except:
+					pass
 
 			else: print (" Found it!!")
 #			print ("	WebPath: Linking web archive zip")
@@ -663,9 +699,12 @@ def mmiloader_code():
 					if not os.path.isfile(mediaDirectory + "/" + language + "/" + thisDirectory + ("/archive-" + language + "-" + thisDirectory + ".zip").replace('--','-')):
 						logging.info ("trying to create a zip file of " + mediaDirectory + "/" + language + "/" + thisDirectory + "/archive-" + language + "-" + thisDirectory + ".zip")
 
-						f = open(comsFileName, "w", encoding='utf-8')					#Update the display for creating a zip
-						f.write('Creating ZIP'+chr(10)+"File")
-						f.close()
+						try:
+							f = open(comsFileName, "w", encoding='utf-8')					#Update the display for creating a zip
+							f.write('Creating ZIP'+chr(10)+"File")
+							f.close()
+						except:
+							pass
 
 						try:
 							print ("	Path: Creating archive zip file on USB")
@@ -676,17 +715,23 @@ def mmiloader_code():
 						except:
 							print ("	error  making archive")
 
-						f = open(comsFileName, "w", encoding='utf-8')					#Update the display with Indexing status
-						f.write('Indexing USB')
-						f.close()
+						try:
+							f = open(comsFileName, "w", encoding='utf-8')					#Update the display with Indexing status
+							f.write('Indexing USB')
+							f.close()
+						except:
+							pass
 				else:
 					print ("looking at: " + mediaDirectory + "/archive-" + language + "-" + thisDirectory + ".zip")
 					if not os.path.isfile(mediaDirectory + "/archive-" + language + "-" + thisDirectory + ".zip"):
 						logging.info ("trying to create a zip file of " + mediaDirectory + "/" + thisDirectory + "/archive-" + language + "-" + thisDirectory + ".zip")
 
-						f = open(comsFileName, "w", encoding='utf-8')					#Update the display for creating a zip
-						f.write('Creating ZIP'+chr(10)+"File")
-						f.close()
+						try:
+							f = open(comsFileName, "w", encoding='utf-8')					#Update the display for creating a zip
+							f.write('Creating ZIP'+chr(10)+"File")
+							f.close()
+						except:
+							pass
 
 						try:
 							print ("	Path: Creating archive zip file on USB")
@@ -697,9 +742,12 @@ def mmiloader_code():
 						except:
 							print ("	error  making archive")
 
-						f = open(comsFileName, "w", encoding='utf-8')					#Update the ddisplay for Indexing
-						f.write('Indexing USB')
-						f.close()
+						try:
+							f = open(comsFileName, "w", encoding='utf-8')					#Update the ddisplay for Indexing
+							f.write('Indexing USB')
+							f.close()
+						except:
+							pass
 
 				if (str(files).find("archive-" + language + "-" + thisDirectory + '.zip') < 0): files.append( "archive-" + language + "-" + thisDirectory + '.zip')
 			else:
@@ -1026,15 +1074,20 @@ def mmiloader_code():
 		languageJson.append(languageJsonObject)
 
 	if (len(languageJson) == 0):
-			print ("No valid content found on the USB.  Exiting")
-			os.system("rm " + comsFileName)
-			try:
-				os.system('rm '+ ComplexDir)
-			except:
-				pass
+		print ("No valid content found on the USB.  Exiting")
+
+		try:
+			x = os.system("rm " + comsFileName)
+			x = os.waitstatus_to_exitcode(x)
+			while x!=0:
+				x = os.system("rm " + comsFileName)
+				x = os.waitstatus_to_exitcode(x)
+				time.sleep(1)
+		except:
+			pass											#Clear the display
 
 			try:
-				os.system("rm " + comsFileName)
+				os.system('rm '+ ComplexDir)
 			except:
 				pass
 
@@ -1064,10 +1117,14 @@ def mmiloader_code():
 		pass
 
 	try:
-		os.system("rm " + comsFileName)
+		x = os.system("rm " + comsFileName)
+		x = os.waitstatus_to_exitcode(x)
+		while x!=0:
+			x = os.system("rm " + comsFileName)
+			x = os.waitstatus_to_exitcode(x)
+			time.sleep(1)
 	except:
-		pass
-
+		pass											#Clear the display
 
 	print ("DONE")
 	sys.exit()
