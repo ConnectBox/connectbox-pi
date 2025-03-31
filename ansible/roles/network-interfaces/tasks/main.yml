@@ -178,12 +178,12 @@
     rtl88x2bd : '{{ rtl88x2budriver }}'
     rtl8852ad : '{{ rtl8852audriver }}'
   vars:
-    rtl88XXdriver: "{{ (listoutput.find('88XXau') >=0 ) }}"
-    rtl8812driver: "{{ (listoutput.find('8812au') >=0 ) }}"
+    rtl88XXdriver: "{{ (listoutput.find('88XXau.ko') >=0 ) }}"
+    rtl8812driver: "{{ (listoutput.find('8812au.ko') >=0 ) }}"
     rtw88driver: "{{ (listoutput.find('rtw88' ) >=0 ) }}"
-    rtl88xbudriver: "{{ (listoutput.find('88xbu') >=0 ) }}"
-    rtl88x2budriver: "{{ (listoutput.find('88x2bu') >=0 ) }}"
-    rtl8852audriver: "{{ (listoutput.find('8852au') >=0 ) }}"
+    rtl88xbudriver: "{{ (listoutput.find('88xbu.ko') >=0 ) }}"
+    rtl88x2budriver: "{{ (listoutput.find('88x2bu.ko') >=0 ) }}"
+    rtl8852audriver: "{{ (listoutput.find('8852au.ko') >=0 ) }}"
 
 - debug:
     msg: "Variable pulled Listoutput rtl88xxdriver: {{ rtl88XXd }}"
@@ -202,6 +202,8 @@
 
 - debug:   
     msg: "variable pulled listoutput rtl52audriver: {{ rtl8852ad }}"
+
+- name: check the rtl8812au driver for real or just rtl88xxau driver
 
   
 - name: Let the user know that we found the drivers
