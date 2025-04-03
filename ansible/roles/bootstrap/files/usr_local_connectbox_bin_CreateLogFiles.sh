@@ -19,8 +19,6 @@ touch /var/log/connectbox/captive_portal-access.log
 touch /var/log/connectbox/captive_portal-error.log
 touch /var/log/connectbox/connectbox-access.log
 touch /var/log/connectbox/connectbox-error.log
-touch /var/log/connectbox/connectbox_enhanced.json
-chmod 0777 /usr/log/connectbox/connectbox_enhanced.json
 touch /var/log/nginx/access.log
 touch /var/log/nginx/error.log
 
