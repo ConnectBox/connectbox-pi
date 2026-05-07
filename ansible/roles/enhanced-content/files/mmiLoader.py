@@ -68,11 +68,7 @@ def mmiloader_code():
 
 	update_display('Indexing USB')
 
-	try:
-		run_cmd("rm -r " + contentDirectory)								#Get rid of any old content data structures we may have
-	except Exception as e:
-		logging.debug(f"Ignored exception: {e}")
-		pass
+	shutil.rmtree(contentDirectory, ignore_errors=True)						#Get rid of any old content data structures we may have
 
 	##########################################################################
 	#  See if  we have a saved.zip file to unzip and exit
@@ -84,7 +80,7 @@ def mmiloader_code():
 		print (" ")
 		print ("****If you want to reload the USB, delete the file saved.zip from the USB drive.")
 
-		os.mkdir(contentDirectory, mode=0o755)
+		os.makedirs(contentDirectory, mode=0o755, exist_ok=True)
 		run_cmd ("(cd " + contentDirectory + " && unzip " + zipFileName + ")")
 		print ("DONE")
 		time.sleep(3)
@@ -102,15 +98,11 @@ def mmiloader_code():
 	##########################################################################
 
 	print ("Creating content Directory")
-	update_display('Indexing USB')	
-	try:
-		os.mkdir(contentDirectory, mode=0o755)								#Create a new content directory to store our data in
-	except Exception as e:
-		run_cmd("rm -r " + contentDirectory)
-		os.mkdir(contentDirectory, mode=0o755)
+	update_display('Indexing USB')
+	os.makedirs(contentDirectory, mode=0o755, exist_ok=True)						#Create a new content directory to store our data in
 
 	print ("Copying the templates to the main contentDirectory")
-	shutil.copytree(templatesDirectory + '/en', contentDirectory + '/en')					#Copy the templates to an /en language file for starters.
+	shutil.copytree(templatesDirectory + '/en', contentDirectory + '/en', dirs_exist_ok=True)		#Copy the templates to an /en language file for starters.
 	shutil.copy(templatesDirectory + '/footer.html', contentDirectory)					#Get the html footer
 	print ("copyied templates for en and footer")
 
