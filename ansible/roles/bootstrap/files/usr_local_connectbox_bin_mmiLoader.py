@@ -28,6 +28,29 @@ def run_cmd(cmd):
 		print(f"    *** run_cmd FAILED (exit {e.returncode}): {cmd}")
 
 
+def is_blank_thumbnail(path):
+	"""Return True if the image is too uniform to be a useful thumbnail.
+
+	Resizes to 64x64 before analysis so this runs fast on low-power hardware.
+	Rejects frames that are nearly any single colour (black title cards, white
+	fades, solid-colour overlays) by requiring sufficient contrast (std dev >= 20).
+	Also rejects frames that are almost entirely dark (mean < 20) or blown-out
+	(mean > 235) even if a handful of pixels differ.
+	"""
+	try:
+		from PIL import Image
+		img = Image.open(path).convert('L').resize((64, 64))
+		pixels = list(img.getdata())
+		mean = sum(pixels) / len(pixels)
+		if mean < 20 or mean > 235:
+			return True
+		variance = sum((p - mean) ** 2 for p in pixels) / len(pixels)
+		std_dev = variance ** 0.5
+		return std_dev < 20  # too uniform — nearly one solid colour
+	except Exception:
+		return False  # if PIL unavailable or image unreadable, accept the frame
+
+
 def mmiloader_code():
 
 	# Single-instance guard: exit if another mmiLoader is already running
@@ -859,21 +882,29 @@ def mmiloader_code():
 			if ((content["mediaType"] == 'video') and (content["image"] == 'blank.gif')):
 
 				try:
-					if not (os.path.isfile(mediaDirectory + "/.thumbnail-" + language +  "-" + slug + ".png")):
+					thumb_path = mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png"
+					if not os.path.isfile(thumb_path):
 						print ("	Attempting to make a thumbnail for the video")
-						run_cmd("ffmpeg -y  -i '" + fullFilename + "' -an -ss 00:00:15 -vframes 1 '" + mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png'  >/dev/null 2>&1")
-					if os.path.isfile(mediaDirectory + '/.thumbnail-' + language + '-' + slug + '.png'):
-						content["image"] = slug + ".png"  # Set the key correctly (was a unicode typo)
+						for ts in ["00:00:15", "00:00:30", "00:01:00", "00:02:00", "00:03:00"]:
+							run_cmd("ffmpeg -y -i '" + fullFilename + "' -an -ss " + ts + " -vframes 1 '" + thumb_path + "' >/dev/null 2>&1")
+							if os.path.isfile(thumb_path) and os.path.getsize(thumb_path) > 100:
+								if not is_blank_thumbnail(thumb_path):
+									print("	Thumbnail extracted at " + ts)
+									break
+								print("	Frame at " + ts + " is blank or uniform, trying next time point")
+								os.remove(thumb_path)
+					if os.path.isfile(thumb_path):
+						content["image"] = slug + ".png"
 						print ("        We found the thumbnail")
 					try:
-						if os.path.getsize( mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png") > 100:		#image is large enough to be usable.
-							shutil.copy(mediaDirectory + '/.thumbnail-' + language + '-' + slug + '.png', contentDirectory + '/' + language + '/images/' + slug + '.png')
-							content["image"] =  slug + ".png"
+						if os.path.getsize(thumb_path) > 100:
+							shutil.copy(thumb_path, contentDirectory + '/' + language + '/images/' + slug + '.png')
+							content["image"] = slug + ".png"
 						else:
 							print ("        Image was too small to use!!!!!!!")
 							content["image"] = 'video.png'
 					except Exception as e:
-						print ("had an error getting size of video !!!!!!!!" + mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png")
+						print ("had an error getting size of video !!!!!!!!" + thumb_path)
 						content['image'] = 'video.png'
 				except Exception as e:
 					print ("Something whent wrong with the ffmpeg or elsewhere")
