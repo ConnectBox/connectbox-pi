@@ -407,6 +407,12 @@
     dest: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/neo_batterylevelshutdown/displays.py"
     mode: 0644
 
+- name: Copy page_display_image.py with left-aligned text for wait frames
+  copy:
+    src: neo-batterylevelshutdown/page_display_image.py
+    dest: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/neo_batterylevelshutdown/page_display_image.py"
+    mode: 0644
+
 - name: Copy wait frame images for OLED animation
   copy:
     src: "assets/{{ item }}"
