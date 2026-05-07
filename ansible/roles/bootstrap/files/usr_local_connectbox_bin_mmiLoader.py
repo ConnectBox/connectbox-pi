@@ -1085,15 +1085,12 @@ def mmiloader_code():
 
 if __name__ == '__main__' :
 
-	try:
-		f = open("/tmp/creating_menus.txt", "r", encoding = "utf-8")
-		print(" Ok the comsFileName file is present. we can't try to load since system is doing something else")
-		logging.info(" Skipped mmmiLoader.py since complex_dir file was present")
-		sys.exit()
-	except Exception as e:
-		logging.debug(f"Ignored exception: {e}")
-		pass
-
 	print ("Ok now we will start the loader")
 
-	mmiloader_code()
+	try:
+		mmiloader_code()
+	finally:
+		try:
+			os.remove("/tmp/creating_menus.txt")
+		except Exception:
+			pass
