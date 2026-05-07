@@ -31,6 +31,17 @@ def run_cmd(cmd):
 
 def mmiloader_code():
 
+	# Single-instance guard: exit if another mmiLoader is already running
+	try:
+		result = subprocess.run(['pgrep', '-f', 'mmiLoader.py'], capture_output=True, text=True)
+		running_pids = [int(p) for p in result.stdout.split() if p.strip()]
+		running_pids = [p for p in running_pids if p != os.getpid()]
+		if running_pids:
+			print("mmiLoader.py already running (pid " + str(running_pids) + "), exiting")
+			logging.info("mmiLoader.py already running, skipping duplicate run")
+			return
+	except Exception:
+		pass  # If pgrep unavailable, continue
 
 	# Defaults for Connectbox / TheWell
 	mediaDirectory = "/media/usb0/content"									#The root of data
