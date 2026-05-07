@@ -462,15 +462,16 @@ def mmiloader_code():
 		##########################################################################
 
 		# See if the language already exists in the directory, if not make and populate a directory from the template
-		if (not os.path.exists(contentDirectory + "/" + language)):   					#If this language already exsists skip creating it.
+		if (not os.path.exists(contentDirectory + "/" + language + "/data")):				#Check for data/ specifically — language dir may exist but be incomplete
 			print("Doing new language setup " + language + " **********************************")
 			print ("	Creating Directory: " + contentDirectory + "/" + language)
-			shutil.copytree(templatesDirectory + '/en', contentDirectory + "/" + language)
+			shutil.copytree(templatesDirectory + '/en', contentDirectory + "/" + language, dirs_exist_ok=True)
 			run_cmd ("chown -R www-data.www-data " + contentDirectory + "/" + language)
 			# Load the main.json template and populate the mains for that language.
-			f = open (templatesDirectory + "/en/data/main.json")					#load the language with the base directories
-			mains[language] = json.load(f)
-			f.close()
+			if language not in mains:
+				f = open (templatesDirectory + "/en/data/main.json")				#load the language with the base directories
+				mains[language] = json.load(f)
+				f.close()
 
 		update_display('Indexing USB')
 
