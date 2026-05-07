@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(*)",
+      "Read(//c/c/Users/kirkw/Documents/Hobby - ConnectBox/Antigravity/connectbox-pi/ansible/roles/webserver-content/defaults/**)",
+      "Read(//c/c/Users/kirkw/Documents/Hobby - ConnectBox/Antigravity/connectbox-pi/ansible/roles/nginx/tasks/**)",
+      "Read(//c/c/Users/kirkw/Documents/Hobby - ConnectBox/Antigravity/**)",
+      "Read(//c/c/Users/kirkw/Documents/Hobby - ConnectBox/Antigravity/connectbox-pi/ansible/roles/bootstrap/tasks/**)",
+      "Read(//c/Users/kirkw/Documents/Github/simple-offline-captive-portal/**)",
+      "Read(//c/Users/kirkw/mmi_test/**)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\kirkw\\Documents\\Github\\simple-offline-captive-portal\\docs"
+    ]
+  }
+}
