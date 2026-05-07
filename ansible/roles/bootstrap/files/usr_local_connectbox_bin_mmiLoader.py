@@ -101,8 +101,6 @@ def mmiloader_code():
 
 	update_display('Loading USB')
 
-	shutil.rmtree(contentDirectory, ignore_errors=True)						#Get rid of any old content data structures we may have
-
 	##########################################################################
 	#  See if  we have a saved.zip file to unzip and exit
 	##########################################################################
@@ -115,7 +113,31 @@ def mmiloader_code():
 
 		os.makedirs(contentDirectory, mode=0o755, exist_ok=True)
 		update_display('Unzipping USB')
-		run_cmd ("(cd " + contentDirectory + " && unzip " + zipFileName + ")")
+
+		# Compare saved.zip mtime to marker written after last successful unzip.
+		# Same mtime = same USB key: skip files already on disk (-n) for speed.
+		# Different mtime = different USB key: wipe first so old content doesn't persist.
+		mtime_marker = contentDirectory + "/.saved_zip_mtime"
+		current_mtime = str(os.path.getmtime(zipFileName))
+		try:
+			with open(mtime_marker) as _f:
+				cached_mtime = _f.read().strip()
+		except Exception:
+			cached_mtime = ""
+
+		if cached_mtime == current_mtime:
+			print("	Same USB key detected — skipping files already present")
+			run_cmd("(cd " + contentDirectory + " && unzip -n " + zipFileName + ")")
+		else:
+			print("	New or changed USB key — full extract")
+			shutil.rmtree(contentDirectory, ignore_errors=True)
+			os.makedirs(contentDirectory, mode=0o755, exist_ok=True)
+			run_cmd("(cd " + contentDirectory + " && unzip " + zipFileName + ")")
+			try:
+				with open(mtime_marker, "w") as _f:
+					_f.write(current_mtime)
+			except Exception:
+				pass
 		print ("DONE")
 		time.sleep(3)
 		try:
@@ -133,6 +155,7 @@ def mmiloader_code():
 
 	print ("Creating content Directory")
 	update_display('Indexing USB')
+	shutil.rmtree(contentDirectory, ignore_errors=True)							#Wipe any old content before full index
 	os.makedirs(contentDirectory, mode=0o755, exist_ok=True)						#Create a new content directory to store our data in
 
 	print ("Copying the templates to the main contentDirectory")
