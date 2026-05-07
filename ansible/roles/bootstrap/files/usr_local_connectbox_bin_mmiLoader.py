@@ -117,7 +117,7 @@ def mmiloader_code():
 		# Compare saved.zip mtime to marker written after last successful unzip.
 		# Same mtime = same USB key: skip files already on disk (-n) for speed.
 		# Different mtime = different USB key: wipe first so old content doesn't persist.
-		mtime_marker = contentDirectory + "/.saved_zip_mtime"
+		mtime_marker = "/tmp/.saved_zip_mtime"
 		current_mtime = str(os.path.getmtime(zipFileName))
 		try:
 			with open(mtime_marker) as _f:
