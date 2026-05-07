@@ -141,11 +141,8 @@ def mmiloader_code():
 		print ("DONE")
 		time.sleep(3)
 		try:
-			for _ in range(5):
-				if os.waitstatus_to_exitcode(os.system("rm " + comsFileName)) == 0:
-					break
-				time.sleep(1)
-		except Exception as e:
+			os.remove(comsFileName)
+		except Exception:
 			pass											#Clear the display
 		exit(0)												#We finished up with restoring the data for this USB stick. exit the app.
 
@@ -1097,11 +1094,8 @@ def mmiloader_code():
 		print ("No valid content found on the USB.  Exiting")
 
 		try:
-			for _ in range(5):
-				if os.waitstatus_to_exitcode(os.system("rm " + comsFileName)) == 0:
-					break
-				time.sleep(1)
-		except Exception as e:
+			os.remove(comsFileName)
+		except Exception:
 			pass											#Clear the display
 
 		try:
@@ -1137,11 +1131,8 @@ def mmiloader_code():
 		pass
 
 	try:
-		for _ in range(5):
-			if os.waitstatus_to_exitcode(os.system("rm " + comsFileName)) == 0:
-				break
-			time.sleep(1)
-	except Exception as e:
+		os.remove(comsFileName)
+	except Exception:
 		pass											#Clear the display
 
 	print ("DONE")
