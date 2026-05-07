@@ -133,7 +133,7 @@ def mountCheck():
               except:
                   pass
               if os.system("pgrep -f mmiLoader.py > /dev/null 2>&1") != 0:
-                  os.system("/usr/bin/python3 /usr/local/connectbox/bin/mmiLoader.py >/tmp/loadContent.log 2>&1 &")
+                  os.system("/bin/bash -c '/usr/bin/python3 /usr/local/connectbox/bin/mmiLoader.py >/tmp/loadContent.log 2>&1; rm -f /tmp/creating_menus.txt' &")
               logger.info("Finished load content for menu's, time is" + time.asctime())
               try:
                   os.system("rm /usr/local/connectbox/complex_dir")
@@ -156,7 +156,7 @@ def mountCheck():
             except:
                 pass
             if os.system("pgrep -f mmiLoader.py > /dev/null 2>&1") != 0:
-                os.system("/usr/bin/python3 /usr/local/connectbox/bin/mmiLoader.py >/tmp/loadContent.log 2>&1 &")
+                os.system("/bin/bash -c '/usr/bin/python3 /usr/local/connectbox/bin/mmiLoader.py >/tmp/loadContent.log 2>&1; rm -f /tmp/creating_menus.txt' &")
             logger.info("Finished load content for menu's, time is" + time.asctime())
             try:
                 os.system("rm /usr/local/connectbox/complex_dir")
@@ -286,7 +286,7 @@ def mountCheck():
               print("Start load content for menu's")
               logger.info("Starting content indexing and load on  /dev/sda1, time is " + time.asctime())
               if os.system("pgrep -f mmiLoader.py > /dev/null 2>&1") != 0:
-                  os.system("/usr/bin/python3 /usr/local/connectbox/bin/mmiLoader.py >/tmp/loadContent.log 2>&1 &")
+                  os.system("/bin/bash -c '/usr/bin/python3 /usr/local/connectbox/bin/mmiLoader.py >/tmp/loadContent.log 2>&1; rm -f /tmp/creating_menus.txt' &")
               logger.info("Finished content indexing and load on /dev/sda1, time is " + time.asctime())
 
               # upgrade enabler
@@ -326,7 +326,7 @@ def mountCheck():
                       logger.info("We already had a USB that was mounted but added it to our mount table so starting loading cocntent, time is "+ time.asctime())
                       print("Start load content for menu's")
                       if os.system("pgrep -f mmiLoader.py > /dev/null 2>&1") != 0:
-                          os.system("/usr/bin/python3 /usr/local/connectbox/bin/mmiLoader.py >/tmp/loadContent.log 2>&1 &")
+                          os.system("/bin/bash -c '/usr/bin/python3 /usr/local/connectbox/bin/mmiLoader.py >/tmp/loadContent.log 2>&1; rm -f /tmp/creating_menus.txt' &")
 
                       # SSH Enabler
                       os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/.connectbox/enable-ssh && (/bin/systemctl is-active ssh.service || /bin/systemctl enable ssh.service && /bin/systemctl start ssh.service)'")
