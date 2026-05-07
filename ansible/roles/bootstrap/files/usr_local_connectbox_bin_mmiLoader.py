@@ -224,10 +224,17 @@ def mmiloader_code():
 				doesRootContainLanguage.remove(lang)
 				if y > 0: y -= 1
 		except:
-			doesRootContainLanguage.remove(lang)
-			if y > 0: y -= 1
-			print ("We just removed " + lang + " from doesRootContainLanguage, language not found!")
-			logging.info("We just removed " + lang + " from doesRootContainLanguage, language not found!")
+			# Check if this is a regional variant (e.g. zh-CN, pt-BR) before discarding
+			base_lang = lang.split('-')[0] if '-' in lang else ''
+			if base_lang and base_lang in languageCodes:
+				languageCodes[lang] = languageCodes[base_lang]
+				print("checking language " + lang + " as valid regional variant of " + base_lang)
+				y += 1
+			else:
+				doesRootContainLanguage.remove(lang)
+				if y > 0: y -= 1
+				print ("We just removed " + lang + " from doesRootContainLanguage, language not found!")
+				logging.info("We just removed " + lang + " from doesRootContainLanguage, language not found!")
 
 		if y > len(doesRootContainLanguage):
 			y = y-1
