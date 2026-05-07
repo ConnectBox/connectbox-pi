@@ -1002,6 +1002,16 @@ def mmiloader_code():
 	print ("*************************************************")
 	print ("Completing Final Compilation of languages and items")
 
+	# For regional variant language dirs (e.g. zh-CN), create a base-code symlink (e.g. zh -> zh-CN)
+	# The media interface strips the hyphen suffix when constructing content paths.
+	for lang_dir in os.listdir(contentDirectory):
+		if '-' in lang_dir and os.path.isdir(contentDirectory + '/' + lang_dir):
+			base = lang_dir.split('-')[0]
+			base_path = contentDirectory + '/' + base
+			if not os.path.exists(base_path):
+				os.symlink(contentDirectory + '/' + lang_dir, base_path)
+				print("Created symlink " + base + " -> " + lang_dir + " for media interface")
+
 	# Now go through each language that we found and processed and write the interface.json and main.json for each
 	languageJson = []
 	for language in mains:
