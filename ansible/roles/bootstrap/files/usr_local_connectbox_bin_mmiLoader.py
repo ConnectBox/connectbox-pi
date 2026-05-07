@@ -8,20 +8,40 @@ import pathlib
 import shutil
 import mimetypes
 import logging
+import subprocess
+import sys
 import time
 from indexer import *
 #import ffmpeg
 
+def update_display(message):
+	try:
+		with open("/tmp/creating_menus.txt", "w", encoding='utf-8') as f:
+			f.write(message)
+	except Exception as e:
+		logging.debug(f"Ignored exception: {e}")
+
+def run_cmd(cmd):
+	try:
+		subprocess.run(cmd, shell=True, check=True)
+	except subprocess.CalledProcessError as e:
+		logging.error(f"Command failed: {cmd}")
+		print(f"    *** run_cmd FAILED (exit {e.returncode}): {cmd}")
+
+
 def mmiloader_code():
 
-
-	#######################################################
-	def intersection(lst1, lst2):
-	    lst3 = [value for value in lst1 if value in lst2]
-	    return lst3
-	######################################################
-
-
+	# Single-instance guard: exit if another mmiLoader is already running
+	try:
+		result = subprocess.run(['pgrep', '-f', 'mmiLoader.py'], capture_output=True, text=True)
+		running_pids = [int(p) for p in result.stdout.split() if p.strip()]
+		running_pids = [p for p in running_pids if p != os.getpid()]
+		if running_pids:
+			print("mmiLoader.py already running (pid " + str(running_pids) + "), exiting")
+			logging.info("mmiLoader.py already running, skipping duplicate run")
+			return
+	except Exception:
+		pass  # If pgrep unavailable, continue
 
 	# Defaults for Connectbox / TheWell
 	mediaDirectory = "/media/usb0/content"									#The root of data
@@ -43,54 +63,44 @@ def mmiloader_code():
 	# Handel memory issues  by setting up automated free memory
 	######################################################
 
-	os.system("sync && echo 3 > sudo tee /proc/sys/vm/drop_caches")						#Try to clear any cach data that we have to maximize memory availability
+	run_cmd("sync && echo 3 | sudo tee /proc/sys/vm/drop_caches")						#Try to clear any cach data that we have to maximize memory availability
 
 
 	mains = {}        # This object contains all the data to construct each main.json at the end.  We add as we go along
 	logging.info("Starting a run of mmiLoader.py to index the data contents and create the user interface")
-	complex = 0 															#Cpunter of complex file directories we have (top directories)
 
 	# Clear the comsFileName directory so we dont have a screen on
 
 	try:
 		os.remove(comsFileName)										#Always starat with display off, no leftover elements
-	except:
+	except Exception as e:
+		logging.debug(f"Ignored exception: {e}")
 		pass
 
-	try:
-		f = open(comsFileName, "w", encoding='utf-8')								#Start display showing were going to do indexxing of data
-		f.write('Indexing USB')
-		f.close()
-	except:
-		pass
+	update_display('Indexing USB')
 
-	try:
-		os.system("rm -r " + contentDirectory)								#Get rid of any old content data structures we may have
-	except:
-		pass
+	shutil.rmtree(contentDirectory, ignore_errors=True)						#Get rid of any old content data structures we may have
 
 	##########################################################################
 	#  See if  we have a saved.zip file to unzip and exit
 	##########################################################################
 
 	print ("	Check for saved.zip")
-	if (os.path.isfile(mediaDirectory + "/saved.zip")):							#Check for a quick index file for creating the data structures.
+	if (os.path.isfile(os.path.join(mediaDirectory, "saved.zip"))):							#Check for a quick index file for creating the data structures.
 		print ("	Found saved.zip.  Unzipping and restoring to " + contentDirectory)
 		print (" ")
 		print ("****If you want to reload the USB, delete the file saved.zip from the USB drive.")
 
-		os.mkdir(contentDirectory, mode=0o755)
-		os.system ("(cd " + contentDirectory + " && unzip " + zipFileName + ")")
+		os.makedirs(contentDirectory, mode=0o755, exist_ok=True)
+		run_cmd ("(cd " + contentDirectory + " && unzip " + zipFileName + ")")
 		print ("DONE")
 		time.sleep(3)
 		try:
-			x = os.system("rm " + comsFileName)
-			x = os.waitstatus_to_exitcode(x)
-			while x!=0:
-				x = os.system("rm " + comsFileName)
-				x = os.waitstatus_to_exitcode(x)
+			for _ in range(5):
+				if os.waitstatus_to_exitcode(os.system("rm " + comsFileName)) == 0:
+					break
 				time.sleep(1)
-		except:
+		except Exception as e:
 			pass											#Clear the display
 		exit(0)												#We finished up with restoring the data for this USB stick. exit the app.
 
@@ -99,20 +109,11 @@ def mmiloader_code():
 	##########################################################################
 
 	print ("Creating content Directory")
-	try:
-		f = open(comsFileName, "w", encoding='utf-8')
-		f.write('Indexing USB')											#We didn't have a valid saved.zip file so we have to create all the data
-		f.close()
-	except:
-		pass	
-	try:
-		os.mkdir(contentDirectory, mode=0o755)								#Create a new content directory to store our data in
-	except:
-		os.system("rm -r " + contentDirectory)
-		os.mkdir(contentDirectory, mode=0o755)
+	update_display('Indexing USB')
+	os.makedirs(contentDirectory, mode=0o755, exist_ok=True)						#Create a new content directory to store our data in
 
 	print ("Copying the templates to the main contentDirectory")
-	shutil.copytree(templatesDirectory + '/en', contentDirectory + '/en')					#Copy the templates to an /en language file for starters.
+	shutil.copytree(templatesDirectory + '/en', contentDirectory + '/en', dirs_exist_ok=True)		#Copy the templates to an /en language file for starters.
 	shutil.copy(templatesDirectory + '/footer.html', contentDirectory)					#Get the html footer
 	print ("copyied templates for en and footer")
 
@@ -121,7 +122,7 @@ def mmiloader_code():
 	mains["en"] = json.load(f)										#load it for /en language
 	f.close()
 	print ("main.json loaded, now changing modes of files in mediaDirectory") 				#Save it off
-	os.system("chmod -R 755 " + mediaDirectory)
+	run_cmd("chmod -R 755 " + mediaDirectory)
 
 	print ("going to get the language codes now")
 
@@ -132,26 +133,27 @@ def mmiloader_code():
 	print ("language codes loaded")
 
 
-	# Retrieve brand.txt
+	# Retrieve brand.j2
 	f = open('/usr/local/connectbox/brand.j2', "r")								#Get the current brand information
 	brand = json.load(f)
 	f.close()
 	print ("brand Aquired")
 
 	# Sanity Checks
-	error = 0
-	try:
-		if (len(brand['Brand']) < 5):
-			throw()
-		print ("Custom Branding: " + brand['Brand'])
-	except:
-		brand['Brand'] = os.popen('cat /etc/hostname').read()						#Get the current host name
-	try:
-		if (len(brand['Logo']) < 5):									#Get the current brand logo
-			throw()
-		print ("Custom Logo: " + brand['Logo'])
-	except:
-		brand['Logo'] = "imgs/logo.png"									#set default logo if no custom
+	if not brand.get('Brand') or len(brand['Brand']) < 5:
+		try:
+			brand['Brand'] = subprocess.check_output(['hostname'], text=True).strip()
+		except Exception as e:
+			logging.error(f"Could not read hostname: {e}")
+			brand['Brand'] = 'ConnectBox'
+		logging.warning("Brand name missing or too short, defaulting to hostname")
+	else:
+		print("Custom Branding: " + brand['Brand'])
+	if not brand.get('Logo') or len(brand['Logo']) < 5:
+		brand['Logo'] = "imgs/logo.png"  # Default logo
+		logging.warning("Logo missing or too short, using default")
+	else:
+		print("Custom Logo: " + brand['Logo'])
 
 	print ("Building Content For " + brand['Brand'])
 
@@ -161,7 +163,7 @@ def mmiloader_code():
 	f.close()
 	interface["APP_NAME"] = brand["Brand"]
 
-	if brand["enhancedInterfaceLogo"] != "" :
+	if brand.get("enhancedInterfaceLogo", "") != "" :
 	        interface["APP_LOGO"] = brand["enhancedInterfaceLogo"]
 	else:
 	        interface["APP_LOGO"] =  brand["Logo"]
@@ -183,9 +185,9 @@ def mmiloader_code():
 			f = open(mediaDirectory + "/connectbox.txt", "a")
 			f.write("<h2>Media Directory is Empty</h2> Please refer to the administration guide!")
 			f.close()
-	except:
+	except Exception as e:
 			print("Directory is empty")								#Do the same as above for errors
-			os.system("mkdir " + mediaDirectory)
+			run_cmd("mkdir " + mediaDirectory)
 			f = open(mediaDirectory + "/connectbox.txt", "w")
 			f.write("<h2>Media Directory is Empty</h2> Please refer to the administration guide!")
 			f.close()
@@ -209,10 +211,17 @@ def mmiloader_code():
 		try:
 			print ("lang is: ",languageCodes[lang]['english'])
 
-			if len(lang) > 3: 								#Were making hard spaces on the proported language
-				print("checking language " + lang + " is NOT a valid language and will be removed from the list")
-				doesRootContainLanguage.remove(lang)
-				if y > 0: y -= 1
+			if len(lang) > 3: 								#Check for regional variant (e.g. zh-CN, pt-BR)
+				base_lang = lang.split('-')[0] if '-' in lang else ''
+				if base_lang and base_lang in languageCodes:
+					# Alias regional variant so all subsequent languageCodes[lang] lookups work
+					languageCodes[lang] = languageCodes[base_lang]
+					print("checking language " + lang + " as valid regional variant of " + base_lang)
+					y += 1
+				else:
+					print("checking language " + lang + " is NOT a valid language and will be removed from the list")
+					doesRootContainLanguage.remove(lang)
+					if y > 0: y -= 1
 
 			elif (languageCodes[lang]):
 				print("checking language " + lang + " as a valide language",languageCodes[lang])
@@ -223,11 +232,18 @@ def mmiloader_code():
 				print ("We don't know what happened but well remove " + lang + " from the language list")
 				doesRootContainLanguage.remove(lang)
 				if y > 0: y -= 1
-		except:
-			doesRootContainLanguage.remove(lang)
-			if y > 0: y -= 1
-			print ("We just removed " + lang + " from doesRootContainLanguage, language not found!")
-			logging.info("We just removed " + lang + " from doesRootContainLanguage, language not found!")
+		except Exception as e:
+			# Check if this is a regional variant (e.g. zh-CN, pt-BR) before discarding
+			base_lang = lang.split('-')[0] if '-' in lang else ''
+			if base_lang and base_lang in languageCodes:
+				languageCodes[lang] = languageCodes[base_lang]
+				print("checking language " + lang + " as valid regional variant of " + base_lang)
+				y += 1
+			else:
+				doesRootContainLanguage.remove(lang)
+				if y > 0: y -= 1
+				print ("We just removed " + lang + " from doesRootContainLanguage, language not found!")
+				logging.info("We just removed " + lang + " from doesRootContainLanguage, language not found!")
 
 		if y > len(doesRootContainLanguage):
 			y = y-1
@@ -297,7 +313,7 @@ def mmiloader_code():
 #				print("we didn't find the language")
 				directoryType = ""
 				continue
-		except:
+		except Exception as e:
 			if os.path.isfile(mediaDirectory + "/.language"):
 				print ("	Root Directory has .language file")
 				file = open(mediaDirectory + "/.language")
@@ -351,12 +367,7 @@ def mmiloader_code():
 					print("FOUND MY INDEX.HTML FILE")
 					print("since this is root directory starting path it needs to go in the complex list")
 					complex_lst.append(path)
-					try:
-						f = open(comsFileName, "w", encoding='utf-8')					#ndicate were dealing with complex directories
-						f.write('Highly Complex' + chr(10) + 'Filesystem')
-						f.close()
-					except:
-						pass
+					update_display('Highly Complex' + chr(10) + 'Filesystem')
 					print("Added complex root directory "+str(path))
 					### We leave math alogne and z alone ###
 					#This is our continue flag for the outer loop
@@ -364,10 +375,10 @@ def mmiloader_code():
 				for d in dirs:										#Now lets check the directories under the path
 					for pathname, dirname, filename in os.walk(os.path.join(path,d)):
 						if ((len(dirname) > 0) and (len(filename) <= 2)):			#This looks like a complex directory we need to add to the list
-							if ('index.html' in filename) and (len(filename == 1)):
+							if ('index.html' in filename) and (len(filename) == 1):
 								print("FOUND MY INDEX/HTML FILE")
 								pass
-							elif ('Start_Here.htm' in filenames):
+							elif ('Start_Here.htm' in filename):
 								pass
 							else:
 								continue
@@ -375,12 +386,7 @@ def mmiloader_code():
 
 						print("ÖK we found a starting path tha needs to go into the complex list")
 						complex_lst.append(path)						#While the subdirectory is complex this shows the path is also.
-						try:
-							f = open(comsFileName, "w", encoding='utf-8')				#ndicate were dealing with complex directories
-							f.write('Highly Complex' + chr(10) + 'Filesystem')
-							f.close()
-						except:
-							pass
+						update_display('Highly Complex' + chr(10) + 'Filesystem')
 
 						print("Added complex root directory "+str(path))
 						z = 1									#This is our continue flag for the outer loop
@@ -401,14 +407,9 @@ def mmiloader_code():
 		process_dir(path, path, "recursive", indexed_before )						#process the complex directory into HTML code
 
 	print("Finished the complex directory recursion")
-	if len(complex_lst)>0: os.system("touch " + (os.path.join(mediaDirectory, ".indexed.idx")))		#Write the file that says we have done the indexing at least once.
+	if len(complex_lst)>0: run_cmd("touch " + (os.path.join(mediaDirectory, ".indexed.idx")))		#Write the file that says we have done the indexing at least once.
 
-	try:
-		f = open(comsFileName, "w", encoding='utf-8')								#now that were done lets go back to our general indexing status on the screen
-		f.write("Indexing USB")
-		f.close()
-	except:
-		pass
+	update_display("Indexing USB")
 
 	##########################################################################
 	#  Main Loop content loop
@@ -419,7 +420,7 @@ def mmiloader_code():
 		print ("====================================================")
 		print ("Evaluating Directory: " + thisDirectory)
 
-		shortPath = path.replace(mediaDirectory + '/d','')
+		shortPath = path.replace(mediaDirectory + '/','')							#Relative path from media root
 		# These next two lines ignore directories and files that start with .
 		files = [f for f in files if not f[0] == '_']							#Normalize files again
 		dirs[:] = [d for d in dirs if not d[0] == '_']							#Normalize directories again
@@ -447,7 +448,7 @@ def mmiloader_code():
 				NoISOCodes = 0
 #				print("         this is the language: ", language)				#We have found a language and set the directoryType
 
-		except:												#We had an error so we jsut use the /en we setup before
+		except Exception as e: #We had an error so we jsut use the /en we setup before
 #			print ('	NOT a Language: ' + thisDirectory)
 			pass
 
@@ -464,22 +465,18 @@ def mmiloader_code():
 		##########################################################################
 
 		# See if the language already exists in the directory, if not make and populate a directory from the template
-		if (not os.path.exists(contentDirectory + "/" + language)):   					#If this language already exsists skip creating it.
+		if (not os.path.exists(contentDirectory + "/" + language + "/data")):				#Check for data/ specifically — language dir may exist but be incomplete
 			print("Doing new language setup " + language + " **********************************")
 			print ("	Creating Directory: " + contentDirectory + "/" + language)
-			shutil.copytree(templatesDirectory + '/en', contentDirectory + "/" + language)
-			os.system ("chown -R www-data.www-data " + contentDirectory + "/" + language)
+			shutil.copytree(templatesDirectory + '/en', contentDirectory + "/" + language, dirs_exist_ok=True)
+			run_cmd ("chown -R www-data.www-data " + contentDirectory + "/" + language)
 			# Load the main.json template and populate the mains for that language.
-			f = open (templatesDirectory + "/en/data/main.json")					#load the language with the base directories
-			mains[language] = json.load(f)
-			f.close()
+			if language not in mains:
+				f = open (templatesDirectory + "/en/data/main.json")				#load the language with the base directories
+				mains[language] = json.load(f)
+				f.close()
 
-		try:
-			f = open(comsFileName, "w", encoding='utf-8')							#Output to the display that were indexing this data
-			f.write('Indexing USB')
-			f.close()
-		except:
-			pass
+		update_display('Indexing USB')
 
 
 		###########################################################################
@@ -494,7 +491,7 @@ def mmiloader_code():
 				try:
 					d = str(path)[(y+len(testPath)):]					#See if we have any subpaths after this path
 					print("ok remainder of string is: "+d)
-				except:
+				except Exception as e:
 					d = ""
 					print ("Hit our exception in the complex_lst test loop")
 					y = 0
@@ -530,9 +527,8 @@ def mmiloader_code():
 
 		print ("our evaluation of testing for web elements is finished we have go forward at: "+str(y)+ " , current directoryType is: " + directoryType + "yy: "+str(yy))
 
-		if ((yy == 1) and (y == 0)): y = 0								# if we have go forward on extended but not web then we don't go forward.
-		elif ((yy == 0) and (y == 1)): y = 0								# if we have go forward on webdirectory but not on extended directory we don't go forward
-		else: y = 1
+		if (yy == 1) and (y == 1): y = 1								# both checks say go forward — process this directory
+		else: y = 0											# either check said skip — do not process
 
 
 		##########################################################################
@@ -544,7 +540,7 @@ def mmiloader_code():
 			print ("	" + path + " is web content")
 			# Make a symlink to the file on USB to display the content
 #			print ("	WebPath: Writing symlink to /html folder")
-			os.system ("ln -s '" + path + "' " + contentDirectory + "/" + language + "/html/")
+			run_cmd ("ln -s '" + path + "' " + contentDirectory + "/" + language + "/html/")
 			x = 0
 #			print ("directoryType: ",directoryType)
 			subpath = path.replace(mediaDirectory, "")
@@ -552,12 +548,7 @@ def mmiloader_code():
 
 			if not((os.path.isfile(mediaDirectory + "/" + (".webarchive-" + language + "-" + subpath + ".zip").replace("/","-").replace('--','-'))) or (os.path.isfile(mediaDirectory + '/.NoWebcompress'))):
 
-				try:
-					f = open(comsFileName, "w", encoding='utf-8')						#Update the display to show were zipping
-					f.write('Creating ZIP'+chr(10)+"File")
-					f.close()
-				except:
-					pass
+				update_display('Creating ZIP'+chr(10)+"File")
 
 				logging.info ("Trying to archive a web file set for " + thisDirectory)
 				try:
@@ -567,7 +558,7 @@ def mmiloader_code():
 					SkipArchive = 1
 					logging.info ("succeeded in finishing the zip file for .webarchvie-" + language + "-" + subpath.replace("/","-").replace("--","-")+".zip")
 #					print ("succeeded in finishing the zip file for .webarchvie-" + language + "-" + subpath.replace("/","-").replace("--","-")+".zip")
-				except:
+				except Exception as e:
 					print ("	Error making web archive ")
 					logging.info ("Failled to finishing the zip file for .webarchvie-" + language + "-" + subpath.replace("/","-").replace("--","-")+".zip")
 					x = 0 	 									#Clear our archive flag
@@ -575,14 +566,9 @@ def mmiloader_code():
 				print(("webarchive already exsists /.webarchive-" + language + '-' + subpath + ".zip").replace("/", "-").replace("--","-") + "or .Nowebarchive file in root")
 				x = 1  											#set our archive flag
 			# Re-write the display as indexing since it may have changed.
-			try:
-				f = open(comsFileName, "w", encoding='utf-8')
-				f.write('Indexing USB')
-				f.close()
-			except:
-				pass
+			update_display('Indexing USB')
 
-			if x>0: os.system (("ln -s '"+ mediaDirectory + "/.webarchive-" + language + "-" + subpath.replace("/","-") + ".zip'  '" + contentDirectory + "/" + language + "/html/" + thisDirectory + ".zip'").replace("--","-"))
+			if x>0: run_cmd (("ln -s '"+ mediaDirectory + "/.webarchive-" + language + "-" + subpath.replace("/","-") + ".zip'  '" + contentDirectory + "/" + language + "/html/" + thisDirectory + ".zip'").replace("--","-"))
 			else: print ("No webarchve is available!!")
 
 			dirs = []
@@ -615,19 +601,14 @@ def mmiloader_code():
 			# See if the language already exists in the directory, if not make and populate a directory from the template
 			# Make a symlink to the file on USB to display the content
 #			print ("	WebPath: Writing symlink to /html folder")
-			os.system ("ln -s '" + path + "'  " + contentDirectory + "/" + language + "/html/")
+			run_cmd ("ln -s '" + path + "'  " + contentDirectory + "/" + language + "/html/")
 #			print ("    Path is equal to: " + path)
 			print("    Looking for: " + mediaDirectory + "/" + (".webarchive-" + language + "-" + thisDirectory + ".zip").replace('--','-'))
 
 
 			if (not os.path.isfile(mediaDirectory + "/" + (".webarchive-" + language + "-" + thisDirectory + ".zip").replace('--','-'))):
 
-				try:
-					f = open(comsFileName, "w", encoding='utf-8')
-					f.write('Creating ZIP'+chr(10)+"File")
-					f.close()
-				except:
-					pass
+				update_display('Creating ZIP'+chr(10)+"File")
 
 				SkipArchive = 1
 
@@ -635,20 +616,15 @@ def mmiloader_code():
 				try:
 					print ("	WebPath: Creating web archive zip file on USB at: "+ mediaDirectory + "/.webarchive-" + language + "-" + thisDirectory + ".zip")
 					shutil.make_archive(mediaDirectory + ("/.webarchive-" + language + "-" + thisDirectory ).replace('--','-'), "zip", (path))
-				except:
+				except Exception as e:
 					print ("	error  making web archive")
 				logging.info ("succeeded in finishing the zip file")
 
-				try:
-					f = open(comsFileName, "w", encoding='utf-8')
-					f.write('Indexing USB')
-					f.close()
-				except:
-					pass
+				update_display('Indexing USB')
 
 			else: print (" Found it!!")
 #			print ("	WebPath: Linking web archive zip")
-			os.system ("ln -s '" + mediaDirectory + ("/.webarchive-" + language + "-" + thisDirectory + ".zip").replace("--","-") + "'  '" + contentDirectory + "/" + language + "/html/" + thisDirectory + ".zip'")
+			run_cmd ("ln -s '" + mediaDirectory + ("/.webarchive-" + language + "-" + thisDirectory + ".zip").replace("--","-") + "'  '" + contentDirectory + "/" + language + "/html/" + thisDirectory + ".zip'")
 			dirs = []
 			webpaths.append(path)
 			directoryType = "html"
@@ -671,7 +647,7 @@ def mmiloader_code():
 			pass
 		elif ("html" in directoryType):
 			pass
-		else: directoryType = directoryTpye + ' singular'
+		else: directoryType = directoryType + ' singular'
 
 		print ("	Processing Directory: " + path)
 		print ("	Processing Files According To directoryType = " + directoryType)
@@ -691,7 +667,7 @@ def mmiloader_code():
 				if ((pathlib.Path(path + "/" + filename).suffix).lower() in '.zip, .gzip, .zy, .gz, .gzip, .7z, .bz2, .tar'): x = 1  #We found a compressed file
 			if (x==0):												#Were ok to go forward with creating a compressed file of this directory
 				print ("	Path: Writing symlink to /html folder")
-				os.system ("ln -s '" + path + "' '" + contentDirectory + "/" + language + "/html/" + thisDirectory + "'")
+				run_cmd ("ln -s '" + path + "' '" + contentDirectory + "/" + language + "/html/" + thisDirectory + "'")
 				print ("        Path is equal to: " + path)
 
 				if doesRootContainLanguage:
@@ -699,55 +675,35 @@ def mmiloader_code():
 					if not os.path.isfile(mediaDirectory + "/" + language + "/" + thisDirectory + ("/archive-" + language + "-" + thisDirectory + ".zip").replace('--','-')):
 						logging.info ("trying to create a zip file of " + mediaDirectory + "/" + language + "/" + thisDirectory + "/archive-" + language + "-" + thisDirectory + ".zip")
 
-						try:
-							f = open(comsFileName, "w", encoding='utf-8')					#Update the display for creating a zip
-							f.write('Creating ZIP'+chr(10)+"File")
-							f.close()
-						except:
-							pass
+						update_display('Creating ZIP'+chr(10)+"File")
 
 						try:
 							print ("	Path: Creating archive zip file on USB")
 							shutil.make_archive(mediaDirectory + "/" + language + "/" + thisDirectory + "/archive-" + language + "-" + thisDirectory, 'zip', path)
 							print ("	Path: Linking archive zip")
-							os.system ('ln -s '+ mediaDirectory + "/" + language + "/" + thisDirectory +  "/archive-" + language + "-" + thisDirectory + '.zip  ' + contentDirectory + "/" + language + "/zip/" + thisDirectory + ".zip")
+							run_cmd ('ln -s '+ mediaDirectory + "/" + language + "/" + thisDirectory +  "/archive-" + language + "-" + thisDirectory + '.zip  ' + contentDirectory + "/" + language + "/zip/" + thisDirectory + ".zip")
 							logging.info ("succeeded in finishing the zip file")
-						except:
+						except Exception as e:
 							print ("	error  making archive")
 
-						try:
-							f = open(comsFileName, "w", encoding='utf-8')					#Update the display with Indexing status
-							f.write('Indexing USB')
-							f.close()
-						except:
-							pass
+						update_display('Indexing USB')
 				else:
 					print ("looking at: " + mediaDirectory + "/archive-" + language + "-" + thisDirectory + ".zip")
 					if not os.path.isfile(mediaDirectory + "/archive-" + language + "-" + thisDirectory + ".zip"):
 						logging.info ("trying to create a zip file of " + mediaDirectory + "/" + thisDirectory + "/archive-" + language + "-" + thisDirectory + ".zip")
 
-						try:
-							f = open(comsFileName, "w", encoding='utf-8')					#Update the display for creating a zip
-							f.write('Creating ZIP'+chr(10)+"File")
-							f.close()
-						except:
-							pass
+						update_display('Creating ZIP'+chr(10)+"File")
 
 						try:
 							print ("	Path: Creating archive zip file on USB")
 							shutil.make_archive(mediaDirectory + "/archive-" + language + "-" + thisDirectory, 'zip', path)
 							print ("	Path: Linking web archive zip")
-							os.system ('ln -s '+ mediaDirectory + "/archive-" + language + "-" + thisDirectory + '.zip  ' + contentDirectory + "/" + language + "/zip/" + thisDirectory + ".zip")
+							run_cmd ('ln -s '+ mediaDirectory + "/archive-" + language + "-" + thisDirectory + '.zip  ' + contentDirectory + "/" + language + "/zip/" + thisDirectory + ".zip")
 							logging.info ("succeeded in finishing the zip file")
-						except:
+						except Exception as e:
 							print ("	error  making archive")
 
-						try:
-							f = open(comsFileName, "w", encoding='utf-8')					#Update the ddisplay for Indexing
-							f.write('Indexing USB')
-							f.close()
-						except:
-							pass
+						update_display('Indexing USB')
 
 				if (str(files).find("archive-" + language + "-" + thisDirectory + '.zip') < 0): files.append( "archive-" + language + "-" + thisDirectory + '.zip')
 			else:
@@ -776,7 +732,6 @@ def mmiloader_code():
 			# Get certain data about the file and path
 			fullFilename = path + "/" + filename									# Example /media/usb0/content/video.mp4
 			shortName = pathlib.Path(path + "/" + filename).stem							# Example  video      (ALSO, slug is a term used in the BoltCMS mediabuilder that I'm adapting here)
-			relativePath = path.replace(mediaDirectory + '/','')
 			slug = (os.path.basename(fullFilename).replace('.','-')).replace('--','-')				# Example  video.mp4
 			extension = (pathlib.Path(path + "/" + filename).suffix).lower()					# Example  .mp4
 			print(" Slug is now: "+slug)
@@ -851,7 +806,7 @@ def mmiloader_code():
 			print ("	Determining Mimetype of " + extension)
 			if (content["mimeType"]):
 				print ("	mimeType already determined to be " + content["mimeType"])
-			elif (hasattr(types[extension],"mimeType")):
+			elif ("mimeType" in types[extension]):
 				content["mimeType"] = types[extension]["mimeType"]
 				print ("	mimetypes types.json says: " + content["mimeType"])
 			elif (mimetypes.guess_type(fullFilename)[0] is not None):
@@ -860,7 +815,7 @@ def mmiloader_code():
 			else:
 				content["mimeType"] = "application/octet-stream"
 				print ("	Default mimetype: " + content["mimeType"])
-				collection['image'] = 'apps.png'
+				if 'collection' in locals(): collection['image'] = 'apps.png'
 
 			print("        Media Type is: "+ content["mediaType"])
 
@@ -872,8 +827,8 @@ def mmiloader_code():
 			if (((content["image"] == 'blank.gif') or (content['image'] == "")) and (os.path.isfile(mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png"))):
 				print ("	Found Thumbnail" +  mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png")
 				content["image"] =  slug + ".png"
-				os.system ('ln -s "'+ mediaDirectory + '/.thumbnail-' + language + '-' + slug + '.png"' + '  "' + contentDirectory + '/' + language + '/images/' + slug + '.png"')
-				print ("	Thumbnail link complete at: " + mediaDirectory + "/" +  content["image"])
+				shutil.copy(mediaDirectory + '/.thumbnail-' + language + '-' + slug + '.png', contentDirectory + '/' + language + '/images/' + slug + '.png')
+				print ("	Thumbnail copy complete at: " + contentDirectory + '/' + language + '/images/' + slug + '.png')
 				if ('collection' in locals() or 'collection' in globals()):
 					if (collection['image'] == 'blank.gif'): collection['image'] = content['image']
 
@@ -890,13 +845,13 @@ def mmiloader_code():
 
 				try:
 					if os.path.getsize(path + "/" + filename) > 100:					#image is large enough to be usable.
-						os.system ("ln -s '" + fullFilename + "'  " + contentDirectory + "/" + language + "/images/")
+						run_cmd ("ln -s '" + fullFilename + "'  " + contentDirectory + "/" + language + "/images/")
 					else:
 						print (str(os.path.getsize(path + "/" + filename)) + " is the size we got for the image " + path + "/" + filename)
 						content['image'] = 'images.png'
-				except:
+				except Exception as e:
 					print (" Ok we had an error tryuging to ge the size of " + path + "/" + filename)
-					os.system ("ln -s '" + fullFilename + "'  " + contentDirectory + "/" + language + "/images/")
+					run_cmd ("ln -s '" + fullFilename + "'  " + contentDirectory + "/" + language + "/images/")
 				if ('collection' in locals() or 'collection' in globals()) and collection['image'] == 'blank.gif': collection['image'] = "images.png"
 
 
@@ -906,21 +861,21 @@ def mmiloader_code():
 				try:
 					if not (os.path.isfile(mediaDirectory + "/.thumbnail-" + language +  "-" + slug + ".png")):
 						print ("	Attempting to make a thumbnail for the video")
-						os.system("ffmpeg -y  -i '" + fullFilename + "' -an -ss 00:00:15 -vframes 1 '" + mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png'  >/dev/null 2>&1")
+						run_cmd("ffmpeg -y  -i '" + fullFilename + "' -an -ss 00:00:15 -vframes 1 '" + mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png'  >/dev/null 2>&1")
 					if os.path.isfile(mediaDirectory + '/.thumbnail-' + language + '-' + slug + '.png'):
-						content["ímage"] = slug + ".png"
+						content["image"] = slug + ".png"  # Set the key correctly (was a unicode typo)
 						print ("        We found the thumbnail")
 					try:
 						if os.path.getsize( mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png") > 100:		#image is large enough to be usable.
-							os.system ('ln -s "' + mediaDirectory +  '/.thumbnail-' + language + '-' + slug + '.png' + '"  "' + contentDirectory + '/' + language + '/images/' +  slug + '.png"')
+							shutil.copy(mediaDirectory + '/.thumbnail-' + language + '-' + slug + '.png', contentDirectory + '/' + language + '/images/' + slug + '.png')
 							content["image"] =  slug + ".png"
 						else:
 							print ("        Image was too small to use!!!!!!!")
 							content["image"] = 'video.png'
-					except:
+					except Exception as e:
 						print ("had an error getting size of video !!!!!!!!" + mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png")
 						content['image'] = 'video.png'
-				except:
+				except Exception as e:
 					print ("Something whent wrong with the ffmpeg or elsewhere")
 					content['image'] = 'video.png'
 																# if its not a video & not an image
@@ -933,21 +888,21 @@ def mmiloader_code():
 				print("        Were looking for " + ".thumbnail-" + language + "-" + slug + ".png")
 				if not os.path.isfile( mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png"):
 					try:
-						os.system("ffmpeg -y -i '" + fullFilename + "' -an -c:v copy '" + mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png'  >/dev/null 2>&1")
-						if os.path.isfile(mediaDirectory + "./thumbnail-" + language + "-" + slug + ".png"):
+						run_cmd("ffmpeg -y -i '" + fullFilename + "' -an -c:v copy '" + mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png'  >/dev/null 2>&1")
+						if os.path.isfile(mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png"):
 							content["image"]= slug + ".png"
 							if (os.path.getsize( mediaDirectory + '/.thumbnail-' + language + '-' + slug + '.png') > 100):
 								print("mp3 thumbnail image created")
-								os.system ('ln -s "' + mediaDirectory + '/.thumbnail-' + language + '-' + slug + '.png' + '"  "' + contentDirectory + '/' + language + '/images/' + slug + '.png"')
-								if os.path.isfile(mediaDirectory + '/.thumbnail-' + language + '-' + slug + ".png"):
-									print ("	Thumbnail image link complete at: " + mediaDirectory + "/.thumbnail-"+ language + "-" + slug + ".png")
+								shutil.copy(mediaDirectory + '/.thumbnail-' + language + '-' + slug + '.png', contentDirectory + '/' + language + '/images/' + slug + '.png')
+								if os.path.isfile(contentDirectory + '/' + language + '/images/' + slug + '.png'):
+									print ("	Thumbnail image copy complete at: " + contentDirectory + '/' + language + '/images/' + slug + '.png')
 								else:
 									print ("       Thumbnail image did not get linked...or created.  ?????? What to do????? ")
-									fail
+									raise Exception("fail")
 							else:
 								print ("NO mp3 thumbnail created")
-								fail
-					except: content["image"] = "sound.png"
+								raise Exception("fail")
+					except Exception as e: content["image"] = "sound.png"
 				if ('collection' in locals() or 'collection' in globals()) and (collection['image'] == 'blank.gif' or collection['image'] != "sound.png"): collection['image'] = "sound.png"
 
 			##########################################################################
@@ -957,7 +912,7 @@ def mmiloader_code():
 			if ('collection' in locals() or 'collection' in globals()):
 				if (content["mediaType"] in 'audio'):  collection['image'] = 'sound.png'
 				elif ((content["mediaType"] in 'zip, gzip, gz, xz, 7z, bz2, 7zip, tar') and (collection['image'] == 'blank.gif')):  collection['image'] = 'zip.png'
-				elif ((content["mediaType"] in 'document, text, docx, xlsx, pptx') and (collection['image'] == 'blank.gif')):  collection['image'] = 'book.png'
+				elif ((content["mediaType"] in 'document, text, docx, xlsx, pptx, h5p, epub') and (collection['image'] == 'blank.gif')):  collection['image'] = 'book.png'
 				elif ((content['mediaType'] in 'epub') and (collection['image'] == 'blank.gif')): collection ['image'] = 'epub.png'
 				elif ((content['mediaType'] in 'pdf') and (collection['image'] == 'blank.gif')): collection['image'] = 'pdf.png'
 				elif ((content['mediaType'] in 'image, img, tif, tiff, wbmp, ico, jng, bmp, svg, svgz, webp, png, jpg') and (collection['image'] == 'blank.gif')): collection['image'] = 'images.png'
@@ -967,7 +922,7 @@ def mmiloader_code():
 			else:
 				if (content["mediaType"] in 'audio'):  content['image'] = 'sound.png'
 				elif (content["mediaType"] in 'zip, gzip, gz, xz, 7z, bz2, 7zip, tar'):  content['image'] = 'zip.png'
-				elif (content["mediaType"] in 'document, text, docx, xlsx, pptx'):  content['image'] = 'book.png'
+				elif (content["mediaType"] in 'document, text, docx, xlsx, pptx, h5p, epub'):  content['image'] = 'book.png'
 				elif (content['mediaType'] in 'epub'): content ['image'] = 'epub.png'
 				elif (content['mediaType'] in 'pdf') : content['image'] = 'pdf.png'
 				elif (content['mediaType'] in 'image, img, tif, tiff, wbmp, ico, jng, bmp, svg, svgz, webp, png, jpg'):
@@ -1020,7 +975,7 @@ def mmiloader_code():
 				mains[language]["content"].append(content)
 			# Make a symlink to the file on USB to display the content
 			print ("	Creating symlink for the content")
-			os.system ('ln -s "' + fullFilename + '" "' + contentDirectory + '/' + language + '/media/"')
+			run_cmd ('ln -s "' + fullFilename + '" "' + contentDirectory + '/' + language + '/media/"')
 			print ("	Symlink: " + contentDirectory + '/' + language + '/media/' + filename)
 
 			print ("	COMPLETE: Based on file type " + fullFilename + " added to enhanced interface for language " + language)
@@ -1037,8 +992,9 @@ def mmiloader_code():
 		# END DIRECTORY LOOP
 
 	try:
-		os.system("rm "+complex_dir)
-	except:
+		run_cmd("rm "+complex_dir)
+	except Exception as e:
+		logging.debug(f"Ignored exception: {e}")
 		pass
 
 	##########################################################################
@@ -1068,7 +1024,7 @@ def mmiloader_code():
 		languageJsonObject["codes"] = [language]
 		try:
 			languageJsonObject["text"] = languageCodes[language]["native"][0]
-		except:
+		except Exception as e:
 			languageJsonObject ["text"] = languageCodes[language]["english"][0]
 
 		languageJson.append(languageJsonObject)
@@ -1077,21 +1033,20 @@ def mmiloader_code():
 		print ("No valid content found on the USB.  Exiting")
 
 		try:
-			x = os.system("rm " + comsFileName)
-			x = os.waitstatus_to_exitcode(x)
-			while x!=0:
-				x = os.system("rm " + comsFileName)
-				x = os.waitstatus_to_exitcode(x)
+			for _ in range(5):
+				if os.waitstatus_to_exitcode(os.system("rm " + comsFileName)) == 0:
+					break
 				time.sleep(1)
-		except:
+		except Exception as e:
 			pass											#Clear the display
 
-			try:
-				os.system('rm '+ ComplexDir)
-			except:
-				pass
+		try:
+			run_cmd('rm '+ complex_dir)
+		except Exception as e:
+			logging.debug(f"Ignored exception: {e}")
+			pass
 
-			sys.exit()
+		sys.exit()
 
 	# Determine which language should be default.  It is english or first one found
 	hasDefault = 0
@@ -1108,22 +1063,21 @@ def mmiloader_code():
 	f.close()
 
 	print ("Copying Metadata to Zip File On USB")
-	os.system ("(cd " + contentDirectory + " && zip --symlinks -r " + zipFileName + " *)")
+	run_cmd ("(cd " + contentDirectory + " && zip --symlinks -r " + zipFileName + " *)")
 	logging.info("Finished mmiLoader.py run successfully to create the user interface and index the data contents")
 
 	try:
-		os.system('rm '+ ComplexDir)
-	except:
+		run_cmd('rm '+ complex_dir)
+	except Exception as e:
+		logging.debug(f"Ignored exception: {e}")
 		pass
 
 	try:
-		x = os.system("rm " + comsFileName)
-		x = os.waitstatus_to_exitcode(x)
-		while x!=0:
-			x = os.system("rm " + comsFileName)
-			x = os.waitstatus_to_exitcode(x)
+		for _ in range(5):
+			if os.waitstatus_to_exitcode(os.system("rm " + comsFileName)) == 0:
+				break
 			time.sleep(1)
-	except:
+	except Exception as e:
 		pass											#Clear the display
 
 	print ("DONE")
@@ -1133,11 +1087,12 @@ def mmiloader_code():
 if __name__ == '__main__' :
 
 	try:
-		f = open(comsFileName, "r", encoding = "utf-8")
+		f = open("/tmp/creating_menus.txt", "r", encoding = "utf-8")
 		print(" Ok the comsFileName file is present. we can't try to load since system is doing something else")
 		logging.info(" Skipped mmmiLoader.py since complex_dir file was present")
 		sys.exit()
-	except:
+	except Exception as e:
+		logging.debug(f"Ignored exception: {e}")
 		pass
 
 	print ("Ok now we will start the loader")

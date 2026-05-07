@@ -681,12 +681,20 @@
     group: _connectbox
     mode: 0555
 
-- name: Install indexer.py 
+- name: Install indexer.py
   copy:
-    src: usr_local_connectbox_bin_indexer.py 
-    dest: /usr/local/connectbox/bin/indexer.py 
-    owner: _connectbox 
-    group: _connectbox 
+    src: usr_local_connectbox_bin_indexer.py
+    dest: /usr/local/connectbox/bin/indexer.py
+    owner: _connectbox
+    group: _connectbox
+    mode: 0555
+
+- name: Install mmiLoader.py
+  copy:
+    src: usr_local_connectbox_bin_mmiLoader.py
+    dest: /usr/local/connectbox/bin/mmiLoader.py
+    owner: _connectbox
+    group: _connectbox
     mode: 0555
 
 - name: Change the permissions of PxUSBm.py 
