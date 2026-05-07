@@ -401,6 +401,28 @@
   debug: 
     msg: "remove build and files and get rigd of gcc"
 
+- name: Copy displays.py with animated wait page support
+  copy:
+    src: neo-batterylevelshutdown/displays.py
+    dest: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/neo_batterylevelshutdown/displays.py"
+    mode: 0644
+
+- name: Copy wait frame images for OLED animation
+  copy:
+    src: "assets/{{ item }}"
+    dest: "{{ hat_service_virtualenv_dir }}/lib/{{ python_ver }}/site-packages/neo_batterylevelshutdown/assets/{{ item }}"
+    mode: 0644
+  loop:
+    - wait.png
+    - wait0.png
+    - wait1.png
+    - wait2.png
+    - wait3.png
+    - wait4.png
+    - wait5.png
+    - wait6.png
+    - wait7.png
+
 - name: Enable and restart NEO_BatteryLevelShutdown
   systemd:
     name: "{{ item }}"

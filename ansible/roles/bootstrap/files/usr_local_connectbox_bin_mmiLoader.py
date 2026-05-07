@@ -76,7 +76,7 @@ def mmiloader_code():
 		logging.debug(f"Ignored exception: {e}")
 		pass
 
-	update_display('Indexing USB')
+	update_display('Loading USB')
 
 	shutil.rmtree(contentDirectory, ignore_errors=True)						#Get rid of any old content data structures we may have
 
@@ -91,6 +91,7 @@ def mmiloader_code():
 		print ("****If you want to reload the USB, delete the file saved.zip from the USB drive.")
 
 		os.makedirs(contentDirectory, mode=0o755, exist_ok=True)
+		update_display('Unzipping USB')
 		run_cmd ("(cd " + contentDirectory + " && unzip " + zipFileName + ")")
 		print ("DONE")
 		time.sleep(3)
