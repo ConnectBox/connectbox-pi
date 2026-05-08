@@ -1,4 +1,4 @@
-ACTION=="add", KERNEL=="sd[a-z][0-9]", RUN+="/bin/mount -o sync,noexec,nodev,noatime,nodiratime,utf8 /dev/%k /media/usb0"
+ACTION=="add", KERNEL=="sd[a-z][0-9]", RUN+="/bin/mount -o noexec,nodev,noatime,nodiratime,utf8 /dev/%k /media/usb0"
 ACTION=="add", KERNEL=="sd[a-z][0-9]", RUN+="/usr/bin/python3 /usr/local/connectbox/bin/usb_mounter.py add /dev/%k"
 ACTION=="remove", KERNEL=="sd[a-z][0-9]", RUN+="/bin/umount /dev/%k"
 ACTION=="remove", KERNEL=="sd[a-z][0-9]", RUN+="/usr/bin/python3 /usr/local/connectbox/bin/usb_mounter.py remove /dev/%k"

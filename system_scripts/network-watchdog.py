@@ -82,9 +82,4 @@ if __name__ == "__main__":
     time.sleep(30)
     while True:
         check_network()
-        # Drop caches occasionally like PxUSBm.py did
-        try:
-            os.system("sync; echo 3 > /proc/sys/vm/drop_caches")
-        except:
-            pass
         time.sleep(30)
