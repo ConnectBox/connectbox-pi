@@ -1121,6 +1121,10 @@ def mmiloader_code():
 	f.close()
 
 	print ("Copying Metadata to Zip File On USB")
+	# Only write saved.zip if the USB is still mounted (guard against root-FS pollution)
+	if not os.path.ismount(mediaDirectory.split('/content')[0]):
+		print("USB no longer mounted, skipping saved.zip creation")
+		sys.exit()
 	run_cmd ("(cd " + contentDirectory + " && zip --symlinks -r " + zipFileName + " *)")
 	try:
 		with open("/tmp/.saved_zip_mtime", "w") as _f:
