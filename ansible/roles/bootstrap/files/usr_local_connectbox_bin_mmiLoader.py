@@ -5,6 +5,7 @@
 import json
 import os
 import pathlib
+import shlex
 import shutil
 import mimetypes
 import logging
@@ -53,17 +54,34 @@ def is_blank_thumbnail(path):
 
 def mmiloader_code():
 
-	# Single-instance guard: exit if another mmiLoader is already running
+	# Single-instance guard: exit if another mmiLoader Python process is already running.
+	# We check /proc directly rather than pgrep -f because pgrep matches shell processes
+	# whose argv contains "mmiLoader.py" as a -c argument (e.g. the sh launched by
+	# os.system()), causing false positives that prevent mmiLoader from ever running.
 	try:
-		result = subprocess.run(['pgrep', '-f', 'mmiLoader.py'], capture_output=True, text=True)
-		running_pids = [int(p) for p in result.stdout.split() if p.strip()]
-		running_pids = [p for p in running_pids if p != os.getpid()]
+		my_pid = os.getpid()
+		running_pids = []
+		import glob
+		for cmdline_path in glob.glob('/proc/*/cmdline'):
+			try:
+				pid = int(cmdline_path.split('/')[2])
+				if pid == my_pid:
+					continue
+				with open(cmdline_path, 'rb') as _f:
+					args = _f.read().split(b'\x00')
+				# argv[0] must be a python interpreter, argv[1] must be our script
+				if (len(args) >= 2
+						and b'python' in args[0]
+						and b'mmiLoader.py' in args[1]):
+					running_pids.append(pid)
+			except Exception:
+				pass
 		if running_pids:
 			print("mmiLoader.py already running (pid " + str(running_pids) + "), exiting")
 			logging.info("mmiLoader.py already running, skipping duplicate run")
 			return
 	except Exception:
-		pass  # If pgrep unavailable, continue
+		pass  # If /proc unavailable, continue
 
 	# Defaults for Connectbox / TheWell
 	mediaDirectory = "/media/usb0/content"									#The root of data
@@ -81,13 +99,6 @@ def mmiloader_code():
 
 	mimetypes.init()
 
-	#######################################################
-	# Handel memory issues  by setting up automated free memory
-	######################################################
-
-	run_cmd("sync && echo 3 | sudo tee /proc/sys/vm/drop_caches")						#Try to clear any cach data that we have to maximize memory availability
-
-
 	mains = {}        # This object contains all the data to construct each main.json at the end.  We add as we go along
 	logging.info("Starting a run of mmiLoader.py to index the data contents and create the user interface")
 
@@ -100,6 +111,11 @@ def mmiloader_code():
 		pass
 
 	update_display('Loading USB')
+
+	# Guard: exit immediately if USB is not mounted — prevents using root-FS files
+	if not os.path.ismount(mediaDirectory.split('/content')[0]):
+		print("USB not mounted at startup, exiting cleanly")
+		sys.exit()
 
 	##########################################################################
 	#  See if  we have a saved.zip file to unzip and exit
@@ -169,9 +185,6 @@ def mmiloader_code():
 		print("USB no longer mounted before index write, exiting cleanly")
 		sys.exit()
 
-	print ("main.json loaded, now changing modes of files in mediaDirectory") 				#Save it off
-	run_cmd("chmod -R 755 " + mediaDirectory)
-
 	print ("going to get the language codes now")
 
 	# Retrieve language codes
@@ -234,11 +247,18 @@ def mmiloader_code():
 			f.write("<h2>Media Directory is Empty</h2> Please refer to the administration guide!")
 			f.close()
 	except Exception as e:
-			print("Directory is empty")								#Do the same as above for errors
+			print("Directory is empty or inaccessible")
 			run_cmd("mkdir " + mediaDirectory)
-			f = open(mediaDirectory + "/connectbox.txt", "w")
-			f.write("<h2>Media Directory is Empty</h2> Please refer to the administration guide!")
-			f.close()
+			if not os.path.isdir(mediaDirectory):
+				print("Failed to create mediaDirectory (I/O error?), exiting cleanly")
+				sys.exit()
+			try:
+				f = open(mediaDirectory + "/connectbox.txt", "w")
+				f.write("<h2>Media Directory is Empty</h2> Please refer to the administration guide!")
+				f.close()
+			except Exception as e2:
+				print(f"Failed to write to mediaDirectory: {e2}, exiting cleanly")
+				sys.exit()
 
 	language = "en"  # By default but it will be overwritten if there are other language directories on the USB
 	directoryType = "" # By default we don't have a directory type (language, folder, folders, singular, etc.
@@ -463,6 +483,11 @@ def mmiloader_code():
 	#  Main Loop content loop
 	##########################################################################
 	for path,dirs,files in os.walk(mediaDirectory):								#This is our main content analysis loop now for data
+
+		if not os.path.ismount(mediaDirectory.split('/content')[0]):
+			print("USB unmounted mid-run, aborting")
+			logging.warning("USB unmounted during indexing, exiting without saved.zip")
+			sys.exit(1)
 
 		thisDirectory = os.path.basename(os.path.normpath(path))
 		print ("====================================================")
@@ -911,7 +936,7 @@ def mmiloader_code():
 					if not os.path.isfile(thumb_path):
 						print ("	Attempting to make a thumbnail for the video")
 						for ts in ["00:00:15", "00:00:30", "00:01:00", "00:02:00", "00:03:00"]:
-							run_cmd("ffmpeg -y -i '" + fullFilename + "' -an -ss " + ts + " -vframes 1 '" + thumb_path + "' >/dev/null 2>&1")
+							run_cmd("/usr/bin/ffmpeg -y -i " + shlex.quote(fullFilename) + " -an -ss " + ts + " -vframes 1 " + shlex.quote(thumb_path) + " >/dev/null 2>&1")
 							if os.path.isfile(thumb_path) and os.path.getsize(thumb_path) > 100:
 								if not is_blank_thumbnail(thumb_path):
 									print("	Thumbnail extracted at " + ts)
@@ -944,7 +969,7 @@ def mmiloader_code():
 				print("        Were looking for " + ".thumbnail-" + language + "-" + slug + ".png")
 				if not os.path.isfile( mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png"):
 					try:
-						run_cmd("ffmpeg -y -i '" + fullFilename + "' -an -c:v copy '" + mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png'  >/dev/null 2>&1")
+						run_cmd("/usr/bin/ffmpeg -y -i " + shlex.quote(fullFilename) + " -an -c:v copy " + shlex.quote(mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png") + "  >/dev/null 2>&1")
 						if os.path.isfile(mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png"):
 							content["image"]= slug + ".png"
 							if (os.path.getsize( mediaDirectory + '/.thumbnail-' + language + '-' + slug + '.png') > 100):
