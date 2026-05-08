@@ -138,19 +138,19 @@ def mountCheck():
               try:
                   os.system("rm /usr/local/connectbox/complex_dir")
               except:
-                  pass    
-            if loc[j] == ord('0'):
-                try:
-                    os.remove('/tmp/.usb0_indexed')
-                except Exception:
-                    pass
-            loc[j]= -1
-            mnt[j] = -1
-            j += 1
+                  pass
           else:
-            if DEBUG > 2: print("Failed to " + c + "So what do we do?")
-            logging.warning("Unmount failed for " + c + " — keeping in mount table to retry next cycle")
-            j += 1
+            logger.info("Umount returned non-zero (likely already unmounted by udev) for "+c)
+          # Always clear sentinel and table when device is gone from lsblk,
+          # regardless of whether our umount call succeeded
+          if loc[j] == ord('0'):
+              try:
+                  os.remove('/tmp/.usb0_indexed')
+              except Exception:
+                  pass
+          loc[j]= -1
+          mnt[j] = -1
+          j += 1
         else:
         #Were here with the device still mounted
           print("device still mounted /dev/sd"+chr(mnt[j])+"1 Device present")
