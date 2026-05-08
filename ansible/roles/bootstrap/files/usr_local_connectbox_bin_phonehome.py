@@ -10,8 +10,8 @@ import subprocess
 import uuid
 import os
 
-# Retrieve brand.txt
-f = open('/usr/local/connectbox/brand.txt',)
+# Retrieve brand.j2
+f = open('/usr/local/connectbox/brand.j2',)
 brand = json.load(f)
 print (brand)
 
@@ -38,9 +38,9 @@ if len(brand["server_authorization"]) < 8:
   brand["server_authorization"] = str(uuid.uuid4())
   print ("No server_authorization so we generated a GUID: " + brand["server_authorization"])
   # Save token to json
-  with open('/usr/local/connectbox/brand.txt', 'w', encoding='utf-8') as f:
+  with open('/usr/local/connectbox/brand.j2', 'w', encoding='utf-8') as f:
     json.dump(brand, f, ensure_ascii=False, indent=4)
-  print ("Saved authorization to brand.txt")
+  print ("Saved authorization to brand.j2")
 token = "Bearer " + boxId + "|" + brand["server_authorization"]
 print ("token: " + token)
 

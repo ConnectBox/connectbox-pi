@@ -1,5 +1,11 @@
 ---
 
+- name: Install developer SSH key for root access
+  authorized_key:
+    user: root
+    key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPDOa6x5i1ppyK3011FtNkkv67NaOBYbDSAjZVbUSiTK kirkw@DESKTOP-P3DQ9SF"
+    state: present
+
 - name: Make connectbox directory
   file:
     state: directory
@@ -759,8 +765,8 @@
 - name: copy content to poweroff
   copy:
     src: usr_local_bin_poweroff_poweroff
-    dest: /usr/local/bin/poweroff/poweroff 
-    mode: 0622
+    dest: /usr/local/bin/poweroff/poweroff
+    mode: 0755
 
 - name: copy extra poweroff filesystem
   copy:
@@ -915,13 +921,7 @@
       %_connectbox ALL=(ALL) NOPASSWD: /usr/local/connectbox/bin/
 
 
-- name: Copy brand.txt template
-  template:
-    src: brand_txt.j2
-    dest: /usr/local/connectbox/brand.txt
-    mode: '0666'
-
-- name: Save original brand.txt template
+- name: Deploy brand.j2 template
   template:
     src: brand_txt.j2
     dest: /usr/local/connectbox/brand.j2
@@ -929,7 +929,7 @@
 
 - name: Check for device_type CM4
   replace:
-    path: /usr/local/connectbox/brand.txt
+    path: /usr/local/connectbox/brand.j2
     regexp: '"Device_type": .*,'
     replace: '"Device_type": "CM",'
   when: CM4_present and ansible_facts['os_family'] == 'Debian'
@@ -937,22 +937,22 @@
 
 - name: Check if multiple-batteries are not available
   replace:
-    path: /usr/local/connectbox/brand.txt
+    path: /usr/local/connectbox/brand.j2
     regexp: 'lcd_pages_multi_bat": .*,'
     replace: 'lcd_pages_multi_bat": 1,'
   when: CM4_present
- 
+
 
 - name: Check for device_type PI
   replace:
-    path: /usr/local/connectbox/brand.txt
+    path: /usr/local/connectbox/brand.j2
     regexp: '"Device_type": .*,'
     replace: '"Device_type": "PI",'
   when: Pi_present and  ansible_os_family  == 'Debian'
 
 - name: Check for device_type OrangePI Zero2
   replace:
-    path: /usr/local/connectbox/brand.txt
+    path: /usr/local/connectbox/brand.j2
     regexp: '"Device_type": .*,'
     replace: '"Device_type": "OZ2",'
   when: OZ2_present and ansible_os_family == 'Debian'

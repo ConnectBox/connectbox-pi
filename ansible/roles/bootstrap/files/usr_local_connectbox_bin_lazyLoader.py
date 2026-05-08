@@ -29,7 +29,7 @@ except:
 isSubscribed = False;
 try:
   print ("Check For Subscription");
-  f = open('/usr/local/connectbox/brand.txt');
+  f = open('/usr/local/connectbox/brand.j2');
   brand = json.load(f)
   f = open(contentDirectory + 'subscription.json');
   subscription = json.load(f)

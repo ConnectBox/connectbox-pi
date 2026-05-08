@@ -132,8 +132,6 @@ def mountCheck():
                   os.system("rm /usr/local/connectbox/complex_dir")
               except:
                   pass
-              if os.system("pgrep -f mmiLoader.py > /dev/null 2>&1") != 0:
-                  os.system("/bin/bash -c '/usr/bin/python3 /usr/local/connectbox/bin/mmiLoader.py >/tmp/loadContent.log 2>&1; rm -f /tmp/creating_menus.txt' &")
               logger.info("Finished load content for menu's, time is" + time.asctime())
               try:
                   os.system("rm /usr/local/connectbox/complex_dir")
@@ -160,8 +158,6 @@ def mountCheck():
                 os.system("rm /usr/local/connectbox/complex_dir")
             except:
                 pass
-            if os.system("pgrep -f mmiLoader.py > /dev/null 2>&1") != 0:
-                os.system("/bin/bash -c '/usr/bin/python3 /usr/local/connectbox/bin/mmiLoader.py >/tmp/loadContent.log 2>&1; rm -f /tmp/creating_menus.txt' &")
             logger.info("Finished load content for menu's, time is" + time.asctime())
             try:
                 os.system("rm /usr/local/connectbox/complex_dir")
@@ -227,9 +223,9 @@ def mountCheck():
           y = str(x.communicate()[0])
           x.stdout.close()
           if y>="5.15.0":
-            b = "mount /dev/" + e.group() + " -t auto -o noatime,nodev,nosuid,sync,utf8" + " /media/usb" + chr(a)
+            b = "mount /dev/" + e.group() + " -t auto -o noatime,nodev,nosuid,utf8" + " /media/usb" + chr(a)
           else:
-            b = "mount /dev/" + e.group() + " -t auto -o noatime,nodev,nosuid,sync,iocharset=utf8" + " /media/usb" + chr(a)
+            b = "mount /dev/" + e.group() + " -t auto -o noatime,nodev,nosuid,iocharset=utf8" + " /media/usb" + chr(a)
           c = "dosfsck -a /dev/" + e.group()
           starttime = time.time()
           print("checking the files system before mount with: "+ c)
@@ -293,8 +289,6 @@ def mountCheck():
               # Enhanced Content Load
               print("Start load content for menu's")
               logger.info("Starting content indexing and load on  /dev/sda1, time is " + time.asctime())
-              if os.system("pgrep -f mmiLoader.py > /dev/null 2>&1") != 0:
-                  os.system("/bin/bash -c '/usr/bin/python3 /usr/local/connectbox/bin/mmiLoader.py >/tmp/loadContent.log 2>&1; rm -f /tmp/creating_menus.txt' &")
               logger.info("Finished content indexing and load on /dev/sda1, time is " + time.asctime())
 
               # upgrade enabler
@@ -333,9 +327,6 @@ def mountCheck():
                   if l == 0:
                       logger.info("We already had a USB that was mounted but added it to our mount table so starting loading cocntent, time is "+ time.asctime())
                       print("Start load content for menu's")
-                      if os.system("pgrep -f mmiLoader.py > /dev/null 2>&1") != 0:
-                          os.system("/bin/bash -c '/usr/bin/python3 /usr/local/connectbox/bin/mmiLoader.py >/tmp/loadContent.log 2>&1; rm -f /tmp/creating_menus.txt' &")
-
                       # SSH Enabler
                       os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/.connectbox/enable-ssh && (/bin/systemctl is-active ssh.service || /bin/systemctl enable ssh.service && /bin/systemctl start ssh.service)'")
                 else:
@@ -1568,94 +1559,20 @@ def check_PM2():
 
 
 def sync_brand():
-  file_txt = "/usr/local/connectbox/brand.txt"
   file_j2  = "/usr/local/connectbox/brand.j2"
-  global otime_txt
   global otime_j2
 
   try:
-    time_txt = os.path.getmtime(file_txt)
+    time_j2 = os.path.getmtime(file_j2)
   except:
-    time_txt = os.path.getmtime(file_j2)-1
-  try:
-    time_j2  = os.path.getmtime(file_j2)
-  except:
-    time_j2 = time_txt - 1
+    return
 
-#First see if we have the same time as last time, meaning nothing has changed
-  if ((otime_txt != time_txt) or (otime_j2 != time_j2)):
-  # ok we have a change
-    if time_txt > time_j2:
-# if j2 is older than txt
-      print (" text is newer than J2" )
-      brand_Str2 = ""
-      x = 0
-      try:
-        f = open(file_txt, 'r', encoding='utf-8')
-        brand_Str2 = f.read()
-        brand_Str2 = brand_Str2.replace("\n","").replace("\r", "").replace(" ", "")
-      except Exception as e:
-        logging.info("sync_brand error on brand_txt as ",e)
-        f.close()
-        return
-      try:
-        brand_dict = json.loads(brand_Str2)
-        f.close()
-      except Exception as e:
-        f.close()
-        print("error in loading the string into json,  error: ",e)
-        logging.info("sync_brand error on brand_txt as ",e)
-        return
-      try:
-        fo = open(file_j2, "w", encoding='utf-8')
-        json.dump(brand_dict, fo, indent = 4, sort_keys = False)
-        fo.close()
-        time_j2  = os.path.getmtime(file_j2)
-        otime_j2 = time_j2					#set the old time for j2 to the current j2 time
-      except:
-        print("don't know what happened but couldn't write brand.j2")
-        f.close()
-
-# if txt is older than j2 then
-    else:
-      print("j2 is newer than txt")
-      try:
-        with open(file_j2, "r", encoding='utf-8') as f:
-          brand_dict = json.load(f)
-        fo = open(file_txt, 'w', encoding="utf-8")
-      except:
-        print (" failed to load brand_dict")
-        logging.info("sync_brand error on load of brand_dict from brand.j2")
-        f.close()
-        fo.close()
-        return
-      f.close()
-      fo.write("{\n")
-      x = 0
-      regex = r'[a-zA-Z@-_*&^%$#!`~:;?/=+]'
-      for k,v in brand_dict.items():
-        vv = str(v)
-        if vv == "": vv = '""'
-        if (re.search(regex, k)): k = '"' + k.replace("\"", "") + '"'
-        elif not str(k).isnumeric():k = '"' + k.replace("\"", "") + '"'
-        else:
-          print ("cant figure out the command side: "+k)
-          return
-        if (re.search(regex,vv)): vv = '"' + vv.replace("\"", "") + '"'
-        elif not vv.isnumeric(): vv = '"' +  vv.replace("\"", "") + '"'
-        if x == 0:
-            fo.write("    "+ str(k) + ":" + str(vv))
-            x=1
-        else: fo.write(",\n    " + str(k) + ":" + str(vv))
- #     print(k + ":" + str(vv))
-      fo.write("\n}\n")
-      fo.close()
-      time_txt = os.path.getmtime(file_txt)
-      otime_txt = time_txt				#set the otime_txt to the current time of time_txt
-    return(0)
+  if otime_j2 != time_j2:
+    otime_j2 = time_j2
+    print("brand.j2 changed")
   else:
-     print("no change to brand")
-     return(0)					#IF NO TIME CHANGE ON THE 2 FILES THEN JUST RETURN
+    print("no change to brand")
+  return(0)
 
 
 if __name__ == "__main__":
@@ -1663,7 +1580,6 @@ if __name__ == "__main__":
 # First handle the partition expansion
 # Determine if we are on NEO or CM
     brand_file = '/usr/local/connectbox/brand.j2'
-    brand_file_txt = '/usr/local/connectbox/brand.txt'
     rpi_platform = False
     global areadyconf
     global apwifi
@@ -1679,9 +1595,7 @@ if __name__ == "__main__":
 
 
     # Brand time testing
-    global otime_txt
     global otime_j2
-    otime_txt = 0
     otime_j2 = 0
 
     handler = logging.handlers.WatchedFileHandler( os.environ.get("LOGFILE", "/var/log/PxUSSBm.log"))
@@ -1727,83 +1641,48 @@ if __name__ == "__main__":
     except:
         pass
     logger.info("PxUSBm Starting revision is "+version)
-    ti_m_txt = 0
-    ti_m_j2 = 0
     try:
-      ti_m_txt = os.path.getmtime(brand_file_txt)
-      ti_m_j2 = os.path.getmtime(brand_file)
+        f = open(brand_file, mode="r", encoding='utf-8')
+        Brand = json.loads(f.read())
+        f.close()
     except:
-      if (ti_m_txt > 0):
-          f = open(brand_file_txt, mode="r", encoding='utf-8')
-          Brand = json.loads( f.read() )
-          f = open(brand_file, mode="w", encoding = 'utf-8')
-          f.write(json.dumps(Brand))
-          f.close()
-      else:
-          raise
-    try:
-        if ti_m_txt == 0:
-            raise
-        if ti_m_txt > ti_m_j2:
-            f = open(brand_file_txt, mode="r", encoding='utf-8')
-            Brand = json.loads( f.read() )
-            f.close()
-            f = open(brand_file, mode="w", encoding = 'utf-8')
-            f.write(json.dumps(Brand))
-            f.close()
-        else:
-            f = open(brand_file, mode="r", encoding='utf-8')
-            Brand = json.loads( f.read() )
-            f = open(brand_file_txt, mode="w", encoding = 'utf-8')
-            for key, value in Brand.items():
-               f.write('%s:%s' % (key, value))
-            f.close()
-    except:
-      f = open(brand_file, mode="w", encoding = 'utf-8')
-      details  = { \
-        'Brand':"Connectbox", \
-        'enhancedInterfaceLogo': "", \
-        'Image':'connectbox_logo.png', \
-        'Font': 27, \
-        'pos_x': 6, \
-        'pos_y': 0, \
-        'Device_type': a, \
-        "usb0NoMount": 0, \
-        "lcd_pages_main": 1,\
-        "lcd_pages_info": 1,\
-        "lcd_pages_battery": 1,\
-        "lcd_pages_multi_bat": 0,\
-        "lcd_pages_memory": 1,\
-        "lcd_pages_stats_hour_one": 1,\
-        "lcd_pages_stats_hour_two": 1,\
-        "lcd_pages_stats_day_one": 1,\
-        "lcd_pages_stats_day_two": 1,\
-        "lcd_pages_stats_week_one": 1,\
-        "lcd_pages_stats_week_two": 1,\
-        "lcd_pages_stats_month_one": 1,\
-        "lcd_pages_stats_month_two": 1,\
-        "lcd_pages_admin": 0,\
-        "Enable_MassStorage": "",\
-        "g_device": "g_serial",\
-        "otg": 0,\
-        "server_url": "", \
-        "server_authorization": "", \
-        "server_sitename": "", \
-        "server_siteadmin_name": "", \
-        "server_siteadmin_email": "", \
-        "server_siteadmin_phone": "", \
-        "server_siteadmin_country": "" \
+        Brand = {
+            'Brand': "Connectbox",
+            'enhancedInterfaceLogo': "",
+            'Image': 'connectbox_logo.png',
+            'Font': 27,
+            'pos_x': 6,
+            'pos_y': 0,
+            'Device_type': a,
+            "usb0NoMount": 0,
+            "lcd_pages_main": 1,
+            "lcd_pages_info": 1,
+            "lcd_pages_battery": 1,
+            "lcd_pages_multi_bat": 0,
+            "lcd_pages_memory": 1,
+            "lcd_pages_stats_hour_one": 1,
+            "lcd_pages_stats_hour_two": 1,
+            "lcd_pages_stats_day_one": 1,
+            "lcd_pages_stats_day_two": 1,
+            "lcd_pages_stats_week_one": 1,
+            "lcd_pages_stats_week_two": 1,
+            "lcd_pages_stats_month_one": 1,
+            "lcd_pages_stats_month_two": 1,
+            "lcd_pages_admin": 0,
+            "Enable_MassStorage": "",
+            "g_device": "g_serial",
+            "otg": 0,
+            "server_url": "",
+            "server_authorization": "",
+            "server_sitename": "",
+            "server_siteadmin_name": "",
+            "server_siteadmin_email": "",
+            "server_siteadmin_phone": "",
+            "server_siteadmin_country": ""
         }
-      f.write(json.dumps(details))
-      f.close()
-      f = open(brand_file, mode="r", encoding='utf8')
-      Brand = json.loads(f.read())
-      f.close()
-      f = open(brand_file_txt, mode = 'w', encoding='utf-8')
-      for key, value in Brand.items():
-          f.write('%s:%s\n' % (key, value))
-      f.close()
-      logger.info("Created new Brand.j2")
+        with open(brand_file, mode="w", encoding='utf-8') as f:
+            f.write(json.dumps(Brand))
+        logger.info("Created new brand.j2 with defaults")
 
     NoMountUSB = Brand["usb0NoMount"] 			   # Note: brand is type dict, so no "find" method
     rpi_platform=False
@@ -2000,12 +1879,6 @@ if __name__ == "__main__":
 
           if ((x % 20)==0):
             logger.info("PxUSBm Going to do a Network check " + str(x) + " time stamp " + time.asctime())
-# clear memory caches
-            try:
-                os.system("sync")
-                os.system("echo 3 | sudo tee /proc/sys/vm/drop_caches")
-            except:
-                pass
 
 # add check for /etc/wpa_supplicant/wpa_supplicant.conf for country=<blank>
             wpa_File = '/etc/wpa_supplicant/wpa_supplicant.conf'
