@@ -139,6 +139,11 @@ def mountCheck():
                   os.system("rm /usr/local/connectbox/complex_dir")
               except:
                   pass    
+            if loc[j] == ord('0'):
+                try:
+                    os.remove('/tmp/.usb0_indexed')
+                except Exception:
+                    pass
             loc[j]= -1
             mnt[j] = -1
             j += 1
@@ -149,7 +154,7 @@ def mountCheck():
         else:
         #Were here with the device still mounted
           print("device still mounted /dev/sd"+chr(mnt[j])+"1 Device present")
-          if loc[j] == ord('0'):
+          if loc[j] == ord('0') and not os.path.isfile('/tmp/.usb0_indexed'):
             logger.info("Start load content for menu's, time is " + time.asctime())
             try:
                 os.system("rm /usr/local/connectbox/complex_dir")
@@ -162,7 +167,10 @@ def mountCheck():
                 os.system("rm /usr/local/connectbox/complex_dir")
             except:
                 pass
-            loc[j] = ord('0') - 1  # mark as indexed so we don't re-run mmiLoader each cycle
+            try:
+                open('/tmp/.usb0_indexed', 'w').close()
+            except Exception:
+                pass
           j += 1
           total += 1
       else:
