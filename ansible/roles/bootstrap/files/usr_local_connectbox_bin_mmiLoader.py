@@ -164,6 +164,11 @@ def mmiloader_code():
 	f = open (templatesDirectory + "/en/data/main.json", "r")						#Get the main data structure
 	mains["en"] = json.load(f)										#load it for /en language
 	f.close()
+	# Guard: if the USB was removed while we were starting up, exit before writing anything to mediaDirectory
+	if not os.path.ismount(mediaDirectory.split('/content')[0]):
+		print("USB no longer mounted before index write, exiting cleanly")
+		sys.exit()
+
 	print ("main.json loaded, now changing modes of files in mediaDirectory") 				#Save it off
 	run_cmd("chmod -R 755 " + mediaDirectory)
 
