@@ -1122,6 +1122,11 @@ def mmiloader_code():
 
 	print ("Copying Metadata to Zip File On USB")
 	run_cmd ("(cd " + contentDirectory + " && zip --symlinks -r " + zipFileName + " *)")
+	try:
+		with open("/tmp/.saved_zip_mtime", "w") as _f:
+			_f.write(str(os.path.getmtime(zipFileName)))
+	except Exception:
+		pass
 	logging.info("Finished mmiLoader.py run successfully to create the user interface and index the data contents")
 
 	try:
