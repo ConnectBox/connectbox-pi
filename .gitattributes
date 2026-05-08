@@ -1,0 +1,5 @@
+# Force LF line endings for files deployed to Linux targets
+*.sh    eol=lf
+*.py    eol=lf
+*.pl    eol=lf
+*.j2    eol=lf
