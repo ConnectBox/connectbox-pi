@@ -15,6 +15,25 @@ import time
 #import ffmpeg
 
 def update_display(message):
+	"""Write a status message to the display coordination file.
+
+	The ConnectBox UI polls /tmp/creating_menus.txt to show a progress overlay
+	on the device screen while indexing is running.  Writing to this file is
+	best-effort; if the write fails (e.g. the filesystem is read-only or the
+	directory does not exist) the error is silently swallowed so that indexing
+	continues uninterrupted.
+
+	Parameters
+	----------
+	message : str
+	    The human-readable status string to display (e.g. 'Indexing USB').
+	    A newline character (chr(10)) may be embedded to force a line break
+	    on the device display.
+
+	Returns
+	-------
+	None
+	"""
 	try:
 		with open("/tmp/creating_menus.txt", "w", encoding='utf-8') as f:
 			f.write(message)
@@ -22,6 +41,24 @@ def update_display(message):
 		logging.debug(f"Ignored exception: {e}")
 
 def run_cmd(cmd):
+	"""Execute a shell command, logging failures but never raising an exception.
+
+	Uses subprocess.run with shell=True so that shell features such as
+	piping, redirection, and command substitution work as expected.  The
+	check=True flag means a non-zero exit code raises CalledProcessError,
+	which is caught here so that a single failing command does not abort the
+	entire indexing run — a best-effort approach appropriate for operations
+	such as creating symlinks that may already exist.
+
+	Parameters
+	----------
+	cmd : str
+	    The full shell command string to execute.
+
+	Returns
+	-------
+	None
+	"""
 	try:
 		subprocess.run(cmd, shell=True, check=True)
 	except subprocess.CalledProcessError as e:
@@ -37,6 +74,19 @@ def is_blank_thumbnail(path):
 	fades, solid-colour overlays) by requiring sufficient contrast (std dev >= 20).
 	Also rejects frames that are almost entirely dark (mean < 20) or blown-out
 	(mean > 235) even if a handful of pixels differ.
+
+	Parameters
+	----------
+	path : str
+	    Absolute path to the candidate thumbnail image file.
+
+	Returns
+	-------
+	bool
+	    True  — the image is blank/uniform and should be discarded.
+	    False — the image has enough visual content to be a useful thumbnail,
+	            OR PIL is unavailable / the image is unreadable (fail-open so
+	            we never block thumbnail creation due to missing PIL).
 	"""
 	try:
 		from PIL import Image
@@ -53,11 +103,59 @@ def is_blank_thumbnail(path):
 
 
 def mmiloader_code():
+	"""Primary entry point: scan USB content and build the enhanced media interface index.
 
+	This function performs the complete indexing pipeline for the ConnectBox
+	enhanced media interface.  It is designed to run at boot (or on USB insert)
+	and must handle a wide variety of USB content layouts gracefully, including:
+
+	  * Single-language flat content (all files directly in /media/usb0/content)
+	  * Multi-language layouts (ISO-code subdirectories such as 'en', 'fa', 'bos')
+	  * Regional language variants (e.g. 'zh-CN', 'pt-BR')
+	  * Web/HTML content trees (detected by the presence of index.html)
+	  * Android app bundles (detected by AndroidManifest.xml)
+	  * Complex nested directory structures (multiple sub-directories, few files)
+
+	High-level pipeline
+	-------------------
+	1.  Single-instance guard — prevent duplicate runs by inspecting /proc.
+	2.  saved.zip fast path — if a saved.zip index cache exists on the USB,
+	    unzip it and exit immediately rather than re-indexing.
+	3.  Language detection — walk the USB root to find ISO-code directories
+	    and/or a .language marker file that declares the active language.
+	4.  Complex-directory detection — identify web/app bundles that need to
+	    be treated as opaque HTML trees rather than media-file directories.
+	5.  Main content loop — walk every directory, determine its directoryType,
+	    generate thumbnails via ffmpeg, create symlinks into the web-server
+	    content tree, and accumulate JSON metadata.
+	6.  Wrap-up — write main.json, interface.json, and languages.json for each
+	    language, then compress the entire content tree into saved.zip on the
+	    USB for fast loading on next insert.
+
+	Key path constants (set inside this function)
+	----------------------------------------------
+	mediaDirectory    : /media/usb0/content           — USB content root
+	templatesDirectory: /var/www/enhanced/…/templates  — JSON/HTML skeletons
+	contentDirectory  : /var/www/enhanced/…/content    — web-server asset root
+	zipFileName       : mediaDirectory/saved.zip       — compressed index cache
+
+	Parameters
+	----------
+	None — all configuration is derived from well-known filesystem paths.
+
+	Returns
+	-------
+	None
+	    The function calls sys.exit() at natural termination points; it only
+	    returns normally if the single-instance guard fires and no work is done.
+	"""
+
+	# -------------------------------------------------------------------------
 	# Single-instance guard: exit if another mmiLoader Python process is already running.
 	# We check /proc directly rather than pgrep -f because pgrep matches shell processes
 	# whose argv contains "mmiLoader.py" as a -c argument (e.g. the sh launched by
 	# os.system()), causing false positives that prevent mmiLoader from ever running.
+	# -------------------------------------------------------------------------
 	try:
 		my_pid = os.getpid()
 		running_pids = []
@@ -83,6 +181,11 @@ def mmiloader_code():
 	except Exception:
 		pass  # If /proc unavailable, continue
 
+	# -------------------------------------------------------------------------
+	# Path and state variable initialisation.
+	# All directory constants are defined here so they are easy to adjust for
+	# alternative deployments without hunting through the rest of the code.
+	# -------------------------------------------------------------------------
 	# Defaults for Connectbox / TheWell
 	mediaDirectory = "/media/usb0/content"									#The root of data
 	templatesDirectory = "/var/www/enhanced/content/www/assets/templates"					#Where we get our structures for data
@@ -118,7 +221,17 @@ def mmiloader_code():
 		sys.exit()
 
 	##########################################################################
-	#  See if  we have a saved.zip file to unzip and exit
+	#  Fast-path: saved.zip detected — restore and exit without re-indexing.
+	#
+	#  saved.zip is written at the end of a full indexing run and contains the
+	#  entire contentDirectory tree (JSON metadata + symlinks).  When the same
+	#  USB key is reinserted the zip lets us skip minutes of ffmpeg work.
+	#
+	#  We distinguish "same USB key" from "different USB key" by caching the
+	#  zip file's mtime in /tmp/.saved_zip_mtime:
+	#    • Same mtime  → use -n (no-overwrite) for speed; existing files kept.
+	#    • Different mtime → wipe contentDirectory first so stale content from
+	#      the previous key cannot leak into the new interface.
 	##########################################################################
 
 	print ("	Check for saved.zip")
@@ -160,10 +273,14 @@ def mmiloader_code():
 			os.remove(comsFileName)
 		except Exception:
 			pass											#Clear the display
+
 		exit(0)												#We finished up with restoring the data for this USB stick. exit the app.
 
 	##########################################################################
-	# See if this directory is language folder or content
+	#  Full indexing path: no saved.zip present.
+	#  Wipe any stale contentDirectory and rebuild it from the USB contents.
+	#  We copy the English template tree first because 'en' is the fallback
+	#  language for all content that has no language directory on the USB.
 	##########################################################################
 
 	print ("Creating content Directory")
@@ -200,7 +317,13 @@ def mmiloader_code():
 	f.close()
 	print ("brand Aquired")
 
-	# Sanity Checks
+	# -------------------------------------------------------------------------
+	# Sanity-check the brand configuration.
+	# brand.j2 is maintained by the administrator; it may be incomplete or
+	# contain placeholder values.  We fall back to the device hostname for the
+	# brand name and a known-good default logo path so the interface is always
+	# renderable even on a fresh or misconfigured device.
+	# -------------------------------------------------------------------------
 	if not brand.get('Brand') or len(brand['Brand']) < 5:
 		try:
 			brand['Brand'] = subprocess.check_output(['hostname'], text=True).strip()
@@ -218,6 +341,13 @@ def mmiloader_code():
 
 	print ("Building Content For " + brand['Brand'])
 
+	# -------------------------------------------------------------------------
+	# Inject the brand name and logo into the interface.json template.
+	# interface.json is served to the front-end app and controls the header
+	# area of the enhanced media interface (title bar text and logo image).
+	# enhancedInterfaceLogo overrides Logo when a separate hi-res logo is
+	# provided specifically for the enhanced interface.
+	# -------------------------------------------------------------------------
 	# Insert Brand and Logo into the interface template.  We will write this at the end to each language
 	f = open (templatesDirectory + "/en/data/interface.json", "r")   # We will always place USB content in EN language which is default
 	interface = json.load(f)
@@ -239,6 +369,12 @@ def mmiloader_code():
 
 	webpaths = []     # As we find web content, add here so we skip files and folders within
 
+	# -------------------------------------------------------------------------
+	# Bootstrap guard: if the USB content directory is completely empty, write
+	# a placeholder text file so that the indexer always has at least one item
+	# to process.  This prevents the interface from rendering an empty library
+	# and gives the user a visible hint to add content.
+	# -------------------------------------------------------------------------
 	# Check for empty directory and write default content if empty
 	try:
 		if len(os.listdir(mediaDirectory) ) == 0:
@@ -268,7 +404,21 @@ def mmiloader_code():
 
 
 	##########################################################################
-	#  Check mediaDirectory for at least one language directory.  If one exists, then only process language folders
+	#  Detect language directories at the USB root.
+	#
+	#  The ConnectBox supports multi-language USB layouts where the top-level
+	#  directories are named with ISO language codes (e.g. 'en', 'fa', 'bos',
+	#  'zh-CN').  This block collects all root-level directory names, then
+	#  filters them against the master languageCodes lookup:
+	#    • Exact ISO matches are kept as-is.
+	#    • Regional variants (e.g. 'zh-CN') are resolved to their base code
+	#      and aliased in languageCodes so downstream lookups succeed.
+	#    • Anything that is not a recognised language code is removed from the
+	#      list — those directories will be processed as normal content folders.
+	#
+	#  Result: doesRootContainLanguage holds only the validated language codes.
+	#  If this list is non-empty, the main content loop will SKIP any root-level
+	#  directory that is not in this list, enforcing a language-partitioned layout.
 	##########################################################################
 
 	doesRootContainLanguage = (next(os.walk(mediaDirectory))[1])
@@ -327,7 +477,18 @@ def mmiloader_code():
 
 	print("validate language directories and/or look for .language file")
 	####################################################################################################
-	# We are going to check for file forced language .language then we'll chekc for extended directories
+	#  Pre-pass: determine the active language mode before the main content loop.
+	#
+	#  Three possible outcomes:
+	#  1. A root-level directory matches a known ISO code  →  directoryType = 'language',
+	#     language is set to that code, NoISOCodes = 0 (full multi-lang mode).
+	#  2. A .language file exists at the USB root  →  directoryType = 'language',
+	#     language is set to the code in that file, NoISOCodes = 1 (single-lang
+	#     override: ignores any language-named directories already discovered).
+	#  3. Neither  →  directoryType = "", language = "en" (default English mode).
+	#
+	#  We use os.walk to iterate but only care about the root level; 'continue'
+	#  is used liberally to skip deeper paths without processing them here.
 	####################################################################################################
 	for path,dirs,files in os.walk(mediaDirectory):								# Walk all files/directories on the data set
 
@@ -413,7 +574,29 @@ def mmiloader_code():
 		print ("** finished on the languages check, now looking at extended directories **")
 
 		##########################################################################
-		# Check for Complex file structure with multiple directories
+		#  Complex directory detection pass.
+		#
+		#  A "complex" directory is one that contains a self-contained web/app
+		#  bundle — typically a directory tree with an index.html or Start_Here.htm
+		#  at its root and sub-directories for assets (js, css, images, etc.).
+		#  These should be served as an opaque HTML tree rather than having their
+		#  individual files indexed as separate media items.
+		#
+		#  Detection logic:
+		#  1. If the current path already appears in complex_lst (or is a sub-path
+		#     of a known complex directory), skip further checking — it has already
+		#     been classified (z = 1 acts as a short-circuit flag).
+		#  2. For root-level directories with no files (or ≤ 2 files) and at least
+		#     one sub-directory, we recurse into each sub-directory.  If a
+		#     sub-directory has sub-directories itself but only an index.html (or
+		#     Start_Here.htm) file, it qualifies as a complex head and its parent
+		#     is added to complex_lst.
+		#  3. The root path itself is also checked: if it has sub-dirs and an
+		#     index.html directly, it is added directly to complex_lst.
+		#
+		#  complex_lst is persisted to /tmp/Complex_lst as JSON so that the
+		#  recursive processing step (process_dir calls below) can work from the
+		#  same list without re-walking the USB tree.
 		##########################################################################
 
 
@@ -460,6 +643,7 @@ def mmiloader_code():
 						z = 1									#This is our continue flag for the outer loop
 						break
 
+	# Persist the complex directory list so the recursive HTML processor can read it
 	if len(complex_lst)>0:											#If we have complex directories then lets save the list off
 		f = open(complex_dir, "w", encoding='utf-8')
 		json.dump(complex_lst, f)
@@ -468,7 +652,18 @@ def mmiloader_code():
 	print("We have a total of " + str(len(complex_lst)) + " complex directories heads to process")
 
 	##################################################################################################
-	# This is where we process complex directories into HTML file directories
+	#  Process complex (HTML-tree) directories.
+	#
+	#  Each entry in complex_lst is a self-contained web/app bundle root.
+	#  process_dir() is called with mode="recursive" so it copies (or symlinks)
+	#  the entire sub-tree into the web-server content area and generates an
+	#  HTML entry for the enhanced interface — rather than indexing individual
+	#  media files inside the bundle.
+	#
+	#  After processing, we touch .indexed.idx on the USB to record that at
+	#  least one full index pass has completed.  This marker is read back on
+	#  subsequent runs (indexed_before flag) so that process_dir() can decide
+	#  whether to re-generate thumbnails or skip already-completed work.
 	##################################################################################################
 
 	for path in complex_lst:										#Now we have a full list of complex directories
@@ -480,10 +675,29 @@ def mmiloader_code():
 	update_display("Indexing USB")
 
 	##########################################################################
-	#  Main Loop content loop
+	#  Main content indexing loop.
+	#
+	#  os.walk visits every directory under mediaDirectory.  For each directory
+	#  we:
+	#    1. Check the USB is still mounted (exit cleanly if ejected mid-run).
+	#    2. Determine the directoryType (language, root, collection, singular,
+	#       html, folders) by inspecting the path, its files, and the presence
+	#       of special marker files (index.html, AndroidManifest.xml, .compress).
+	#    3. Skip directories that are sub-paths of already-classified web trees
+	#       (webpaths) or complex HTML bundles (complex_lst).
+	#    4. For each file in the directory:
+	#         a. Resolve the MIME type.
+	#         b. Generate or locate a thumbnail (via ffmpeg for video/audio,
+	#            or directly for images).
+	#         c. Build the JSON metadata object (item.json / episode.json).
+	#         d. Symlink the file into the web-server content tree.
+	#    5. After all files in a directory are processed, if it was a
+	#       'collection', append the completed collection object to mains.
 	##########################################################################
 	for path,dirs,files in os.walk(mediaDirectory):								#This is our main content analysis loop now for data
 
+		# Mount check on every iteration: if the USB is ejected mid-run we
+		# must not continue writing to the root filesystem.
 		if not os.path.ismount(mediaDirectory.split('/content')[0]):
 			print("USB unmounted mid-run, aborting")
 			logging.warning("USB unmounted during indexing, exiting without saved.zip")
@@ -507,7 +721,14 @@ def mmiloader_code():
 
 
 		##########################################################################
-		#  See if this directory is language folder or content
+		#  Language classification for this directory.
+		#
+		#  We re-check whether the current directory is a known language root so
+		#  that the 'language' variable is correctly set before we process any
+		#  files.  This matters for multi-language USB layouts: content found
+		#  under /fa must be tagged with language='fa', not carried over from the
+		#  previous iteration.  The try/except swallows KeyError from languageCodes
+		#  lookups when the directory name is not a language code at all.
 		##########################################################################
 
 #		print ('	Checking For Language Folder with: '+ thisDirectory)
@@ -526,7 +747,12 @@ def mmiloader_code():
 			pass
 
 		##########################################################################
-		#  IF directory is not a language but we are ignoring non language root folders
+		#  Skip non-language root directories when language partitioning is active.
+		#
+		#  If doesRootContainLanguage is non-empty, the USB uses a language-
+		#  partitioned layout.  Any root-level directory that was not recognised as
+		#  a language code must be ignored; its files belong to the language folder
+		#  that contains them, not to a separate top-level category.
 		##########################################################################
 
 		if (path == mediaDirectory and directoryType != "language" and doesRootContainLanguage):
@@ -534,7 +760,16 @@ def mmiloader_code():
 			continue  										#Skip any directory without a language ISO code that is in root with other language directories
 
 		##########################################################################
-		#  New language set up
+		#  First-time language setup.
+		#
+		#  When a language is encountered for the first time (i.e. its content
+		#  directory tree has not yet been created), we copy the English template
+		#  tree into a new language-named subdirectory and seed mains[language]
+		#  with the default main.json structure.  This ensures that every
+		#  language has the full set of required directories (data/, images/,
+		#  media/, html/, zip/) before any files are written into them.
+		#  We check for the data/ subdirectory specifically because the language
+		#  dir itself may have been partially created in a previous failed run.
 		##########################################################################
 
 		# See if the language already exists in the directory, if not make and populate a directory from the template
@@ -553,7 +788,17 @@ def mmiloader_code():
 
 
 		###########################################################################
-		# Check this path as a subpath of one main path already handled in extended
+		#  Complex-directory exclusion check.
+		#
+		#  Directories that are sub-paths of a complex HTML bundle (entries in
+		#  complex_lst) have already been processed by process_dir().  We must
+		#  not re-index them here as individual media files, so we set y=1 to
+		#  indicate "skip this directory in the main loop" and break early.
+		#
+		#  The variable 'yy' captures whether this path is a MAJOR directory of
+		#  a complex bundle (i.e. the bundle root itself, not a sub-directory).
+		#  Major directories need their index.html entry created; sub-directories
+		#  (where d contains a '/') are fully skipped (y=0).
 		###########################################################################
 		x = 0
 		y = 1												#Set y to 1 so we get through next test section if there are no extended paths.
@@ -583,6 +828,19 @@ def mmiloader_code():
 
 		yy = y												# Were not a major directory in a complex one.
 		y = 1
+		# -------------------------------------------------------------------------
+		# webpaths exclusion check.
+		#
+		# webpaths accumulates every directory that has been classified as an HTML
+		# or web-archive tree.  Sub-directories inside such trees must not be
+		# indexed individually — their files are part of the archive that was
+		# already created for the parent.  We check whether the current path is
+		# a sub-path of any entry in webpaths and set y=0 to trigger a skip.
+		#
+		# Exception: if the current path itself has an index.htm, we add it to
+		# webpaths so its own archive can be created (handles nested web sites
+		# where each subdirectory is itself a standalone web page).
+		# -------------------------------------------------------------------------
 		print ("Ok we need to check if this is part of a web directory")
 		if len(webpaths) > 0:
 			print ("Testing for webpaths in this path", path, " : ",webpaths)
@@ -600,12 +858,32 @@ def mmiloader_code():
 
 		print ("our evaluation of testing for web elements is finished we have go forward at: "+str(y)+ " , current directoryType is: " + directoryType + "yy: "+str(yy))
 
+		# -------------------------------------------------------------------------
+		# Combine the two skip signals (complex-bundle exclusion and web-path
+		# exclusion) into a single go/no-go flag.  BOTH must say "go" (y==1,
+		# yy==1) for processing to continue; a single "skip" from either check
+		# causes the directory to be skipped entirely.
+		# -------------------------------------------------------------------------
 		if (yy == 1) and (y == 1): y = 1								# both checks say go forward — process this directory
 		else: y = 0											# either check said skip — do not process
 
 
 		##########################################################################
-		#  If this directory contains index.html then treat as web content  (DO NOT AFFECT Y)
+		#  Web content detection: index.html present.
+		#
+		#  If a directory contains index.html (or any index.htm* file) and the
+		#  go/no-go flag is set, the directory is an HTML website that should be
+		#  served as a single item with a ZIP download, not as a list of files.
+		#
+		#  Steps:
+		#  1. Create a symlink into the web-server html/ tree so the browser can
+		#     serve the site directly.
+		#  2. Create (or reuse) a .webarchive-<lang>-<subpath>.zip on the USB so
+		#     users can download the site for offline use.  The ZIP is skipped if
+		#     a .NoWebcompress marker file exists in the USB root.
+		#  3. Symlink the ZIP into the web-server html/ tree.
+		#  4. Mark dirs=[] to prevent os.walk from descending further — the inner
+		#     files are part of the web archive and must not be individually indexed.
 		##########################################################################
 
 		if (((os.path.isfile(path + "/index.html")) or (str(files).find('index.htm') >= 0)) and ( y > 0)):	#we have inidex.html and our move forward flag y
@@ -647,18 +925,24 @@ def mmiloader_code():
 			dirs = []
 			webpaths.append(path)
 			if directoryType != 'folders':  directoryType = "html"						#if this is a complex folder we keep the folders icon otherwise
-															#we treat it as a regular html directory
+																#we treat it as a regular html directory
 
 
 		print ("Directory Type is: ", directoryType)
 
 		##########################################################################
-		#  See if this directory is skipped because it resides within a webPath for a web site content such as ./images or ./js
+		#  Web sub-directory skip.
+		#
+		#  Now that webpaths is fully updated (including any newly added path from
+		#  the index.html check above), do a final pass to confirm this path is not
+		#  a sub-directory of a web tree.  If it is, set skipWebPath=True and
+		#  'continue' to the next os.walk iteration.  We must not process the
+		#  individual JS/CSS/image files inside a web archive as media items.
 		##########################################################################
 
 		for testPath in webpaths:
-			if ((path.find(testPath) != -1) and (not('folder' in directoryType)) and (not((os.path.isfile(path + "/index.html")) or (str(files).find('index.htm') >= 0)) or (y <= 0))):	#we will have testpath in path for 
-															#for folder in directoryType or complexx folder, or an index.htm type file
+			if ((path.find(testPath) != -1) and (not('folder' in directoryType)) and (not((os.path.isfile(path + "/index.html")) or (str(files).find('index.htm') >= 0)) or (y <= 0))):	#we will have testpath in path for
+																#for folder in directoryType or complexx folder, or an index.htm type file
 				print ("	Skipping web path: " + path)
 				skipWebPath = True
 		if (skipWebPath):
@@ -666,7 +950,14 @@ def mmiloader_code():
 
 
 		##########################################################################
-		#  If this directory contains AndroidManifest.xml then treat as Android App
+		#  Android app bundle detection: AndroidManifest.xml present.
+		#
+		#  An Android app distributed as a directory (rather than a single APK)
+		#  contains AndroidManifest.xml at its root.  We treat it identically to
+		#  a web tree: symlink the directory into html/, create a zip archive for
+		#  download, and prevent os.walk from descending into sub-directories.
+		#  The ZIP is named .webarchive-<lang>-<dirname>.zip for consistency with
+		#  the HTML web-archive naming scheme.
 		##########################################################################
 
 		if (os.path.isfile(path + "/AndroidManifest.xml")):
@@ -704,7 +995,16 @@ def mmiloader_code():
 
 
 		#############################################################################################
-		#  Finish detecting directoryType (root, language, html, img,  collection, singular, folders)
+		#  Final directoryType classification.
+		#
+		#  At this point the directoryType may still be '' if no special marker was
+		#  detected.  We assign a concrete type based on the directory's position in
+		#  the tree and file count:
+		#    'root'       — this IS the mediaDirectory (top level)
+		#    'collection' — more than 2 files: treated as a grouped series (album,
+		#                   podcast, etc.) so files become episodes in a collection
+		#    'singular'   — 1-2 files: treated as a standalone item
+		#  Types already set (language, html, folders, folder) are left unchanged.
 		#############################################################################################
 		if ((path == mediaDirectory) and (not ('folder' in directoryType))):
 			directoryType = directoryType + ' root'
@@ -730,7 +1030,21 @@ def mmiloader_code():
 
 
 		##########################################################################
-		#  If we have a .compress file in the root content folder we zip any directory with multiple items except languages.
+		#  .compress mode: create a downloadable ZIP of the directory.
+		#
+		#  If the file /media/usb0/content/.compress exists, any directory that
+		#  contains more than one media file is eligible for ZIP packaging so
+		#  users can download all files in the directory in one tap.
+		#
+		#  We skip this step if:
+		#    • The directory is a language root (would create a ZIP of all content)
+		#    • The directory already contains a compressed file (.zip, .gz, etc.)
+		#      — we don't want to double-zip already-compressed content
+		#    • SkipArchive is set (a web or Android archive was already created)
+		#
+		#  The resulting archive is stored on the USB itself so it persists across
+		#  runs and can be served for download.  A symlink is placed in the
+		#  web-server's zip/ directory so the interface can link to it.
 		##########################################################################
 		if ((('collection' in directoryType) or (len(files) > 1)) and not(language in directoryType) and (os.path.isfile(mediaDirectory + "/" + ".compress")) and (SkipArchive == 0)):
 			print("        Looking to create a zip file of directory, thisDirectory:Looking to create a zip file of directory, thisDirectory: "+ thisDirectory, directoryType)
@@ -785,7 +1099,18 @@ def mmiloader_code():
 
 
 		###########################################################################
-		# Loop through each file in this directory
+		#  Per-file processing loop.
+		#
+		#  Iterate over every file in the current directory.  For each file we:
+		#    1. Skip files that belong to web archives (only index.html and
+		#       AndroidManifest.xml are processed within web paths).
+		#    2. Determine the file extension and look it up in types.json.
+		#    3. Build a JSON content/episode object from the appropriate template.
+		#    4. Resolve a thumbnail image (user-supplied, auto-generated from video
+		#       via ffmpeg, extracted from audio ID3 tags, or a type-default icon).
+		#    5. Write the content JSON to contentDirectory and create a media symlink.
+		#    6. Append the item to mains[language] (singular) or to the collection's
+		#       episodes list (collection directoryType).
 		##########################################################################
 
 		for filename in files:
@@ -794,7 +1119,13 @@ def mmiloader_code():
 			print ("	Processing according to language " + language)
 
 			##########################################################################
-			#  Understand the  file being processed
+			#  File pre-screening.
+			#
+			#  Skip files that should not be individually indexed:
+			#    • Files inside a webpath that are not the entry-point (index.html /
+			#      AndroidManifest.xml) — they are already bundled in a web archive.
+			#    • Files with no extension or an extension not present in types.json
+			#      — we have no way to render them in the interface.
 			##########################################################################
 
 			# Skip all files in a web path not named index.html because we just build an item for the index
@@ -818,7 +1149,18 @@ def mmiloader_code():
 				continue
 
 			##########################################################################
-			#  Depending on collection / single.  Load default json(s)
+			#  JSON template selection: collection vs. singular.
+			#
+			#  A 'collection' directory (>2 files) uses the item.json template for
+			#  the parent container and episode.json for each individual file, so
+			#  the interface can display them as an expandable series (e.g. a folder
+			#  of podcast episodes grouped under one tile).
+			#
+			#  A singular/root/language/html directory uses item.json for each file
+			#  directly — each file becomes its own top-level tile.
+			#
+			#  'collection' is created once (first file in the directory) and then
+			#  reused for subsequent files via the locals()/globals() check.
 			##########################################################################
 
 			# Load the item template file
@@ -851,7 +1193,15 @@ def mmiloader_code():
 			content["mimeType"] = types[extension]["mediaType"]
 
 			##########################################################################
-			#  Handle Web Content Index Page
+			#  Web content entry-point override.
+			#
+			#  For index.html and AndroidManifest.xml the 'file' we expose to the
+			#  interface is actually the ZIP archive of the entire site/app — the
+			#  individual HTML/XML file is not useful on its own.  We override:
+			#    • slug  → the parent directory name (the site/app identifier)
+			#    • mimeType → application/zip (the downloadable archive)
+			#    • filename → slug + ".zip"
+			#    • image → a type-appropriate icon (www.png, app.png, folders.png)
 			##########################################################################
 			# For html, the slug is just the directory name
 			#			the mimeType is always zip for the zip file to download
@@ -873,7 +1223,14 @@ def mmiloader_code():
 					else: collection['image'] = "app.png"
 
 			##########################################################################
-			#  Mime type determination.  Try types.json, then mimetype library4
+			#  MIME type resolution (three-tier fallback).
+			#
+			#  1. Already set (e.g. overridden to application/zip for web content).
+			#  2. types.json lookup — the project-curated mapping of extensions to
+			#     MIME types, preferred because it handles ConnectBox-specific types
+			#     and edge cases the standard library does not know about.
+			#  3. Python mimetypes library — system-level MIME detection.
+			#  4. Final fallback: application/octet-stream (binary download).
 			##########################################################################
 
 			print ("	Determining Mimetype of " + extension)
@@ -893,7 +1250,25 @@ def mmiloader_code():
 			print("        Media Type is: "+ content["mediaType"])
 
 			##########################################################################
-			#  Thumbnail Management
+			#  Thumbnail resolution (priority order).
+			#
+			#  ConnectBox thumbnails are stored on the USB with the naming convention
+			#  .thumbnail-<lang>-<slug>.png (hidden files so they don't appear as
+			#  content items).  Resolution priority:
+			#
+			#  1. User-supplied .thumbnail-<lang>-<slug>.png on the USB root.
+			#     These are hand-crafted and always preferred over auto-generated ones.
+			#  2. For image files: the image itself IS the thumbnail.  We symlink it
+			#     into the images/ directory rather than copying.
+			#  3. For video files: ffmpeg extracts a frame at multiple time offsets
+			#     (15s, 30s, 1m, 2m, 3m) and is_blank_thumbnail() rejects solid-
+			#     colour frames (black leader, white fade) until a usable frame is
+			#     found.  The result is cached as .thumbnail-<lang>-<slug>.png on the
+			#     USB so subsequent runs skip ffmpeg entirely.
+			#  4. For audio files: ffmpeg extracts embedded cover art (-c:v copy).
+			#     Falls back to sound.png if no embedded art exists.
+			#  5. Default type icons (video.png, sound.png, book.png, etc.) when no
+			#     media-specific thumbnail can be obtained.
 			##########################################################################
 
 			# Look for user generateed  thumbnail.  If there is one, use it.
@@ -931,6 +1306,11 @@ def mmiloader_code():
 			# If this is a video, we can probably make a thumbnail
 			if ((content["mediaType"] == 'video') and (content["image"] == 'blank.gif')):
 
+				# Try multiple time offsets because the first few seconds of a video
+				# are often a black leader or title card.  is_blank_thumbnail() validates
+				# that the extracted frame has enough visual content before accepting it.
+				# The thumbnail is cached on the USB so this expensive ffmpeg pass only
+				# runs once per file even across multiple mmiLoader invocations.
 				try:
 					thumb_path = mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png"
 					if not os.path.isfile(thumb_path):
@@ -966,6 +1346,10 @@ def mmiloader_code():
 
 			# if this is an audio file, we can probably get an image from the mp3
 			if ((content["mediaType"] == 'audio') and (content["image"] == 'blank.gif')):
+				# Use ffmpeg to extract embedded cover art from the audio file's ID3/APE
+				# tags (-c:v copy streams the video (cover art) stream without re-encoding).
+				# If no embedded art exists, ffmpeg exits non-zero and the thumbnail file
+				# is not created, so we fall back to the generic sound.png icon.
 				print("        Were looking for " + ".thumbnail-" + language + "-" + slug + ".png")
 				if not os.path.isfile( mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png"):
 					try:
@@ -987,9 +1371,17 @@ def mmiloader_code():
 				if ('collection' in locals() or 'collection' in globals()) and (collection['image'] == 'blank.gif' or collection['image'] != "sound.png"): collection['image'] = "sound.png"
 
 			##########################################################################
-			# Done with thumbnail creation and linkage
+			# Thumbnail resolution complete.
 			##########################################################################
 
+			# -------------------------------------------------------------------------
+			# Default icon fallback for each media type.
+			#
+			# If no specific thumbnail was resolved (image is still blank.gif), assign
+			# a type-appropriate default icon.  These icons are shipped with the
+			# enhanced interface templates and provide a recognisable visual cue in the
+			# library grid even when no artwork is available.
+			# -------------------------------------------------------------------------
 			if ('collection' in locals() or 'collection' in globals()):
 				if (content["mediaType"] in 'audio'):  collection['image'] = 'sound.png'
 				elif ((content["mediaType"] in 'zip, gzip, gz, xz, 7z, bz2, 7zip, tar') and (collection['image'] == 'blank.gif')):  collection['image'] = 'zip.png'
@@ -1014,7 +1406,18 @@ def mmiloader_code():
 					content['title'] = content['title'] + extension
 
 			##########################################################################
-			#  Compiling Collection or Single
+			#  Compile the JSON output: collection episode or standalone item.
+			#
+			#  Collection mode: append this file's content object to the collection's
+			#  'episodes' list and rewrite the collection JSON file after every episode
+			#  so that a partial run (e.g. interrupted by USB eject) leaves a usable
+			#  (though incomplete) collection on disk.  The collection is not added to
+			#  mains[language] until the directory loop ends (after all episodes are
+			#  processed) to avoid writing a partial entry to main.json.
+			#
+			#  Singular mode: write a standalone item JSON file named by slug and
+			#  immediately append its content object to mains[language]["content"]
+			#  so it appears as a top-level tile in the interface.
 			##########################################################################
 			if ( 'collection' in directoryType):
 				print ("	Adding Episode to collection.json")
@@ -1063,7 +1466,16 @@ def mmiloader_code():
 			# END FILE LOOP
 
 
-		# Wait to write collection to main.json until directory has been fully processed
+		# -------------------------------------------------------------------------
+		# Post-directory collection finalisation.
+		#
+		# Once all files in a 'collection' directory have been processed, append
+		# the completed collection object to mains[language]["content"] so it
+		# appears as a single tile in the interface grid.  Then delete the local
+		# 'collection' variable so the next directory starts fresh — without this
+		# del, the collection object would bleed over into the next directory's
+		# file processing loop via the locals() check.
+		# -------------------------------------------------------------------------
 		if (('collection' in locals() or 'collection' in globals()) and ("collection" in directoryType)):
 			print ("	No More Episodes / Wrap up Collection for " + thisDirectory + " by adding it to mains[language]['content'] ")
 			# slug.json has already been saved so we don't need to do that.  Just write the collection to the main.json
@@ -1079,7 +1491,21 @@ def mmiloader_code():
 		pass
 
 	##########################################################################
-	#  Wrap up: main.json, languages.json and interface.json
+	#  Wrap-up: write final JSON files and create saved.zip.
+	#
+	#  At this point all content has been indexed and symlinked.  We now:
+	#    1. Create base-code symlinks for regional language variants (e.g.
+	#       'zh' → 'zh-CN') because the media interface strips hyphen suffixes
+	#       when constructing asset paths.
+	#    2. For each language that produced at least one content item:
+	#         a. Write main.json (the full content index for that language).
+	#         b. Write interface.json (brand/logo settings for that language).
+	#         c. Build an entry for languages.json (code + native name label).
+	#    3. Determine the default language (English if present, otherwise first).
+	#    4. Write languages.json so the interface knows which languages are
+	#       available and which to load on first visit.
+	#    5. Compress the entire contentDirectory into saved.zip on the USB so
+	#       future insertions of the same USB key skip the full indexing run.
 	##########################################################################
 	print ("*************************************************")
 	print ("Completing Final Compilation of languages and items")
@@ -1097,6 +1523,10 @@ def mmiloader_code():
 	# Now go through each language that we found and processed and write the interface.json and main.json for each
 	languageJson = []
 	for language in mains:
+		# Skip languages that ended up with no content (e.g. a language directory
+		# that contained only unsupported file types).  Remove the template copy
+		# for 'en' specifically so an empty English directory doesn't appear in the
+		# interface when the USB uses a non-English single-language layout.
 		if (len(mains[language]["content"]) == 0):
 			print ("Skipping Empty Content for language:" +language)
 			if (language == 'en'):
@@ -1113,6 +1543,8 @@ def mmiloader_code():
 		# Add this language to the language interface
 		languageJsonObject = {}
 		languageJsonObject["codes"] = [language]
+		# Prefer the native-script name (e.g. "فارسی" for Farsi) over the English
+		# name so the language picker is readable to native speakers of that language.
 		try:
 			languageJsonObject["text"] = languageCodes[language]["native"][0]
 		except Exception as e:
@@ -1120,6 +1552,12 @@ def mmiloader_code():
 
 		languageJson.append(languageJsonObject)
 
+	# -------------------------------------------------------------------------
+	# Safety exit: if no language produced any content, nothing useful was
+	# indexed.  Clear the display file and exit without writing saved.zip so
+	# that the next USB insert triggers a full re-index rather than restoring
+	# an empty archive.
+	# -------------------------------------------------------------------------
 	if (len(languageJson) == 0):
 		print ("No valid content found on the USB.  Exiting")
 
@@ -1156,6 +1594,8 @@ def mmiloader_code():
 		print("USB no longer mounted, skipping saved.zip creation")
 		sys.exit()
 	run_cmd ("(cd " + contentDirectory + " && zip --symlinks -r " + zipFileName + " *)")
+	# Cache the new saved.zip mtime so the next insert can detect whether it is the
+	# same USB key and skip unnecessary file extraction work.
 	try:
 		with open("/tmp/.saved_zip_mtime", "w") as _f:
 			_f.write(str(os.path.getmtime(zipFileName)))
@@ -1185,6 +1625,9 @@ if __name__ == '__main__' :
 	try:
 		mmiloader_code()
 	finally:
+		# Ensure the display overlay is always cleared on exit, even if the
+		# indexer crashed or was killed, so the device does not get stuck
+		# showing a "Loading USB" screen indefinitely.
 		try:
 			os.remove("/tmp/creating_menus.txt")
 		except Exception:
