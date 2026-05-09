@@ -1457,10 +1457,15 @@ def mmiloader_code():
 					json.dump(content, f, ensure_ascii=False, indent=4)
 				f.close()
 				mains[language]["content"].append(content)
-			# Make a symlink to the file on USB to display the content
-			print ("	Creating symlink for the content")
-			run_cmd ('ln -s "' + fullFilename + '" "' + contentDirectory + '/' + language + '/media/"')
-			print ("	Symlink: " + contentDirectory + '/' + language + '/media/' + filename)
+			# Make a symlink to the file on USB to display the content.
+			# Skip html/xml entry-point files — the directory itself is already
+			# exposed via html/ and the zip archive; symlinking index.html or
+			# AndroidManifest.xml into media/ produces a broken link that doesn't
+			# serve correctly and pollutes the media directory.
+			if not (path in webpaths and ('.htm' in extension or extension == '.xml')):
+				print ("	Creating symlink for the content")
+				run_cmd ('ln -s "' + fullFilename + '" "' + contentDirectory + '/' + language + '/media/"')
+				print ("	Symlink: " + contentDirectory + '/' + language + '/media/' + filename)
 
 			print ("	COMPLETE: Based on file type " + fullFilename + " added to enhanced interface for language " + language)
 			# END FILE LOOP
@@ -1485,10 +1490,10 @@ def mmiloader_code():
 		# END DIRECTORY LOOP
 
 	try:
-		run_cmd("rm "+complex_dir)
+		if os.path.isfile(complex_dir):
+			os.remove(complex_dir)
 	except Exception as e:
 		logging.debug(f"Ignored exception: {e}")
-		pass
 
 	##########################################################################
 	#  Wrap-up: write final JSON files and create saved.zip.
@@ -1604,10 +1609,10 @@ def mmiloader_code():
 	logging.info("Finished mmiLoader.py run successfully to create the user interface and index the data contents")
 
 	try:
-		run_cmd('rm '+ complex_dir)
+		if os.path.isfile(complex_dir):
+			os.remove(complex_dir)
 	except Exception as e:
 		logging.debug(f"Ignored exception: {e}")
-		pass
 
 	try:
 		os.remove(comsFileName)
