@@ -7,10 +7,13 @@
       "Read(//c/c/Users/kirkw/Documents/Hobby - ConnectBox/Antigravity/**)",
       "Read(//c/c/Users/kirkw/Documents/Hobby - ConnectBox/Antigravity/connectbox-pi/ansible/roles/bootstrap/tasks/**)",
       "Read(//c/Users/kirkw/Documents/Github/simple-offline-captive-portal/**)",
-      "Read(//c/Users/kirkw/mmi_test/**)"
+      "Read(//c/Users/kirkw/mmi_test/**)",
+      "Read(//c/Users/kirkw/Documents/Github/connectbox-hat-service/neo_batterylevelshutdown/**)",
+      "Read(//c/Users/kirkw/Documents/Github/access-log-analyzer/lib/access_log_analyzer/**)"
     ],
     "additionalDirectories": [
-      "C:\\Users\\kirkw\\Documents\\Github\\simple-offline-captive-portal\\docs"
+      "C:\\Users\\kirkw\\Documents\\Github\\simple-offline-captive-portal\\docs",
+      "c:\\Users\\kirkw\\Documents\\Github\\connectbox-hat-service\\neo_batterylevelshutdown"
     ]
   }
 }
