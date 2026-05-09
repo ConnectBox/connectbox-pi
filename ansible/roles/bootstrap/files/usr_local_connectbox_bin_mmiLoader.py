@@ -1138,6 +1138,10 @@ def mmiloader_code():
 			shortName = pathlib.Path(path + "/" + filename).stem							# Example  video      (ALSO, slug is a term used in the BoltCMS mediabuilder that I'm adapting here)
 			slug = (os.path.basename(fullFilename).replace('.','-')).replace('--','-')				# Example  video.mp4
 			extension = (pathlib.Path(path + "/" + filename).suffix).lower()					# Example  .mp4
+			# img_name is the slug sanitized for use in CSS url() contexts — spaces in an
+			# unquoted url() value are invalid, so replace them with underscores here rather
+			# than patching the third-party enhanced-interface template.
+			img_name = slug.replace(' ', '_') + ".png"
 			print(" Slug is now: "+slug)
 
 			# Ignore certain extensions
@@ -1274,9 +1278,9 @@ def mmiloader_code():
 			# Look for user generateed  thumbnail.  If there is one, use it.
 			if (((content["image"] == 'blank.gif') or (content['image'] == "")) and (os.path.isfile(mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png"))):
 				print ("	Found Thumbnail" +  mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png")
-				content["image"] =  slug + ".png"
-				shutil.copy(mediaDirectory + '/.thumbnail-' + language + '-' + slug + '.png', contentDirectory + '/' + language + '/images/' + slug + '.png')
-				print ("	Thumbnail copy complete at: " + contentDirectory + '/' + language + '/images/' + slug + '.png')
+				content["image"] =  img_name
+				shutil.copy(mediaDirectory + '/.thumbnail-' + language + '-' + slug + '.png', contentDirectory + '/' + language + '/images/' + img_name)
+				print ("	Thumbnail copy complete at: " + contentDirectory + '/' + language + '/images/' + img_name)
 				if ('collection' in locals() or 'collection' in globals()):
 					if (collection['image'] == 'blank.gif'): collection['image'] = content['image']
 
@@ -1288,7 +1292,7 @@ def mmiloader_code():
 
 				if ('collection' in locals() or 'collection' in globals()):
 					if ((mediaDirectory + '/' + thisDirectory) == path):					#This means were a root directory and file
-						if (collection['image'] == 'blank.gif'): collection['image'] = slug + ".png"
+						if (collection['image'] == 'blank.gif'): collection['image'] = img_name
 					elif (collection['image'] == 'blank.gif'): collection['image'] = 'images.png'
 
 				try:
@@ -1324,12 +1328,12 @@ def mmiloader_code():
 								print("	Frame at " + ts + " is blank or uniform, trying next time point")
 								os.remove(thumb_path)
 					if os.path.isfile(thumb_path):
-						content["image"] = slug + ".png"
+						content["image"] = img_name
 						print ("        We found the thumbnail")
 					try:
 						if os.path.getsize(thumb_path) > 100:
-							shutil.copy(thumb_path, contentDirectory + '/' + language + '/images/' + slug + '.png')
-							content["image"] = slug + ".png"
+							shutil.copy(thumb_path, contentDirectory + '/' + language + '/images/' + img_name)
+							content["image"] = img_name
 						else:
 							print ("        Image was too small to use!!!!!!!")
 							content["image"] = 'video.png'
@@ -1355,12 +1359,12 @@ def mmiloader_code():
 					try:
 						run_cmd("/usr/bin/ffmpeg -y -i " + shlex.quote(fullFilename) + " -an -c:v copy " + shlex.quote(mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png") + "  >/dev/null 2>&1")
 						if os.path.isfile(mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png"):
-							content["image"]= slug + ".png"
+							content["image"]= img_name
 							if (os.path.getsize( mediaDirectory + '/.thumbnail-' + language + '-' + slug + '.png') > 100):
 								print("mp3 thumbnail image created")
-								shutil.copy(mediaDirectory + '/.thumbnail-' + language + '-' + slug + '.png', contentDirectory + '/' + language + '/images/' + slug + '.png')
-								if os.path.isfile(contentDirectory + '/' + language + '/images/' + slug + '.png'):
-									print ("	Thumbnail image copy complete at: " + contentDirectory + '/' + language + '/images/' + slug + '.png')
+								shutil.copy(mediaDirectory + '/.thumbnail-' + language + '-' + slug + '.png', contentDirectory + '/' + language + '/images/' + img_name)
+								if os.path.isfile(contentDirectory + '/' + language + '/images/' + img_name):
+									print ("	Thumbnail image copy complete at: " + contentDirectory + '/' + language + '/images/' + img_name)
 								else:
 									print ("       Thumbnail image did not get linked...or created.  ?????? What to do????? ")
 									raise Exception("fail")
