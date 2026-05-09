@@ -85,6 +85,53 @@ max_partiton = 0
 
 
 def mountCheck():
+    """
+    Poll the system for USB drive insertion and removal events, then mount or unmount
+    drives as appropriate.
+
+    This is the central USB-management function called on every iteration of the main
+    daemon loop.  It performs three conceptual passes over the state of the system:
+
+    Pass 1 — detect removals:
+        Walk the ``mnt[]`` / ``loc[]`` parallel arrays.  For each slot that previously
+        held a mounted drive, check whether ``lsblk`` still shows the device.  If the
+        device has gone away, issue ``umount``, delete the mount-point directory (for
+        usb1+), remove the ``/tmp/.usb0_indexed`` sentinel (for usb0), and clear the
+        slot in both arrays.
+
+    Pass 2 — detect new insertions:
+        Re-parse the ``lsblk`` output line by line looking for ``sdX1`` devices that
+        are not yet mounted.  For each new device, pick the lowest-numbered free
+        ``/media/usbN`` slot, run ``dosfsck``/``ntfsfix`` for filesystem integrity,
+        then mount with ``noatime,nodev,nosuid,utf8`` flags.  Kernel >=5.15 uses
+        ``utf8=`` directly; older kernels need ``iocharset=utf8``.  On a successful
+        usb0 mount, trigger upgrade scripts and (for TheWell brand) Moodle course
+        restore.
+
+    Pass 3 — compact the mount table:
+        After additions and removals the ``mnt[]``/``loc[]`` arrays may have holes.
+        This pass bubbles all occupied slots to the front so the arrays remain
+        contiguous and ``total`` is an accurate count.
+
+    SSH-enabler side-effect:
+        After each pass 1 iteration the function also evaluates whether
+        ``/media/usb0/.connectbox/enable-ssh`` exists and starts sshd if so.  This
+        runs unconditionally so that a newly inserted key can enable SSH without
+        waiting for the next full cycle.
+
+    Globals used:
+        mnt (list): Parallel array mapping slot index -> ord() of the sdX drive letter
+                    (e.g. ord('a') for /dev/sda1).  -1 means slot is empty.
+        loc (list): Parallel array mapping slot index -> ord() of the usb mount number
+                    (e.g. ord('0') for /media/usb0).  -1 means slot is empty.
+        total (int): Count of currently mounted drives after this call completes.
+        Brand (dict): Parsed brand.j2 configuration; ``usb0NoMount`` key suppresses
+                      all mounting when set to "1".
+        DEBUG (int): Verbosity level; 1=network, 2=mount summary, 3=mount detail.
+
+    Returns:
+        None
+    """
     global mnt
     global loc
     global total
@@ -103,6 +150,17 @@ def mountCheck():
       print("no mount set")
       return
     total = 0
+
+    # --- Pass 1: Detect USB removals ---
+    # Snapshot the current block-device tree once with lsblk.  We then walk every
+    # occupied slot in mnt[] and check whether the corresponding sdX1 device still
+    # appears in that snapshot.  If it has disappeared the drive was physically
+    # removed (or ejected by udev), so we issue umount, clean up the mount-point
+    # directory, and free the slot.
+    # We use lsblk rather than /proc/mounts because lsblk reflects kernel block-
+    # device state; a device can vanish from the kernel before /proc/mounts is
+    # updated, which would cause umount to return non-zero.  We handle that case
+    # (res != 0) gracefully by logging a warning and still clearing the slot.
     j = 0                   #mount iterator looking for unmounted devices
     process = os.popen('lsblk')
     b = process.read()
@@ -176,11 +234,32 @@ def mountCheck():
 
 
 
-    # SSH Enabler
+    # SSH Enabler: run after every removal-pass iteration.
+    # Checks for /media/usb0/.connectbox/enable-ssh and starts sshd if found.
+    # Running this unconditionally (not just on insertion) ensures a key inserted
+    # while the daemon is already running can still trigger SSH activation.
     os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/.connectbox/enable-ssh && (/bin/systemctl is-active ssh.service || /bin/systemctl enable ssh.service && /bin/systemctl start ssh.service)'")
 
 
 
+    # --- Pass 2: Detect new USB insertions and mount them ---
+    # Re-parse the same lsblk snapshot line by line.  For each line that contains
+    # an sdX1 pattern, determine whether it is already mounted (lsblk shows "usb"
+    # or "part /" in the same line).  If not mounted:
+    #   - Find the lowest free /media/usbN slot by scanning loc[] for -1 entries
+    #     and f[] (a bitmap of used usb numbers) for gaps.
+    #   - Create the /media/usbN directory if it does not exist.
+    #   - Run dosfsck (FAT) or ntfsfix (NTFS) for filesystem integrity before
+    #     mounting -- a corrupted FAT table can cause mount to hang the process.
+    #   - Attempt a FAT mount first (covers FAT16/32/exFAT); if that returns
+    #     non-zero, retry with explicit -t ntfs.
+    #   - Kernel >= 5.15 uses the unified "utf8" mount option; older kernels need
+    #     "iocharset=utf8".  The kernel version is read once via "uname -r".
+    #   - Record the successful mount in mnt[j] and loc[j], increment total.
+    #   - If the newly mounted drive is usb0, trigger SSH-enabler, upgrade script,
+    #     and (for TheWell brand) Moodle course restore.
+    # If already mounted, register it in the mnt[]/loc[] table if not already there
+    # (handles the case where the drive was mounted before this daemon started).
     i=0                       #line iterator
     j=0                       #used for finding sdx1's
     k=0                       #used for usb mount
@@ -341,7 +420,18 @@ def mountCheck():
               if DEBUG > 2: print("/dev/sdx1 is already mounted but not as usb", d[i])
       c = c[2].partition("\n")
       i += 1
-# now that we have looked at all lines in the current lsblk we need to count up the mounts
+
+    # --- Pass 3: Compact the mount table ---
+    # After insertions and removals, mnt[] and loc[] may have holes (slots set back
+    # to -1 while later slots still hold valid entries).  The rest of the code and
+    # the main loop assume the arrays are densely packed from index 0, with `total`
+    # being an accurate count of active mounts.  This pass uses a two-pointer bubble
+    # to move every occupied slot left to fill any gaps, then sets total = j+1.
+    # Why compact rather than just scan for -1 gaps each time?  Because Pass 2 uses
+    # the first -1 slot in loc[] to decide where to register a new mount.  Holes
+    # left by removals would be found before higher-numbered occupied slots,
+    # potentially causing the next insertion to reuse a slot that lsblk still shows
+    # as mounted (race condition on rapid insert/remove cycles).
     j = -1
     i = 0
     while (i < 10):            # we will check a maximum of 10 mounts
@@ -377,7 +467,33 @@ def mountCheck():
 
 
 def do_resize2fs(rpi_platform, rm3_platform):
+    """
+    Expand the root filesystem to fill the full partition that was enlarged by do_fdisk().
 
+    This is the second phase of the two-phase partition-expansion sequence.  It is
+    called only when expand_progress.txt contains "fdisk_done", meaning fdisk has
+    already moved the partition boundary to the end of the storage device.
+    resize2fs then tells the ext4 filesystem to grow into that space.
+
+    Platform selection logic:
+        - RM3 (Radxa CM3): uses /dev/mmcblk1p<max_partition>
+        - Raspberry Pi / CM4 with connectbox_scroll (multi-partition layout):
+              uses /dev/mmcblk0p<max_partition>
+        - Raspberry Pi / CM4 single-partition: uses /dev/mmcblk0p2
+        - NEO / other: uses /dev/mmcblk0p1
+
+    On success, writes "resize2fs_done" to expand_progress.txt, syncs, and reboots.
+    If resize2fs output does not contain "blocks long" (i.e. the filesystem was already
+    the right size or the resize failed silently) the function returns without rebooting
+    and without updating the progress file -- the caller should handle this case.
+
+    Parameters:
+        rpi_platform (bool): True when running on a Raspberry Pi or CM4 board.
+        rm3_platform (bool): True when running on a Radxa CM3 (Rock) board.
+
+    Returns:
+        None  (either reboots the system on success, or returns silently on failure)
+    """
     global DEBUG
     global connectbox_scroll
     global max_partition
@@ -419,7 +535,44 @@ def do_resize2fs(rpi_platform, rm3_platform):
 
 
 def do_fdisk(rpi_platform, rm3_platform):
+    """
+    Use fdisk (via pexpect) to delete and recreate the root partition so it occupies
+    the full available space on the storage device.
 
+    This is the first phase of the two-phase partition-expansion sequence.  The
+    original image ships with a small partition (2-3 GB).  On first boot, this
+    function interactively drives fdisk to:
+        1. Print partition info and extract the starting sector of the last partition.
+        2. Delete the last partition.
+        3. Create a new primary partition starting at the same sector but extending
+           to the end of the device (default last sector).
+        4. Decline to remove the existing filesystem signature ("N") so that
+           resize2fs can expand into the new space on the next boot.
+        5. Write the changes and reboot.
+
+    The starting sector is preserved exactly so that the existing ext4 superblock and
+    data remain intact -- only the partition table entry changes.  resize2fs (called
+    on the following boot via do_resize2fs) then makes the filesystem aware of the
+    larger boundary.
+
+    Platform differences:
+        - RM3 uses /dev/mmcblk1; all others use /dev/mmcblk0.
+        - RPi/CM4 has a two-partition layout; NEO has a single-partition layout.
+          The partition-number prompts from fdisk differ between these, so the
+          interactive sequence branches accordingly.
+        - connectbox_scroll is set True when fdisk output reveals a /dev/mmcblk0p5
+          partition (the Connectbox Scroll hardware variant).
+
+    After writing changes, "fdisk_done maxp=<N>" is written to expand_progress.txt
+    (where N is the last partition number), then the system reboots.
+
+    Parameters:
+        rpi_platform (bool): True when running on a Raspberry Pi or CM4 board.
+        rm3_platform (bool): True when running on a Radxa CM3 (Rock) board.
+
+    Returns:
+        None  (always reboots before returning)
+    """
     global DEBUG
     global connectbox_scroll
     global max_partition
@@ -454,6 +607,15 @@ def do_fdisk(rpi_platform, rm3_platform):
         if DEBUG: print("Found it!")
   # continuing
 
+  # --- Parse the existing partition layout ---
+  # Send "p" to print the partition table.  pexpect captures everything fdisk
+  # outputs before returning to the "Command (m for help):" prompt, which is
+  # stored in child.before as bytes.  We decode to UTF-8 and use regex to find
+  # the last partition's line (e.g. "/dev/mmcblk0p2   532480   ...") and extract
+  # the starting sector number from it.  The starting sector is the critical value
+  # we must preserve -- it marks where the filesystem data begins.
+  # Detecting "/dev/mmcblk0p5" identifies Connectbox Scroll hardware which has a
+  # five-partition layout (boot + root + three data partitions).
   # "p" get partition info and search out the starting sector of mmcblk0p1
     child.sendline('p')
     i = child.expect('Command (m for help)*')
@@ -586,6 +748,21 @@ def do_fdisk(rpi_platform, rm3_platform):
 # called by main()
 
 def check_iwconfig(b):
+  """
+  Check whether the specified wireless interface is operating in Access Point
+  (Master) mode, indicating the AP is up and broadcasting.
+
+  Runs ``iwconfig`` and searches the output for the interface name followed by
+  "Mode:Master".  This is used by the main loop to detect a dropped AP and trigger
+  a recovery (ifdown/ifup, hostapd restart, or full getNetworkClass() call).
+
+  Parameters:
+      b (int): The wlan interface number to check (e.g. 0 for wlan0, 1 for wlan1).
+
+  Returns:
+      int: 1 if wlan<b> is present in iwconfig output and shows "Mode:Master",
+           0 otherwise (interface absent, not in Master mode, or iwconfig failed).
+  """
 # run iwconfig parameter and check for "Mode:Master"
 # if found return 1 to indicate the wlan associated with the AP is up
 #  else, return a 0
@@ -608,6 +785,26 @@ def check_iwconfig(b):
 
 
 def dbCheck():
+       """
+       Verify that the MySQL/MariaDB service is running and restart it if not.
+
+       Called on every main-loop iteration when ``connectbox_scroll`` is True (i.e. on
+       the Connectbox Scroll hardware variant which uses a database for content).
+       A failed database causes the content-serving web application to return errors to
+       clients, so this provides a lightweight self-healing mechanism without requiring
+       a full system reboot.
+
+       Logic:
+           1. Query systemctl for the mysql service status.
+           2. If "active (running) since" is found in the output, the DB is healthy --
+              return 0 immediately.
+           3. Otherwise, attempt a ``systemctl restart mysql`` and re-check.
+           4. Return 0 if the restart succeeded, 1 if the database is still not running.
+
+       Returns:
+           int: 0 if MySQL is running (either initially or after a successful restart),
+                1 if MySQL could not be started.
+       """
        process = Popen(["/bin/systemctl","status","mysql"], shell = False, stdout=PIPE, stderr=PIPE)
        stdout, stderr = process.communicate()
        if stdout.find("active (running) since")>=0:
@@ -623,7 +820,28 @@ def dbCheck():
 
 
 def Revision():
+  """
+  Detect the ConnectBox hardware platform by reading /proc/cpuinfo.
 
+  Reads the "Revision" field from /proc/cpuinfo and maps the hex revision code to a
+  human-readable version string (e.g. "PI 4B 4GB 1.4").  Special cases:
+      - "Radxa CM3 IO" in any cpuinfo line -> returns "Rock CM3"
+      - revision "0000" -> NanoPi NEO
+      - revision "4"    -> Orange Pi Zero 2
+      - revision "RM3"  -> Rock CM3
+
+  If /proc/cpuinfo cannot be parsed (empty revision, unknown board, or exception),
+  the function falls back to ``lshw -short`` and looks for a "system" entry.
+  Orange Pi Zero 2 variants are normalised to "OrangePiZero2".
+
+  The returned string is used at startup to set ``rpi_platform``, ``rm3_platform``,
+  ``PI_stat``, and ``OP_stat`` flags, which control partition layout, network
+  interface naming, and OLED display behaviour throughout the daemon.
+
+  Returns:
+      str: A short hardware description string such as "PI 4B 4GB 1.4",
+           "OrangePiZero2", "Rock CM3", "NEO NANOPI", "Unknown", or "Error".
+  """
   global DEBUG
 
   if DEBUG > 3: print("Started Revision test")
@@ -721,6 +939,38 @@ def Revision():
 # setNetworkNames() is used to set names if they are not standard names for devices.
 
 def setNetworkNames():
+    """
+    Ensure all network interfaces use standard kernel names (ethX, wlanX).
+
+    Newer Linux kernels assign predictable-but-non-standard names to network
+    interfaces (e.g. "enp3s0", "wlxaabbccddee").  ConnectBox configuration files
+    (hostapd.conf, dnsmasq.conf, /etc/network/interfaces) all rely on "wlan0",
+    "wlan1", "eth0" etc.  This function detects non-standard names and creates
+    systemd .link files under /etc/systemd/network/ that bind each interface's
+    MAC address to a standard name, then reboots so the names take effect.
+
+    Algorithm:
+        1. Run ``lshw -c Network`` and split on "*-network:" to get one block per
+           interface.
+        2. For each block, extract the "logical name" and "serial" (MAC address).
+        3. If the logical name already matches ethX or wlanX format, record it in
+           ``ethntwk`` or ``wlanntwk`` and move on -- no link file needed.
+        4. If the name is non-standard, find the lowest unused ethN or wlanN number
+           (not already claimed by a standard-named port or an existing .link file),
+           write a systemd .link file that maps the MAC to that standard name, and
+           set a flag (z=1) indicating a reboot is required.
+        5. If any .link files were written, sync and reboot. The reboot causes
+           systemd-udevd to apply the new names before any service starts.
+
+    Why .link files instead of udev rules:
+        systemd-networkd .link files are the modern, distribution-agnostic mechanism
+        for persistent interface renaming.  They are evaluated early in boot before
+        network services start, ensuring all downstream configuration sees the correct
+        interface names.
+
+    Returns:
+        None  (may reboot the system if link files were written)
+    """
     # we look at the names and see if they match the standard style ethX, lo, wlanX format.  If not we create link files in
     # /etc/systemd/network/10-networkname.link
     # the contents of the link files will contain a short set of instructions:
@@ -884,6 +1134,41 @@ def setNetworkNames():
 # getNetworkClass() ported from connectbox-hat-service / cli.py
 
 def getNetworkClass(level):
+    """
+    Identify which wireless interface serves as the Access Point (AP) and which
+    serves as the Client Interface (CI), then apply any necessary configuration
+    changes.
+
+    ConnectBox uses two wireless interfaces when a USB WiFi dongle (RTL8812AU/BU or
+    RTL88192U) is present: the RTL dongle becomes the AP because it supports the
+    required AP mode and higher throughput, while the on-board BCM WiFi (brcmfmac)
+    becomes the client-facing uplink.  Without a dongle, the single on-board chip
+    acts as the AP.
+
+    Detection logic (in priority order):
+        - If wlan0 driver contains "rtl88" -> AP=wlan0, CI=wlan1
+        - If wlan1 driver contains "rtl88" -> AP=wlan1, CI=wlan0
+        - If wlan0 driver is "brcmfmac"    -> AP=wlan1, CI=wlan0
+        - Fallback                         -> AP=wlan0, CI=wlan1
+        - Only one wlan found              -> AP=that wlan, CI="" (no uplink)
+
+    After identifying AP and CI, calls ``fixfiles(AP, CI)`` to update
+    /etc/network/interfaces, /etc/dnsmasq.conf, /etc/hostapd/hostapd.conf, and
+    /etc/dhcpcd.conf if they do not already reflect the current assignment.
+    If files were changed, brings interfaces down and up to apply the new config.
+
+    The ``level`` parameter is reserved for future use to control the aggressiveness
+    of the interface-restart sequence (level=1 is the minimal/fastest restart).
+
+    Parameters:
+        level (int): Severity level of the fix attempt. 1 = least severe (minimal
+                     ifconfig down/up). Higher values trigger more aggressive resets.
+
+    Returns:
+        int: Value returned by fixfiles() -- 1 if config files were changed and
+             services were restarted, 0 if no changes were needed, or 0 if the
+             interface topology could not be determined (no wlan found, or >2 wlans).
+    """
     # this module is designed to get the available interfaces and define which interface is the client facing one and which is the
     # network facing interface.  The client interface is the AP interface and is based on either RTL8812AU or RTL8812BU or RTL88192U  The
     # network facing interface will use the on board BMC wifi module as long as an AP module is present.  If no AP module is present it will become
@@ -1004,6 +1289,44 @@ def getNetworkClass(level):
 # fixFiles(a,c) was ported from connectbox-hat-service/cli.py
 
 def fixfiles(a, c):
+    """
+    Rewrite network configuration files to bind the correct wlan interface numbers
+    to the AP and Client Interface roles, then restart the affected services.
+
+    This function is the workhorse called by getNetworkClass() when the detected
+    AP/CI assignment differs from what is recorded in wificonf.txt, or when the
+    hostapd.conf SSID does not match the current Brand name.
+
+    Files updated (via .tmp intermediates, then mv into place):
+        /etc/network/interfaces  -- wlan numbers substituted for AP and CI sections
+        /etc/dnsmasq.conf        -- interface= line updated to AP wlan
+        /etc/hostapd/hostapd.conf -- interface= and ssid= lines updated
+        /etc/dhcpcd.conf         -- denyinterfaces updated to CI wlan (or removed if
+                                    no CI), interface= line updated to AP wlan
+        /usr/local/connectbox/wificonf.txt -- written last as the canonical record;
+                                    if this file agrees with lshw output on the next
+                                    boot the entire rewrite is skipped (fast path).
+
+    The .j2 template for /etc/network/interfaces uses a #CLIENTIF# marker to
+    separate AP directives from CI directives.  Lines containing "wlan" have their
+    numeric suffix replaced with the correct interface number.  If CI is absent
+    (c == ""), the CI section is commented out entirely.
+
+    Why write .tmp then mv:
+        Writing to a temp file and then moving (cp) avoids leaving a partially-written
+        config file on disk if the process is interrupted, which would prevent the
+        network from coming up on the next boot.
+
+    Parameters:
+        a (str): The wlan number (as a string, e.g. "0") that will serve as the
+                 Access Point interface.
+        c (str): The wlan number (as a string) that will serve as the Client
+                 Interface uplink, or "" if there is no CI (single-wlan devices).
+
+    Returns:
+        int: 1 if config files were changed and network services were restarted,
+             0 if the existing config already matched and no changes were needed.
+    """
 # This function is called to fix the files and restart the network daemons (if neeeded)
 #    based on what we have loaded.
 #  variable a: (AP) represents the Wlan that will serve as the Access point.
@@ -1048,6 +1371,10 @@ def fixfiles(a, c):
         	return(0)
 
 # if NOT, we cook the files and will restart the services with
+    # Stop all network services before rewriting config files.  Writing to live
+    # config files while hostapd/dnsmasq are running can cause them to re-read
+    # partial data and enter an inconsistent state.  Stopping first is safe because
+    # the interfaces will be brought back up after the files are in place.
     res = os.system("/bin/systemctl stop networking.service")
     res = os.system("/bin/systemctl stop hostapd")
     res = os.system("/bin/systemctl stop dnsmasq")
@@ -1055,6 +1382,18 @@ def fixfiles(a, c):
 
 # we only come here if we need to adjust the network settings
 # Lets start with the /etc/network/interface folder
+    # --- Rewrite /etc/network/interfaces from the .j2 template ---
+    # interfaces.j2 is a template where wlan interface numbers are placeholders.
+    # This loop reads the template line by line and substitutes the correct wlan
+    # numbers for AP and CI sections.  The #CLIENTIF# marker line divides the file:
+    #   - Lines before #CLIENTIF#: AP section; all "wlan" occurrences get the AP number.
+    #   - Lines after #CLIENTIF#:  CI section; all "wlan" occurrences get the CI number.
+    # If c=="" (no Client Interface), the CI section lines are commented out with "#"
+    # and skip_rest=1 causes all remaining lines to be skipped once a non-wlan line
+    # is seen (avoiding partial CI stanzas in the output).
+    # The old numeric suffix after "wlan" is stripped digit by digit before the new
+    # number is appended, so "wlan0" and "wlan1" in the template both become the
+    # correct target interface regardless of what number the template used.
     f = open('/etc/network/interfaces.j2','r', encoding='utf-8')
     g = open('/etc/network/interfaces.tmp','w', encoding='utf-8')
     x = 0
@@ -1239,6 +1578,24 @@ def fixfiles(a, c):
 
 
 def get_AP():
+    """
+    Read the Access Point wlan interface number from wificonf.txt.
+
+    wificonf.txt is written by fixfiles() and contains lines of the form:
+        AccessPointIF=wlan0
+        ClientIF=wlan1
+
+    This function extracts the numeric suffix from the AccessPointIF line and
+    returns it as an integer.  It is called by the main loop and by checkServices()
+    to know which wlan interface to monitor and restart if the AP goes down.
+
+    Returns:
+        int: The wlan interface number used as the Access Point (e.g. 0 for wlan0).
+
+    Raises:
+        Any exception from open() or int() if wificonf.txt is missing or malformed
+        will propagate to the caller.
+    """
     f = open("/usr/local/connectbox/wificonf.txt", "r")
     wifi = f.read()
     f.close()
@@ -1247,6 +1604,18 @@ def get_AP():
     return(AP)
 
 def get_CI():
+    """
+    Read the Client Interface wlan number from wificonf.txt.
+
+    Parses the "ClientIF=" line from wificonf.txt (written by fixfiles()).  If there
+    is no Client Interface configured (single-wlan devices or no uplink dongle), the
+    line will be "ClientIF=" with no number, and this function returns an empty string
+    rather than raising an exception.
+
+    Returns:
+        int | str: The wlan interface number used as the Client Interface (e.g. 1 for
+                   wlan1), or "" if no Client Interface is configured.
+    """
     f = open("/usr/local/connectbox/wificonf.txt", "r")
     wifi = f.read()
     f.close()
@@ -1258,6 +1627,21 @@ def get_CI():
     return(CI)
 
 def check_CI():
+  """
+  Determine whether a Client Interface uplink connection is actually configured
+  in wpa_supplicant.conf.
+
+  Even if a CI wlan interface exists, it is only useful if wpa_supplicant has an
+  SSID and PSK configured for it to connect to.  This function inspects
+  wpa_supplicant.conf: if the "ssid" field is present but the "psk" section shows
+  "Network" (indicating a placeholder/empty network block) or the ssid area
+  contains "Password" (another empty-config indicator), the CI is considered
+  unconfigured and 0 is returned.
+
+  Returns:
+      int: 1 if the CI appears to have a real SSID/PSK configured (uplink likely
+           usable), 0 if wpa_supplicant.conf has no real network credentials.
+  """
   f = open("/etc/wpa_supplicant/wpa_supplicant.conf")
   connections = f.read()
   f.close()
@@ -1273,6 +1657,25 @@ def check_CI():
 
 
 def check_eth0():
+  """
+  Check whether eth0 is connected and has an IP address, and attempt recovery if not.
+
+  Parses ``ifconfig`` output for the eth0 interface and inspects the flags field:
+      - flags=4099 (UP, BROADCAST, MULTICAST but no LOWER_UP): cable unplugged --
+        no action needed, return 0.
+      - flags=4163 (UP, BROADCAST, RUNNING, MULTICAST): cable plugged in, but if
+        there is no "inet" address the interface failed to get a DHCP lease.  In
+        that case, issue ifdown/ifup and re-check once.
+      - Any other flags value: unexpected state, return 1 (error).
+
+  This is called on every 10th main-loop iteration (x % 10 == 0) to catch eth0
+  stalls that can occur when the cable is connected after boot or after a DHCP
+  server restart.
+
+  Returns:
+      int: 0 if eth0 is absent, unplugged, or has a valid IP address,
+           1 if eth0 is in an unexpected or unrecoverable state.
+  """
   process = Popen("ifconfig", shell=False, stdout=PIPE, stderr=PIPE)
   stdout, stderr = process.communicate()
   net_stats = str(stdout).split("eth0")   # look for eth0 in ifconfig output
@@ -1316,6 +1719,20 @@ def check_eth0():
   return(1)
 
 def check_wlan_CI(CI):
+  """
+  Check whether the Client Interface wlan is present in the ifconfig output.
+
+  A simple presence check -- if wlan<CI> appears in ``ifconfig`` output at all,
+  the interface exists (even if it has no IP yet).  Used by getNetworkClass() to
+  decide whether to bring the CI interface up.
+
+  Parameters:
+      CI (int | str): The wlan number of the Client Interface (e.g. 1 for wlan1).
+
+  Returns:
+      int: 0 if wlan<CI> is found in ifconfig output (interface exists),
+           1 if wlan<CI> is not found (interface absent or not yet up).
+  """
   process = Popen("ifconfig", shell=False, stdout=PIPE, stderr=PIPE)
   stdout, stderr = process.communicate()
   net_stats = str(stdout).split("wlan"+str(CI))   # look for wlan(CI) in ifconfig output
@@ -1326,6 +1743,31 @@ def check_wlan_CI(CI):
 
 
 def check_stat_CI(CI):
+    """
+    Check the Client Interface link state and attempt recovery if it has dropped.
+
+    Called on every 10th main-loop iteration alongside check_eth0().  Unlike
+    check_wlan_CI() which only tests presence, this function also inspects the
+    interface flags to detect a link that is up but has lost its association
+    (flags != 4163, or no "inet" address).
+
+    Logic:
+        1. If check_CI() returns 0 (no SSID configured in wpa_supplicant), skip all
+           checks and return 0 -- there is nothing to connect to.
+        2. Parse ifconfig output for wlan<CI>.  If the interface is absent (no split
+           result), return 0 (nothing to fix).
+        3. If the flags field is present but not 4163 (RUNNING), set z=1 to indicate
+           a recovery is needed.
+        4. If z != 0, issue ifdown/ifup on wlan<CI> and return 0 on success or 1 on
+           failure.
+
+    Parameters:
+        CI (int | str): The wlan number of the Client Interface (e.g. 1 for wlan1).
+
+    Returns:
+        int: 0 if the CI is healthy, unconfigured, or was successfully recovered,
+             1 if the ifdown/ifup recovery attempt failed.
+    """
     if (check_CI() == 0):
         return(0)	      #Were ok because we have not SSID set
     z = 0		      #If zero we  don't do anything
@@ -1360,7 +1802,37 @@ def check_stat_CI(CI):
     return(0)			#Nothingg wrong we have a correct status.
 
 
-def checkServices():		#check out the services that were supposed to start
+def checkServices():
+    """
+    Verify that all critical network services started correctly after boot and
+    attempt to restart any that are not active.
+
+    Called once (twice with a 5-second gap) after the initial startup delay to
+    catch services that failed to start during boot -- a common occurrence on
+    embedded hardware where the network interfaces may not be ready when systemd
+    first tries to bring them up.
+
+    Services checked in order:
+        1. networking.service  -- the base networking stack; without it nothing works.
+        2. hostapd             -- the Access Point daemon; if masked, unmask then
+                                  restart.  If simply stopped, restart it.
+        3. ifup@<AP>           -- the systemd instance that brought up the AP wlan;
+                                  if not active, restart it and then restart hostapd
+                                  so it re-binds to the newly-up interface.
+        4. ifup@eth0           -- the wired Ethernet interface instance.
+        5. ifup@<CI>           -- the Client Interface wlan instance; only checked if
+                                  check_CI() confirms a real SSID is configured.
+
+    For each service, the pattern is: check -> restart if needed -> check again ->
+    return 1 (error) if still not running.  The caller (main block) calls this
+    function twice with a 5-second sleep between attempts before giving up and
+    continuing anyway, since a permanently broken network state is handled by the
+    periodic checks in the main loop.
+
+    Returns:
+        int: 0 if all checked services are active (or were successfully restarted),
+             1 if any service could not be brought to active state.
+    """
     print("starting Check Services")
     logger.info("check services starting")
     process = Popen(["/bin/systemctl",'status','networking'], shell = False, stdout=PIPE, stderr=PIPE)
@@ -1538,6 +2010,28 @@ def checkServices():		#check out the services that were supposed to start
 
 
 def check_PM2():
+    """
+    Ensure the PM2 Node.js process manager is running and restart it if not.
+
+    PM2 manages the ConnectBox web application (the captive-portal UI served to
+    connected clients).  If PM2 goes down -- which can happen after a crash or
+    OOM event -- clients see a blank or error page instead of the content library.
+
+    This function polls ``pm2 status`` in a tight loop until "online" appears in
+    the output, restarting PM2 on each failed check.  A 5-second sleep between
+    attempts gives PM2 time to fully initialise before the next status check.
+
+    Why a blocking loop rather than a single attempt:
+        PM2 is critical for the user-facing experience.  A single restart attempt
+        that appears to succeed but leaves PM2 in a non-online state would cause
+        client-facing failures for the entire next 20-iteration window (60 seconds)
+        before the next scheduled check_PM2() call.  The loop guarantees that when
+        this function returns, PM2 is confirmed online.
+
+    Returns:
+        int: The character position of "online" in the final ``pm2 status`` output
+             (always >= 0, since the loop only exits when "online" is found).
+    """
 ####### Utility to check if PM2 is operationa and restart if not
 
     x = -1
@@ -1559,6 +2053,36 @@ def check_PM2():
 
 
 def sync_brand():
+  """
+  Detect changes to brand.j2 by comparing its current mtime to the last-seen mtime.
+
+  brand.j2 is the ConnectBox configuration file (JSON) that controls the SSID name,
+  logo, OLED display layout, feature flags (usb0NoMount, Enable_MassStorage, etc.),
+  and server sync settings.  The admin web UI can update brand.j2 at any time while
+  the daemon is running.
+
+  This function uses the global ``otime_j2`` to track the last modification time
+  seen.  On each call:
+      - If os.path.getmtime() fails (file missing), return immediately without
+        updating ``otime_j2``.
+      - If the mtime has changed since the last call, update ``otime_j2`` and log
+        that a change was detected.  The caller is responsible for acting on the
+        change (e.g. re-reading Brand, updating the OLED display).
+      - If the mtime is unchanged, log "no change to brand" and return.
+
+  Note: In the current codebase the main loop re-reads brand.j2 on every iteration
+  unconditionally, so sync_brand() serves primarily as a diagnostic/logging hook and
+  a hook point for future change-triggered actions.
+
+  Globals used:
+      otime_j2 (float): Module-level variable holding the mtime of brand.j2 as of
+                        the last call.  Initialised to 0 at startup so the first
+                        call always detects a "change".
+
+  Returns:
+      int: 0 always (after normal execution); returns None implicitly if the file
+           does not exist and the early-return path is taken.
+  """
   file_j2  = "/usr/local/connectbox/brand.j2"
   global otime_j2
 
@@ -1636,11 +2160,19 @@ if __name__ == "__main__":
       else:
           a = version[0:4].rstrip()
 
+    # Clear the creating_menus.txt sentinel so the OLED display does not get stuck
+    # showing a stale "creating menus" message from a previous (possibly crashed) run
+    # of mmiLoader.  The file is harmless if absent, so the exception is silently ignored.
     try:
         os.remove("/usr/local/connectbox/creating_menus.txt")		# Clear any pending mmiLoader states
     except:
         pass
     logger.info("PxUSBm Starting revision is "+version)
+
+    # Load brand.j2 configuration.  brand.j2 is the single source of truth for all
+    # device-specific settings (SSID name, logo, OLED page layout, feature flags).
+    # If the file is missing or malformed, a default Brand dict is constructed with
+    # safe defaults and written back to disk so subsequent reads succeed.
     try:
         f = open(brand_file, mode="r", encoding='utf-8')
         Brand = json.loads(f.read())
@@ -1692,7 +2224,12 @@ if __name__ == "__main__":
 
 
 # -- sort out the SSID
-
+# If the hardware revision is known and the brand file records a different Device_type
+# (e.g. after swapping an SD card between platforms), update brand.j2 to match the
+# actual hardware.  This prevents using a partition layout or display config that was
+# tuned for a different board.  Quotation marks are stripped from the SSID because
+# json.dumps() sometimes wraps string values in extra quotes which would appear
+# verbatim in the hostapd SSID field.
     if (version != "Unknown") and (version != "Error"):
       logger.info("Major type: "+a)
       if Brand["Device_type"].find(a)<=0:                    # Make sure the brand file is what we expect as were on this hardware.
@@ -1712,6 +2249,12 @@ if __name__ == "__main__":
 
     logger.info("SSID from file is now: "+SSID)
 
+    # Set platform flags based on the Device_type string in brand.j2.
+    # These flags control partition table layout (do_fdisk/do_resize2fs),
+    # network interface naming assumptions, and OLED page counts.
+    # The checks are intentionally sequential (not elif) so that a Device_type
+    # string containing multiple keywords (e.g. from a corrupted file) sets the
+    # last matching flags -- RM3 is last and thus takes highest priority.
     if 'CM' in Brand["Device_type"]:             #Now we determine what brand to work with
         rpi_platform=True
         PI_stat=True
@@ -1743,7 +2286,14 @@ if __name__ == "__main__":
     logger.info("device is RPI? "+str(rpi_platform)+" rm3_platform? "+str(rm3_platform)+" PI_stat? "+str(PI_stat)+" OP_stat? "+str(OP_stat))
     print("device is RPI? "+str(rpi_platform)+" rm3_platform? "+str(rm3_platform)+" PI_stat? "+str(PI_stat)+" OP_stat? "+str(OP_stat))
 
-    # Sort out how far we are in the partition expansion process
+    # --- Partition expansion state machine ---
+    # expand_progress.txt acts as a persistent state flag across reboots:
+    #   Missing            -> first boot after imaging; run do_fdisk() then reboot
+    #   "fdisk_done ..."   -> fdisk completed on previous boot; run do_resize2fs() then reboot
+    #   "resize2fs_done"   -> expansion complete; fall through to normal operation
+    #   "running"          -> daemon was already running (written at end of this block)
+    # Both do_fdisk() and do_resize2fs() end with os.system('shutdown -r now') so
+    # they never return.  Code after this block only executes when expansion is done.
     file_exists = os.path.exists(progress_file)
     if file_exists == False:
         logger.info("PxUSBm starting the fdisk operation for expansion")
@@ -1754,6 +2304,8 @@ if __name__ == "__main__":
         progress = f.read()
         f.close()
         if "fdisk_done" in progress:
+            # Extract the max partition number saved by do_fdisk() so do_resize2fs()
+            # knows which partition to expand (e.g. p2 on RPi, p1 on NEO).
             maxp = progress.split("maxp=")
             max_partition = maxp[1][0]
             logger.info("PxUSBm starting the resize2fs to format full disk")
@@ -1793,6 +2345,12 @@ if __name__ == "__main__":
     getNetworkClass(1)  					# Note: calls fixfiles() if required... the (1) signals minimal ifconfig down/up
     print("Finished get network class")
 
+    # Ensure neo-battery-shutdown is running before entering the main loop.
+    # This service monitors battery voltage and initiates a clean shutdown if the
+    # battery falls below a safe threshold.  Without it, a flat battery causes an
+    # unclean shutdown that can corrupt the SD card filesystem.
+    # The loop retries every 5 seconds -- the service sometimes takes a moment to
+    # appear active after a network reconfiguration restart cascade.
     print("Checking on neo-battery-shutdown")
     x = -1
     while x < 0:
@@ -1829,8 +2387,19 @@ if __name__ == "__main__":
         time.sleep(5)				#it attemtps to fix them, but we only try twice then go on.
         checkServices()                         #we wait between attempts.
 
+    # --- Main daemon loop ---
+    # `while (x == x)` is an intentional infinite loop (x always equals itself).
+    # x is a counter used to schedule periodic tasks at different rates:
+    #   every iteration (~3 s): re-read brand.j2, run mountCheck()
+    #   every 10 iterations (~30 s): check AP mode, eth0, and CI link state
+    #   every 20 iterations (~60 s): check wpa_supplicant country code, check PM2
+    # x is reset to 0 when it exceeds 1,000,000,000,000 to prevent integer overflow
+    # over extremely long uptimes.
     logger.info("Getting ready to start Mount Checks")
     while (x == x):                         # main loop that we live in for life of running
+
+          # Re-read brand.j2 on every iteration so that admin changes (SSID, feature
+          # flags, usb0NoMount) take effect without restarting the daemon.
           try:
               f = open(brand_file, mode="r", encoding='utf-8')
               Brand = json.loads( f.read() )
@@ -1839,7 +2408,11 @@ if __name__ == "__main__":
           except:
               pass
 
-          # This is where we do mount checks
+          # USB mount check -- every iteration.
+          # Skipped entirely when usb0NoMount is set in brand.j2 (e.g. during
+          # mass-storage / OTG mode where the USB port is used for something else).
+          # dbCheck() is only called on Connectbox Scroll hardware (connectbox_scroll=True)
+          # because that variant uses a MySQL database for content serving.
           if (int(NoMountUSB) <= 0):
              if DEBUG > 3: print("PxUSBm Going to start the mount Check")
              logger.info("Doing a mount check "+str(x) + " time is " +time.asctime())
@@ -1850,7 +2423,10 @@ if __name__ == "__main__":
 
 
           if ((x % 10)==0):
-          # check to see if AP is still active
+            # AP health check -- every ~30 seconds.
+            # Verify the AP wlan is still in Mode:Master.  If it has dropped (can
+            # happen after a kernel driver reset or power spike), attempt recovery in
+            # escalating steps: ifdown/ifup -> hostapd restart -> full getNetworkClass().
             AP = get_AP()
             AP_up = check_iwconfig(AP)  # returns 1 if up
             logger.info("checking AP is up "+str(x)+ " time is "+time.asctime())
@@ -1880,7 +2456,13 @@ if __name__ == "__main__":
           if ((x % 20)==0):
             logger.info("PxUSBm Going to do a Network check " + str(x) + " time stamp " + time.asctime())
 
-# add check for /etc/wpa_supplicant/wpa_supplicant.conf for country=<blank>
+            # wpa_supplicant country code fix -- every ~60 seconds.
+            # Some builds ship with an empty country= line in wpa_supplicant.conf.
+            # An empty country code prevents wpa_supplicant from connecting to 5 GHz
+            # networks in many regulatory domains.  We default to "US" if the field
+            # is blank.  This is a safe fallback -- the admin can set the correct
+            # country via the web UI which writes a proper value that won't match
+            # 'country=\n' and therefore won't be overwritten.
             wpa_File = '/etc/wpa_supplicant/wpa_supplicant.conf'
             f = open(wpa_File, mode="r", encoding='utf-8')
             filedata=f.read()
@@ -1890,14 +2472,17 @@ if __name__ == "__main__":
                 with open(wpa_File, 'w') as f:
                   f.write(filedata)
                 f.close()
-# check PM2
 
+          # PM2 health check -- every ~60 seconds.
+          # PM2 manages the Node.js web application.  Check separately from the
+          # network block above so it runs even if the x%20 network block is skipped
+          # due to a future refactor -- PM2 being down is independently critical.
           if ((x % 20)==0):
               logger.info("Checking PM2 status " + str(x) + " time is " + time.asctime())
               check_PM2()
 
-
-# loop
+          # Increment loop counter; wrap at 1 trillion to prevent overflow on
+          # devices that run for years without a reboot.
           x += 1
           if x > 1000000000000: x = 0
           time.sleep(3)
