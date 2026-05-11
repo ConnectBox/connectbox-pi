@@ -10,6 +10,7 @@ import mimetypes
 import logging
 import subprocess
 import time
+import shlex
 from indexer import *
 #import ffmpeg
 
@@ -50,7 +51,7 @@ def mmiloader_code():
 	# Handel memory issues  by setting up automated free memory
 	######################################################
 
-	run_cmd("sync && echo 3 > sudo tee /proc/sys/vm/drop_caches")						#Try to clear any cach data that we have to maximize memory availability
+	run_cmd("sync && echo 3 | sudo tee /proc/sys/vm/drop_caches")						#Try to clear any cach data that we have to maximize memory availability
 
 
 	mains = {}        # This object contains all the data to construct each main.json at the end.  We add as we go along
@@ -78,13 +79,23 @@ def mmiloader_code():
 	##########################################################################
 
 	print ("	Check for saved.zip")
-	if (os.path.isfile(os.path.join(mediaDirectory, "saved.zip"))):							#Check for a quick index file for creating the data structures.
-		print ("	Found saved.zip.  Unzipping and restoring to " + contentDirectory)
+	# Check both root of USB and content directory for saved.zip
+	usb_root = os.path.dirname(mediaDirectory.rstrip('/'))
+	zip_paths = [os.path.join(mediaDirectory, "saved.zip"), os.path.join(usb_root, "saved.zip")]
+	found_zip = None
+	for zp in zip_paths:
+		if os.path.isfile(zp):
+			found_zip = zp
+			break
+
+	if found_zip:
+		print ("	Found saved.zip at " + found_zip + ". Unzipping and restoring to " + contentDirectory)
 		print (" ")
 		print ("****If you want to reload the USB, delete the file saved.zip from the USB drive.")
 
-		os.mkdir(contentDirectory, mode=0o755)
-		run_cmd ("(cd " + contentDirectory + " && unzip " + zipFileName + ")")
+		if not os.path.exists(contentDirectory):
+			os.mkdir(contentDirectory, mode=0o755)
+		run_cmd (f"cd {shlex.quote(contentDirectory)} && unzip {shlex.quote(found_zip)}")
 		print ("DONE")
 		time.sleep(3)
 		try:
@@ -107,7 +118,7 @@ def mmiloader_code():
 	try:
 		os.mkdir(contentDirectory, mode=0o755)								#Create a new content directory to store our data in
 	except Exception as e:
-		run_cmd("rm -r " + contentDirectory)
+		run_cmd(f"rm -rf {shlex.quote(contentDirectory)}")
 		os.mkdir(contentDirectory, mode=0o755)
 
 	print ("Copying the templates to the main contentDirectory")
@@ -120,7 +131,7 @@ def mmiloader_code():
 	mains["en"] = json.load(f)										#load it for /en language
 	f.close()
 	print ("main.json loaded, now changing modes of files in mediaDirectory") 				#Save it off
-	run_cmd("chmod -R 755 " + mediaDirectory)
+	run_cmd(f"chmod -R 755 {shlex.quote(mediaDirectory)}")
 
 	print ("going to get the language codes now")
 
@@ -202,7 +213,10 @@ def mmiloader_code():
 	#  Check mediaDirectory for at least one language directory.  If one exists, then only process language folders
 	##########################################################################
 
-	doesRootContainLanguage = (next(os.walk(mediaDirectory))[1])
+	try:
+		doesRootContainLanguage = (next(os.walk(mediaDirectory))[1])
+	except (StopIteration, OSError):
+		doesRootContainLanguage = []
 	y = 0
 	while ((y < len(doesRootContainLanguage) and (len(doesRootContainLanguage) > 0))):
 		lang = doesRootContainLanguage[y]
@@ -454,7 +468,7 @@ def mmiloader_code():
 			print("Doing new language setup " + language + " **********************************")
 			print ("	Creating Directory: " + contentDirectory + "/" + language)
 			shutil.copytree(templatesDirectory + '/en', contentDirectory + "/" + language)
-			run_cmd ("chown -R www-data.www-data " + contentDirectory + "/" + language)
+			run_cmd (f"chown -R www-data.www-data {shlex.quote(contentDirectory + '/' + language)}")
 			# Load the main.json template and populate the mains for that language.
 			f = open (templatesDirectory + "/en/data/main.json")					#load the language with the base directories
 			mains[language] = json.load(f)
@@ -525,7 +539,7 @@ def mmiloader_code():
 			print ("	" + path + " is web content")
 			# Make a symlink to the file on USB to display the content
 #			print ("	WebPath: Writing symlink to /html folder")
-			run_cmd ("ln -s '" + path + "' " + contentDirectory + "/" + language + "/html/")
+			run_cmd (f"ln -s {shlex.quote(path)} {shlex.quote(contentDirectory + '/' + language + '/html/')}")
 			x = 0
 #			print ("directoryType: ",directoryType)
 			subpath = path.replace(mediaDirectory, "")
@@ -553,7 +567,10 @@ def mmiloader_code():
 			# Re-write the display as indexing since it may have changed.
 			update_display('Indexing USB')
 
-			if x>0: run_cmd (("ln -s '"+ mediaDirectory + "/.webarchive-" + language + "-" + subpath.replace("/","-") + ".zip'  '" + contentDirectory + "/" + language + "/html/" + thisDirectory + ".zip'").replace("--","-"))
+			if x > 0:
+				zip_src = (mediaDirectory + "/.webarchive-" + language + "-" + subpath.replace("/", "-")).replace("--", "-") + ".zip"
+				zip_dst = (contentDirectory + "/" + language + "/html/" + thisDirectory + ".zip").replace("--", "-")
+				run_cmd(f"ln -s {shlex.quote(zip_src)} {shlex.quote(zip_dst)}")
 			else: print ("No webarchve is available!!")
 
 			dirs = []
@@ -586,7 +603,7 @@ def mmiloader_code():
 			# See if the language already exists in the directory, if not make and populate a directory from the template
 			# Make a symlink to the file on USB to display the content
 #			print ("	WebPath: Writing symlink to /html folder")
-			run_cmd ("ln -s '" + path + "'  " + contentDirectory + "/" + language + "/html/")
+			run_cmd (f"ln -s {shlex.quote(path)} {shlex.quote(contentDirectory + '/' + language + '/html/')}")
 #			print ("    Path is equal to: " + path)
 			print("    Looking for: " + mediaDirectory + "/" + (".webarchive-" + language + "-" + thisDirectory + ".zip").replace('--','-'))
 
@@ -609,7 +626,9 @@ def mmiloader_code():
 
 			else: print (" Found it!!")
 #			print ("	WebPath: Linking web archive zip")
-			run_cmd ("ln -s '" + mediaDirectory + ("/.webarchive-" + language + "-" + thisDirectory + ".zip").replace("--","-") + "'  '" + contentDirectory + "/" + language + "/html/" + thisDirectory + ".zip'")
+			zip_src = (mediaDirectory + "/.webarchive-" + language + "-" + thisDirectory + ".zip").replace("--", "-")
+			zip_dst = (contentDirectory + "/" + language + "/html/" + thisDirectory + ".zip").replace("--", "-")
+			run_cmd(f"ln -s {shlex.quote(zip_src)} {shlex.quote(zip_dst)}")
 			dirs = []
 			webpaths.append(path)
 			directoryType = "html"
@@ -651,8 +670,7 @@ def mmiloader_code():
 			for filename in files:
 				if ((pathlib.Path(path + "/" + filename).suffix).lower() in '.zip, .gzip, .zy, .gz, .gzip, .7z, .bz2, .tar'): x = 1  #We found a compressed file
 			if (x==0):												#Were ok to go forward with creating a compressed file of this directory
-				print ("	Path: Writing symlink to /html folder")
-				run_cmd ("ln -s '" + path + "' '" + contentDirectory + "/" + language + "/html/" + thisDirectory + "'")
+				run_cmd (f"ln -s {shlex.quote(path)} {shlex.quote(contentDirectory + '/' + language + '/html/' + thisDirectory)}")
 				print ("        Path is equal to: " + path)
 
 				if doesRootContainLanguage:
@@ -665,8 +683,9 @@ def mmiloader_code():
 						try:
 							print ("	Path: Creating archive zip file on USB")
 							shutil.make_archive(mediaDirectory + "/" + language + "/" + thisDirectory + "/archive-" + language + "-" + thisDirectory, 'zip', path)
-							print ("	Path: Linking archive zip")
-							run_cmd ('ln -s '+ mediaDirectory + "/" + language + "/" + thisDirectory +  "/archive-" + language + "-" + thisDirectory + '.zip  ' + contentDirectory + "/" + language + "/zip/" + thisDirectory + ".zip")
+							zip_path = (mediaDirectory + "/" + language + "/" + thisDirectory + "/archive-" + language + "-" + thisDirectory + ".zip").replace("--", "-")
+							zip_link = (contentDirectory + "/" + language + "/zip/" + thisDirectory + ".zip").replace("--", "-")
+							run_cmd(f"ln -s {shlex.quote(zip_path)} {shlex.quote(zip_link)}")
 							logging.info ("succeeded in finishing the zip file")
 						except Exception as e:
 							print ("	error  making archive")
@@ -682,8 +701,9 @@ def mmiloader_code():
 						try:
 							print ("	Path: Creating archive zip file on USB")
 							shutil.make_archive(mediaDirectory + "/archive-" + language + "-" + thisDirectory, 'zip', path)
-							print ("	Path: Linking web archive zip")
-							run_cmd ('ln -s '+ mediaDirectory + "/archive-" + language + "-" + thisDirectory + '.zip  ' + contentDirectory + "/" + language + "/zip/" + thisDirectory + ".zip")
+							zip_path = (mediaDirectory + "/archive-" + language + "-" + thisDirectory + ".zip").replace("--", "-")
+							zip_link = (contentDirectory + "/" + language + "/zip/" + thisDirectory + ".zip").replace("--", "-")
+							run_cmd(f"ln -s {shlex.quote(zip_path)} {shlex.quote(zip_link)}")
 							logging.info ("succeeded in finishing the zip file")
 						except Exception as e:
 							print ("	error  making archive")
@@ -813,7 +833,9 @@ def mmiloader_code():
 			if (((content["image"] == 'blank.gif') or (content['image'] == "")) and (os.path.isfile(mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png"))):
 				print ("	Found Thumbnail" +  mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png")
 				content["image"] =  slug + ".png"
-				run_cmd ('ln -s "'+ mediaDirectory + '/.thumbnail-' + language + '-' + slug + '.png"' + '  "' + contentDirectory + '/' + language + '/images/' + slug + '.png"')
+				thumb_src = mediaDirectory + '/.thumbnail-' + language + '-' + slug + '.png'
+				thumb_dst = contentDirectory + '/' + language + '/images/' + slug + '.png'
+				run_cmd(f"ln -s {shlex.quote(thumb_src)} {shlex.quote(thumb_dst)}")
 				print ("	Thumbnail link complete at: " + mediaDirectory + "/" +  content["image"])
 				if ('collection' in locals() or 'collection' in globals()):
 					if (collection['image'] == 'blank.gif'): collection['image'] = content['image']
@@ -831,13 +853,13 @@ def mmiloader_code():
 
 				try:
 					if os.path.getsize(path + "/" + filename) > 100:					#image is large enough to be usable.
-						run_cmd ("ln -s '" + fullFilename + "'  " + contentDirectory + "/" + language + "/images/")
+						run_cmd(f"ln -s {shlex.quote(fullFilename)} {shlex.quote(contentDirectory + '/' + language + '/images/')}")
 					else:
 						print (str(os.path.getsize(path + "/" + filename)) + " is the size we got for the image " + path + "/" + filename)
 						content['image'] = 'images.png'
 				except Exception as e:
 					print (" Ok we had an error tryuging to ge the size of " + path + "/" + filename)
-					run_cmd ("ln -s '" + fullFilename + "'  " + contentDirectory + "/" + language + "/images/")
+					run_cmd(f"ln -s {shlex.quote(fullFilename)} {shlex.quote(contentDirectory + '/' + language + '/images/')}")
 				if ('collection' in locals() or 'collection' in globals()) and collection['image'] == 'blank.gif': collection['image'] = "images.png"
 
 
@@ -847,13 +869,15 @@ def mmiloader_code():
 				try:
 					if not (os.path.isfile(mediaDirectory + "/.thumbnail-" + language +  "-" + slug + ".png")):
 						print ("	Attempting to make a thumbnail for the video")
-						run_cmd("ffmpeg -y  -i '" + fullFilename + "' -an -ss 00:00:15 -vframes 1 '" + mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png'  >/dev/null 2>&1")
+						run_cmd(f"ffmpeg -y -ss 00:00:15 -i {shlex.quote(fullFilename)} -an -vframes 1 {shlex.quote(mediaDirectory + '/.thumbnail-' + language + '-' + slug + '.png')} >/dev/null 2>&1")
 					if os.path.isfile(mediaDirectory + '/.thumbnail-' + language + '-' + slug + '.png'):
 						content["image"] = slug + ".png"  # Set the key correctly (was a unicode typo)
 						print ("        We found the thumbnail")
 					try:
 						if os.path.getsize( mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png") > 100:		#image is large enough to be usable.
-							run_cmd ('ln -s "' + mediaDirectory +  '/.thumbnail-' + language + '-' + slug + '.png' + '"  "' + contentDirectory + '/' + language + '/images/' +  slug + '.png"')
+							thumb_src = mediaDirectory + '/.thumbnail-' + language + '-' + slug + '.png'
+							thumb_dst = contentDirectory + '/' + language + '/images/' + slug + '.png'
+							run_cmd(f"ln -s {shlex.quote(thumb_src)} {shlex.quote(thumb_dst)}")
 							content["image"] =  slug + ".png"
 						else:
 							print ("        Image was too small to use!!!!!!!")
@@ -874,12 +898,14 @@ def mmiloader_code():
 				print("        Were looking for " + ".thumbnail-" + language + "-" + slug + ".png")
 				if not os.path.isfile( mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png"):
 					try:
-						run_cmd("ffmpeg -y -i '" + fullFilename + "' -an -c:v copy '" + mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png'  >/dev/null 2>&1")
-						if os.path.isfile(mediaDirectory + "./thumbnail-" + language + "-" + slug + ".png"):
+						run_cmd(f"ffmpeg -y -i {shlex.quote(fullFilename)} -an -c:v copy {shlex.quote(mediaDirectory + '/.thumbnail-' + language + '-' + slug + '.png')} >/dev/null 2>&1")
+						if os.path.isfile(mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png"):
 							content["image"]= slug + ".png"
 							if (os.path.getsize( mediaDirectory + '/.thumbnail-' + language + '-' + slug + '.png') > 100):
 								print("mp3 thumbnail image created")
-								run_cmd ('ln -s "' + mediaDirectory + '/.thumbnail-' + language + '-' + slug + '.png' + '"  "' + contentDirectory + '/' + language + '/images/' + slug + '.png"')
+								thumb_src = mediaDirectory + '/.thumbnail-' + language + '-' + slug + '.png'
+								thumb_dst = contentDirectory + '/' + language + '/images/' + slug + '.png'
+								run_cmd(f"ln -s {shlex.quote(thumb_src)} {shlex.quote(thumb_dst)}")
 								if os.path.isfile(mediaDirectory + '/.thumbnail-' + language + '-' + slug + ".png"):
 									print ("	Thumbnail image link complete at: " + mediaDirectory + "/.thumbnail-"+ language + "-" + slug + ".png")
 								else:
@@ -961,7 +987,7 @@ def mmiloader_code():
 				mains[language]["content"].append(content)
 			# Make a symlink to the file on USB to display the content
 			print ("	Creating symlink for the content")
-			run_cmd ('ln -s "' + fullFilename + '" "' + contentDirectory + '/' + language + '/media/"')
+			run_cmd(f"ln -s {shlex.quote(fullFilename)} {shlex.quote(contentDirectory + '/' + language + '/media/')}")
 			print ("	Symlink: " + contentDirectory + '/' + language + '/media/' + filename)
 
 			print ("	COMPLETE: Based on file type " + fullFilename + " added to enhanced interface for language " + language)
@@ -978,7 +1004,7 @@ def mmiloader_code():
 		# END DIRECTORY LOOP
 
 	try:
-		run_cmd("rm "+complex_dir)
+		run_cmd(f"rm -f {shlex.quote(complex_dir)}")
 	except Exception as e:
 		logging.debug(f"Ignored exception: {e}")
 		pass
@@ -1029,7 +1055,7 @@ def mmiloader_code():
 			pass											#Clear the display
 
 			try:
-				run_cmd('rm '+ complex_dir)
+				run_cmd(f"rm -f {shlex.quote(complex_dir)}")
 			except Exception as e:
 				logging.debug(f"Ignored exception: {e}")
 				pass
@@ -1051,7 +1077,7 @@ def mmiloader_code():
 	f.close()
 
 	print ("Copying Metadata to Zip File On USB")
-	run_cmd ("(cd " + contentDirectory + " && zip --symlinks -r " + zipFileName + " *)")
+	run_cmd (f"cd {shlex.quote(contentDirectory)} && zip --symlinks -r {shlex.quote(zipFileName)} *")
 	logging.info("Finished mmiLoader.py run successfully to create the user interface and index the data contents")
 
 	try:
