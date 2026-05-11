@@ -220,6 +220,8 @@ def mmiloader_code():
 	y = 0
 	while ((y < len(doesRootContainLanguage) and (len(doesRootContainLanguage) > 0))):
 		lang = doesRootContainLanguage[y]
+		language = lang
+		directoryImage = "blank.gif"
 		print ("lang is now: "+lang)
 		try:
 			print ("lang is: ",languageCodes[lang]['english'])
@@ -338,7 +340,7 @@ def mmiloader_code():
 					if len(doesRootContainLanguage)>0:
 						continue        						#Skip this non language directory
 			else:
-				pass										# We will process this directory as its either non root or no languages in root.
+				pass
 
 
 		print ("** finished on the languages check, now looking at extended directories **")
@@ -762,17 +764,17 @@ def mmiloader_code():
 					collection = json.load(f);
 					f.close()
 					collection["episodes"] = [];
-					collection['image'] = 'blank.gif'							#default value but may be changed
+					collection['image'] = directoryImage
 				f = open (templatesDirectory + "/en/data/episode.json");
 				content = json.load(f);
 				f.close()
-				content['image'] = 'blank.gif'									#default value but may be changed
+				content['image'] = directoryImage
 
 			else:    #Singular, folders, root
 				print ("	Loading Item JSON")
 				f = open (templatesDirectory + "/en/data/item.json");
 				content = json.load(f);
-				content['image'] = 'blank.gif'
+				content['image'] = directoryImage
 				f.close()
 
 			# Update content attributes
@@ -821,7 +823,7 @@ def mmiloader_code():
 			else:
 				content["mimeType"] = "application/octet-stream"
 				print ("	Default mimetype: " + content["mimeType"])
-				collection['image'] = 'apps.png'
+				collection['image'] = directoryImage
 
 			print("        Media Type is: "+ content["mediaType"])
 
@@ -830,7 +832,7 @@ def mmiloader_code():
 			##########################################################################
 
 			# Look for user generateed  thumbnail.  If there is one, use it.
-			if (((content["image"] == 'blank.gif') or (content['image'] == "")) and (os.path.isfile(mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png"))):
+			if (((content["image"] == directoryImage) or (content['image'] == "")) and (os.path.isfile(mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png"))):
 				print ("	Found Thumbnail" +  mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png")
 				content["image"] =  slug + ".png"
 				thumb_src = mediaDirectory + '/.thumbnail-' + language + '-' + slug + '.png'
@@ -838,18 +840,18 @@ def mmiloader_code():
 				run_cmd(f"ln -s {shlex.quote(thumb_src)} {shlex.quote(thumb_dst)}")
 				print ("	Thumbnail link complete at: " + mediaDirectory + "/" +  content["image"])
 				if ('collection' in locals() or 'collection' in globals()):
-					if (collection['image'] == 'blank.gif'): collection['image'] = content['image']
+					if (collection['image'] == directoryImage): collection['image'] = content['image']
 
-			if content['image'] == "": content['image'] = 'blank.gif'
+			if content['image'] == "": content['image'] = directoryImage
 
 			# if this is an image, we use the image as the thumbnail
-			if ((content["mimeType"] == "image") and (content["image"] == 'blank.gif')):  				#Since image is same as thumbnail we set thumbnail to image
+			if ((content["mimeType"] == "image") and (content["image"] == directoryImage)):  				#Since image is same as thumbnail we set thumbnail to image
 				content["image"] = filename
 
 				if ('collection' in locals() or 'collection' in globals()):
 					if ((mediaDirectory + '/' + thisDirectory) == path):					#This means were a root directory and file
-						if (collection['image'] == 'blank.gif'): collection['image'] = slug + ".png"
-					elif (collection['image'] == 'blank.gif'): collection['image'] = 'images.png'
+						if (collection['image'] == directoryImage): collection['image'] = slug + ".png"
+					elif (collection['image'] == directoryImage): collection['image'] = 'images.png'
 
 				try:
 					if os.path.getsize(path + "/" + filename) > 100:					#image is large enough to be usable.
@@ -860,11 +862,11 @@ def mmiloader_code():
 				except Exception as e:
 					print (" Ok we had an error tryuging to ge the size of " + path + "/" + filename)
 					run_cmd(f"ln -s {shlex.quote(fullFilename)} {shlex.quote(contentDirectory + '/' + language + '/images/')}")
-				if ('collection' in locals() or 'collection' in globals()) and collection['image'] == 'blank.gif': collection['image'] = "images.png"
+				if ('collection' in locals() or 'collection' in globals()) and collection['image'] == directoryImage: collection['image'] = "images.png"
 
 
 			# If this is a video, we can probably make a thumbnail
-			if ((content["mediaType"] == 'video') and (content["image"] == 'blank.gif')):
+			if ((content["mediaType"] == 'video') and (content["image"] == directoryImage)):
 
 				try:
 					if not (os.path.isfile(mediaDirectory + "/.thumbnail-" + language +  "-" + slug + ".png")):
@@ -881,7 +883,7 @@ def mmiloader_code():
 							content["image"] =  slug + ".png"
 						else:
 							print ("        Image was too small to use!!!!!!!")
-							content["image"] = 'video.png'
+							content["image"] = directoryImage
 					except Exception as e:
 						print ("had an error getting size of video !!!!!!!!" + mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png")
 						content['image'] = 'video.png'
@@ -889,12 +891,12 @@ def mmiloader_code():
 					print ("Something whent wrong with the ffmpeg or elsewhere")
 					content['image'] = 'video.png'
 																# if its not a video & not an image
-				if ('collection' in locals() or 'collection' in globals()) and (collection['image'] == 'blank.gif' or collection['image'] != 'video.png'):
+				if ('collection' in locals() or 'collection' in globals()) and (collection['image'] == directoryImage or collection['image'] != 'video.png'):
 					if content['image'] != 'video.png': collection['image'] = content['image']
 					else: collection['image'] = "video.png"
 
 			# if this is an audio file, we can probably get an image from the mp3
-			if ((content["mediaType"] == 'audio') and (content["image"] == 'blank.gif')):
+			if ((content["mediaType"] == 'audio') and (content["image"] == directoryImage)):
 				print("        Were looking for " + ".thumbnail-" + language + "-" + slug + ".png")
 				if not os.path.isfile( mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png"):
 					try:
@@ -914,34 +916,39 @@ def mmiloader_code():
 							else:
 								print ("NO mp3 thumbnail created")
 								raise Exception("fail")
-					except Exception as e: content["image"] = "sound.png"
-				if ('collection' in locals() or 'collection' in globals()) and (collection['image'] == 'blank.gif' or collection['image'] != "sound.png"): collection['image'] = "sound.png"
+					except Exception as e:
+						if (directoryImage != 'blank.gif'): content["image"] = directoryImage
+						else: content["image"] = "sound.png"
+				if ('collection' in locals() or 'collection' in globals()):
+					if (directoryImage != 'blank.gif'): collection['image'] = directoryImage
+					else: collection['image'] = "sound.png"
 
 			##########################################################################
 			# Done with thumbnail creation and linkage
 			##########################################################################
 
 			if ('collection' in locals() or 'collection' in globals()):
-				if (content["mediaType"] in 'audio'):  collection['image'] = 'sound.png'
-				elif ((content["mediaType"] in 'zip, gzip, gz, xz, 7z, bz2, 7zip, tar') and (collection['image'] == 'blank.gif')):  collection['image'] = 'zip.png'
-				elif ((content["mediaType"] in 'document, text, docx, xlsx, pptx, h5p, epub') and (collection['image'] == 'blank.gif')):  collection['image'] = 'book.png'
-				elif ((content['mediaType'] in 'epub') and (collection['image'] == 'blank.gif')): collection ['image'] = 'epub.png'
-				elif ((content['mediaType'] in 'pdf') and (collection['image'] == 'blank.gif')): collection['image'] = 'pdf.png'
-				elif ((content['mediaType'] in 'image, img, tif, tiff, wbmp, ico, jng, bmp, svg, svgz, webp, png, jpg') and (collection['image'] == 'blank.gif')): collection['image'] = 'images.png'
+				if (content["mediaType"] in 'audio'):  collection['image'] = directoryImage
+				elif ((content["mediaType"] in 'zip, gzip, gz, xz, 7z, bz2, 7zip, tar') and (collection['image'] == directoryImage)):  collection['image'] = directoryImage
+				elif ((content["mediaType"] in 'document, text, docx, xlsx, pptx, h5p, epub') and (collection['image'] == directoryImage)):  collection['image'] = directoryImage
+				elif ((content['mediaType'] in 'epub') and (collection['image'] == directoryImage)): collection ['image'] = directoryImage
+				elif ((content['mediaType'] in 'pdf') and (collection['image'] == directoryImage)): collection['image'] = directoryImage
+				elif ((content['mediaType'] in 'image, img, tif, tiff, wbmp, ico, jng, bmp, svg, svgz, webp, png, jpg') and (collection['image'] == directoryImage)): collection['image'] = directoryImage
 				elif (content['mediaType'] in 'application') :
-					collection['image'] = 'apps.png'
+					collection['image'] = directoryImage
 					content['title'] = content['title'] + extension
 			else:
-				if (content["mediaType"] in 'audio'):  content['image'] = 'sound.png'
-				elif (content["mediaType"] in 'zip, gzip, gz, xz, 7z, bz2, 7zip, tar'):  content['image'] = 'zip.png'
-				elif (content["mediaType"] in 'document, text, docx, xlsx, pptx, h5p, epub'):  content['image'] = 'book.png'
-				elif (content['mediaType'] in 'epub'): content ['image'] = 'epub.png'
-				elif (content['mediaType'] in 'pdf') : content['image'] = 'pdf.png'
+				if (content["mediaType"] in 'audio'):  content['image'] = directoryImage
+				elif (content["mediaType"] in 'zip, gzip, gz, xz, 7z, bz2, 7zip, tar'):  content['image'] = directoryImage
+				elif (content["mediaType"] in 'document, text, docx, xlsx, pptx, h5p, epub'):  content['image'] = directoryImage
+				elif (content['mediaType'] in 'epub'): content ['image'] = directoryImage
+				elif (content['mediaType'] in 'pdf') : content['image'] = directoryImage
 				elif (content['mediaType'] in 'image, img, tif, tiff, wbmp, ico, jng, bmp, svg, svgz, webp, png, jpg'):
-					if ((content['image'] == "") or (content['image'] == 'blank.gif')):
-						 content['image'] = 'images.png'
+					if ((content['image'] == "") or (content['image'] == directoryImage)):
+						if (directoryImage != 'blank.gif'): content["image"] = directoryImage
+						else: content["image"] = 'video.png'
 				elif (content['mediaType'] == 'application') :
-					content['image'] = 'apps.png'
+					content['image'] = directoryImage
 					content['title'] = content['title'] + extension
 
 			##########################################################################

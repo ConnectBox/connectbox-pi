@@ -42,7 +42,7 @@ def handle_add(dev_node):
         os.system("rm /usr/local/connectbox/complex_dir 2>/dev/null")
     except:
         pass
-    os.system("/usr/bin/python3 /usr/local/connectbox/bin/mmiLoader.py >/tmp/loadContent.log 2>&1 &")
+    os.system("/usr/bin/systemd-run --unit=connectbox-loader --description='ConnectBox Content Loader' --remain-after-exit /usr/bin/python3 /usr/local/connectbox/bin/mmiLoader.py")
     
     # 3. Upgrade Enabler
     if os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/.connectbox/upgrade/upgrade.py'") == 0:
