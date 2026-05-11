@@ -27,26 +27,6 @@ comsFileName = "/tmp/creating_menus.txt"
 var_Indexing = False
 
 
-def _coms_file_is_active():
-    """Return True only if the wait file exists AND mmiLoader is actually running.
-
-    If the file exists but mmiLoader has exited (killed by OOM, crash, etc.)
-    the file is stale — delete it and return False so the display clears.
-    """
-    if not os.path.isfile(comsFileName):
-        return False
-    result = subprocess.run(['pgrep', '-f', 'mmiLoader.py'],
-                            capture_output=True)
-    if result.returncode != 0:
-        # mmiLoader is gone but left the file behind — clean up
-        try:
-            os.remove(comsFileName)
-        except Exception:
-            pass
-        return False
-    return True
-
-
 # globals was initiated by cli, so no need to re initialize here
 # We do the imports here... but function calls inside of the code
 if globals.device_type == "RM3":
@@ -295,7 +275,7 @@ class DummyHAT(BasePhysicalHAT):
         logging.info("There is no HAT, so there's nothing to do using DummyHat")
         logging.info("globals.device_type = "+globals.device_type)
         while True:
-            if _coms_file_is_active():
+            if os.path.isfile(comsFileName):
                  f = open(comsFileName, 'r', encoding='utf-8')
                  globals.a = f.read()
                  f.close()
@@ -382,7 +362,7 @@ class q1y2018HAT(BasePhysicalHAT):
                 if (time.time() > self.displayPowerOffTime) and (not var_Indexing):
                     self.display.powerOffDisplay()
 
-                if _coms_file_is_active():
+                if os.path.isfile(comsFileName):
                     f = open(comsFileName, 'r', encoding='utf-8')
                     globals.a = f.read()
                     f.close()
@@ -559,7 +539,7 @@ class Axp209HAT(BasePhysicalHAT):
                 if (time.time() > self.displayPowerOffTime) and (not var_Indexing):
                     self.display.powerOffDisplay()
 
-                if _coms_file_is_active():
+                if os.path.isfile(comsFileName):
                     f = open(comsFileName, 'r', encoding='utf-8')
                     globals.a = f.read()
                     f.close()

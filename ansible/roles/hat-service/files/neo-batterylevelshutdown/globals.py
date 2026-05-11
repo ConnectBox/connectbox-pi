@@ -41,6 +41,7 @@ a = ""
 
 
 
+from . import page_battery
 from .HAT_Utilities import get_device
 
 
@@ -172,4 +173,4 @@ def init():
     f = open("/usr/local/connectbox/wificonf.txt","r")
     dat = f.read()
     f.close()
-    clientIF = dat.split("\n")[1].partition("ClientIF=")[2]
+    clientIF = dat.split("\n")[0].partition("AccessPointIF=")[2]
