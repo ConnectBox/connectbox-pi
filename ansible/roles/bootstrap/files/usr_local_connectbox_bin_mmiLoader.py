@@ -29,6 +29,8 @@ def run_cmd(cmd):
 
 
 def mmiloader_code():
+	# Removed global webpaths and collection to prevent state pollution
+	global directoryImage
 
 
 	# Defaults for Connectbox / TheWell
@@ -95,6 +97,7 @@ def mmiloader_code():
 
 		if not os.path.exists(contentDirectory):
 			os.mkdir(contentDirectory, mode=0o755)
+		update_display("Restoring from Backup...")
 		run_cmd (f"cd {shlex.quote(contentDirectory)} && unzip {shlex.quote(found_zip)}")
 		print ("DONE")
 		time.sleep(3)
@@ -430,13 +433,34 @@ def mmiloader_code():
 		files.sort()											#Sort files
 
 		directoryType = ''  	# Always start a directory with unknown
-		skipWebPath = False    # By Defaults								#Flag to indicate skippiing of web paths
+		directoryImage = 'blank.gif' # Reset for this specific directory
+		
+		# Clear collection state for each new directory to prevent leakage
+		if 'collection' in locals():
+			del collection
 
+		# Pre-scan for directory-level icons before processing files
+		for f in files:
+			if f.lower() in ['folder.png', 'folder.jpg', 'cover.jpg', 'album.art.jpg', 'front.jpg']:
+				directoryImage = f
+				break
+			if ((".png" in f) or ((".jpg" in f) or (".gif" in f))) and not f.startswith(".thumbnail"):
+				directoryImage = f
+				# keep looking for a better one like 'folder.png', but this is a good start
+		
+		# If still blank, check for media files to set a contextual default
+		if directoryImage == 'blank.gif':
+			for f in files:
+				ext = os.path.splitext(f)[1].lower()
+				if ext in types:
+					mType = types[ext]["mediaType"]
+					if mType == 'audio':
+						directoryImage = 'sound.png'
+						break
+					if mType == 'video':
+						directoryImage = 'video.png'
+						break
 
-
-		##########################################################################
-		#  See if this directory is language folder or content
-		##########################################################################
 
 #		print ('	Checking For Language Folder with: '+ thisDirectory)
 		try:
@@ -575,10 +599,15 @@ def mmiloader_code():
 				run_cmd(f"ln -s {shlex.quote(zip_src)} {shlex.quote(zip_dst)}")
 			else: print ("No webarchve is available!!")
 
-			dirs = []
+			# Do not skip subdirectories if this is a language root or explicitly marked as folders
+			if directoryType != 'language' and directoryType != 'folders':
+				dirs[:] = [] # Clear dirs to prevent entering web app subfolders (js, css, etc)
+			
 			webpaths.append(path)
-			if directoryType != 'folders':  directoryType = "html"						#if this is a complex folder we keep the folders icon otherwise
-															#we treat it as a regular html directory
+			
+			# Preserve 'language' type if it was already set
+			if directoryType != 'folders' and directoryType != 'language':  
+				directoryType = "html"
 
 
 		print ("Directory Type is: ", directoryType)
@@ -587,6 +616,7 @@ def mmiloader_code():
 		#  See if this directory is skipped because it resides within a webPath for a web site content such as ./images or ./js
 		##########################################################################
 
+		skipWebPath = False
 		for testPath in webpaths:
 			if ((path.find(testPath) != -1) and (not('folder' in directoryType)) and (not((os.path.isfile(path + "/index.html")) or (str(files).find('index.htm') >= 0)) or (y <= 0))):	#we will have testpath in path for 
 															#for folder in directoryType or complexx folder, or an index.htm type file
@@ -723,6 +753,7 @@ def mmiloader_code():
 		##########################################################################
 
 		for filename in files:
+			update_display("Processing: " + filename)
 			print ("	--------------------------------------------------")
 			print ("	Processing File: " + filename)
 			print ("	Processing according to language " + language)
@@ -741,6 +772,7 @@ def mmiloader_code():
 			shortName = pathlib.Path(path + "/" + filename).stem							# Example  video      (ALSO, slug is a term used in the BoltCMS mediabuilder that I'm adapting here)
 			relativePath = path.replace(mediaDirectory + '/','')
 			slug = (os.path.basename(fullFilename).replace('.','-')).replace('--','-')				# Example  video.mp4
+			img_name = slug.replace(' ', '_') + ".png"							# Space-safe image filename; CSS url() breaks on spaces
 			extension = (pathlib.Path(path + "/" + filename).suffix).lower()					# Example  .mp4
 			print(" Slug is now: "+slug)
 
@@ -759,23 +791,50 @@ def mmiloader_code():
 			# Load the item template file
 			if ("collection" in directoryType):
 				print ("** Starting a collection: Loading Collection and Episode JSON **")
-				if ('collection' not in locals() and 'collection' not in globals()):
-					f = open (templatesDirectory + "/en/data/item.json")
-					collection = json.load(f);
-					f.close()
-					collection["episodes"] = [];
-					collection['image'] = directoryImage
+				if 'collection' not in locals():
+					with open (templatesDirectory + "/en/data/item.json") as f_item:
+						collection = json.load(f_item)
+					collection["episodes"] = []
+					# Fallback logic for collection image: Look for first media extension in files
+					if directoryImage == 'blank.gif':
+						collection['image'] = 'pdf.png' # Default for generic folders
+						for f_check in files:
+							ext_check = os.path.splitext(f_check)[1].lower()
+							if ext_check in types:
+								mType = types[ext_check]["mediaType"]
+								if mType == 'audio': 
+									collection['image'] = 'sound.png'
+									break
+								elif mType == 'video': 
+									collection['image'] = 'video.png'
+									break
+					else:
+						collection['image'] = directoryImage
 				f = open (templatesDirectory + "/en/data/episode.json");
 				content = json.load(f);
 				f.close()
-				content['image'] = directoryImage
+				# Fallback logic for episode image
+				if directoryImage == 'blank.gif':
+					mType = types[extension]["mediaType"]
+					if mType == 'audio': content['image'] = 'sound.png'
+					elif mType == 'video': content['image'] = 'video.png'
+					else: content['image'] = 'pdf.png'
+				else:
+					content['image'] = directoryImage
 
 			else:    #Singular, folders, root
 				print ("	Loading Item JSON")
 				f = open (templatesDirectory + "/en/data/item.json");
 				content = json.load(f);
-				content['image'] = directoryImage
 				f.close()
+				# Fallback logic for single item image
+				if directoryImage == 'blank.gif':
+					mType = types[extension]["mediaType"]
+					if mType == 'audio': content['image'] = 'sound.png'
+					elif mType == 'video': content['image'] = 'video.png'
+					else: content['image'] = 'pdf.png'
+				else:
+					content['image'] = directoryImage
 
 			# Update content attributes
 			if (filename != 'AndroidManifest.xml'): content["filename"] = filename
@@ -799,13 +858,13 @@ def mmiloader_code():
 				content["mimeType"] = "application/zip"
 				content["title"] = os.path.basename(os.path.normpath(path))
 				content["filename"] = slug + ".zip"
-				if (('.htm' in extension) and (directoryType != 'folders')): content['image'] = "www.png"
-				elif (extension == '.xml'): content['image'] = "app.png"
-				elif ('folders' in directoryType):
+				if (('.htm' in extension) and (directoryType != 'folders') and (content['image'] == 'blank.gif')): content['image'] = "www.png"
+				elif (extension == '.xml' and content['image'] == 'blank.gif'): content['image'] = "app.png"
+				elif ('folders' in directoryType and content['image'] == 'blank.gif'):
 					content['image'] = 'folders.png'
 				if (directoryType == "collection"):
-					if '.htm' in extension: collection['image'] = "www.png"
-					else: collection['image'] = "app.png"
+					if '.htm' in extension and collection['image'] == 'blank.gif': collection['image'] = "www.png"
+					elif extension == '.xml' and collection['image'] == 'blank.gif': collection['image'] = "app.png"
 
 			##########################################################################
 			#  Mime type determination.  Try types.json, then mimetype library4
@@ -834,9 +893,9 @@ def mmiloader_code():
 			# Look for user generateed  thumbnail.  If there is one, use it.
 			if (((content["image"] == directoryImage) or (content['image'] == "")) and (os.path.isfile(mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png"))):
 				print ("	Found Thumbnail" +  mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png")
-				content["image"] =  slug + ".png"
+				content["image"] = img_name
 				thumb_src = mediaDirectory + '/.thumbnail-' + language + '-' + slug + '.png'
-				thumb_dst = contentDirectory + '/' + language + '/images/' + slug + '.png'
+				thumb_dst = contentDirectory + '/' + language + '/images/' + img_name
 				run_cmd(f"ln -s {shlex.quote(thumb_src)} {shlex.quote(thumb_dst)}")
 				print ("	Thumbnail link complete at: " + mediaDirectory + "/" +  content["image"])
 				if ('collection' in locals() or 'collection' in globals()):
@@ -850,7 +909,7 @@ def mmiloader_code():
 
 				if ('collection' in locals() or 'collection' in globals()):
 					if ((mediaDirectory + '/' + thisDirectory) == path):					#This means were a root directory and file
-						if (collection['image'] == directoryImage): collection['image'] = slug + ".png"
+						if (collection['image'] == directoryImage): collection['image'] = img_name
 					elif (collection['image'] == directoryImage): collection['image'] = 'images.png'
 
 				try:
@@ -873,14 +932,14 @@ def mmiloader_code():
 						print ("	Attempting to make a thumbnail for the video")
 						run_cmd(f"ffmpeg -y -ss 00:00:15 -i {shlex.quote(fullFilename)} -an -vframes 1 {shlex.quote(mediaDirectory + '/.thumbnail-' + language + '-' + slug + '.png')} >/dev/null 2>&1")
 					if os.path.isfile(mediaDirectory + '/.thumbnail-' + language + '-' + slug + '.png'):
-						content["image"] = slug + ".png"  # Set the key correctly (was a unicode typo)
+						content["image"] = img_name
 						print ("        We found the thumbnail")
 					try:
 						if os.path.getsize( mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png") > 100:		#image is large enough to be usable.
 							thumb_src = mediaDirectory + '/.thumbnail-' + language + '-' + slug + '.png'
-							thumb_dst = contentDirectory + '/' + language + '/images/' + slug + '.png'
+							thumb_dst = contentDirectory + '/' + language + '/images/' + img_name
 							run_cmd(f"ln -s {shlex.quote(thumb_src)} {shlex.quote(thumb_dst)}")
-							content["image"] =  slug + ".png"
+							content["image"] = img_name
 						else:
 							print ("        Image was too small to use!!!!!!!")
 							content["image"] = directoryImage
@@ -902,11 +961,11 @@ def mmiloader_code():
 					try:
 						run_cmd(f"ffmpeg -y -i {shlex.quote(fullFilename)} -an -c:v copy {shlex.quote(mediaDirectory + '/.thumbnail-' + language + '-' + slug + '.png')} >/dev/null 2>&1")
 						if os.path.isfile(mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png"):
-							content["image"]= slug + ".png"
+							content["image"] = img_name
 							if (os.path.getsize( mediaDirectory + '/.thumbnail-' + language + '-' + slug + '.png') > 100):
 								print("mp3 thumbnail image created")
 								thumb_src = mediaDirectory + '/.thumbnail-' + language + '-' + slug + '.png'
-								thumb_dst = contentDirectory + '/' + language + '/images/' + slug + '.png'
+								thumb_dst = contentDirectory + '/' + language + '/images/' + img_name
 								run_cmd(f"ln -s {shlex.quote(thumb_src)} {shlex.quote(thumb_dst)}")
 								if os.path.isfile(mediaDirectory + '/.thumbnail-' + language + '-' + slug + ".png"):
 									print ("	Thumbnail image link complete at: " + mediaDirectory + "/.thumbnail-"+ language + "-" + slug + ".png")
@@ -963,13 +1022,12 @@ def mmiloader_code():
 					collection['mimeType'] = content['mimeType']
 					if content["image"] == types[extension]["image"]:
 						collection['image'] = content['image']
-					elif ((content['image'] != "blank.gif") and (collection['image'] == 'blank.gif')):
-						#now the default on creation of collection
-						collection['image'] = 'images.png'
+					elif ((content['image'] != "blank.gif") and (collection['image'] == 'pdf.png' or collection['image'] == 'blank.gif')):
+						# Sync with episode image if collection is using a generic fallback
+						collection['image'] = content['image']
 					else:
-	                                        # We got here because its not an image or the image is balank and the collection image is blank
-						print("We have a blank  image state! "+content["image"])
-						logging.info("We have a blank image state "+language+" and collection : "+collection['title'])
+	                                        # We have a specific image or custom folder art
+						pass
 				elif (collection['mediaType'] == "application" and content['mediaType'] != "application"):
 					print ("  Replacing collection content type with new value: " + content['mediaType'])
 					collection['mediaType'] = content['mediaType']
