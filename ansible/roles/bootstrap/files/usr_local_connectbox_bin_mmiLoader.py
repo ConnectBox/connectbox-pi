@@ -443,33 +443,38 @@ def mmiloader_code():
 		files.sort()											#Sort files
 
 		directoryType = ''  	# Always start a directory with unknown
-		directoryImage = 'blank.gif' # Reset for this specific directory
-		
+		directoryImage = 'blank.gif' # Sentinel for per-item thumbnail logic — only set by explicit folder art
+
 		# Clear collection state for each new directory to prevent leakage
 		if 'collection' in locals():
 			del collection
 
-		# Pre-scan for directory-level icons before processing files
+		# Pre-scan for explicit folder art (folder.png, cover.jpg, etc.) — applies to all items
 		for f in files:
 			if f.lower() in ['folder.png', 'folder.jpg', 'cover.jpg', 'album.art.jpg', 'front.jpg']:
 				directoryImage = f
 				break
 			if ((".png" in f) or ((".jpg" in f) or (".gif" in f))) and not f.startswith(".thumbnail"):
 				directoryImage = f
-				# keep looking for a better one like 'folder.png', but this is a good start
-		
-		# If still blank, check for media files to set a contextual default
-		if directoryImage == 'blank.gif':
+				# keep looking for a better one like 'folder.png'
+
+		# collectionCoverImage is used ONLY for the collection card icon.
+		# directoryImage stays blank.gif (unless explicit folder art) so the per-item
+		# sentinel checks (content['image'] == directoryImage) keep working correctly.
+		collectionCoverImage = directoryImage
+		if collectionCoverImage == 'blank.gif':
 			for f in files:
 				ext = os.path.splitext(f)[1].lower()
 				if ext in types:
 					mType = types[ext]["mediaType"]
 					if mType == 'audio':
-						directoryImage = 'sound.png'
+						collectionCoverImage = 'sound.png'
 						break
 					if mType == 'video':
-						directoryImage = 'video.png'
+						collectionCoverImage = 'video.png'
 						break
+			if collectionCoverImage == 'blank.gif':
+				collectionCoverImage = 'pdf.png'
 
 
 #		print ('	Checking For Language Folder with: '+ thisDirectory)
@@ -805,46 +810,18 @@ def mmiloader_code():
 					with open (templatesDirectory + "/en/data/item.json") as f_item:
 						collection = json.load(f_item)
 					collection["episodes"] = []
-					# Fallback logic for collection image: Look for first media extension in files
-					if directoryImage == 'blank.gif':
-						collection['image'] = 'pdf.png' # Default for generic folders
-						for f_check in files:
-							ext_check = os.path.splitext(f_check)[1].lower()
-							if ext_check in types:
-								mType = types[ext_check]["mediaType"]
-								if mType == 'audio': 
-									collection['image'] = 'sound.png'
-									break
-								elif mType == 'video': 
-									collection['image'] = 'video.png'
-									break
-					else:
-						collection['image'] = directoryImage
+					collection['image'] = collectionCoverImage
 				f = open (templatesDirectory + "/en/data/episode.json");
 				content = json.load(f);
 				f.close()
-				# Fallback logic for episode image
-				if directoryImage == 'blank.gif':
-					mType = types[extension]["mediaType"]
-					if mType == 'audio': content['image'] = 'sound.png'
-					elif mType == 'video': content['image'] = 'video.png'
-					else: content['image'] = 'pdf.png'
-				else:
-					content['image'] = directoryImage
+				content['image'] = directoryImage
 
 			else:    #Singular, folders, root
 				print ("	Loading Item JSON")
 				f = open (templatesDirectory + "/en/data/item.json");
 				content = json.load(f);
 				f.close()
-				# Fallback logic for single item image
-				if directoryImage == 'blank.gif':
-					mType = types[extension]["mediaType"]
-					if mType == 'audio': content['image'] = 'sound.png'
-					elif mType == 'video': content['image'] = 'video.png'
-					else: content['image'] = 'pdf.png'
-				else:
-					content['image'] = directoryImage
+				content['image'] = directoryImage
 
 			# Update content attributes
 			if (filename != 'AndroidManifest.xml'): content["filename"] = filename
@@ -997,27 +974,32 @@ def mmiloader_code():
 			##########################################################################
 
 			if ('collection' in locals() or 'collection' in globals()):
-				if (content["mediaType"] in 'audio'):  collection['image'] = directoryImage
-				elif ((content["mediaType"] in 'zip, gzip, gz, xz, 7z, bz2, 7zip, tar') and (collection['image'] == directoryImage)):  collection['image'] = directoryImage
-				elif ((content["mediaType"] in 'document, text, docx, xlsx, pptx, h5p, epub') and (collection['image'] == directoryImage)):  collection['image'] = directoryImage
-				elif ((content['mediaType'] in 'epub') and (collection['image'] == directoryImage)): collection ['image'] = directoryImage
-				elif ((content['mediaType'] in 'pdf') and (collection['image'] == directoryImage)): collection['image'] = directoryImage
-				elif ((content['mediaType'] in 'image, img, tif, tiff, wbmp, ico, jng, bmp, svg, svgz, webp, png, jpg') and (collection['image'] == directoryImage)): collection['image'] = directoryImage
-				elif (content['mediaType'] in 'application') :
-					collection['image'] = directoryImage
+				if (content["mediaType"] in 'audio'):
+					if collection['image'] == directoryImage: collection['image'] = 'sound.png'
+				elif ((content["mediaType"] in 'zip, gzip, gz, xz, 7z, bz2, 7zip, tar') and (collection['image'] == directoryImage)):  collection['image'] = 'zip.png'
+				elif ((content['mediaType'] in 'epub') and (collection['image'] == directoryImage)): collection['image'] = 'epub.png'
+				elif ((content["mediaType"] in 'document, text, docx, xlsx, pptx, h5p') and (collection['image'] == directoryImage)):  collection['image'] = 'pdf.png'
+				elif ((content['mediaType'] in 'pdf') and (collection['image'] == directoryImage)): collection['image'] = 'pdf.png'
+				elif ((content['mediaType'] in 'image, img, tif, tiff, wbmp, ico, jng, bmp, svg, svgz, webp, png, jpg') and (collection['image'] == directoryImage)): collection['image'] = 'images.png'
+				elif (content['mediaType'] in 'application'):
+					if collection['image'] == directoryImage: collection['image'] = 'apps.png'
 					content['title'] = content['title'] + extension
 			else:
-				if (content["mediaType"] in 'audio'):  content['image'] = directoryImage
-				elif (content["mediaType"] in 'zip, gzip, gz, xz, 7z, bz2, 7zip, tar'):  content['image'] = directoryImage
-				elif (content["mediaType"] in 'document, text, docx, xlsx, pptx, h5p, epub'):  content['image'] = directoryImage
-				elif (content['mediaType'] in 'epub'): content ['image'] = directoryImage
-				elif (content['mediaType'] in 'pdf') : content['image'] = directoryImage
+				if (content["mediaType"] in 'audio'):
+					if content['image'] == directoryImage: content['image'] = 'sound.png'
+				elif (content["mediaType"] in 'zip, gzip, gz, xz, 7z, bz2, 7zip, tar'):
+					if content['image'] == directoryImage: content['image'] = 'zip.png'
+				elif (content['mediaType'] in 'epub'):
+					if content['image'] == directoryImage: content['image'] = 'epub.png'
+				elif (content["mediaType"] in 'document, text, docx, xlsx, pptx, h5p'):
+					if content['image'] == directoryImage: content['image'] = 'pdf.png'
+				elif (content['mediaType'] in 'pdf'):
+					if content['image'] == directoryImage: content['image'] = 'pdf.png'
 				elif (content['mediaType'] in 'image, img, tif, tiff, wbmp, ico, jng, bmp, svg, svgz, webp, png, jpg'):
 					if ((content['image'] == "") or (content['image'] == directoryImage)):
-						if (directoryImage != 'blank.gif'): content["image"] = directoryImage
-						else: content["image"] = 'video.png'
-				elif (content['mediaType'] == 'application') :
-					content['image'] = directoryImage
+						content["image"] = directoryImage if directoryImage != 'blank.gif' else 'images.png'
+				elif (content['mediaType'] == 'application'):
+					if content['image'] == directoryImage: content['image'] = 'apps.png'
 					content['title'] = content['title'] + extension
 
 			##########################################################################
