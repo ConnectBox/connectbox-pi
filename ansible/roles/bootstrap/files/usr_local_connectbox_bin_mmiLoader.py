@@ -16,8 +16,10 @@ from indexer import *
 
 def update_display(message):
 	try:
+		# OLED font only supports latin-1; non-ASCII chars crash the hat service
+		safe = message.encode('ascii', 'replace').decode('ascii')
 		with open("/tmp/creating_menus.txt", "w", encoding='utf-8') as f:
-			f.write(message)
+			f.write(safe)
 	except Exception as e:
 		logging.debug(f"Ignored exception: {e}")
 
