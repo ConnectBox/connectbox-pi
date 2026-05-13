@@ -18,6 +18,14 @@ def update_display(message):
 	try:
 		# OLED font only supports latin-1; non-ASCII chars crash the hat service
 		safe = message.encode('ascii', 'replace').decode('ascii')
+		# Screen is 128px wide at x=5 offset, font is 8px/char → 15 chars/line.
+		# If no explicit newline and text overflows, break at the last word boundary
+		# within the first 15 chars so filenames wrap onto a second line.
+		if '\n' not in safe and len(safe) > 15:
+			wrap_at = safe.rfind(' ', 0, 16)
+			if wrap_at <= 0:
+				wrap_at = 15
+			safe = safe[:wrap_at].rstrip() + '\n' + safe[wrap_at:].lstrip()[:15]
 		with open("/tmp/creating_menus.txt", "w", encoding='utf-8') as f:
 			f.write(safe)
 	except Exception as e:
