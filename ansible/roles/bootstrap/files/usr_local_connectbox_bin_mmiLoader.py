@@ -237,15 +237,18 @@ def mmiloader_code():
 		directoryImage = "blank.gif"
 		print ("lang is now: "+lang)
 		try:
-			print ("lang is: ",languageCodes[lang]['english'])
+			# Support IETF regional tags like zh-CN, pt-BR: fall back to base language code
+			base_lang = lang.split('-')[0]
+			lookup_lang = lang if lang in languageCodes else (base_lang if base_lang in languageCodes else lang)
+			print ("lang is: ",languageCodes[lookup_lang]['english'])
 
-			if len(lang) > 3: 								#Were making hard spaces on the proported language
+			if len(lang) > 3 and '-' not in lang:				#Reject long codes that aren't regional tags
 				print("checking language " + lang + " is NOT a valid language and will be removed from the list")
 				doesRootContainLanguage.remove(lang)
 				if y > 0: y -= 1
 
-			elif (languageCodes[lang]):
-				print("checking language " + lang + " as a valide language",languageCodes[lang])
+			elif (languageCodes[lookup_lang]):
+				print("checking language " + lang + " as a valid language",languageCodes[lookup_lang])
 				y +=1
 				pass
 
