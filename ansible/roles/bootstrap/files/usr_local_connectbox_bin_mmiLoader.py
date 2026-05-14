@@ -515,6 +515,12 @@ def mmiloader_code():
 			print ("	Creating Directory: " + contentDirectory + "/" + language)
 			shutil.copytree(templatesDirectory + '/en', contentDirectory + "/" + language)
 			run_cmd (f"chown -R www-data.www-data {shlex.quote(contentDirectory + '/' + language)}")
+			# Regional language tags like zh-CN: create a base-code symlink (e.g. zh -> zh-CN)
+			# so the frontend, which normalises to the base code when building URLs, can resolve content
+			if '-' in language:
+				base_link = contentDirectory + '/' + language.split('-')[0]
+				if not os.path.exists(base_link):
+					os.symlink(contentDirectory + '/' + language, base_link)
 			# Load the main.json template and populate the mains for that language.
 			f = open (templatesDirectory + "/en/data/main.json")					#load the language with the base directories
 			mains[language] = json.load(f)
@@ -577,10 +583,17 @@ def mmiloader_code():
 
 
 		##########################################################################
-		#  If this directory contains index.html then treat as web content  (DO NOT AFFECT Y)
+		#  If this directory contains index.html/htm (or a single html file) treat as web content.
+		#  Language root directories are excluded: they may mix html with doc/pdf/mp4 and must
+		#  not have their other files suppressed by being added to webpaths.
 		##########################################################################
 
-		if (((os.path.isfile(path + "/index.html")) or (str(files).find('index.htm') >= 0)) and ( y > 0)):	#we have inidex.html and our move forward flag y
+		is_language_root = (path == mediaDirectory + '/' + language)
+		html_files_in_dir = [f for f in files if f.lower().endswith('.html') or f.lower().endswith('.htm')]
+		has_web_index = os.path.isfile(path + "/index.html") or any(f.lower() in ('index.htm', 'index.html') for f in files)
+		single_html_file = not has_web_index and len(html_files_in_dir) == 1
+
+		if not is_language_root and (has_web_index or single_html_file) and ( y > 0):	#we have inidex.html and our move forward flag y
 
 			print ("	" + path + " is web content")
 			# Make a symlink to the file on USB to display the content
@@ -623,7 +636,9 @@ def mmiloader_code():
 			if directoryType != 'language' and directoryType != 'folders':
 				dirs[:] = [] # Clear dirs to prevent entering web app subfolders (js, css, etc)
 			
-			webpaths.append(path)
+			# Language roots must not join webpaths or all their non-html files get skipped
+			if not is_language_root:
+				webpaths.append(path)
 			
 			# Preserve 'language' type if it was already set
 			if directoryType != 'folders' and directoryType != 'language':  
@@ -849,6 +864,13 @@ def mmiloader_code():
 			#			the mimeType is always zip for the zip file to download
 			#			the filename is always to the zip file
 
+			# The webpath handler sets slug/filename to directory-level values for the zip.
+			# Only run it when this path IS a known webpath; standalone html files in
+			# non-webpath directories (e.g. articles in a language root) would all get
+			# the same slug and overwrite each other, so skip them entirely for now.
+			if ('.htm' in extension) and (path not in webpaths):
+				print ("	Skipping standalone html in non-webpath dir: " + filename)
+				continue
 			if ('.htm' in extension) or (extension == ".xml"):
 				print ("	Handling index.html/AndroidManifest.xml  for webpath")
 				slug = os.path.basename(os.path.normpath(path))
@@ -1107,7 +1129,8 @@ def mmiloader_code():
 		f.close()
 		# Add this language to the language interface
 		languageJsonObject = {}
-		languageJsonObject["codes"] = [language]
+		# Use base language code in the codes array (zh for zh-CN) so frontend URL routing works
+		languageJsonObject["codes"] = [language.split('-')[0] if '-' in language else language]
 		# zh-CN style regional tags aren't in languageCodes; fall back to base code
 		lang_key = language if language in languageCodes else language.split('-')[0]
 		try:
