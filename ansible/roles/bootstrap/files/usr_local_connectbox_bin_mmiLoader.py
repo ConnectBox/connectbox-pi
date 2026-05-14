@@ -697,7 +697,13 @@ def mmiloader_code():
 		elif ("language" in directoryType):
 			pass
 		elif ("html" in directoryType):
-			pass
+			# Image files inside a web content directory are part of the web app,
+			# not folder art. No symlink is ever placed in images/ for them, so
+			# using one as directoryImage produces a broken link. Reset both to
+			# blank.gif so the www.png fallback applies instead.
+			if directoryImage != 'blank.gif':
+				directoryImage = 'blank.gif'
+				collectionCoverImage = 'www.png'
 		else: directoryType = directoryType + ' singular'
 
 		print ("	Processing Directory: " + path)
