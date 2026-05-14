@@ -311,9 +311,10 @@ def mmiloader_code():
 						lineCounter+=1
 						if (lineCounter == 1):
 							language = line.strip()
-					if ( json.dumps(languageCodes[language])):
+					lang_key = language if language in languageCodes else language.split('-')[0]
+					if ( json.dumps(languageCodes[lang_key])):
 						print ('	Found Language: ' + language)
-						logging.info ("Found a .language folder containing a valid .language in th root contents " + language + " which is " + json.dumps(languageCodes[language]))
+						logging.info ("Found a .language folder containing a valid .language in th root contents " + language + " which is " + json.dumps(languageCodes[lang_key]))
 						directoryType = "language"
 						NoISOCodes = 1
 						if len(doesRootContainLanguage)>0:
@@ -339,9 +340,10 @@ def mmiloader_code():
 					lineCounter+=1
 					if (lineCounter == 1):
 						language = line.strip()
-				if ( json.dumps(languageCodes[language])):
+				lang_key = language if language in languageCodes else language.split('-')[0]
+				if ( json.dumps(languageCodes[lang_key])):
 					print ('	Found Language: ' + language)
-					logging.info ("Found a .language folder containing a valid .language in th root contents " + language + " which is " + json.dumps(languageCodes[language]))
+					logging.info ("Found a .language folder containing a valid .language in th root contents " + language + " which is " + json.dumps(languageCodes[lang_key]))
 					directoryType = "language"
 					NoISOCodes = 1
 					if len(doesRootContainLanguage)>0:
@@ -987,7 +989,10 @@ def mmiloader_code():
 					if collection['image'] == directoryImage: collection['image'] = 'sound.png'
 				elif ((content["mediaType"] in 'zip, gzip, gz, xz, 7z, bz2, 7zip, tar') and (collection['image'] == directoryImage)):  collection['image'] = 'zip.png'
 				elif ((content['mediaType'] in 'epub') and (collection['image'] == directoryImage)): collection['image'] = 'epub.png'
-				elif ((content["mediaType"] in 'document, text, docx, xlsx, pptx, h5p') and (collection['image'] == directoryImage)):  collection['image'] = 'pdf.png'
+				elif ((content["mediaType"] in 'document, text, docx, xlsx, pptx, h5p') and (collection['image'] == directoryImage)):
+					if extension in ('.doc', '.docx'): collection['image'] = 'doc.png'
+					elif extension in ('.xls', '.xlsx', '.pptx'): collection['image'] = 'sheet.png'
+					else: collection['image'] = 'pdf.png'
 				elif ((content['mediaType'] in 'pdf') and (collection['image'] == directoryImage)): collection['image'] = 'pdf.png'
 				elif ((content['mediaType'] in 'image, img, tif, tiff, wbmp, ico, jng, bmp, svg, svgz, webp, png, jpg') and (collection['image'] == directoryImage)): collection['image'] = 'images.png'
 				elif (content['mediaType'] in 'application'):
@@ -1001,7 +1006,10 @@ def mmiloader_code():
 				elif (content['mediaType'] in 'epub'):
 					if content['image'] == directoryImage: content['image'] = 'epub.png'
 				elif (content["mediaType"] in 'document, text, docx, xlsx, pptx, h5p'):
-					if content['image'] == directoryImage: content['image'] = 'pdf.png'
+					if content['image'] == directoryImage:
+						if extension in ('.doc', '.docx'): content['image'] = 'doc.png'
+						elif extension in ('.xls', '.xlsx', '.pptx'): content['image'] = 'sheet.png'
+						else: content['image'] = 'pdf.png'
 				elif (content['mediaType'] in 'pdf'):
 					if content['image'] == directoryImage: content['image'] = 'pdf.png'
 				elif (content['mediaType'] in 'image, img, tif, tiff, wbmp, ico, jng, bmp, svg, svgz, webp, png, jpg'):
@@ -1100,10 +1108,12 @@ def mmiloader_code():
 		# Add this language to the language interface
 		languageJsonObject = {}
 		languageJsonObject["codes"] = [language]
+		# zh-CN style regional tags aren't in languageCodes; fall back to base code
+		lang_key = language if language in languageCodes else language.split('-')[0]
 		try:
-			languageJsonObject["text"] = languageCodes[language]["native"][0]
+			languageJsonObject["text"] = languageCodes[lang_key]["native"][0]
 		except Exception as e:
-			languageJsonObject ["text"] = languageCodes[language]["english"][0]
+			languageJsonObject["text"] = languageCodes[lang_key]["english"][0]
 
 		languageJson.append(languageJsonObject)
 
