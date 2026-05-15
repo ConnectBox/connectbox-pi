@@ -39,15 +39,27 @@ def run_cmd(cmd):
 
 
 
-def is_black_frame(png_path):
-	# Return True if the PNG is predominantly black (ffmpeg blackframe filter: 98% pixels below luma 32).
+def is_unusable_frame(png_path):
+	# Return True if the frame is predominantly black OR predominantly white.
+	# Black check: 98% of pixels below luma 32 (blackframe filter).
+	# White check: invert the image then run the same test (bright pixels become dark).
 	# Returns False on any error so the frame is treated as usable rather than discarded.
 	try:
-		result = subprocess.run(
+		r1 = subprocess.run(
 			"ffmpeg -i " + shlex.quote(png_path) + " -vf blackframe=98:32 -f null - 2>&1",
 			shell=True, capture_output=True, text=True, timeout=15
 		)
-		return "blackframe" in result.stdout or "blackframe" in result.stderr
+		if "blackframe" in r1.stdout or "blackframe" in r1.stderr:
+			print("    Frame is predominantly black -- skipping")
+			return True
+		r2 = subprocess.run(
+			"ffmpeg -i " + shlex.quote(png_path) + " -vf negate,blackframe=98:32 -f null - 2>&1",
+			shell=True, capture_output=True, text=True, timeout=15
+		)
+		if "blackframe" in r2.stdout or "blackframe" in r2.stderr:
+			print("    Frame is predominantly white -- skipping")
+			return True
+		return False
 	except Exception:
 		return False
 
@@ -65,7 +77,7 @@ def extract_video_thumbnail(video_path, output_path):
 		except subprocess.CalledProcessError:
 			pass
 		if os.path.isfile(output_path) and os.path.getsize(output_path) > 100:
-			if not is_black_frame(output_path):
+			if not is_unusable_frame(output_path):
 				print("    Good thumbnail frame at seek " + seek)
 				return True
 			print("    Black frame at seek " + seek + " -- trying later...")
@@ -984,7 +996,7 @@ def mmiloader_code():
 					needs_extract = (
 						not os.path.isfile(thumb_path) or
 						os.path.getsize(thumb_path) <= 100 or
-						is_black_frame(thumb_path)
+						is_unusable_frame(thumb_path)
 					)
 					if needs_extract:
 						print("	Attempting to extract a non-black thumbnail for the video")
