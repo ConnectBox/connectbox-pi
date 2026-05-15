@@ -668,6 +668,7 @@ def mmiloader_code():
 
 		if ((yy == 1) and (y == 0)): y = 0								# if we have go forward on extended but not web then we don't go forward.
 		elif ((yy == 0) and (y == 1)): y = 0								# if we have go forward on webdirectory but not on extended directory we don't go forward
+		elif ((yy == 0) and (y == 0)): y = 0								# both say stop -- this path is inside a complex dir
 		else: y = 1
 
 
@@ -973,7 +974,7 @@ def mmiloader_code():
 				if (('.htm' in extension) and (directoryType != 'folders') and (content['image'] == 'blank.gif')): content['image'] = "www.png"
 				elif (extension == '.xml' and content['image'] == 'blank.gif'): content['image'] = "app.png"
 				elif ('folders' in directoryType and content['image'] == 'blank.gif'):
-					content['image'] = 'folders.png'
+					content['image'] = 'www.png'
 				if (directoryType == "collection"):
 					if '.htm' in extension and collection['image'] == 'blank.gif': collection['image'] = "www.png"
 					elif extension == '.xml' and collection['image'] == 'blank.gif': collection['image'] = "app.png"
