@@ -276,7 +276,7 @@
     new_code = '''HomePage.prototype.goToDetails = function (resource) {
         if (resource.mediaType === 'html') {
             var lang = (this.currentLanguage && this.currentLanguage.code) ? this.currentLanguage.code : 'en';
-            window.open('assets/content/' + lang + '/html/' + resource.slug);
+            window.location.href = 'assets/content/' + lang + '/html/' + resource.slug;
         } else {
             this.navController.push('media-details', { slug: resource.slug });
         }
