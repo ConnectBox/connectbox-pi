@@ -461,20 +461,28 @@ def mmiloader_code():
 				x +=1											#Lets see if there are more to check
 		if ((match == "") and (directoryType != "language") and (z == 0)):					#This path is not in the complex_lst
 			if ((len(dirs) > 0) and (mediaDirectory + '/' + thisDirectory) == path):				#Ok we may have a root directory extended path directory extended path
-				if ("index.html" in files):
+				if len(files) == 0:										# Original definition: no files at root, only subdirs = complex
+					complex_lst.append(path)
+					update_display('Highly Complex' + chr(10) + 'Filesystem')
+					print("Added complex root directory (no files, subdirs only): "+str(path))
+				elif ("index.html" in files):							# Already has index.html from a previous index run
 					print("FOUND MY INDEX.HTML FILE")
 					print("since this is root directory starting path it needs to go in the complex list")
 					complex_lst.append(path)
 					update_display('Highly Complex' + chr(10) + 'Filesystem')
 					print("Added complex root directory "+str(path))
-					### We leave math alogne and z alone ###
-					#This is our continue flag for the outer loop
 			else:
-				for d in dirs:										#Now lets check the directories under the path
-					for pathname, dirname, filename in os.walk(os.path.join(path,d)):
-						if (len(dirname) > 0):								#Subdirs present at any depth means complex structure regardless of file count
-							pass											# Any subdir presence qualifies — no special index file required
-						else: continue								# No subdirs — not a complex structure
+				if len(files) == 0 and len(dirs) > 0:				# Original definition: no files here, only subdirs containing files
+					complex_lst.append(path)
+					update_display('Highly Complex' + chr(10) + 'Filesystem')
+					print("Added complex directory (no files, subdirs only): "+str(path))
+					z = 1
+				else:
+					for d in dirs:										# Also check for deeper nesting: subdirs that themselves have subdirs
+						for pathname, dirname, filename in os.walk(os.path.join(path,d)):
+							if (len(dirname) > 0):								#Subdirs present at any depth means complex structure regardless of file count
+								pass											# Any subdir presence qualifies — no special index file required
+							else: continue								# No subdirs — not a complex structure
 
 						print("ÖK we found a starting path tha needs to go into the complex list")
 						complex_lst.append(path)						#While the subdirectory is complex this shows the path is also.
