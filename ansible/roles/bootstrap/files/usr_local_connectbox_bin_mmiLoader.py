@@ -38,6 +38,43 @@ def run_cmd(cmd):
 		logging.error(f"Command failed: {cmd}")
 
 
+
+def is_black_frame(png_path):
+	# Return True if the PNG is predominantly black (ffmpeg blackframe filter: 98% pixels below luma 32).
+	# Returns False on any error so the frame is treated as usable rather than discarded.
+	try:
+		result = subprocess.run(
+			"ffmpeg -i " + shlex.quote(png_path) + " -vf blackframe=98:32 -f null - 2>&1",
+			shell=True, capture_output=True, text=True, timeout=15
+		)
+		return "blackframe" in result.stdout or "blackframe" in result.stderr
+	except Exception:
+		return False
+
+
+def extract_video_thumbnail(video_path, output_path):
+	# Try progressive seek points until a non-black thumbnail frame is found.
+	# Seeks at 1s, 5s, 15s, 30s, 60s.  Returns True if a usable frame was written.
+	seek_times = ["00:00:01", "00:00:05", "00:00:15", "00:00:30", "00:01:00"]
+	for seek in seek_times:
+		try:
+			subprocess.run(
+				"ffmpeg -y -ss " + seek + " -i " + shlex.quote(video_path) + " -an -vframes 1 " + shlex.quote(output_path) + " >/dev/null 2>&1",
+				shell=True, check=True
+			)
+		except subprocess.CalledProcessError:
+			pass
+		if os.path.isfile(output_path) and os.path.getsize(output_path) > 100:
+			if not is_black_frame(output_path):
+				print("    Good thumbnail frame at seek " + seek)
+				return True
+			print("    Black frame at seek " + seek + " -- trying later...")
+		else:
+			print("    No usable frame at seek " + seek + " -- video may be shorter")
+	print("    Could not extract a non-black thumbnail for this video")
+	return False
+
+
 def mmiloader_code():
 	# Removed global webpaths and collection to prevent state pollution
 	global directoryImage
@@ -942,27 +979,29 @@ def mmiloader_code():
 			if ((content["mediaType"] == 'video') and (content["image"] == directoryImage)):
 
 				try:
-					if not (os.path.isfile(mediaDirectory + "/.thumbnail-" + language +  "-" + slug + ".png")):
-						print ("	Attempting to make a thumbnail for the video")
-						run_cmd(f"ffmpeg -y -ss 00:00:01 -i {shlex.quote(fullFilename)} -an -vframes 1 {shlex.quote(mediaDirectory + '/.thumbnail-' + language + '-' + slug + '.png')} >/dev/null 2>&1")
-					if os.path.isfile(mediaDirectory + '/.thumbnail-' + language + '-' + slug + '.png'):
+					thumb_path = mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png"
+					# Re-extract if no file, file too small, or cached frame is black (long black leader)
+					needs_extract = (
+						not os.path.isfile(thumb_path) or
+						os.path.getsize(thumb_path) <= 100 or
+						is_black_frame(thumb_path)
+					)
+					if needs_extract:
+						print("	Attempting to extract a non-black thumbnail for the video")
+						if os.path.isfile(thumb_path):
+							os.remove(thumb_path)  # Remove black/bad cached frame so extract starts clean
+						extract_video_thumbnail(fullFilename, thumb_path)
+					if os.path.isfile(thumb_path) and os.path.getsize(thumb_path) > 100:
+						thumb_src = thumb_path
+						thumb_dst = contentDirectory + "/" + language + "/images/" + img_name
+						run_cmd("ln -s " + shlex.quote(thumb_src) + " " + shlex.quote(thumb_dst))
 						content["image"] = img_name
-						print ("        We found the thumbnail")
-					try:
-						if os.path.getsize( mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png") > 100:		#image is large enough to be usable.
-							thumb_src = mediaDirectory + '/.thumbnail-' + language + '-' + slug + '.png'
-							thumb_dst = contentDirectory + '/' + language + '/images/' + img_name
-							run_cmd(f"ln -s {shlex.quote(thumb_src)} {shlex.quote(thumb_dst)}")
-							content["image"] = img_name
-						else:
-							print ("        Image was too small to use!!!!!!!")
-							content["image"] = 'video.png'
-					except Exception as e:
-						print ("had an error getting size of video !!!!!!!!" + mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png")
-						content['image'] = 'video.png'
+						print("        Thumbnail linked: " + img_name)
+					else:
+						content["image"] = "video.png"
 				except Exception as e:
-					print ("Something whent wrong with the ffmpeg or elsewhere")
-					content['image'] = 'video.png'
+					print("Something went wrong extracting video thumbnail")
+					content["image"] = "video.png"
 																# if its not a video & not an image
 				if ('collection' in locals() or 'collection' in globals()) and (collection['image'] == directoryImage or collection['image'] != 'video.png'):
 					if content['image'] != 'video.png': collection['image'] = content['image']
