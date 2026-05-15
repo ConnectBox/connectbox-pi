@@ -14,7 +14,7 @@
     month: "*"
     weekday: "*"
     user: root
-    job:  "python3 /usr/local/connectbox/bin/TestPxUSBm.py > /dev/nul"
+    job:  "python3 /usr/local/connectbox/bin/TestPxUSBm.py > /dev/null"
 
 - name: install access-log-analyzer
   git:

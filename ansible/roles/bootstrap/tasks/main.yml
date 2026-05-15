@@ -438,7 +438,7 @@
   when: (OS_Version == 'focal') and  (ansible_os_family|lower == 'debian') and (connectbox_os == 'ubuntu') 
 
 - name : Increase size of /tmp to handle upcoming installs
-  command: mount -o remount, size=400M /tmp/
+  command: mount -o remount,size=400M /tmp/
   when: (ansible_os_family  == 'Ubuntu' or connectbox_os == 'armbian') and not aws_instance
 
 - name: Get current rfkill state for interface 0 (wireless LAN) on Raspbian
@@ -458,7 +458,7 @@
 
 - name: Get current rfkill state for interface 1 (wireless LAN) on Raspbian
   command: cat /sys/class/rfkill/rfkill1/soft
-  register: rfkill1_stateXray 
+  register: rfkill1_state
   ignore_errors: yes
   changed_when: False
   when: connectbox_os == 'Debian'
@@ -530,6 +530,7 @@
 # mikegleasonjr.firewall assumes iptables but Armbian doesn't ship with it
 - name: Install iptables
   apt:
+    name: iptables
     state: present
   when: connectbox_os == 'armbian'
 
@@ -605,7 +606,7 @@
 - name: check that we have dns working on Ubuntu Debian focal
   shell:
     echo 'nameserver 8.8.8.8\n' >> /etc/resolv.conf
-  when: (OS_Version == 'focal' or OS_Version == "Xenial") and  (ansible_os_family == 'Debian') and (connectbox_os == 'ubuntu') 
+  when: (OS_Version == 'focal' or OS_Version == 'xenial') and (ansible_os_family == 'Debian') and (connectbox_os == 'ubuntu')
 
 
 # acl needed for good install of Postgres as per Leo-Nils 20211011

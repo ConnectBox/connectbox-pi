@@ -354,7 +354,7 @@
     - libssl-dev
     state: present
   ignore_errors: yes
-  when: (compile_all,changed)
+  when: (compile_all.changed)
 
 - name: apt install raspberrypi-kernel-headers
   apt:
@@ -362,7 +362,7 @@
     - raspberrypi-kernel-headers
     state: present
   ignore_errors: yes
-  when: ((connectbox_os == "raspbian") and (compile_all,changed))
+  when: ((connectbox_os == "raspbian") and (compile_all.changed))
 
 # or apt-get install linux-headers-$(uname -r)
 - name: apt install linux-headers-current-sunxi
@@ -370,8 +370,8 @@
     pkg:
     - linux-headers-current-sunxi
     state: present
-  ignore_errors: yes 
-  when: ((connectbox_os != "raspbian") and (compile_all,changed))
+  ignore_errors: yes
+  when: ((connectbox_os != "raspbian") and (compile_all.changed))
 
 
 - name: Copy over 8812au-install script for Raspian
