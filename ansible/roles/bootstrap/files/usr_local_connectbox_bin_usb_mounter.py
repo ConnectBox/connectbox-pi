@@ -32,6 +32,7 @@ def handle_add(dev_node):
         if os.system("grep -qs ' /media/usb0 ' /proc/mounts") != 0:
             break
         os.system("umount -l /media/usb0 2>/dev/null")
+        time.sleep(0.5)  # give lazy-unmount time to update /proc/mounts
 
     # Mount the new device.  Try utf8 first (VFAT/exFAT); fall back without it
     # for ext4 and other filesystems that don't accept the utf8 option.
