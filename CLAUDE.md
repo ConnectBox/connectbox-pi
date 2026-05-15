@@ -35,7 +35,7 @@ The Vagrant file provides three local VMs (stretch, focal, ubuntu) for developme
 | `hat-service` | OLED display driver and `neo-batterylevelshutdown` service for battery monitoring, button handling, and shutdown |
 | `dns-dhcp` | dnsmasq for DNS/DHCP on the WiFi interface |
 | `wifi-ap` | hostapd WiFi access point |
-| `enhanced-content` | Downloads and installs the enhanced media interface (mediainterface + cbadmin) from GitHub releases, installs ffmpeg |
+| `enhanced-content` | Downloads and installs the enhanced media interface (mediainterface + connectbox-admin-ui) from GitHub releases, installs ffmpeg |
 | `nginx` | Five vhosts: captive portal, classic UI, enhanced UI, static site, icon-only |
 | `captive-portal` | Flask captive portal (Python venv at `/var/www/connectbox/captiveportal_venv`) |
 | `webserver-content` | Clones `connectbox-client` repo, installs Flask/gunicorn for chat and admin APIs |

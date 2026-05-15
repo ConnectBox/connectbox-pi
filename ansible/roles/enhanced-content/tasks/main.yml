@@ -46,7 +46,7 @@
 - name: Get admin interface latest release
   ansible.builtin.unarchive:
     # was: https://github.com/RT-coding-team/cbadmin/releases/download/latest/latest.zip
-    src: https://github.com/ConnectBox/cbadmin/releases/download/latest/latest.zip
+    src: https://github.com/ConnectBox/connectbox-admin-ui/releases/download/latest/latest.zip
     dest: /var/www/enhanced/admin/
     remote_src: yes
     owner: www-data
