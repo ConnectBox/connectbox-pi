@@ -28,17 +28,17 @@
     mode: 0644
   register: etc_default_hostapd_hostapd_conf
 
-# wifi-configurator is used on configure_hostapd.sh
-- name: Make wifi-configurator virtualenv directory
+# connectbox-wifi-configurator is used on configure_hostapd.sh
+- name: Make connectbox-wifi-configurator virtualenv directory
   file:
     path: "{{ wifi_configurator_virtualenv_dir }}"
     state: directory
 
-- name: Setup wifi-configurator virtualenv (python3)
+- name: Setup connectbox-wifi-configurator virtualenv (python3)
   pip:
     virtualenv: "{{ wifi_configurator_virtualenv_dir }}"
     virtualenv_python: python3
-    name: git+https://github.com/ConnectBox/wifi-configurator.git
+    name: git+https://github.com/ConnectBox/connectbox-wifi-configurator.git
 
 - name: Find python path variable
   shell: ls {{ wifi_configurator_virtualenv_dir }}/lib
