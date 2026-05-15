@@ -633,10 +633,12 @@ def mmiloader_code():
 		##########################################################################
 		language_root_path = os.path.join(mediaDirectory, language)
 		is_direct_child_of_lang_root = (os.path.dirname(path) == language_root_path)
+		# Non-index files: ignore index.html that may have been generated on a previous run
+		non_index_files = [f for f in files if f.lower() != 'index.html']
 		if (doesRootContainLanguage and
 				directoryType not in ('language', 'folders') and
 				is_direct_child_of_lang_root and
-				len(files) == 0 and len(dirs) > 0 and
+				len(non_index_files) == 0 and len(dirs) > 0 and
 				path not in complex_lst):
 			print("Detected language-level complex directory: " + path)
 			complex_lst.append(path)
