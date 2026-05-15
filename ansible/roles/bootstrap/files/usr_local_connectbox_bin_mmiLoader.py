@@ -185,6 +185,10 @@ def mmiloader_code():
 			os.mkdir(contentDirectory, mode=0o755)
 		update_display("Restoring from Backup...")
 		run_cmd (f"cd {shlex.quote(contentDirectory)} && unzip {shlex.quote(found_zip)}")
+		if not os.path.exists(contentDirectory + "/en"):
+			shutil.copytree(templatesDirectory + "/en", contentDirectory + "/en")
+		if not os.path.exists(contentDirectory + "/footer.html"):
+			shutil.copy(templatesDirectory + "/footer.html", contentDirectory)
 		print ("DONE")
 		time.sleep(3)
 		try:
@@ -617,6 +621,37 @@ def mmiloader_code():
 
 		update_display('Indexing USB')
 
+		##########################################################################
+		# Detect complex (folder-of-folders) directories inside language roots.
+		# The first-pass walk only detects complex dirs at the USB root level; for
+		# language-based USBs the complex dirs sit one level deeper (e.g. fa/Complex
+		# Directory) and are never seen there.  Detect them here: a direct child of
+		# the language root that has subdirectories but no content files is a folder
+		# container.  We generate an index.html for it (and for any subdir that
+		# doesn't already have one) so the file-browser works, then add it to
+		# complex_lst so its children are suppressed from the root display.
+		##########################################################################
+		language_root_path = os.path.join(mediaDirectory, language)
+		is_direct_child_of_lang_root = (os.path.dirname(path) == language_root_path)
+		if (doesRootContainLanguage and
+				directoryType not in ('language', 'folders') and
+				is_direct_child_of_lang_root and
+				len(files) == 0 and len(dirs) > 0 and
+				path not in complex_lst):
+			print("Detected language-level complex directory: " + path)
+			complex_lst.append(path)
+			# Generate top-level file-browser index for this folder
+			process_dir(path, path, "")
+			# Generate index.html for each subdir that doesn't already have one
+			# (skip subdirs with existing HTML content such as web apps)
+			for subdir in dirs:
+				subdir_path = os.path.join(path, subdir)
+				if not os.path.isfile(os.path.join(subdir_path, "index.html")):
+					process_dir(subdir_path, subdir_path, "recursive")
+			# Refresh files so the index.html we just wrote is visible to later checks
+			files = [f for f in os.listdir(path) if not f.startswith('.')]
+			directoryType = 'folders'
+			update_display('Complex' + chr(10) + 'Folder')
 
 		###########################################################################
 		# Check this path as a subpath of one main path already handled in extended
@@ -1215,8 +1250,8 @@ def mmiloader_code():
 	for language in mains:
 		if (len(mains[language]["content"]) == 0):
 			print ("Skipping Empty Content for language:" +language)
-			if (language == 'en'):
-				shutil.rmtree(contentDirectory + '/en')
+			# Do NOT remove the en directory even if empty -- Angular app always needs
+			# en/data/interface.json as a UI strings fallback. It won't appear in languages.json.
 			continue
 		print ("Writing main.json for " + language)
 		with open(contentDirectory + "/" + language + "/data/main.json", 'w', encoding='utf-8') as f:
