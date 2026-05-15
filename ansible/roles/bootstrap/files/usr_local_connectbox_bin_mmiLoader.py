@@ -1145,7 +1145,7 @@ def mmiloader_code():
 					if collection['image'] == directoryImage: collection['image'] = 'video.png'
 				elif ((content["mediaType"] in 'zip, gzip, gz, xz, 7z, bz2, 7zip, tar') and (collection['image'] == directoryImage)):  collection['image'] = 'zip.png'
 				elif ((content['mediaType'] in 'epub') and (collection['image'] == directoryImage)): collection['image'] = 'epub.png'
-				elif ((content["mediaType"] in 'document, text, docx, xlsx, pptx, h5p') and (collection['image'] == directoryImage)):
+				elif ((content["mediaType"] in 'document, text, docx, xlsx, pptx, h5p') and (collection['image'] in (directoryImage, 'pdf.png'))):
 					if extension in ('.doc', '.docx'): collection['image'] = 'doc.png'
 					elif extension in ('.xls', '.xlsx', '.pptx'): collection['image'] = 'sheet.png'
 					else: collection['image'] = 'pdf.png'
