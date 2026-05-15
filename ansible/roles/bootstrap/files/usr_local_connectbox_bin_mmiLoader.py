@@ -9,6 +9,7 @@ import shutil
 import mimetypes
 import logging
 import subprocess
+import sys
 import time
 import shlex
 import signal
@@ -192,13 +193,8 @@ def mmiloader_code():
 		print ("DONE")
 		time.sleep(3)
 		try:
-			x = os.system("rm " + comsFileName)
-			x = os.waitstatus_to_exitcode(x)
-			while x!=0:
-				x = os.system("rm " + comsFileName)
-				x = os.waitstatus_to_exitcode(x)
-				time.sleep(1)
-		except Exception as e:
+			os.remove(comsFileName)
+		except Exception:
 			pass											#Clear the display
 		exit(0)												#We finished up with restoring the data for this USB stick. exit the app.
 
@@ -1280,22 +1276,17 @@ def mmiloader_code():
 		print ("No valid content found on the USB.  Exiting")
 
 		try:
-			x = os.system("rm " + comsFileName)
-			x = os.waitstatus_to_exitcode(x)
-			while x!=0:
-				x = os.system("rm " + comsFileName)
-				x = os.waitstatus_to_exitcode(x)
-				time.sleep(1)
-		except Exception as e:
+			os.remove(comsFileName)
+		except Exception:
 			pass											#Clear the display
 
-			try:
-				run_cmd(f"rm -f {shlex.quote(complex_dir)}")
-			except Exception as e:
-				logging.debug(f"Ignored exception: {e}")
-				pass
+		try:
+			run_cmd(f"rm -f {shlex.quote(complex_dir)}")
+		except Exception as e:
+			logging.debug(f"Ignored exception: {e}")
+			pass
 
-			sys.exit()
+		sys.exit()
 
 	# Determine which language should be default.  It is english or first one found
 	hasDefault = 0
@@ -1325,13 +1316,8 @@ def mmiloader_code():
 		pass
 
 	try:
-		x = os.system("rm " + comsFileName)
-		x = os.waitstatus_to_exitcode(x)
-		while x!=0:
-			x = os.system("rm " + comsFileName)
-			x = os.waitstatus_to_exitcode(x)
-			time.sleep(1)
-	except Exception as e:
+		os.remove(comsFileName)
+	except Exception:
 		pass											#Clear the display
 
 	print ("DONE")
