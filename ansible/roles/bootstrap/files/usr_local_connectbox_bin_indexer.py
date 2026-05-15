@@ -284,7 +284,7 @@ def process_dir(top_dir, dest_dir, opts):
             <tbody>
             <tr class="clickable">
                 <td></td>
-                <td><a href=".."><svg width="1.5em" height="1em" version="1.1" viewBox="0 0 24 24"><use xlink:href="#go-up"></use></svg>
+                <td><a href="#" onclick="history.back(); return false;"><svg width="1.5em" height="1em" version="1.1" viewBox="0 0 24 24"><use xlink:href="#go-up"></use></svg>
                 <span class="goup">..</span></a></td>
                 <td>&mdash;</td>
                 <td class="hideable">&mdash;</td>
