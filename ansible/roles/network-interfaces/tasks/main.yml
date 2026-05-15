@@ -413,10 +413,47 @@
   ignore_errors: yes
   when: (compile_c.changed)
 
-- name: Compile the 8852au driver via script for raspbian or neo 
+- name: Compile the 8852au driver via script for raspbian or neo
   command:
-     chdir: /tmp 
+     chdir: /tmp
      cmd: "sh 8852au-install.sh"
+  ignore_errors: yes
+  when: (compile_c.changed)
+
+# Save freshly compiled drivers back to the build host so future provisioning
+# runs for this kernel version can skip compilation entirely.  The directory
+# layout mirrors the existing files/<kernel-version>/ cache structure:
+# each .ko is stored flat under files/<kernel-version>/ — the same layout
+# that the "Check for drivers" copy task at the top of this file expects.
+
+- name: Create local driver cache directory for kernel {{ kernel_num.stdout }}
+  file:
+    path: "{{ role_path }}/files/{{ kernel_num.stdout }}"
+    state: directory
+  delegate_to: localhost
+  when: (compile_all.changed)
+
+- name: Save compiled 8812au driver to build host
+  fetch:
+    src: "/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/8812au.ko"
+    dest: "{{ role_path }}/files/{{ kernel_num.stdout }}/8812au.ko"
+    flat: yes
+  ignore_errors: yes
+  when: (compile_a.changed)
+
+- name: Save compiled 88x2bu driver to build host
+  fetch:
+    src: "/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/88x2bu.ko"
+    dest: "{{ role_path }}/files/{{ kernel_num.stdout }}/88x2bu.ko"
+    flat: yes
+  ignore_errors: yes
+  when: (compile_b.changed)
+
+- name: Save compiled 8852au driver to build host
+  fetch:
+    src: "/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/8852au.ko"
+    dest: "{{ role_path }}/files/{{ kernel_num.stdout }}/8852au.ko"
+    flat: yes
   ignore_errors: yes
   when: (compile_c.changed)
 
