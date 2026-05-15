@@ -944,7 +944,7 @@ def mmiloader_code():
 				try:
 					if not (os.path.isfile(mediaDirectory + "/.thumbnail-" + language +  "-" + slug + ".png")):
 						print ("	Attempting to make a thumbnail for the video")
-						run_cmd(f"ffmpeg -y -ss 00:00:15 -i {shlex.quote(fullFilename)} -an -vframes 1 {shlex.quote(mediaDirectory + '/.thumbnail-' + language + '-' + slug + '.png')} >/dev/null 2>&1")
+						run_cmd(f"ffmpeg -y -ss 00:00:01 -i {shlex.quote(fullFilename)} -an -vframes 1 {shlex.quote(mediaDirectory + '/.thumbnail-' + language + '-' + slug + '.png')} >/dev/null 2>&1")
 					if os.path.isfile(mediaDirectory + '/.thumbnail-' + language + '-' + slug + '.png'):
 						content["image"] = img_name
 						print ("        We found the thumbnail")
@@ -956,7 +956,7 @@ def mmiloader_code():
 							content["image"] = img_name
 						else:
 							print ("        Image was too small to use!!!!!!!")
-							content["image"] = directoryImage
+							content["image"] = 'video.png'
 					except Exception as e:
 						print ("had an error getting size of video !!!!!!!!" + mediaDirectory + "/.thumbnail-" + language + "-" + slug + ".png")
 						content['image'] = 'video.png'
@@ -1003,6 +1003,8 @@ def mmiloader_code():
 			if ('collection' in locals() or 'collection' in globals()):
 				if (content["mediaType"] in 'audio'):
 					if collection['image'] == directoryImage: collection['image'] = 'sound.png'
+				elif (content["mediaType"] == 'video'):
+					if collection['image'] == directoryImage: collection['image'] = 'video.png'
 				elif ((content["mediaType"] in 'zip, gzip, gz, xz, 7z, bz2, 7zip, tar') and (collection['image'] == directoryImage)):  collection['image'] = 'zip.png'
 				elif ((content['mediaType'] in 'epub') and (collection['image'] == directoryImage)): collection['image'] = 'epub.png'
 				elif ((content["mediaType"] in 'document, text, docx, xlsx, pptx, h5p') and (collection['image'] == directoryImage)):
@@ -1017,6 +1019,8 @@ def mmiloader_code():
 			else:
 				if (content["mediaType"] in 'audio'):
 					if content['image'] == directoryImage: content['image'] = 'sound.png'
+				elif (content["mediaType"] == 'video'):
+					if content['image'] == directoryImage: content['image'] = 'video.png'
 				elif (content["mediaType"] in 'zip, gzip, gz, xz, 7z, bz2, 7zip, tar'):
 					if content['image'] == directoryImage: content['image'] = 'zip.png'
 				elif (content['mediaType'] in 'epub'):
