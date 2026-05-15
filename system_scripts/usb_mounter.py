@@ -57,8 +57,10 @@ def handle_add(dev_node):
         os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/*.mbz && /usr/bin/php /var/www/moodle/admin/cli/restore_courses_directory.php /media/usb0/' >/tmp/restore_courses_directory.log 2>&1 &")
 
 def handle_remove(dev_node):
-    # udev already handles the umount, we just clean up anything else
     print(f"Device {dev_node} removed.")
+    # Stop the content loader if it is still running — sends SIGTERM so mmiLoader
+    # can exit cleanly rather than continuing to attempt IO on the unmounted path.
+    os.system("systemctl stop connectbox-loader.service 2>/dev/null")
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:

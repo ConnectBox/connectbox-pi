@@ -11,6 +11,7 @@ import logging
 import subprocess
 import time
 import shlex
+import signal
 from indexer import *
 #import ffmpeg
 
@@ -30,6 +31,32 @@ def update_display(message):
 			f.write(safe)
 	except Exception as e:
 		logging.debug(f"Ignored exception: {e}")
+
+# Global flag set by SIGTERM handler so the main loops can exit cleanly
+_shutdown_requested = False
+
+
+def _sigterm_handler(signum, frame):
+	# Called when systemd stops the service (e.g. USB removed).
+	global _shutdown_requested
+	print("Received SIGTERM -- USB removed or service stopped, exiting cleanly")
+	_shutdown_requested = True
+	try:
+		os.remove("/tmp/creating_menus.txt")
+	except Exception:
+		pass
+
+
+signal.signal(signal.SIGTERM, _sigterm_handler)
+
+
+def usb_is_present():
+	# Returns False if USB has been removed or a shutdown was requested.
+	# Called at the top of every directory/file loop iteration.
+	if _shutdown_requested:
+		return False
+	return os.path.ismount("/media/usb0")
+
 
 def run_cmd(cmd):
 	try:
@@ -330,6 +357,9 @@ def mmiloader_code():
 	for path,dirs,files in os.walk(mediaDirectory):								# Walk all files/directories on the data set
 
 		thisDirectory = os.path.basename(os.path.normpath(path))
+		if not usb_is_present():
+			print("USB removed during language scan -- stopping")
+			return
 		if ((thisDirectory == "content") and (mediaDirectory == path)):
 			continue
 
@@ -479,6 +509,9 @@ def mmiloader_code():
 	for path,dirs,files in os.walk(mediaDirectory):								#This is our main content analysis loop now for data
 
 		thisDirectory = os.path.basename(os.path.normpath(path))
+		if not usb_is_present():
+			print("USB removed during content index -- stopping")
+			return
 		print ("====================================================")
 		print ("Evaluating Directory: " + thisDirectory)
 
@@ -838,6 +871,9 @@ def mmiloader_code():
 
 		for filename in files:
 			update_display("Processing: " + filename)
+			if not usb_is_present():
+				print("USB removed during file processing -- stopping")
+				return
 			print ("	--------------------------------------------------")
 			print ("	Processing File: " + filename)
 			print ("	Processing according to language " + language)
@@ -1224,6 +1260,9 @@ def mmiloader_code():
 		json.dump(languageJson, f, ensure_ascii=False, indent=4)
 	f.close()
 
+	if not usb_is_present():
+		print("USB removed before saving zip -- skipping zip write")
+		return
 	print ("Copying Metadata to Zip File On USB")
 	run_cmd (f"cd {shlex.quote(contentDirectory)} && zip --symlinks -r {shlex.quote(zipFileName)} *")
 	logging.info("Finished mmiLoader.py run successfully to create the user interface and index the data contents")
