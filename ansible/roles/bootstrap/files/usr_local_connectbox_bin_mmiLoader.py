@@ -381,7 +381,7 @@ def mmiloader_code():
 			else:
 				x +=1											#Lets see if there are more to check
 		if ((match == "") and (directoryType != "language") and (z == 0)):					#This path is not in the complex_lst
-			if ((len(dirs) > 0) and (len(files) <= 2) and (mediaDirectory + '/' + thisDirectory) == path):	#Ok we may have a root directory extended path
+			if ((len(dirs) > 0) and (mediaDirectory + '/' + thisDirectory) == path):				#Ok we may have a root directory extended path directory extended path
 				if ("index.html" in files):
 					print("FOUND MY INDEX.HTML FILE")
 					print("since this is root directory starting path it needs to go in the complex list")
@@ -393,15 +393,9 @@ def mmiloader_code():
 			else:
 				for d in dirs:										#Now lets check the directories under the path
 					for pathname, dirname, filename in os.walk(os.path.join(path,d)):
-						if ((len(dirname) > 0) and (len(filename) <= 2)):			#This looks like a complex directory we need to add to the list
-							if ('index.html' in filename) and (len(filename == 1)):
-								print("FOUND MY INDEX/HTML FILE")
-								pass
-							elif ('Start_Here.htm' in filename):
-								pass
-							else:
-								continue
-						else: continue								# We don't have the right files in the directory so its not a viable complex struture
+						if (len(dirname) > 0):								#Subdirs present at any depth means complex structure regardless of file count
+							pass											# Any subdir presence qualifies — no special index file required
+						else: continue								# No subdirs — not a complex structure
 
 						print("ÖK we found a starting path tha needs to go into the complex list")
 						complex_lst.append(path)						#While the subdirectory is complex this shows the path is also.
