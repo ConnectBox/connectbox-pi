@@ -263,3 +263,31 @@
     t['.xlsx']['image'] = 'sheet.png'
     with open(path, 'w') as f: json.dump(t, f, indent=4)
     "
+
+- name: Patch mediainterface to open HTML items directly without detail page
+  become: true
+  shell: |
+    python3 -c "
+    path = '/var/www/enhanced/content/www/build/6.js'
+    with open(path) as f: c = f.read()
+    old = '''HomePage.prototype.goToDetails = function (resource) {
+        this.navController.push('media-detail', { slug: resource.slug });
+    };'''
+    new_code = '''HomePage.prototype.goToDetails = function (resource) {
+        if (resource.mediaType === 'html') {
+            var lang = (this.currentLanguage && this.currentLanguage.code) ? this.currentLanguage.code : 'en';
+            window.open('assets/content/' + lang + '/html/' + resource.slug);
+        } else {
+            this.navController.push('media-details', { slug: resource.slug });
+        }
+    };'''
+    old2 = '''HomePage.prototype.goToDetails = function (resource) {
+        this.navController.push('media-details', { slug: resource.slug });
+    };'''
+    if old in c:
+        c = c.replace(old, new_code, 1)
+    elif old2 in c:
+        c = c.replace(old2, new_code, 1)
+    with open(path, 'w') as f: f.write(c)
+    "
+  ignore_errors: yes
