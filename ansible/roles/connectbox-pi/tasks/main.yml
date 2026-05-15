@@ -16,7 +16,7 @@
     user: root
     job:  "python3 /usr/local/connectbox/bin/TestPxUSBm.py > /dev/null"
 
-- name: install access-log-analyzer
+- name: install connectbox-access-log-analyzer
   git:
     repo: '{{ access_log_analyzer_repo }}'
     dest: /usr/local/access-log-analyzer
