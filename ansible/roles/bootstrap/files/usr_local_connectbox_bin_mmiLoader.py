@@ -654,7 +654,7 @@ def mmiloader_code():
 			print ("Testing for webpaths in this path", path, " : ",webpaths)
 			for d in webpaths:
 				x = path.find(d)
-				if x >= 0:
+				if x >= 0 and path != d:						# skip only sub-paths, not the webpath root itself
 					print ("Found webpath in path", x," : ",path[x:])
 					y = 0									# non continue flag testing for web elements
 					break									# We stop here since its a minor directory
@@ -974,7 +974,7 @@ def mmiloader_code():
 				if (('.htm' in extension) and (directoryType != 'folders') and (content['image'] == 'blank.gif')): content['image'] = "www.png"
 				elif (extension == '.xml' and content['image'] == 'blank.gif'): content['image'] = "app.png"
 				elif ('folders' in directoryType and content['image'] == 'blank.gif'):
-					content['image'] = 'www.png'
+					content['image'] = 'folder.png'
 				if (directoryType == "collection"):
 					if '.htm' in extension and collection['image'] == 'blank.gif': collection['image'] = "www.png"
 					elif extension == '.xml' and collection['image'] == 'blank.gif': collection['image'] = "app.png"

@@ -238,6 +238,18 @@
     - /var/www/enhanced/content/www/assets/imgs/sheet.png
     - /var/www/enhanced/content/www/assets/templates/en/images/sheet.png
 
+- name: Deploy folder.png icon to enhanced interface assets
+  become: true
+  copy:
+    src: folder.png
+    dest: "{{ item }}"
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  loop:
+    - /var/www/enhanced/content/www/assets/imgs/folder.png
+    - /var/www/enhanced/content/www/assets/templates/en/images/folder.png
+
 - name: Patch types.json to use doc.png and sheet.png for Word and spreadsheet files
   become: true
   shell: |
