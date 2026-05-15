@@ -1082,7 +1082,7 @@ def mmiloader_code():
 					# Re-extract if no file, file too small, or cached frame is black (long black leader)
 					needs_extract = (
 						not os.path.isfile(thumb_path) or
-						os.path.getsize(thumb_path) <= 100 or
+						os.path.getsize(thumb_path) <= 10240 or  # < 10KB = black/near-black frame
 						is_unusable_frame(thumb_path)
 					)
 					if needs_extract:
