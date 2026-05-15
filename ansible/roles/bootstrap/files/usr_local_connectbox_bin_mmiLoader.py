@@ -285,11 +285,14 @@ def mmiloader_code():
 			f.write("<h2>Media Directory is Empty</h2> Please refer to the administration guide!")
 			f.close()
 	except Exception as e:
-			print("Directory is empty")								#Do the same as above for errors
-			run_cmd("mkdir " + mediaDirectory)
-			f = open(mediaDirectory + "/connectbox.txt", "w")
-			f.write("<h2>Media Directory is Empty</h2> Please refer to the administration guide!")
-			f.close()
+			print("Content directory issue: " + str(e))
+			try:
+				run_cmd("mkdir " + mediaDirectory)
+				f = open(mediaDirectory + "/connectbox.txt", "w")
+				f.write("<h2>Media Directory is Empty</h2> Please refer to the administration guide!")
+				f.close()
+			except Exception as e2:
+				print("Could not create fallback connectbox.txt -- skipping")
 
 	language = "en"  # By default but it will be overwritten if there are other language directories on the USB
 	directoryType = "" # By default we don't have a directory type (language, folder, folders, singular, etc.
@@ -344,6 +347,8 @@ def mmiloader_code():
 	print("doesRootContainLanguage is now: ",doesRootContainLanguage)
 	if len(doesRootContainLanguage)>0:
 	  	print ("Root Directory Contains Languages so we skip all root level folders that aren't languages: " + json.dumps(doesRootContainLanguage))
+	else:
+		language = "en"  # All root dirs were content folders, not language dirs; reset to default
 
 
 	if os.path.isfile(os.path.join(mediaDirectory, ".indexed.idx")): indexed_before = True
@@ -504,7 +509,7 @@ def mmiloader_code():
 	##################################################################################################
 
 	for path in complex_lst:										#Now we have a full list of complex directories
-		process_dir(path, path, "recursive", indexed_before )						#process the complex directory into HTML code
+		process_dir(path, path, "recursive")							#process the complex directory into HTML code
 
 	print("Finished the complex directory recursion")
 	if len(complex_lst)>0: run_cmd("touch " + (os.path.join(mediaDirectory, ".indexed.idx")))		#Write the file that says we have done the indexing at least once.

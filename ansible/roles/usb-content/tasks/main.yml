@@ -1,5 +1,15 @@
 ---
 
+- name: Install USB automount udev rules
+  copy:
+    src: 99-usb-automount.rules
+    dest: /etc/udev/rules.d/99-usb-automount.rules
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - Reload udev rules
+
 - name: Create drop-in directory for systemd-udevd
   file:
     path: /etc/systemd/system/systemd-udevd.service.d
