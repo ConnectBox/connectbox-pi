@@ -1156,7 +1156,7 @@ def process_file_entry(filename, path, thisDirectory, language, directoryType, d
 	content["mediaType"] = types[extension]["mediaType"]
 	content["slug"] = slug
 	content["title"] = shortName
-	content["mimeType"] = types[extension]["mediaType"]
+	content["mimeType"] = types[extension].get("mimeType", "")
 
 	# Web/Android index file handling
 	if '.htm' in extension and path not in webpaths:
@@ -1186,7 +1186,7 @@ def process_file_entry(filename, path, thisDirectory, language, directoryType, d
 	print("	Determining Mimetype of " + extension)
 	if content["mimeType"]:
 		print("	mimeType already determined to be " + content["mimeType"])
-	elif hasattr(types[extension], "mimeType"):
+	elif types[extension].get("mimeType"):
 		content["mimeType"] = types[extension]["mimeType"]
 		print("	mimetypes types.json says: " + content["mimeType"])
 	elif mimetypes.guess_type(fullFilename)[0] is not None:
