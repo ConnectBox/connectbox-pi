@@ -57,9 +57,10 @@ def handle_add(dev_node):
     except:
         pass
     # Reset any previous run of the transient unit so systemd-run can reuse the name.
-    # Without this, --remain-after-exit keeps the unit alive after exit and the second
-    # USB insert fails silently because the unit name already exists.
-    os.system("systemctl stop connectbox-loader.service 2>/dev/null; systemctl reset-failed connectbox-loader.service 2>/dev/null")
+    # --wait blocks until the unit is fully stopped before reset-failed clears it.
+    # Without --wait the two commands race: systemd-run fires before systemd finishes
+    # tearing down the old unit and the second USB insert fails silently.
+    os.system("systemctl stop --wait connectbox-loader.service 2>/dev/null; systemctl reset-failed connectbox-loader.service 2>/dev/null")
     os.system("/usr/bin/systemd-run --unit=connectbox-loader --description='ConnectBox Content Loader' --remain-after-exit /usr/bin/python3 /usr/local/connectbox/bin/mmiLoader.py")
 
     # 3. Upgrade Enabler
