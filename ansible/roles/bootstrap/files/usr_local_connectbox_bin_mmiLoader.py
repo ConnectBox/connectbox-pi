@@ -987,10 +987,11 @@ def apply_thumbnails(content, filename, fullFilename, slug, language, mediaDirec
 				content["image"] = img_name
 				print("        Thumbnail linked: " + img_name)
 			else:
-				content["image"] = "video.png"
+				# Keep folder art when extraction fails; only use generic icon when no art exists
+				content["image"] = directoryImage if directoryImage != 'blank.gif' else "video.png"
 		except Exception:
 			print("Something went wrong extracting video thumbnail")
-			content["image"] = "video.png"
+			content["image"] = directoryImage if directoryImage != 'blank.gif' else "video.png"
 
 	# 4. Audio: extract embedded album art with ffmpeg
 	if content["mediaType"] == 'audio' and content["image"] == directoryImage:
@@ -1034,9 +1035,11 @@ def apply_fallback_image(content, collection, extension, types, directoryImage):
 		mt = content["mediaType"]
 		img = content["image"]
 		if mt == 'audio':
-			if img == directoryImage: content['image'] = 'sound.png'
+			# Only replace with icon when no folder art — preserve folder art as episode image
+			if img == 'blank.gif': content['image'] = 'sound.png'
 		elif mt == 'video':
-			if img == directoryImage: content['image'] = 'video.png'
+			# Only replace with icon when no folder art — preserve folder art as episode image
+			if img == 'blank.gif': content['image'] = 'video.png'
 		elif mt in 'zip, gzip, gz, xz, 7z, bz2, 7zip, tar':
 			if img == directoryImage: content['image'] = 'zip.png'
 		elif mt in 'epub':
@@ -1060,7 +1063,7 @@ def apply_fallback_image(content, collection, extension, types, directoryImage):
 		mt = content["mediaType"]
 		cimg = collection['image']
 		if mt == 'audio':
-			if cimg == directoryImage: collection['image'] = 'sound.png'
+			if cimg == 'blank.gif': collection['image'] = 'sound.png'
 		elif mt == 'video':
 			if cimg == directoryImage or cimg != 'video.png': collection['image'] = content['image'] if content['image'] != 'video.png' else 'video.png'
 		elif mt in 'zip, gzip, gz, xz, 7z, bz2, 7zip, tar':
