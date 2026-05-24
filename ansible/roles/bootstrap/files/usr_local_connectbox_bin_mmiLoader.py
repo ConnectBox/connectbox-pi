@@ -956,7 +956,7 @@ def apply_thumbnails(content, filename, fullFilename, slug, language, mediaDirec
 		content['image'] = directoryImage
 
 	# 2. Image files use themselves as the thumbnail
-	if content["mimeType"] == "image" and content["image"] == directoryImage:
+	if content["mediaType"] == "image" and content["image"] == directoryImage:
 		content["image"] = filename
 		try:
 			if os.path.getsize(fullFilename) > 100:
