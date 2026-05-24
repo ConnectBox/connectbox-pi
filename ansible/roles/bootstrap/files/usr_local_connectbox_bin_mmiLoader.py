@@ -5,6 +5,7 @@
 import json
 import os
 import pathlib
+import re
 import shutil
 import mimetypes
 import logging
@@ -1123,7 +1124,9 @@ def process_file_entry(filename, path, thisDirectory, language, directoryType, d
 	fullFilename = path + "/" + filename
 	shortName = pathlib.Path(fullFilename).stem
 	slug = (os.path.basename(fullFilename).replace('.', '-')).replace('--', '-')
-	img_name = slug.replace(' ', '_') + ".png"
+	# Strip all non-URL-safe characters from the image filename; slug itself stays
+	# unchanged since it is used for routing and data file names.
+	img_name = re.sub(r'[^\w\-]', '_', slug) + ".png"
 	extension = (pathlib.Path(fullFilename).suffix).lower()
 	print("  Slug is now: " + slug)
 
