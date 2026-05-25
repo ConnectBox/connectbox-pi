@@ -264,6 +264,20 @@
     with open(path, 'w') as f: json.dump(t, f, indent=4)
     "
 
+- name: Patch media-detail page to navigate home when collection not found in new language
+  become: true
+  shell: |
+    python3 -c "
+    path = '/var/www/enhanced/content/www/build/3.js'
+    with open(path) as f: c = f.read()
+    old = '.subscribe(function (media) { return _this.media = media; });'
+    new_code = '.subscribe(function (media) { if (media === null) { _this.navController.popToRoot(); } else { _this.media = media; } });'
+    if old in c:
+        c = c.replace(old, new_code, 1)
+        with open(path, 'w') as f: f.write(c)
+    "
+  ignore_errors: yes
+
 - name: Patch connectbox-mediainterface to open HTML items directly without detail page
   become: true
   shell: |
