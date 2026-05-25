@@ -512,7 +512,7 @@ def get_folder_art(files, types):
 	"""
 	directoryImage = 'blank.gif'
 	for f in files:
-		if f.lower() in ['folder.png', 'folder.jpg', 'cover.jpg', 'album.art.jpg', 'front.jpg']:
+		if f.lower() in ['folder.png', 'folder.jpg', 'cover.jpg', 'album.art.jpg', 'front.jpg', 'index.jpg']:
 			directoryImage = f
 			break
 		if ((".png" in f) or (".jpg" in f) or (".gif" in f)) and not f.startswith(".thumbnail"):
@@ -827,12 +827,11 @@ def classify_directory_type(path, mediaDirectory, language, directoryType, files
 	elif "language" in directoryType:
 		pass
 	elif "html" in directoryType:
-		# Image files inside a web content directory are part of the web app,
-		# not folder art.  No symlink is ever placed in images/ for them, so
-		# using one as directoryImage produces a broken link.  Reset to blank.gif
-		# so the www.png fallback applies instead.
-		if directoryImage != 'blank.gif':
-			directoryImage = 'blank.gif'
+		# For web content dirs with no known folder art, fall back to www.png.
+		# When folder art exists (e.g. index.jpg set by get_folder_art), preserve
+		# directoryImage so the caller can symlink it into images/ and use it as
+		# the card thumbnail.
+		if directoryImage == 'blank.gif':
 			cover_override = 'www.png'
 	else:
 		directoryType = directoryType + ' singular'
@@ -1178,6 +1177,14 @@ def process_file_entry(filename, path, thisDirectory, language, directoryType, d
 		content["filename"] = slug + ".zip"
 		if '.htm' in extension and directoryType != 'folders' and content['image'] == 'blank.gif':
 			content['image'] = "www.png"
+		elif '.htm' in extension and content['image'] not in ('blank.gif', 'www.png', 'app.png', 'folder.png'):
+			# Folder art found (covers both html and folders directoryType) —
+			# symlink it into images/ so the frontend card thumbnail resolves.
+			folder_art_src = path + "/" + content['image']
+			if os.path.isfile(folder_art_src):
+				img_dst = contentDirectory + '/' + language + '/images/' + content['image']
+				if not os.path.exists(img_dst):
+					run_cmd(f"ln -s {shlex.quote(folder_art_src)} {shlex.quote(img_dst)}")
 		elif extension == '.xml' and content['image'] == 'blank.gif':
 			content['image'] = "app.png"
 		elif 'folders' in directoryType and content['image'] == 'blank.gif':
