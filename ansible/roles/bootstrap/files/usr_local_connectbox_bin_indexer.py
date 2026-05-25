@@ -76,6 +76,22 @@ def process_dir(top_dir, dest_dir, opts):
         print('cannot create file %s %s' % (index_path, e))
         return
 
+    # If the directory has a known entry-point file other than index.html,
+    # write a redirect instead of a file browser so users land on the real
+    # content rather than a raw directory listing.
+    for entry_name in ('contents.html', 'home.html', 'start.html', 'main.html'):
+        if (path_top_dir / entry_name).exists():
+            print(f"Found entry point '{entry_name}' — writing redirect index.html")
+            index_file.write(
+                f'<!DOCTYPE html><html><head>'
+                f'<meta charset="utf-8">'
+                f'<meta http-equiv="refresh" content="0;url={entry_name}">'
+                f'<title>Redirecting...</title>'
+                f'</head><body><a href="{entry_name}">Open</a></body></html>'
+            )
+            index_file.close()
+            return
+
     index_file.write("""<!DOCTYPE html>
 <html>
 <head>

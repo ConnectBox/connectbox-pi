@@ -444,6 +444,12 @@ def find_complex_dirs(mediaDirectory, doesRootContainLanguage):
 			complex_lst.append(path)
 			update_display('Highly Complex' + chr(10) + 'Filesystem')
 			print("Added complex root directory (has index.html): " + str(path))
+		# Has a known alternative web entry point — treat as complex so process_dir
+		# can write a redirect index.html pointing to the real content entry file.
+		elif any(f.lower() in ('contents.html', 'home.html', 'start.html', 'main.html') for f in files):
+			complex_lst.append(path)
+			update_display('Web Content' + chr(10) + 'Detected')
+			print("Added complex root directory (alternate entry point): " + str(path))
 		else:
 			# Check if any immediate subdir itself has subdirs (deeper nesting)
 			for d in dirs:
