@@ -264,14 +264,29 @@
     with open(path, 'w') as f: json.dump(t, f, indent=4)
     "
 
-- name: Patch media-detail page to navigate home when collection not found in new language
+- name: Patch media-detail page to navigate home on language change instead of showing broken content
   become: true
   shell: |
     python3 -c "
     path = '/var/www/enhanced/content/www/build/3.js'
     with open(path) as f: c = f.read()
-    old = '.subscribe(function (media) { return _this.media = media; });'
-    new_code = '.subscribe(function (media) { if (media === null) { _this.navController.popToRoot(); } else { _this.media = media; } });'
+    old = (
+        '        this.currentLanguage = language;\n'
+        '        this.mediaDetailProvider.setLanguage(language.code);\n'
+        '        this.mediaDetailProvider\n'
+        '            .get(this.slug)\n'
+        '            .pipe(Object(__WEBPACK_IMPORTED_MODULE_2_rxjs_operators_take__[\"take\"])(1))\n'
+        '            .subscribe(function (media) { return _this.media = media; });'
+    )
+    new_code = (
+        '        if (this.currentLanguage) { _this.navController.popToRoot(); return; }\n'
+        '        this.currentLanguage = language;\n'
+        '        this.mediaDetailProvider.setLanguage(language.code);\n'
+        '        this.mediaDetailProvider\n'
+        '            .get(this.slug)\n'
+        '            .pipe(Object(__WEBPACK_IMPORTED_MODULE_2_rxjs_operators_take__[\"take\"])(1))\n'
+        '            .subscribe(function (media) { if (media === null) { _this.navController.popToRoot(); } else { _this.media = media; } });'
+    )
     if old in c:
         c = c.replace(old, new_code, 1)
         with open(path, 'w') as f: f.write(c)
