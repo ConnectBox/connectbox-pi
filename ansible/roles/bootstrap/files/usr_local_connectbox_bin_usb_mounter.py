@@ -31,7 +31,7 @@ def handle_add(dev_node):
     for _ in range(10):
         if os.system("grep -qs ' /media/usb0 ' /proc/mounts") != 0:
             break
-        os.system("umount -l /media/usb0 2>/dev/null")
+        os.system("umount -A -l /media/usb0 2>/dev/null")
         time.sleep(0.5)  # give lazy-unmount time to update /proc/mounts
 
     # Mount the new device.  Try utf8 first (VFAT/exFAT); fall back without it
@@ -77,9 +77,9 @@ def handle_remove(dev_node):
     os.system("systemctl stop connectbox-loader.service 2>/dev/null")
     # Lazy unmount: -l detaches the mount point immediately even if the device
     # node is already physically gone (avoids stale mount entries on the next insert).
-    if os.system("umount -l " + dev_node + " 2>/dev/null") != 0:
+    if os.system("umount -A -l " + dev_node + " 2>/dev/null") != 0:
         # Device node no longer exists; unmount by mount point instead
-        os.system("umount -l /media/usb0 2>/dev/null")
+        os.system("umount -A -l /media/usb0 2>/dev/null")
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
