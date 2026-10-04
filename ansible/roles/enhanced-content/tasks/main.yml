@@ -293,30 +293,65 @@
     "
   ignore_errors: yes
 
+# HTML items skip the detail page, which is where the stock app reports views
+# (media-detail openViewer).  The patched goToDetails therefore reports the view
+# itself: a PUT to /admin/api/weblog with the same body as StatReporterProvider,
+# honouring the disable_stats live setting.  Navigation waits for the report to
+# finish (or 1.5 s, whichever is first) so a slow or failed report never blocks
+# the user.  Plain ES5 + XMLHttpRequest so it runs on iOS 9 / Android 4 browsers.
+# The whole goToDetails function is located by brace matching and replaced, so
+# the patch applies to the stock release and also upgrades devices carrying the
+# earlier (non-reporting) version, whatever its indentation.  The replacement is
+# indented to match the compiled file (4-space class body).  Re-running is a no-op.
 - name: Patch connectbox-mediainterface to open HTML items directly without detail page
   become: true
   shell: |
     python3 -c "
     path = '/var/www/enhanced/content/www/build/6.js'
     with open(path) as f: c = f.read()
-    old = '''HomePage.prototype.goToDetails = function (resource) {
-        this.navController.push('media-detail', { slug: resource.slug });
-    };'''
     new_code = '''HomePage.prototype.goToDetails = function (resource) {
-        if (resource.mediaType === 'html') {
-            var lang = (this.currentLanguage && this.currentLanguage.code) ? this.currentLanguage.code : 'en';
-            window.location.href = 'assets/content/' + lang + '/html/' + resource.slug;
-        } else {
-            this.navController.push('media-details', { slug: resource.slug });
-        }
-    };'''
-    old2 = '''HomePage.prototype.goToDetails = function (resource) {
-        this.navController.push('media-details', { slug: resource.slug });
-    };'''
-    if old in c:
-        c = c.replace(old, new_code, 1)
-    elif old2 in c:
-        c = c.replace(old2, new_code, 1)
-    with open(path, 'w') as f: f.write(c)
+            if (resource.mediaType === 'html') {
+                var lang = (this.currentLanguage && this.currentLanguage.code) ? this.currentLanguage.code : 'en';
+                var target = 'assets/content/' + lang + '/html/' + resource.slug;
+                var done = false;
+                var go = function () { if (!done) { done = true; window.location.href = target; } };
+                var stats = this.liveConfigurationProvider ? this.liveConfigurationProvider.collectingStats : true;
+                if (!stats) { go(); return; }
+                try {
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('PUT', '/admin/api/weblog', true);
+                    xhr.setRequestHeader('Content-Type', 'application/json');
+                    xhr.onreadystatechange = function () { if (xhr.readyState === 4) { go(); } };
+                    xhr.send(JSON.stringify({ value: {
+                        interactionType: 'view',
+                        mediaIdentifier: resource.slug,
+                        mediaLanguage: lang,
+                        mediaProvider: '',
+                        mediaType: resource.mediaType,
+                        timestamp: Math.round((new Date()).getTime() / 1000)
+                    } }));
+                } catch (e) { go(); return; }
+                setTimeout(go, 1500);
+            } else {
+                this.navController.push('media-details', { slug: resource.slug });
+            }
+        };'''
+    # Find the existing function and its matching closing brace
+    start = c.find('HomePage.prototype.goToDetails = function (resource) {')
+    if start == -1:
+        raise SystemExit('goToDetails not found in 6.js')
+    depth = 0
+    i = c.index('{', start)
+    while True:
+        if c[i] == '{': depth += 1
+        elif c[i] == '}':
+            depth -= 1
+            if depth == 0: break
+        i += 1
+    end = i + 1
+    if c[end] == ';': end += 1
+    if c[start:end] != new_code:
+        c = c[:start] + new_code + c[end:]
+        with open(path, 'w') as f: f.write(c)
     "
   ignore_errors: yes

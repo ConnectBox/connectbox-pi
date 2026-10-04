@@ -101,10 +101,10 @@ Sibling checkouts in `C:\Users\kirkw\Documents\Github\`: `connectbox-mediainterf
 ## Patched mediainterface JS
 
 The `enhanced-content` role patches compiled mediainterface bundles on the device with shell tasks in `ansible/roles/enhanced-content/tasks/main.yml`:
-- `6.js` `goToDetails` — HTML items open via `window.location.href` instead of the detail page
+- `6.js` `goToDetails` — HTML items open via `window.location.href` instead of the detail page. Because that skips the detail page (where the stock app reports views), the patch sends the view report itself (`PUT /admin/api/weblog`, same body as `StatReporterProvider`, honours `disable_stats`). The function is replaced by brace matching, so it upgrades older patched copies too.
 - `3.js` `MediaDetailPage.prototype.loadData` — on a language change, `popToRoot()` before `setLanguage()` (prevents "media missing!" and blank pages)
 
-These match exact compiled strings with `ignore_errors: yes`, so they silently no-op if a new mediainterface release changes the code. Recheck them after any mediainterface upgrade.
+The `3.js` patch matches an exact compiled string with `ignore_errors: yes`, so it silently no-ops if a new mediainterface release changes the code. Inside these `shell: |` blocks YAML strips the block's indentation, so string literals end up less indented than the compiled JS (which uses 4/8 spaces) — test a patch against the real release `6.js`/`3.js` before relying on it. Recheck them after any mediainterface upgrade.
 
 ## Tests
 
