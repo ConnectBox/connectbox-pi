@@ -88,7 +88,32 @@ Deploying a single file for testing:
 scp ansible/roles/bootstrap/files/usr_local_connectbox_bin_mmiLoader.py root@<ip>:/usr/local/connectbox/bin/mmiLoader.py
 ```
 
+## Git workflow
+
+Work on `master`. Remotes: `origin` = ConnectBox/connectbox-pi (org), `fork` = kirkdwilson/connectbox-pi. After each commit push to both: `git push origin master && git push fork master`. Use conventional messages, e.g. `fix(usb-mounter): ...`.
+
+The copy at `Documents\Hobby - ConnectBox\Antigravity\connectbox-pi` is stale — work only in this repo.
+
+## Related repos
+
+Sibling checkouts in `C:\Users\kirkw\Documents\Github\`: `connectbox-mediainterface` (Angular/Ionic front end served as the enhanced UI), `connectbox-admin-ui`, `connectbox-manage` (Node.js port-5002 backend), `connectbox-hat-service` (OLED/battery/buttons), `connectbox-chathost`, `connectbox-reports`, `connectbox-access-log-analyzer`, `simple-offline-captive-portal` (Flask captive portal), `armbian-build`.
+
+## Patched mediainterface JS
+
+The `enhanced-content` role patches compiled mediainterface bundles on the device with shell tasks in `ansible/roles/enhanced-content/tasks/main.yml`:
+- `6.js` `goToDetails` — HTML items open via `window.location.href` instead of the detail page
+- `3.js` `MediaDetailPage.prototype.loadData` — on a language change, `popToRoot()` before `setLanguage()` (prevents "media missing!" and blank pages)
+
+These match exact compiled strings with `ignore_errors: yes`, so they silently no-op if a new mediainterface release changes the code. Recheck them after any mediainterface upgrade.
+
+## Tests
+
+`ansible/roles/bootstrap/files/test_mmiLoader.py` covers the mmiLoader helper functions (loads the file via `importlib.util.spec_from_file_location`; kept Python 3.7 compatible with `contextlib.ExitStack`). Run it after any mmiLoader change.
+
 ## Important invariants
+
+- **Captive portal must support very old phones**: devices are deployed in disadvantaged countries with iOS 9 / Android 4–5 era phones. The old-OS checks in `captiveportal/views.py` (sibling repo `simple-offline-captive-portal`) are intentional — do not remove or "modernize" them.
+- **Video must be H.264 in MP4**: browsers don't play MPEG-4 Part 2 (`mp4v`). `content["mimeType"]` must be the real MIME type (`video/mp4`), not the media type (`video`).
 
 - **Line endings**: All `.sh` and `.py` files must have Unix LF endings. `.gitattributes` enforces this. CRLF causes `#!/bin/bash^M: bad interpreter` on the device. Check with `cat -A <file> | head -1` — should show `$` not `^M$`.
 - **brand.j2 is JSON**: Any script that writes to `brand.j2` must produce valid JSON. `node -e "JSON.parse(require('fs').readFileSync('/usr/local/connectbox/brand.j2'))"` to verify.
