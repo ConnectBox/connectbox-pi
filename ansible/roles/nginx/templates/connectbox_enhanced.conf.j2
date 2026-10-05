@@ -64,6 +64,8 @@ server {
     # Must come before the .json location so it wins for web content files.
     location ~ ^/assets/content/[^/]+/html/ {
       error_page 404 = @html_broken_link;
+      # Floating button back to the ConnectBox menu on every web content page
+      include snippets/connectbox_home_button.conf;
       location ~ \.json$ {
         expires -1;
       }

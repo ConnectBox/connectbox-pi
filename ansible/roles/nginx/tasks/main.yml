@@ -4,6 +4,29 @@
     name: nginx-light
     state: present
 
+# subs_filter adds the ConnectBox home button to web content pages
+# (files/connectbox_home_button.conf).  nginx-light does not include
+# sub_filter; this is Debian's dynamic module for the same nginx version.
+- name: Install nginx subs_filter module
+  apt:
+    name: libnginx-mod-http-subs-filter
+    state: present
+
+- name: Create nginx snippets directory
+  file:
+    path: /etc/nginx/snippets
+    state: directory
+    mode: 0755
+
+- name: Install the content home-button snippet
+  copy:
+    src: connectbox_home_button.conf
+    dest: /etc/nginx/snippets/connectbox_home_button.conf
+    owner: root
+    group: root
+    mode: 0644
+  notify: restart nginx
+
 
 - name: Make nginx logs directory
   file:
