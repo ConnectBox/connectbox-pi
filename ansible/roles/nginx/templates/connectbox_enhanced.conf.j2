@@ -38,6 +38,7 @@ server {
 
 	location /admin {
       alias {{ connectbox_enhanced_admin_root }}/;
+      add_header Cache-Control "no-cache";
 	}
 
 
@@ -74,6 +75,12 @@ server {
 
     location ~ \.json$ {
       expires -1;
+    }
+
+    # App code: make browsers check for a newer copy on every load, so patched
+    # bundles (e.g. the 6.js goToDetails patch) reach clients straight away.
+    location /build/ {
+      add_header Cache-Control "no-cache";
     }
 
     location / {
