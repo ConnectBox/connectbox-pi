@@ -38,3 +38,4 @@ This file tracks the architecture changes, thinking process, and code refactors 
 * **ZIM card icons.** Pure-Python PNG check: dark icons on transparent backgrounds are flattened onto white, empty icons fall back to the standard web icon.
 * **One IP per box.** `dhcpcd` was also running DHCP on the WiFi client interface because `denyinterfaces` sat inside an `interface` block; moved to global scope.
 * **Same file name in different folders.** A different file with an already-used name now gets its own link name and slug (`<name>--<folder>`); identical copies share one link; non-colliding files keep their names (stats and thumbnails unchanged).
+* **Menus cleared when the USB is removed.** Removing the USB used to leave every card listed (the menus are files built on the device). PxUSBm now runs `mmiLoader.py --clear`, which resets the menus to the empty English page. (Removal did reset the menus in 2021; that step was lost in a later PxUSBm rework.)

@@ -23,6 +23,7 @@ Summary Of Changes:
 | No `saved.zip` on the USB | Full index walk — scans all files, extracts thumbnails, writes JSON, creates `saved.zip` at end |
 | `saved.zip` on the USB (in `content/` or the USB root) | Content directory is wiped and `saved.zip` is extracted in full (fast); no indexing |
 | `saved.zip` deleted from USB | Falls through to full index walk |
+| USB removed | Menus are cleared to the empty English page (`mmiLoader.py --clear`, run by PxUSBm) and Kiwix stops serving the USB's ZIM files |
 
 After a `saved.zip` restore, mmiLoader also rewrites every language's `interface.json`
 (translations) and the right-to-left flags in `languages.json`, because the zip holds the
@@ -77,7 +78,7 @@ On Linux file systems, files keep the owner and permissions of the computer that
 
 ### Starting the indexer and single-instance guard
 
-`PxUSBm.py` starts mmiLoader on the poll after `/media/usb0` is mounted, in the transient systemd unit `connectbox-loader`, and stops it when the USB is removed. The sentinel `/tmp/.usb0_indexed` stops it re-running on every poll. mmiLoader itself refuses to run twice at once (it checks `/proc/*/cmdline`).
+`PxUSBm.py` starts mmiLoader on the poll after `/media/usb0` is mounted, in the transient systemd unit `connectbox-loader`, and stops it when the USB is removed. The sentinel `/tmp/.usb0_indexed` stops it re-running on every poll. mmiLoader refuses to start while a run is in progress, marked by `/tmp/creating_menus.txt` (removed at the end of a run, when the run is stopped, and by `--clear`).
 
 # ConnectBox
 

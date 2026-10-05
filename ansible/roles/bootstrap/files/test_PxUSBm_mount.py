@@ -184,6 +184,8 @@ def scenario_fat_partition():
 		dev.listing = ""
 		cmds = dev.poll()
 		check("S1: removal stops the loader", any(c.startswith("systemctl stop connectbox-loader") for c in cmds))
+		check("S1: removal clears the menus (mmiLoader --clear)",
+			any("mmiLoader.py --clear" in c for c in cmds), str(cmds))
 		check("S1: removal empties the Kiwix library", "<book" not in open(library).read() and "</library>" in open(library).read())
 		check("S1: removal lazily unmounts by mount point", "umount -l /media/usb0" in cmds, str(cmds))
 		check("S1: removal clears the indexed sentinel", '/tmp/.usb0_indexed' not in dev.files)

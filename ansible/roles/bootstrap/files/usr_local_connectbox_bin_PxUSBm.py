@@ -276,10 +276,12 @@ def mountCheck():
       if (mnt[j] >= 0):
         if not (usb_device_name(chr(mnt[j])) in b):
           if loc[j] == ord('0'):
-            # Stop indexing before the mount goes away under mmiLoader, and
-            # stop Kiwix offering the removed USB's ZIM files
+            # Stop indexing before the mount goes away under mmiLoader, stop
+            # Kiwix offering the removed USB's ZIM files, and empty the menus
+            # (built on the device at insert) so no cards point at missing files
             os.system("systemctl stop connectbox-loader.service 2>/dev/null")
             clear_kiwix_library()
+            os.system("/usr/bin/python3 /usr/local/connectbox/bin/mmiLoader.py --clear >/tmp/mmiLoader_clear.log 2>&1")
           # Unmount by mount point, lazily: the /dev node is already gone, so
           # `umount /dev/sdX1` would fail and leave a stale mount behind.
           c = 'umount -l /media/usb' + chr(loc[j])

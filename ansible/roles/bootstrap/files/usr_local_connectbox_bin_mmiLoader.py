@@ -276,6 +276,32 @@ def restore_from_saved_zip(mediaDirectory, contentDirectory, templatesDirectory,
 	return False
 
 
+def clear_menus(contentDirectory, templatesDirectory, comsFileName="/tmp/creating_menus.txt"):
+	"""
+	Reset the menus to the empty state of a box with no USB: the English
+	template, the footer and the default languages.json, with no cards.
+
+	Run by PxUSBm (mmiLoader.py --clear) when usb0 is removed.  The menus are
+	files built on the device when a USB is inserted, so without this every
+	card stayed listed after the USB was pulled, pointing at files that were
+	gone.  Does not touch /media/usb0.  Also removes the "indexing in progress"
+	marker in case an interrupted run left it, so the next insert is indexed.
+	"""
+	print("Clearing the menus (USB removed)")
+	run_cmd(f"rm -rf {shlex.quote(contentDirectory)}")
+	os.makedirs(contentDirectory, mode=0o755, exist_ok=True)
+	shutil.copytree(templatesDirectory + '/en', contentDirectory + '/en')
+	shutil.copy(templatesDirectory + '/footer.html', contentDirectory)
+	shutil.copy(templatesDirectory + '/languages.json', contentDirectory)
+	# Branding and the extra English strings, as after an index
+	refresh_interface_translations(contentDirectory, templatesDirectory)
+	try:
+		os.remove(comsFileName)
+	except OSError:
+		pass
+	logging.info("Menus cleared (USB removed)")
+
+
 def setup_fresh_content_dir(mediaDirectory, contentDirectory, templatesDirectory):
 	"""
 	Remove any previously generated content directory and create a clean one
@@ -2456,9 +2482,15 @@ def mmiloader_code():
 
 
 if __name__ == '__main__':
-	# Single-instance guard: exit if another mmiLoader is already running.
-	# Uses /proc/*/cmdline inspection rather than pgrep -f to avoid false
-	# positives from the parent shell that launched this script.
+	# mmiLoader.py --clear: reset the menus after the USB is removed (PxUSBm)
+	if '--clear' in sys.argv[1:]:
+		clear_menus("/var/www/enhanced/content/www/assets/content",
+					"/var/www/enhanced/content/www/assets/templates")
+		sys.exit()
+
+	# Single-instance guard: exit if a run is already in progress, which is
+	# marked by /tmp/creating_menus.txt (written by initialize_run, removed at
+	# the end of a run and by the SIGTERM handler).
 	try:
 		f = open("/tmp/creating_menus.txt", "r", encoding="utf-8")
 		print("Ok the comsFileName file is present. we can't try to load since system is doing something else")

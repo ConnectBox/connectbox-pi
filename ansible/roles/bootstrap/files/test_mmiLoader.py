@@ -1098,6 +1098,41 @@ def scenario_duplicate_names(base):
 	mmiLoader._media_names.clear()
 
 
+def scenario_clear_menus(base):
+	"""
+	Scenario 16: mmiLoader --clear (clear_menus) after the USB is removed.
+	"""
+	print("\n-- Scenario 16: clear menus on USB removal --")
+	tpl = make_templates(base)
+	with open(os.path.join(tpl, "languages.json"), "w") as f:
+		json.dump([{"text": "English", "codes": ["en-US", "en"], "default": True}], f)
+	content = os.path.join(base, "content")
+	for lang in ("en", "ar", "zh-CN"):
+		os.makedirs(os.path.join(content, lang, "data"), exist_ok=True)
+		with open(os.path.join(content, lang, "data", "main.json"), "w") as f:
+			json.dump({"content": [{"slug": "old-card"}]}, f)
+	with open(os.path.join(content, "languages.json"), "w") as f:
+		json.dump([{"codes": ["ar"], "text": "x", "default": True}], f)
+	marker = os.path.join(base, "creating_menus.txt")
+	open(marker, "w").close()
+	english = {"APP_NAME": "MyBox", "LANGUAGE_BUTTON": "Language"}
+	with contextlib.ExitStack() as stack:
+		stack.enter_context(mock.patch.object(mmiLoader, "run_cmd",
+			lambda c: shutil.rmtree(content, ignore_errors=True) if c.startswith("rm -rf") else None))
+		stack.enter_context(mock.patch.object(mmiLoader, "load_config",
+			lambda t: {"interface": dict(english, FOOTER_CONFIGURATION="Configuration"), "languageCodes": {"en": {"english": ["English"]}}}))
+		mmiLoader.clear_menus(content, tpl, marker)
+	left = sorted(os.listdir(content))
+	check("S16: only the empty English menu is left", left == ["en", "footer.html", "languages.json"], str(left))
+	main = json.load(open(os.path.join(content, "en", "data", "main.json")))
+	check("S16: no cards", main.get("content") == [], str(main))
+	langs = json.load(open(os.path.join(content, "languages.json")))
+	check("S16: default languages.json (English)", langs[0]["text"] == "English" and langs[0]["default"] is True)
+	iface = json.load(open(os.path.join(content, "en", "data", "interface.json")))
+	check("S16: English interface written with branding", iface.get("APP_NAME") == "MyBox" and iface.get("FOOTER_CONFIGURATION") == "Configuration")
+	check("S16: stale 'indexing' marker removed", not os.path.exists(marker))
+
+
 if __name__ == '__main__':
 	scenarios = [
 		scenario_flat_english,
@@ -1141,6 +1176,10 @@ if __name__ == '__main__':
 		sub15 = os.path.join(tmp, "s15")
 		os.makedirs(sub15, exist_ok=True)
 		scenario_duplicate_names(sub15)
+
+		sub16 = os.path.join(tmp, "s16")
+		os.makedirs(sub16, exist_ok=True)
+		scenario_clear_menus(sub16)
 
 	print(f"\n{'='*60}")
 	print(f"Results: {PASS} passed, {FAIL} failed")
