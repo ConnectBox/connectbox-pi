@@ -1,0 +1,111 @@
+{
+    "language": "es",
+    "_note": "ConnectBox interface translations. 'en' is the English each string was translated from; mmiLoader re-translates a string when its English changes. Edit 'text' to correct a translation.",
+    "strings": {
+        "CATEGORIES_TITLE": {
+            "en": "Categories",
+            "text": "Categorías",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "EPISODES_TEXT": {
+            "en": "Episodes",
+            "text": "Episodios",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "LANGUAGE_BUTTON": {
+            "en": "Language",
+            "text": "Idioma",
+            "source": "reviewed 2026-10-05 (Claude, from MyMemory draft) - native check advised"
+        },
+        "OTHER_MEDIA_TITLE": {
+            "en": "Media",
+            "text": "Medios",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "MEDIA_TYPE.AUDIO": {
+            "en": "Audio",
+            "text": "Audio",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "MEDIA_TYPE.DOCUMENT": {
+            "en": "Document",
+            "text": "Documento",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "MEDIA_TYPE.IMAGE": {
+            "en": "Image",
+            "text": "Imagen",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "MEDIA_TYPE.HTML": {
+            "en": "Web Document",
+            "text": "Documento web",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "MEDIA_TYPE.TEXT": {
+            "en": "Text File",
+            "text": "Archivo de texto",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "MEDIA_TYPE.VIDEO": {
+            "en": "Video",
+            "text": "Video",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "MEDIA_TYPE.ZIP": {
+            "en": "Archive",
+            "text": "Archivo comprimido",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "MEDIA_TYPE.APPLICATION": {
+            "en": "App",
+            "text": "Aplicación",
+            "source": "reviewed 2026-10-05 (Claude, from MyMemory draft) - native check advised"
+        },
+        "MISSING_MEDIA_TITLE": {
+            "en": "Media is missing!",
+            "text": "¡Falta el contenido!",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "MISSING_MEDIA_TEXT": {
+            "en": "We're working on collecting the data or\nSomething went wrong! The media is missing!",
+            "text": "Estamos recopilando los datos o\n¡algo salió mal! ¡Falta el contenido!",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "RECOMMENDED_TITLE": {
+            "en": "For You",
+            "text": "Para ti",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "RECOMMENDED_TEXT": {
+            "en": "Recommended",
+            "text": "Recomendado",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "UNSUPPORTED_TEXT": {
+            "en": "Sorry, your browser does not support videos.",
+            "text": "Lo sentimos, su navegador no admite videos.",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "FOOTER_CONFIGURATION": {
+            "en": "Configuration",
+            "text": "Configuración",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "CHAT_TITLE": {
+            "en": "Chat",
+            "text": "Chat",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "CHAT_NAME": {
+            "en": "Name",
+            "text": "Nombre",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "CHAT_MESSAGE": {
+            "en": "Type a message",
+            "text": "Escribe un mensaje",
+            "source": "reviewed on test unit 2026-10-05"
+        }
+    }
+}

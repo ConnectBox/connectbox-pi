@@ -105,11 +105,20 @@ The `enhanced-content` role patches compiled mediainterface bundles on the devic
 - `6.js` `goToDetails` — HTML items open via `window.location.href` instead of the detail page. Because that skips the detail page (where the stock app reports views), the patch sends the view report itself (`PUT /admin/api/weblog`, same body as `StatReporterProvider`, honours `disable_stats`). The function is replaced by brace matching, so it upgrades older patched copies too.
 - `3.js` `MediaDetailPage.prototype.loadData` — on a language change, `popToRoot()` before `setLanguage()` (prevents "media missing!" and blank pages)
 
-The `3.js` patch matches an exact compiled string with `ignore_errors: yes`, so it silently no-ops if a new mediainterface release changes the code. Inside these `shell: |` blocks YAML strips the block's indentation, so string literals end up less indented than the compiled JS (which uses 4/8 spaces) — test a patch against the real release `6.js`/`3.js` before relying on it. Recheck them after any mediainterface upgrade.
+- `6.js` language button — shows the active language's own name (`patch_language_button.py`)
+- `6.js` footer — the "Configuration" admin link uses `FOOTER_CONFIGURATION` from the language's interface.json (`patch_footer_translation.py`)
+- `2.js` + `main.css` chat page — translated labels (`CHAT_*`), right-to-left message direction, bubble placement (`patch_chat_rtl.py`, reproduces edits first made by hand on the test unit)
+- `main.js` LanguageProvider — a returning visitor's saved language is rebuilt from the current languages.json so `rtl` changes reach them (`patch_saved_language.py`)
+
+The `patch_*.py` scripts in `ansible/roles/enhanced-content/files/` are idempotent and exit non-zero when the stock text is missing. The `3.js` patch matches an exact compiled string with `ignore_errors: yes`, so it silently no-ops if a new mediainterface release changes the code. Inside these `shell: |` blocks YAML strips the block's indentation, so string literals end up less indented than the compiled JS (which uses 4/8 spaces) — test a patch against the real release `6.js`/`3.js` before relying on it. Recheck them after any mediainterface upgrade.
 
 ## Tests
 
 `ansible/roles/bootstrap/files/test_mmiLoader.py` covers the mmiLoader helper functions (loads the file via `importlib.util.spec_from_file_location`; kept Python 3.7 compatible with `contextlib.ExitStack`). Run it after any mmiLoader change. `test_PxUSBm_mount.py` (same folder) simulates `PxUSBm.mountCheck()` with fake `lsblk` output — run it after any change to USB mounting.
+
+## Interface translations
+
+The app's UI strings (`<lang>/data/interface.json`) exist only in English upstream. mmiLoader writes each language's file from `/usr/local/connectbox/translations/<code>.json` (shipped from `ansible/roles/bootstrap/files/translations/`, reviewed: fa, ar, es, pt, zh-CN). For any other language it looks the strings up online (MyMemory) when the box has internet and saves them there; offline it falls back to English and retries next time. Each entry keeps the English it was translated from, so changed English is re-translated and hand corrections to `text` stick. Codes are normalised via languageCodes.json (`per`→`fa`, `ara`→`ar`). Right-to-left languages get `"rtl": true` in languages.json. After a `saved.zip` restore, `refresh_interface_translations()` rewrites interface.json and the rtl flags. MyMemory output for short UI strings is often wrong (it is partly crowd translation memory) — review new languages before shipping them. mmiLoader is the only writer of interface.json (`apply_translations.py` was retired).
 
 ## Broken links in web content
 

@@ -1,0 +1,111 @@
+{
+    "language": "ar",
+    "_note": "ConnectBox interface translations. 'en' is the English each string was translated from; mmiLoader re-translates a string when its English changes. Edit 'text' to correct a translation.",
+    "strings": {
+        "CATEGORIES_TITLE": {
+            "en": "Categories",
+            "text": "الفئات",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "EPISODES_TEXT": {
+            "en": "Episodes",
+            "text": "الحلقات",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "LANGUAGE_BUTTON": {
+            "en": "Language",
+            "text": "اللغة",
+            "source": "reviewed 2026-10-05 (Claude, from MyMemory draft) - native check advised"
+        },
+        "OTHER_MEDIA_TITLE": {
+            "en": "Media",
+            "text": "الوسائط",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "MEDIA_TYPE.AUDIO": {
+            "en": "Audio",
+            "text": "صوت",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "MEDIA_TYPE.DOCUMENT": {
+            "en": "Document",
+            "text": "مستند",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "MEDIA_TYPE.IMAGE": {
+            "en": "Image",
+            "text": "صورة",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "MEDIA_TYPE.HTML": {
+            "en": "Web Document",
+            "text": "مستند ويب",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "MEDIA_TYPE.TEXT": {
+            "en": "Text File",
+            "text": "ملف نصي",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "MEDIA_TYPE.VIDEO": {
+            "en": "Video",
+            "text": "فيديو",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "MEDIA_TYPE.ZIP": {
+            "en": "Archive",
+            "text": "أرشيف",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "MEDIA_TYPE.APPLICATION": {
+            "en": "App",
+            "text": "تطبيق",
+            "source": "reviewed 2026-10-05 (Claude, from MyMemory draft) - native check advised"
+        },
+        "MISSING_MEDIA_TITLE": {
+            "en": "Media is missing!",
+            "text": "الوسائط مفقودة!",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "MISSING_MEDIA_TEXT": {
+            "en": "We're working on collecting the data or\nSomething went wrong! The media is missing!",
+            "text": "نحن نعمل على جمع البيانات أو\nحدث خطأ ما! الوسائط مفقودة!",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "RECOMMENDED_TITLE": {
+            "en": "For You",
+            "text": "لك",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "RECOMMENDED_TEXT": {
+            "en": "Recommended",
+            "text": "موصى به",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "UNSUPPORTED_TEXT": {
+            "en": "Sorry, your browser does not support videos.",
+            "text": "عذرًا، متصفحك لا يدعم مقاطع الفيديو.",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "FOOTER_CONFIGURATION": {
+            "en": "Configuration",
+            "text": "الإعدادات",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "CHAT_TITLE": {
+            "en": "Chat",
+            "text": "الدردشة",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "CHAT_NAME": {
+            "en": "Name",
+            "text": "الاسم",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "CHAT_MESSAGE": {
+            "en": "Type a message",
+            "text": "اكتب رسالة",
+            "source": "reviewed on test unit 2026-10-05"
+        }
+    }
+}

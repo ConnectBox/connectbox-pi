@@ -355,3 +355,40 @@
         with open(path, 'w') as f: f.write(c)
     "
   ignore_errors: yes
+
+# Show the active language's own name on the home page language button
+# (e.g. "فارسی ⚙") instead of the word "Language".  See the script for details;
+# it is idempotent and reports when the expected template text is missing.
+- name: Patch connectbox-mediainterface language button to show the active language
+  become: true
+  script: patch_language_button.py
+  args:
+    executable: python3
+  ignore_errors: yes
+
+# Footer: show the "Configuration" (admin) link in the selected language
+# (FOOTER_CONFIGURATION from <lang>/data/interface.json).
+- name: Patch connectbox-mediainterface footer to translate its admin link
+  become: true
+  script: patch_footer_translation.py
+  args:
+    executable: python3
+  ignore_errors: yes
+
+# Chat page: translated labels (CHAT_*), right-to-left message direction,
+# bubble placement/colours, and no duplicate own messages.  See the script.
+- name: Patch connectbox-mediainterface chat page for translations and right-to-left
+  become: true
+  script: patch_chat_rtl.py
+  args:
+    executable: python3
+  ignore_errors: yes
+
+# Returning visitors: rebuild the remembered language from the current
+# languages.json, so changes such as "rtl": true reach them.  See the script.
+- name: Patch connectbox-mediainterface to use current settings for a saved language
+  become: true
+  script: patch_saved_language.py
+  args:
+    executable: python3
+  ignore_errors: yes

@@ -1,0 +1,111 @@
+{
+    "language": "zh-CN",
+    "_note": "ConnectBox interface translations. 'en' is the English each string was translated from; mmiLoader re-translates a string when its English changes. Edit 'text' to correct a translation.",
+    "strings": {
+        "CATEGORIES_TITLE": {
+            "en": "Categories",
+            "text": "分类",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "EPISODES_TEXT": {
+            "en": "Episodes",
+            "text": "剧集",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "LANGUAGE_BUTTON": {
+            "en": "Language",
+            "text": "语言",
+            "source": "reviewed 2026-10-05 (Claude, from MyMemory draft) - native check advised"
+        },
+        "OTHER_MEDIA_TITLE": {
+            "en": "Media",
+            "text": "媒体",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "MEDIA_TYPE.AUDIO": {
+            "en": "Audio",
+            "text": "音频",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "MEDIA_TYPE.DOCUMENT": {
+            "en": "Document",
+            "text": "文档",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "MEDIA_TYPE.IMAGE": {
+            "en": "Image",
+            "text": "图片",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "MEDIA_TYPE.HTML": {
+            "en": "Web Document",
+            "text": "网页文档",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "MEDIA_TYPE.TEXT": {
+            "en": "Text File",
+            "text": "文本文件",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "MEDIA_TYPE.VIDEO": {
+            "en": "Video",
+            "text": "视频",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "MEDIA_TYPE.ZIP": {
+            "en": "Archive",
+            "text": "压缩包",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "MEDIA_TYPE.APPLICATION": {
+            "en": "App",
+            "text": "应用",
+            "source": "reviewed 2026-10-05 (Claude, from MyMemory draft) - native check advised"
+        },
+        "MISSING_MEDIA_TITLE": {
+            "en": "Media is missing!",
+            "text": "媒体缺失！",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "MISSING_MEDIA_TEXT": {
+            "en": "We're working on collecting the data or\nSomething went wrong! The media is missing!",
+            "text": "我们正在收集数据，或\n出现了问题！媒体缺失！",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "RECOMMENDED_TITLE": {
+            "en": "For You",
+            "text": "为你推荐",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "RECOMMENDED_TEXT": {
+            "en": "Recommended",
+            "text": "推荐",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "UNSUPPORTED_TEXT": {
+            "en": "Sorry, your browser does not support videos.",
+            "text": "抱歉，您的浏览器不支持视频。",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "FOOTER_CONFIGURATION": {
+            "en": "Configuration",
+            "text": "设置",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "CHAT_TITLE": {
+            "en": "Chat",
+            "text": "聊天",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "CHAT_NAME": {
+            "en": "Name",
+            "text": "名字",
+            "source": "reviewed on test unit 2026-10-05"
+        },
+        "CHAT_MESSAGE": {
+            "en": "Type a message",
+            "text": "输入消息",
+            "source": "reviewed on test unit 2026-10-05"
+        }
+    }
+}

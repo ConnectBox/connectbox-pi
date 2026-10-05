@@ -704,6 +704,19 @@
     group: _connectbox
     mode: 0555
 
+# Reviewed interface translations (interface.json strings) for the deployment
+# languages.  mmiLoader reads /usr/local/connectbox/translations/<code>.json and,
+# for other languages, saves online lookups there too, so only the shipped files
+# are replaced here.
+- name: Install interface translations for mmiLoader
+  copy:
+    src: translations/
+    dest: /usr/local/connectbox/translations/
+    owner: root
+    group: root
+    mode: 0644
+    directory_mode: 0755
+
 # PxUSBm.py is the only USB mounter and starts mmiLoader itself.  The udev
 # helper usb_mounter.py raced it on every insert, so remove it from devices
 # provisioned before it was retired (its udev rule is removed by usb-content).
@@ -787,9 +800,11 @@
   command: systemctl enable PxUSBm.service 
 
 # PxUSBm.py owns network recovery (AP/client interface checks, hostapd
-# restarts) and first-boot partition expansion (expand_progress.txt).  Two
-# scripts from system_scripts/ were hand-installed on some devices and did the
-# same jobs in parallel, so they raced PxUSBm.  Remove them wherever they exist:
+# restarts) and first-boot partition expansion (expand_progress.txt), and
+# mmiLoader.py owns interface.json translations.  Scripts that were
+# hand-installed on some devices did the same jobs in parallel, so they raced.
+# Remove them wherever they exist:
+#   apply_translations - rewrote interface.json after mmiLoader (+ its master list)
 #   network-watchdog   - ifdown/ifup, rmmod/modprobe of the WiFi drivers
 #   first-boot-expand  - partition expansion on a new image's first boot
 - name: Stop and disable retired services that duplicated PxUSBm
@@ -811,6 +826,9 @@
     - /usr/local/connectbox/bin/network-watchdog.py
     - /etc/systemd/system/first-boot-expand.service
     - /usr/local/connectbox/bin/first-boot-expand.py
+    # Superseded by mmiLoader's own translation handling (one writer of interface.json)
+    - /usr/local/connectbox/bin/apply_translations.py
+    - /usr/local/connectbox/translations/interface_translations.json
 
 - name: Reload systemd after removing retired services
   systemd:

@@ -1,0 +1,111 @@
+{
+    "language": "fa",
+    "_note": "ConnectBox interface translations. 'en' is the English each string was translated from; mmiLoader re-translates a string when its English changes. Edit 'text' to correct a translation.",
+    "strings": {
+        "CATEGORIES_TITLE": {
+            "en": "Categories",
+            "text": "دسته‌بندی‌ها",
+            "source": "reviewed 2026-10-05 (Claude, from MyMemory draft) - native check advised"
+        },
+        "EPISODES_TEXT": {
+            "en": "Episodes",
+            "text": "قسمت‌ها",
+            "source": "reviewed 2026-10-05 (Claude, from MyMemory draft) - native check advised"
+        },
+        "LANGUAGE_BUTTON": {
+            "en": "Language",
+            "text": "زبان",
+            "source": "reviewed 2026-10-05 (Claude, from MyMemory draft) - native check advised"
+        },
+        "OTHER_MEDIA_TITLE": {
+            "en": "Media",
+            "text": "رسانه‌ها",
+            "source": "reviewed 2026-10-05 (Claude, from MyMemory draft) - native check advised"
+        },
+        "MEDIA_TYPE.AUDIO": {
+            "en": "Audio",
+            "text": "صوتی",
+            "source": "reviewed 2026-10-05 (Claude, from MyMemory draft) - native check advised"
+        },
+        "MEDIA_TYPE.DOCUMENT": {
+            "en": "Document",
+            "text": "سند",
+            "source": "reviewed 2026-10-05 (Claude, from MyMemory draft) - native check advised"
+        },
+        "MEDIA_TYPE.IMAGE": {
+            "en": "Image",
+            "text": "تصویر",
+            "source": "reviewed 2026-10-05 (Claude, from MyMemory draft) - native check advised"
+        },
+        "MEDIA_TYPE.HTML": {
+            "en": "Web Document",
+            "text": "صفحه وب",
+            "source": "reviewed 2026-10-05 (Claude, from MyMemory draft) - native check advised"
+        },
+        "MEDIA_TYPE.TEXT": {
+            "en": "Text File",
+            "text": "فایل متنی",
+            "source": "reviewed 2026-10-05 (Claude, from MyMemory draft) - native check advised"
+        },
+        "MEDIA_TYPE.VIDEO": {
+            "en": "Video",
+            "text": "ویدیو",
+            "source": "reviewed 2026-10-05 (Claude, from MyMemory draft) - native check advised"
+        },
+        "MEDIA_TYPE.ZIP": {
+            "en": "Archive",
+            "text": "فایل فشرده",
+            "source": "reviewed 2026-10-05 (Claude, from MyMemory draft) - native check advised"
+        },
+        "MEDIA_TYPE.APPLICATION": {
+            "en": "App",
+            "text": "برنامه",
+            "source": "reviewed 2026-10-05 (Claude, from MyMemory draft) - native check advised"
+        },
+        "MISSING_MEDIA_TITLE": {
+            "en": "Media is missing!",
+            "text": "رسانه پیدا نشد!",
+            "source": "reviewed 2026-10-05 (Claude, from MyMemory draft) - native check advised"
+        },
+        "MISSING_MEDIA_TEXT": {
+            "en": "We're working on collecting the data or\nSomething went wrong! The media is missing!",
+            "text": "در حال جمع‌آوری اطلاعات هستیم، یا\nمشکلی پیش آمده است! رسانه پیدا نشد!",
+            "source": "reviewed 2026-10-05 (Claude, from MyMemory draft) - native check advised"
+        },
+        "RECOMMENDED_TITLE": {
+            "en": "For You",
+            "text": "برای شما",
+            "source": "reviewed 2026-10-05 (Claude, from MyMemory draft) - native check advised"
+        },
+        "RECOMMENDED_TEXT": {
+            "en": "Recommended",
+            "text": "پیشنهادی",
+            "source": "reviewed 2026-10-05 (Claude, from MyMemory draft) - native check advised"
+        },
+        "UNSUPPORTED_TEXT": {
+            "en": "Sorry, your browser does not support videos.",
+            "text": "متأسفانه مرورگر شما از پخش ویدیو پشتیبانی نمی‌کند.",
+            "source": "reviewed 2026-10-05 (Claude, from MyMemory draft) - native check advised"
+        },
+        "FOOTER_CONFIGURATION": {
+            "en": "Configuration",
+            "text": "تنظیمات",
+            "source": "reviewed 2026-10-05 (Claude) - native check advised"
+        },
+        "CHAT_TITLE": {
+            "en": "Chat",
+            "text": "گفتگو",
+            "source": "reviewed 2026-10-05 (Claude) - native check advised"
+        },
+        "CHAT_NAME": {
+            "en": "Name",
+            "text": "نام",
+            "source": "reviewed 2026-10-05 (Claude) - native check advised"
+        },
+        "CHAT_MESSAGE": {
+            "en": "Type a message",
+            "text": "پیامی بنویسید",
+            "source": "reviewed 2026-10-05 (Claude) - native check advised"
+        }
+    }
+}

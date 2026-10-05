@@ -15,6 +15,9 @@ import time
 import shlex
 import signal
 import stat
+import html
+import urllib.parse
+import urllib.request
 from indexer import *
 
 
@@ -383,6 +386,8 @@ def load_config(templatesDirectory):
 		main_template = json.load(f)
 	print("main.json loaded")
 
+	complete_interface_strings(interface, types)
+
 	return {
 		'brand': brand,
 		'languageCodes': languageCodes,
@@ -390,6 +395,245 @@ def load_config(templatesDirectory):
 		'interface': interface,
 		'main_template': main_template,
 	}
+
+
+# English UI strings the stock interface.json template lacks.  They are used by
+# the ConnectBox patches to the app (see roles/enhanced-content/files/patch_*.py):
+# the footer's admin link and the chat page labels.
+EXTRA_INTERFACE_STRINGS = {
+	"FOOTER_CONFIGURATION": "Configuration",
+	"CHAT_TITLE": "Chat",
+	"CHAT_NAME": "Name",
+	"CHAT_MESSAGE": "Type a message",
+}
+
+
+def complete_interface_strings(interface, types):
+	"""
+	Fill gaps in the English interface strings before they are written or
+	translated:
+	  - add EXTRA_INTERFACE_STRINGS that are missing;
+	  - fix the stock template's "Were working on..." typo ("We're");
+	  - give interface['MEDIA_TYPE'] a label for every mediaType in types.json.
+	    The app shows MEDIA_TYPE.<TYPE> under each card and a missing key is
+	    displayed raw (the stock template has no APPLICATION, so .apk/.exe cards
+	    read "MEDIA_TYPE.APPLICATION").  Missing labels get a plain English name.
+	"""
+	for key, english in EXTRA_INTERFACE_STRINGS.items():
+		interface.setdefault(key, english)
+	missing = interface.get("MISSING_MEDIA_TEXT")
+	if isinstance(missing, str) and missing.startswith("Were working"):
+		interface["MISSING_MEDIA_TEXT"] = "We're" + missing[len("Were"):]
+	labels = interface.setdefault("MEDIA_TYPE", {})
+	defaults = {"APPLICATION": "App"}
+	for entry in types.values():
+		key = str(entry.get("mediaType", "")).upper()
+		if key and key not in labels:
+			labels[key] = defaults.get(key, key.capitalize())
+
+
+# ── Interface translation helpers ─────────────────────────────────────────────
+#
+# The app's UI strings (interface.json) only exist in English.  For every other
+# language mmiLoader uses a translation file in TRANSLATIONS_DIRECTORY:
+#   1. a file shipped by Ansible, or saved from an earlier online lookup;
+#   2. otherwise, if the box is online, the English strings are translated with
+#      the MyMemory API and the result is saved for next time (boxes are often
+#      offline in the field, so the saved file is what makes it work there);
+#   3. otherwise English is used, and the lookup is retried on the next run.
+# Each saved string keeps the English it was translated from, so a changed
+# English string is re-translated, and a native speaker can correct "text" by
+# hand without it being overwritten.
+
+TRANSLATIONS_DIRECTORY = "/usr/local/connectbox/translations"
+TRANSLATION_API = "https://api.mymemory.translated.net/get"
+TRANSLATION_TIMEOUT = 8          # seconds per request
+UNTRANSLATED_KEYS = ("APP_NAME", "APP_LOGO")   # branding, not UI text
+
+# Right-to-left scripts.  Languages listed in languages.json with "rtl": true
+# make the app flip the page direction (the stock app reads this flag).
+RTL_LANGUAGES = ("ar", "arc", "ckb", "dv", "fa", "he", "iw", "ps", "sd", "ug", "ur", "yi")
+
+# Set when a lookup fails so the rest of this run does not wait on more
+# timeouts (the usual reason is no internet).
+_translation_offline = False
+
+
+def translation_code(language, languageCodes):
+	"""
+	Return the language code used for translation files and the lookup API.
+
+	USB folders may use ISO 639-2 codes (per, ara, spa) where the API wants
+	ISO 639-1 (fa, ar, es).  languageCodes.json lists both forms with the same
+	English name, so a 3-letter code maps to the 2-letter code that has the
+	same name ('per' and 'fa' are both "Persian").  Regional tags (zh-CN) are
+	kept as they are; plain 'zh' means Simplified Chinese (zh-CN).
+	"""
+	if '-' in language:
+		return language
+	if language == 'zh':
+		return 'zh-CN'
+	if len(language) == 2:
+		return language
+	names = languageCodes.get(language, {}).get('english')
+	if names:
+		for code, record in languageCodes.items():
+			if len(code) == 2 and record.get('english') == names:
+				return code
+	return language
+
+
+def is_rtl_language(language, languageCodes):
+	"""True if the language is written right to left (per/fa, ara/ar, ...)."""
+	return translation_code(language, languageCodes).split('-')[0].lower() in RTL_LANGUAGES
+
+
+def flatten_strings(tree, prefix=""):
+	"""Flatten nested interface strings to {"MEDIA_TYPE.AUDIO": "Audio", ...}."""
+	flat = {}
+	for key, value in tree.items():
+		path = prefix + key
+		if isinstance(value, dict):
+			flat.update(flatten_strings(value, path + "."))
+		elif isinstance(value, str):
+			flat[path] = value
+	return flat
+
+
+def set_flat_string(tree, path, value):
+	"""Set tree["A"]["B"] = value for path "A.B"."""
+	keys = path.split(".")
+	for key in keys[:-1]:
+		tree = tree.setdefault(key, {})
+	tree[keys[-1]] = value
+
+
+def needs_translation(path, english):
+	"""
+	Branding values, empty strings and acronyms (PDF, EPUB, H5P) stay as they
+	are in every language.
+	"""
+	if path in UNTRANSLATED_KEYS or not english.strip():
+		return False
+	return not (english.isupper() and len(english) <= 5)
+
+
+def translate_text(english, target):
+	"""
+	Translate one English string with the MyMemory API.  Returns the
+	translation, or None if the lookup fails (no internet, quota, bad answer).
+	Lines are translated separately so line breaks survive.
+	"""
+	global _translation_offline
+	if _translation_offline:
+		return None
+	lines = []
+	for line in english.split("\n"):
+		if not line.strip():
+			lines.append(line)
+			continue
+		url = TRANSLATION_API + "?" + urllib.parse.urlencode({"q": line, "langpair": "en|" + target})
+		try:
+			with urllib.request.urlopen(url, timeout=TRANSLATION_TIMEOUT) as response:
+				answer = json.loads(response.read().decode("utf-8"))
+			text = html.unescape(answer["responseData"]["translatedText"] or "").strip()
+			if answer.get("responseStatus") != 200 or not text or "MYMEMORY WARNING" in text.upper():
+				raise ValueError(str(answer.get("responseDetails") or text)[:200])
+		except Exception as e:
+			print("	Translation lookup failed (" + target + "): " + str(e))
+			logging.info("Translation lookup failed for " + target + ": " + str(e))
+			_translation_offline = True
+			return None
+		lines.append(text)
+	return "\n".join(lines)
+
+
+def get_interface_for_language(language, interface, languageCodes, translationsDirectory=TRANSLATIONS_DIRECTORY):
+	"""
+	Return the interface.json dict to write for one language.
+
+	`interface` is the English template with branding already applied.  Each
+	translatable string is taken from the language's translation file when it
+	was translated from the same English text; strings that are missing or
+	whose English has changed are looked up online and saved back to the file.
+	Anything that cannot be translated stays in English.
+	"""
+	code = translation_code(language, languageCodes)
+	if code.split('-')[0] == 'en':
+		return interface
+
+	path = os.path.join(translationsDirectory, code + ".json")
+	try:
+		with open(path, encoding="utf-8") as f:
+			saved = json.load(f)
+	except (OSError, ValueError):
+		saved = {"language": code, "strings": {}}
+	strings = saved.setdefault("strings", {})
+
+	result = json.loads(json.dumps(interface))     # deep copy
+	added = 0
+	for key, english in flatten_strings(interface).items():
+		if not needs_translation(key, english):
+			continue
+		entry = strings.get(key)
+		if not (entry and entry.get("en") == english and entry.get("text")):
+			text = translate_text(english, code)
+			if text is None:
+				continue                            # offline: leave English
+			entry = {"en": english, "text": text, "source": "MyMemory " + time.strftime("%Y-%m-%d")}
+			strings[key] = entry
+			added += 1
+		set_flat_string(result, key, entry["text"])
+
+	if added:
+		try:
+			os.makedirs(translationsDirectory, exist_ok=True)
+			with open(path, "w", encoding="utf-8") as f:
+				json.dump(saved, f, ensure_ascii=False, indent=4)
+			print("	Saved " + str(added) + " new " + code + " interface translations to " + path)
+			logging.info("Saved " + str(added) + " " + code + " translations")
+		except OSError as e:
+			print("	Could not save translations to " + path + ": " + str(e))
+	return result
+
+
+def refresh_interface_translations(contentDirectory, templatesDirectory):
+	"""
+	Rewrite interface.json in every language folder of the content directory,
+	and set the right-to-left flag in languages.json.
+
+	Used after a saved.zip restore: the zip holds the files written when it was
+	made (English-only, no RTL flag, before these features existed), so without
+	this a USB with a saved.zip would never pick them up.
+	"""
+	try:
+		config = load_config(templatesDirectory)
+	except Exception as e:
+		print("Could not load config for interface translations: " + str(e))
+		return
+	for language in sorted(os.listdir(contentDirectory)):
+		target = os.path.join(contentDirectory, language, "data", "interface.json")
+		if not os.path.isfile(target):
+			continue
+		interface = get_interface_for_language(language, config['interface'], config['languageCodes'])
+		with open(target, 'w', encoding='utf-8') as f:
+			json.dump(interface, f, ensure_ascii=False, indent=4)
+		print("	Refreshed interface.json for " + language)
+
+	languages_path = os.path.join(contentDirectory, "languages.json")
+	try:
+		with open(languages_path, encoding='utf-8') as f:
+			languages = json.load(f)
+		for record in languages:
+			if is_rtl_language(record["codes"][0], config['languageCodes']):
+				record["rtl"] = True
+			else:
+				record.pop("rtl", None)
+		with open(languages_path, 'w', encoding='utf-8') as f:
+			json.dump(languages, f, ensure_ascii=False, indent=4)
+		print("	Refreshed right-to-left flags in languages.json")
+	except (OSError, ValueError, KeyError, IndexError, TypeError) as e:
+		print("	Could not update languages.json: " + str(e))
 
 
 # ── Phase 2: Language detection ───────────────────────────────────────────────
@@ -448,7 +692,16 @@ def detect_language_dirs(mediaDirectory, languageCodes):
 
 	# Phase 2: no ISO-named dirs found — check for .language file
 	language = "en"
+	# Match the file name case-insensitively: USBs made on Windows often have
+	# ".Language", which only works by accident on FAT (ext4 is case-sensitive).
 	language_file = os.path.join(mediaDirectory, ".language")
+	try:
+		for name in os.listdir(mediaDirectory):
+			if name.lower() == ".language":
+				language_file = os.path.join(mediaDirectory, name)
+				break
+	except OSError:
+		pass
 	if os.path.isfile(language_file):
 		print("	Root Directory has .language file")
 		try:
@@ -1450,7 +1703,7 @@ def finalize_output(mains, languageCodes, contentDirectory, interface, mediaDire
 			json.dump(mains[language], f, ensure_ascii=False, indent=4)
 		print("Writing interface.json for " + language)
 		with open(contentDirectory + "/" + language + "/data/interface.json", 'w', encoding='utf-8') as f:
-			json.dump(interface, f, ensure_ascii=False, indent=4)
+			json.dump(get_interface_for_language(language, interface, languageCodes), f, ensure_ascii=False, indent=4)
 
 		languageJsonObject = {}
 		languageJsonObject["codes"] = [language.split('-')[0] if '-' in language else language]
@@ -1459,6 +1712,8 @@ def finalize_output(mains, languageCodes, contentDirectory, interface, mediaDire
 			languageJsonObject["text"] = languageCodes[lang_key]["native"][0]
 		except Exception:
 			languageJsonObject["text"] = languageCodes[lang_key]["english"][0]
+		if is_rtl_language(language, languageCodes):
+			languageJsonObject["rtl"] = True
 		languageJson.append(languageJsonObject)
 
 	if len(languageJson) == 0:
@@ -1559,6 +1814,8 @@ def mmiloader_code():
 
 	# Phase 2: fast path
 	if restore_from_saved_zip(mediaDirectory, contentDirectory, templatesDirectory, comsFileName):
+		# The zip's interface.json files predate any translations; rewrite them
+		refresh_interface_translations(contentDirectory, templatesDirectory)
 		exit(0)
 
 	# Phase 3: fresh content directory

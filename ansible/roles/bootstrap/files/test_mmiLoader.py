@@ -740,6 +740,139 @@ def scenario_usb_permissions(base):
 		check("S11: removed USB stops the walk", mmiLoader.make_usb_world_readable(usb, mounts) == 0 and not chmods)
 
 
+def scenario_interface_translations(base):
+	"""
+	Scenario 12: interface.json translations.
+
+	The MyMemory API is faked (urlopen patched), so this checks code mapping,
+	offline fallback, saving and re-using translations, re-translating changed
+	English, keeping hand corrections, and the saved.zip refresh — no network.
+	"""
+	print("\n-- Scenario 12: interface translations --")
+	codes = {
+		"en": {"english": ["English"]}, "fa": {"english": ["Persian"]}, "per": {"english": ["Persian"]},
+		"ar": {"english": ["Arabic"]}, "ara": {"english": ["Arabic"]}, "es": {"english": ["Castilian", "Spanish"]},
+		"spa": {"english": ["Castilian", "Spanish"]}, "zh": {"english": ["Chinese"]}, "xyz": {"english": ["Nowhere"]},
+	}
+	check("S12: per -> fa", mmiLoader.translation_code("per", codes) == "fa")
+	check("S12: ara -> ar", mmiLoader.translation_code("ara", codes) == "ar")
+	check("S12: spa -> es (multi-name match)", mmiLoader.translation_code("spa", codes) == "es")
+	check("S12: zh -> zh-CN", mmiLoader.translation_code("zh", codes) == "zh-CN")
+	check("S12: zh-CN kept", mmiLoader.translation_code("zh-CN", codes) == "zh-CN")
+	check("S12: unknown 3-letter code kept", mmiLoader.translation_code("xyz", codes) == "xyz")
+
+	types = {".apk": {"mediaType": "application"}, ".mp4": {"mediaType": "video"}, ".zip": {"mediaType": "zip"}}
+	english = {
+		"APP_NAME": "MyBox", "APP_LOGO": "imgs/logo.png", "LANGUAGE_BUTTON": "Language",
+		"MEDIA_TYPE": {"VIDEO": "Video", "PDF": "PDF", "ZIP": "Archive"},
+		"MISSING_MEDIA_TEXT": "Line one\nLine two",
+	}
+	typo = {"MISSING_MEDIA_TEXT": "Were working on it\nSecond line"}
+	mmiLoader.complete_interface_strings(typo, {})
+	check("S12: 'Were working' typo fixed", typo["MISSING_MEDIA_TEXT"] == "We're working on it\nSecond line", typo["MISSING_MEDIA_TEXT"])
+	check("S12: footer/chat strings added", typo.get("FOOTER_CONFIGURATION") == "Configuration" and typo.get("CHAT_MESSAGE") == "Type a message")
+	check("S12: per is right-to-left", mmiLoader.is_rtl_language("per", codes))
+	check("S12: ara is right-to-left", mmiLoader.is_rtl_language("ara", codes))
+	check("S12: es/zh-CN are left-to-right", not mmiLoader.is_rtl_language("es", codes) and not mmiLoader.is_rtl_language("zh-CN", codes))
+	mmiLoader.complete_interface_strings(english, types)
+	check("S12: missing APPLICATION label added", english["MEDIA_TYPE"].get("APPLICATION") == "App")
+	check("S12: existing labels untouched", english["MEDIA_TYPE"]["ZIP"] == "Archive")
+
+	tdir = os.path.join(base, "translations")
+	requests = []
+
+	def fake_online(url, timeout=None):
+		import urllib.parse as up
+		q = up.parse_qs(up.urlparse(url).query)
+		text, pair = q["q"][0], q["langpair"][0]
+		requests.append((text, pair))
+		body = json.dumps({"responseStatus": 200, "responseData": {"translatedText": "[" + pair[3:] + "] " + text + " &amp; co"}})
+		return contextlib.closing(types_module.SimpleNamespace(read=lambda: body.encode("utf-8"), close=lambda: None))
+
+	def fake_offline(url, timeout=None):
+		requests.append(("OFFLINE", url))
+		raise OSError("Network is unreachable")
+
+	def run(lang, opener):
+		requests.clear()
+		mmiLoader._translation_offline = False
+		with mock.patch.object(mmiLoader.urllib.request, "urlopen", opener):
+			return mmiLoader.get_interface_for_language(lang, english, codes, tdir)
+
+	check("S12: English returned unchanged", run("en", fake_offline) is english and not requests)
+
+	out = run("per", fake_offline)
+	check("S12: offline -> English text", out["LANGUAGE_BUTTON"] == "Language")
+	check("S12: offline stops after first failed lookup", len(requests) == 1, str(requests))
+	check("S12: offline saves no file", not os.path.exists(os.path.join(tdir, "fa.json")))
+
+	out = run("per", fake_online)
+	check("S12: online translates via fa code", out["LANGUAGE_BUTTON"] == "[fa] Language & co", out["LANGUAGE_BUTTON"])
+	check("S12: HTML entities decoded", "&amp;" not in out["LANGUAGE_BUTTON"])
+	check("S12: nested strings translated", out["MEDIA_TYPE"]["VIDEO"] == "[fa] Video & co")
+	check("S12: added APPLICATION label translated", out["MEDIA_TYPE"]["APPLICATION"] == "[fa] App & co")
+	check("S12: acronym kept", out["MEDIA_TYPE"]["PDF"] == "PDF")
+	check("S12: branding kept", out["APP_NAME"] == "MyBox" and out["APP_LOGO"] == "imgs/logo.png")
+	check("S12: line breaks kept", out["MISSING_MEDIA_TEXT"] == "[fa] Line one & co\n[fa] Line two & co", repr(out["MISSING_MEDIA_TEXT"]))
+	check("S12: English input not modified", english["LANGUAGE_BUTTON"] == "Language")
+	saved_path = os.path.join(tdir, "fa.json")
+	saved = json.load(open(saved_path, encoding="utf-8")) if os.path.exists(saved_path) else {}
+	check("S12: translations saved as fa.json with source English",
+		saved.get("strings", {}).get("LANGUAGE_BUTTON", {}).get("en") == "Language")
+
+	out = run("fa", fake_offline)
+	check("S12: saved file reused offline (per and fa share it)", out["LANGUAGE_BUTTON"] == "[fa] Language & co" and not requests, str(requests))
+
+	saved["strings"]["LANGUAGE_BUTTON"]["text"] = "زبان"
+	with open(saved_path, "w", encoding="utf-8") as f:
+		json.dump(saved, f, ensure_ascii=False)
+	out = run("fa", fake_online)
+	check("S12: hand correction kept", out["LANGUAGE_BUTTON"] == "زبان" and not requests, str(requests))
+
+	english["LANGUAGE_BUTTON"] = "Choose language"
+	out = run("fa", fake_online)
+	check("S12: changed English is re-translated", out["LANGUAGE_BUTTON"] == "[fa] Choose language & co" and len(requests) == 1, str(requests))
+	english["LANGUAGE_BUTTON"] = "Language"
+
+	# saved.zip restore: every language folder's interface.json is rewritten
+	content = os.path.join(base, "content")
+	os.makedirs(content, exist_ok=True)
+	with open(os.path.join(content, "languages.json"), "w", encoding="utf-8") as f:
+		json.dump([{"codes": ["per"], "text": "x", "default": True}, {"codes": ["en"], "text": "English", "rtl": True}], f)
+	for lang in ("en", "per"):
+		os.makedirs(os.path.join(content, lang, "data"))
+		with open(os.path.join(content, lang, "data", "interface.json"), "w") as f:
+			json.dump({"LANGUAGE_BUTTON": "old"}, f)
+	with contextlib.ExitStack() as stack:
+		stack.enter_context(mock.patch.object(mmiLoader, "load_config", lambda t: {"interface": english, "languageCodes": codes}))
+		stack.enter_context(mock.patch.object(mmiLoader, "TRANSLATIONS_DIRECTORY", tdir))
+		stack.enter_context(mock.patch.object(mmiLoader.urllib.request, "urlopen", fake_offline))
+		real = mmiLoader.get_interface_for_language
+		stack.enter_context(mock.patch.object(mmiLoader, "get_interface_for_language",
+			lambda l, i, c: real(l, i, c, tdir)))
+		mmiLoader._translation_offline = False
+		mmiLoader.refresh_interface_translations(content, "unused")
+	per = json.load(open(os.path.join(content, "per", "data", "interface.json"), encoding="utf-8"))
+	en = json.load(open(os.path.join(content, "en", "data", "interface.json"), encoding="utf-8"))
+	check("S12: restore refresh translates per from saved file",
+		per.get("MEDIA_TYPE", {}).get("VIDEO") == "[fa] Video & co", str(per.get("MEDIA_TYPE")))
+	check("S12: restore refresh: English changed back + offline -> English, not a stale translation",
+		per.get("LANGUAGE_BUTTON") == "Language", str(per.get("LANGUAGE_BUTTON")))
+	check("S12: restore refresh rewrites en", en.get("LANGUAGE_BUTTON") == "Language")
+	langs = {r["codes"][0]: r for r in json.load(open(os.path.join(content, "languages.json"), encoding="utf-8"))}
+	check("S12: restore refresh sets rtl for per", langs["per"].get("rtl") is True and langs["per"]["default"] is True)
+	check("S12: restore refresh clears wrong rtl on en", "rtl" not in langs["en"])
+
+	# .Language file (capital L) is found
+	media = os.path.join(base, "media_lang")
+	os.makedirs(media)
+	with open(os.path.join(media, ".Language"), "w") as f:
+		f.write("per\n")
+	_, lang, _ = mmiLoader.detect_language_dirs(media, codes)
+	check("S12: .Language (any case) is read", lang == "per", lang)
+	mmiLoader._translation_offline = False
+
+
 if __name__ == '__main__':
 	scenarios = [
 		scenario_flat_english,
@@ -767,6 +900,10 @@ if __name__ == '__main__':
 		sub11 = os.path.join(tmp, "s11")
 		os.makedirs(sub11, exist_ok=True)
 		scenario_usb_permissions(sub11)
+
+		sub12 = os.path.join(tmp, "s12")
+		os.makedirs(sub12, exist_ok=True)
+		scenario_interface_translations(sub12)
 
 	print(f"\n{'='*60}")
 	print(f"Results: {PASS} passed, {FAIL} failed")
