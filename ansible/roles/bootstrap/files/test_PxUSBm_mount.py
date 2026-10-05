@@ -174,9 +174,17 @@ def scenario_fat_partition():
 		cmds = dev.poll()
 		check("S1: mmiLoader not restarted on later polls", not started_loader(cmds) and not mounts(cmds), str(cmds))
 
+		import tempfile
+		library = os.path.join(tempfile.mkdtemp(), "library.xml")
+		with open(library, "w") as f:
+			f.write('<library><book path="/media/usb0/content/en/x.zim" /></library>')
+		dev.files.add(library)
+		PxUSBm.KIWIX_LIBRARY = library
+
 		dev.listing = ""
 		cmds = dev.poll()
 		check("S1: removal stops the loader", any(c.startswith("systemctl stop connectbox-loader") for c in cmds))
+		check("S1: removal empties the Kiwix library", "<book" not in open(library).read() and "</library>" in open(library).read())
 		check("S1: removal lazily unmounts by mount point", "umount -l /media/usb0" in cmds, str(cmds))
 		check("S1: removal clears the indexed sentinel", '/tmp/.usb0_indexed' not in dev.files)
 		check("S1: mount table empty after removal", PxUSBm.mnt[0] == -1 and PxUSBm.loc[0] == -1)

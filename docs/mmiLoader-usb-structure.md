@@ -223,6 +223,29 @@ content/
 
 ---
 
+### 2g. ZIM files (offline websites)
+
+A `.zim` file is a whole website packed into one file (Wikipedia, Wiktionary,
+Stack Exchange sites, LibreTexts, ...; download from https://library.kiwix.org).
+Place it in a language folder:
+
+```
+content/
+  en/
+    wikipedia_en_100_2025-01.zim
+    cooking.stackexchange.com_en_all_2024-11.zim
+```
+
+Each ZIM becomes its own card (title and icon taken from the ZIM), even if it is
+inside a collection folder, and opens in the built-in Kiwix reader, which has its
+own search.  A ZIM tagged with several languages is also listed in its other
+languages that are on the USB.  ZIM cards have no download button.
+
+Large ZIMs: FAT32 cannot hold files over 4 GB - use exFAT or ext4.  Remember to
+delete `saved.zip` after adding ZIM files to a USB that has one.
+
+---
+
 ## 3. Supported file types
 
 mmiLoader reads `types.json` for the complete extension map.  The important

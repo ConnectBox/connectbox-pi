@@ -636,6 +636,191 @@ def refresh_interface_translations(contentDirectory, templatesDirectory):
 		print("	Could not update languages.json: " + str(e))
 
 
+# ── ZIM (Kiwix) helpers ───────────────────────────────────────────────────────
+#
+# A .zim file holds a whole website.  kiwix-serve (Ansible role "kiwix") serves
+# every ZIM listed in KIWIX_LIBRARY at /kiwix/content/<zim file name without
+# .zim>/ and re-reads the library within ~2 s when it changes, so mmiLoader only
+# has to keep the library in step with the USB.  Each ZIM becomes an ordinary
+# web-content card (mediaType "html"): the app opens html/<slug>/, where
+# mmiLoader writes a small page that redirects into Kiwix.  ZIMs are always
+# stand-alone cards, even inside a collection folder, and are never zipped.
+
+KIWIX_MANAGE = "/usr/local/bin/kiwix-manage"
+KIWIX_LIBRARY = "/var/lib/connectbox/kiwix/library.xml"
+KIWIX_URL_ROOT = "/kiwix/content/"
+ZIM_MIME_TYPE = "application/x-zim"
+EMPTY_KIWIX_LIBRARY = '<?xml version="1.0" encoding="UTF-8"?>\n<library version="20110515">\n</library>\n'
+
+# Filled by rebuild_kiwix_library(): real path of each ZIM -> its library entry.
+_zim_books = {}
+# Filled while indexing: (language, card, book) for every ZIM card made, used to
+# cross-list multi-language ZIMs once all languages are known.
+_zim_cards = []
+
+
+def write_empty_kiwix_library(library=KIWIX_LIBRARY):
+	"""Reset the Kiwix library so kiwix-serve serves nothing (no ZIMs present)."""
+	os.makedirs(os.path.dirname(library), exist_ok=True)
+	with open(library, "w", encoding="utf-8") as f:
+		f.write(EMPTY_KIWIX_LIBRARY)
+
+
+def read_kiwix_library(library=KIWIX_LIBRARY):
+	"""
+	Return {real path of ZIM: book attributes} from a kiwix-manage library file.
+	Attributes include title, language (ISO 639-3, comma-separated for
+	multi-language ZIMs), description, favicon (base64 PNG) and url_name - the
+	path segment kiwix-serve uses, i.e. the ZIM file name without ".zim".
+	"""
+	import xml.etree.ElementTree as ET
+	books = {}
+	try:
+		root = ET.parse(library).getroot()
+	except (OSError, ET.ParseError):
+		return books
+	for book in root.findall("book"):
+		attrs = dict(book.attrib)
+		path = attrs.get("path", "")
+		if not path:
+			continue
+		if not os.path.isabs(path):
+			path = os.path.join(os.path.dirname(library), path)
+		attrs["url_name"] = os.path.splitext(os.path.basename(path))[0]
+		books[os.path.realpath(path)] = attrs
+	return books
+
+
+def rebuild_kiwix_library(mediaDirectory, library=KIWIX_LIBRARY, kiwix_manage=KIWIX_MANAGE):
+	"""
+	Make the Kiwix library list exactly the ZIM files on the USB.
+
+	Called on every USB insert, before both the saved.zip restore and a full
+	index: the library lives on the device, so it must be rebuilt even when the
+	menus come from saved.zip.  Returns {real path: book attributes}.  Without
+	Kiwix installed, ZIM files are left out of the menus.
+	"""
+	global _zim_books
+	_zim_books = {}
+	if not os.path.isfile(kiwix_manage):
+		print("	Kiwix not installed - ZIM files will not be listed")
+		return _zim_books
+	write_empty_kiwix_library(library)
+	zims = []
+	for root, dirs, files in os.walk(mediaDirectory):
+		dirs[:] = [d for d in dirs if not d.startswith('.')]
+		zims.extend(os.path.join(root, f) for f in files
+					if f.lower().endswith(".zim") and not f.startswith('.'))
+	for zim in sorted(zims):
+		if not usb_is_present():
+			break
+		update_display("Adding ZIM" + chr(10) + os.path.basename(zim)[:16])
+		result = subprocess.run([kiwix_manage, library, "add", zim], capture_output=True, text=True)
+		if result.returncode != 0:
+			print("	Kiwix could not add " + zim + ": " + (result.stderr or result.stdout).strip()[:200])
+			logging.error("kiwix-manage add failed for " + zim)
+	_zim_books = read_kiwix_library(library)
+	print("	Kiwix library: " + str(len(_zim_books)) + " of " + str(len(zims)) + " ZIM files registered")
+	return _zim_books
+
+
+def zim_redirect_page(url_name):
+	"""
+	The html/<slug>/index.html for a ZIM card: sends the browser to the ZIM in
+	Kiwix.  meta refresh plus location.replace so it works on old browsers and
+	the redirect page does not stay in the back history.
+	"""
+	target = KIWIX_URL_ROOT + urllib.parse.quote(url_name) + "/"
+	return ('<!DOCTYPE html>\n<html><head><meta charset="utf-8">\n'
+			'<meta http-equiv="refresh" content="0; url=' + target + '">\n'
+			'<script>window.location.replace("' + target + '");</script>\n'
+			'</head><body><a href="' + target + '">Open</a></body></html>\n')
+
+
+def write_zim_card_files(content, book, language, contentDirectory):
+	"""
+	Write a ZIM card's files into one language of the content directory: the
+	redirect page html/<slug>/index.html, the card icon images/<slug>.png (from
+	the ZIM's own favicon) and data/<slug>.json.
+	"""
+	import base64
+	slug = content["slug"]
+	page_dir = os.path.join(contentDirectory, language, "html", slug)
+	os.makedirs(page_dir, exist_ok=True)
+	with open(os.path.join(page_dir, "index.html"), "w", encoding="utf-8") as f:
+		f.write(zim_redirect_page(book["url_name"]))
+	if content["image"] == slug + ".png":
+		try:
+			with open(os.path.join(contentDirectory, language, "images", slug + ".png"), "wb") as f:
+				f.write(base64.b64decode(book["favicon"]))
+		except (OSError, ValueError, KeyError) as e:
+			print("	Could not write ZIM icon for " + slug + ": " + str(e))
+	with open(os.path.join(contentDirectory, language, "data", slug + ".json"), "w", encoding="utf-8") as f:
+		json.dump(content, f, ensure_ascii=False, indent=4)
+
+
+def make_zim_card(filename, path, language, templatesDirectory, contentDirectory):
+	"""
+	Build the card for one ZIM file and write its files for `language`.
+	Returns the card dict, or None if the ZIM is not in the Kiwix library
+	(Kiwix missing or the file could not be registered).
+	"""
+	full = os.path.realpath(os.path.join(path, filename))
+	book = _zim_books.get(full)
+	if book is None:
+		print("	Skipping ZIM not in the Kiwix library: " + full)
+		return None
+	with open(templatesDirectory + "/en/data/item.json") as f:
+		content = json.load(f)
+	slug = (filename.replace('.', '-')).replace('--', '-')
+	content["filename"] = filename
+	content["slug"] = slug
+	content["mediaType"] = "html"
+	content["mimeType"] = ZIM_MIME_TYPE
+	content["title"] = book.get("title") or os.path.splitext(filename)[0]
+	if "description" in content or book.get("description"):
+		content["description"] = book.get("description", "")
+	content["image"] = slug + ".png" if book.get("favicon") else "www.png"
+	write_zim_card_files(content, book, language, contentDirectory)
+	_zim_cards.append((language, content, book))
+	print("	ZIM card: " + content["title"] + " -> " + KIWIX_URL_ROOT + book["url_name"] + "/")
+	return content
+
+
+def cross_list_zim_cards(mains, contentDirectory, languageCodes):
+	"""
+	Show multi-language ZIMs in every language they are tagged with that is on
+	this box, not just the folder they sit in.  Languages the box does not have
+	are ignored.  A single-language ZIM in another language's folder stays where
+	it is (the folder decides) with a note in the log.  Returns the number of
+	cards added.
+	"""
+	added = 0
+	for folder_language, content, book in list(_zim_cards):
+		folder_code = translation_code(folder_language, languageCodes).split('-')[0]
+		tags = [t.strip() for t in book.get("language", "").split(",") if t.strip()]
+		if len(tags) < 2:
+			if tags and translation_code(tags[0], languageCodes).split('-')[0] != folder_code:
+				print("	Note: ZIM " + content["filename"] + " is tagged '" + tags[0] + "' but is in the '" + folder_language + "' folder")
+				logging.warning("ZIM " + content["filename"] + " language " + tags[0] + " in folder " + folder_language)
+			continue
+		for tag in tags:
+			tag_code = translation_code(tag, languageCodes).split('-')[0]
+			if tag_code == folder_code:
+				continue
+			for box_language in mains:
+				if translation_code(box_language, languageCodes).split('-')[0] != tag_code:
+					continue
+				if any(c.get("slug") == content["slug"] for c in mains[box_language]["content"]):
+					continue
+				card = json.loads(json.dumps(content))
+				write_zim_card_files(card, book, box_language, contentDirectory)
+				mains[box_language]["content"].append(card)
+				added += 1
+				print("	ZIM " + content["title"] + " also listed in " + box_language)
+	return added
+
+
 # ── Phase 2: Language detection ───────────────────────────────────────────────
 
 def detect_language_dirs(mediaDirectory, languageCodes):
@@ -1653,6 +1838,13 @@ def process_directory_files(path, dirs, files, language, directoryType, director
 		print("	Processing File: " + filename)
 		print("	Processing according to language " + language)
 
+		# ZIM files are always stand-alone web-content cards (see make_zim_card)
+		if filename.lower().endswith(".zim") and path not in webpaths:
+			content = make_zim_card(filename, path, language, templatesDirectory, contentDirectory)
+			if content is not None:
+				mains[language]["content"].append(content)
+			continue
+
 		thisDirectory = os.path.basename(os.path.normpath(path))
 		content, collection = process_file_entry(
 			filename, path, thisDirectory, language, directoryType, directoryImage, collectionCoverImage,
@@ -1805,6 +1997,10 @@ def mmiloader_code():
 	# wrote them.  Make everything readable before either the saved.zip restore
 	# or a full index, so nginx can serve whatever ends up in the menus.
 	make_usb_world_readable("/media/usb0")
+
+	# The Kiwix library lives on the device, so list this USB's ZIM files in
+	# it before either the saved.zip restore or a full index.
+	rebuild_kiwix_library(mediaDirectory)
 
 	# Remove old content dir before checking for zip so we start clean
 	try:
@@ -1984,6 +2180,9 @@ def mmiloader_code():
 		run_cmd(f"rm -f {shlex.quote(complex_dir)}")
 	except Exception:
 		pass
+
+	# Multi-language ZIMs also appear in their other languages on this box
+	cross_list_zim_cards(mains, contentDirectory, languageCodes)
 
 	# Phase 9: write output
 	finalize_output(mains, languageCodes, contentDirectory, interface, mediaDirectory,

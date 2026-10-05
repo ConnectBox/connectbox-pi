@@ -140,6 +140,26 @@ def match_usb_device(line, listing):
     return None
 
 
+# Kiwix library that mmiLoader fills with the USB's ZIM files (see mmiLoader.py)
+KIWIX_LIBRARY = "/var/lib/connectbox/kiwix/library.xml"
+EMPTY_KIWIX_LIBRARY = '<?xml version="1.0" encoding="UTF-8"?>\n<library version="20110515">\n</library>\n'
+
+
+def clear_kiwix_library():
+    """
+    Empty the Kiwix library when usb0 is removed, so kiwix-serve (which
+    re-reads it within ~2 s) stops listing ZIM files that are no longer there.
+    Does nothing if Kiwix has never been set up.
+    """
+    if not os.path.isfile(KIWIX_LIBRARY):
+        return
+    try:
+        with open(KIWIX_LIBRARY, "w", encoding="utf-8") as f:
+            f.write(EMPTY_KIWIX_LIBRARY)
+    except OSError as e:
+        logger.info("Could not clear the Kiwix library: " + str(e))
+
+
 def start_content_loader():
     """
     Start mmiLoader.py to index the USB mounted at /media/usb0.
@@ -256,8 +276,10 @@ def mountCheck():
       if (mnt[j] >= 0):
         if not (usb_device_name(chr(mnt[j])) in b):
           if loc[j] == ord('0'):
-            # Stop indexing before the mount goes away under mmiLoader
+            # Stop indexing before the mount goes away under mmiLoader, and
+            # stop Kiwix offering the removed USB's ZIM files
             os.system("systemctl stop connectbox-loader.service 2>/dev/null")
+            clear_kiwix_library()
           # Unmount by mount point, lazily: the /dev node is already gone, so
           # `umount /dev/sdX1` would fail and leave a stale mount behind.
           c = 'umount -l /media/usb' + chr(loc[j])

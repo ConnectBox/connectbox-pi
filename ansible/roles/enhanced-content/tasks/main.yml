@@ -392,3 +392,11 @@
   args:
     executable: python3
   ignore_errors: yes
+
+# ZIM cards: hide the detail page's download button (a ZIM has no .zip)
+- name: Patch connectbox-mediainterface to hide downloads for ZIM cards
+  become: true
+  script: patch_zim_download.py
+  args:
+    executable: python3
+  ignore_errors: yes

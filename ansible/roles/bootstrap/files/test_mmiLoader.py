@@ -873,6 +873,116 @@ def scenario_interface_translations(base):
 	mmiLoader._translation_offline = False
 
 
+def scenario_zim(base):
+	"""
+	Scenario 13: ZIM (Kiwix) support.
+
+	kiwix-manage is faked: subprocess.run is patched to append a <book> entry
+	to the library file, the way the real tool does, with metadata from a
+	table keyed by file name.  Checks the library rebuild, card files, ZIMs in
+	collection folders, and cross-listing of multi-language ZIMs.
+	"""
+	import base64
+	import xml.sax.saxutils as su
+	print("\n-- Scenario 13: ZIM files --")
+	tpl = make_templates(base)
+	media = os.path.join(base, "usb", "content")
+	content_dir = os.path.join(base, "www")
+	library = os.path.join(base, "kiwix", "library.xml")
+	fake_manage = os.path.join(base, "kiwix-manage")
+	open(fake_manage, "w").close()
+	png = base64.b64encode(b"\x89PNG fake icon").decode()
+	meta = {
+		"wiki_en_mini_2025-01.zim": {"title": "Wikipedia Mini", "language": "eng", "favicon": png},
+		"phrasebook_multi_2025-02.zim": {"title": "Phrasebook", "language": "eng,fra,deu", "favicon": ""},
+		"cuisine_fr_2025-03.zim": {"title": "Cuisine", "language": "fra", "favicon": png},
+		"broken.zim": None,                     # kiwix-manage fails on this one
+	}
+	for rel in ("en/wiki_en_mini_2025-01.zim", "en/phrasebook_multi_2025-02.zim",
+				"en/Lessons/cuisine_fr_2025-03.zim", "en/Lessons/lesson1.mp4", "en/broken.zim", ".hidden/x.zim"):
+		p = os.path.join(media, *rel.split("/"))
+		os.makedirs(os.path.dirname(p), exist_ok=True)
+		open(p, "w").close()
+
+	def fake_run(cmd, capture_output=True, text=True):
+		lib, action, zim = cmd[1], cmd[2], cmd[3]
+		info = meta[os.path.basename(zim)]
+		if info is None:
+			return types_module.SimpleNamespace(returncode=1, stdout="", stderr="invalid zim")
+		xml = open(lib, encoding="utf-8").read()
+		attrs = " ".join('%s=%s' % (k, su.quoteattr(v)) for k, v in
+						 dict(info, id=os.path.basename(zim), path=zim, description="About " + info["title"]).items() if v)
+		xml = xml.replace("</library>", "  <book " + attrs + " />\n</library>")
+		open(lib, "w", encoding="utf-8").write(xml)
+		return types_module.SimpleNamespace(returncode=0, stdout="", stderr="")
+
+	with contextlib.ExitStack() as stack:
+		stack.enter_context(mock.patch.object(mmiLoader.subprocess, "run", fake_run))
+		stack.enter_context(mock.patch.object(mmiLoader, "update_display", lambda m: None))
+		stack.enter_context(mock.patch.object(mmiLoader, "usb_is_present", lambda: True))
+		books = mmiLoader.rebuild_kiwix_library(media, library, fake_manage)
+	names = sorted(b["url_name"] for b in books.values())
+	check("S13: library lists the good ZIMs (not broken, not hidden dirs)",
+		names == ["cuisine_fr_2025-03", "phrasebook_multi_2025-02", "wiki_en_mini_2025-01"], str(names))
+	check("S13: url_name is the file name without .zim", "wiki_en_mini_2025-01" in names)
+	check("S13: no Kiwix installed -> nothing listed",
+		mmiLoader.rebuild_kiwix_library(media, library, os.path.join(base, "missing")) == {})
+	mmiLoader._zim_books = books
+
+	# Content directory with the language folders the box has
+	mains = {}
+	for lang in ("en", "fr", "es"):
+		for sub in ("data", "html", "images", "media"):
+			os.makedirs(os.path.join(content_dir, lang, sub), exist_ok=True)
+		mains[lang] = {"content": []}
+	mmiLoader._zim_cards = []
+
+	with contextlib.ExitStack() as stack:
+		stack.enter_context(mock.patch.object(mmiLoader, "update_display", lambda m: None))
+		stack.enter_context(mock.patch.object(mmiLoader, "usb_is_present", lambda: True))
+		stack.enter_context(mock.patch.object(mmiLoader, "run_cmd", lambda c: None))
+		mmiLoader.process_directory_files(os.path.join(media, "en"), [], ["wiki_en_mini_2025-01.zim", "phrasebook_multi_2025-02.zim", "broken.zim"],
+			"en", "language", "blank.gif", "blank.gif", [], {}, tpl, media, content_dir, mains)
+		collection = mmiLoader.process_directory_files(os.path.join(media, "en", "Lessons"), [], ["cuisine_fr_2025-03.zim"],
+			"en", "collection", "blank.gif", "blank.gif", [], {}, tpl, media, content_dir, mains)
+
+	cards = {c["slug"]: c for c in mains["en"]["content"]}
+	wiki = cards.get("wiki_en_mini_2025-01-zim", {})
+	check("S13: ZIM card made", bool(wiki), str(list(cards)))
+	check("S13: card is web content with ZIM mime type", wiki.get("mediaType") == "html" and wiki.get("mimeType") == "application/x-zim")
+	check("S13: card title from the ZIM", wiki.get("title") == "Wikipedia Mini")
+	check("S13: card description from the ZIM", wiki.get("description") == "About Wikipedia Mini")
+	check("S13: card icon from the ZIM favicon", wiki.get("image") == "wiki_en_mini_2025-01-zim.png")
+	icon = os.path.join(content_dir, "en", "images", "wiki_en_mini_2025-01-zim.png")
+	check("S13: icon file decoded", os.path.isfile(icon) and open(icon, "rb").read() == b"\x89PNG fake icon")
+	check("S13: ZIM without favicon uses www.png", cards.get("phrasebook_multi_2025-02-zim", {}).get("image") == "www.png")
+	page = os.path.join(content_dir, "en", "html", "wiki_en_mini_2025-01-zim", "index.html")
+	page_html = open(page, encoding="utf-8").read() if os.path.isfile(page) else ""
+	check("S13: redirect page points into Kiwix", "/kiwix/content/wiki_en_mini_2025-01/" in page_html and "location.replace" in page_html)
+	check("S13: data json written", os.path.isfile(os.path.join(content_dir, "en", "data", "wiki_en_mini_2025-01-zim.json")))
+	check("S13: unregistered ZIM gets no card", "broken-zim" not in cards)
+	check("S13: ZIM in a collection folder is a stand-alone card",
+		"cuisine_fr_2025-03-zim" in cards and collection is None)
+
+	added = mmiLoader.cross_list_zim_cards(mains, content_dir, {
+		"en": {"english": ["English"]}, "eng": {"english": ["English"]},
+		"fr": {"english": ["French"]}, "fra": {"english": ["French"]},
+		"de": {"english": ["German"]}, "deu": {"english": ["German"]},
+		"es": {"english": ["Spanish"]}})
+	fr = [c["slug"] for c in mains["fr"]["content"]]
+	check("S13: multi-language ZIM also listed in fr", "phrasebook_multi_2025-02-zim" in fr, str(fr))
+	check("S13: fr gets its own redirect page",
+		os.path.isfile(os.path.join(content_dir, "fr", "html", "phrasebook_multi_2025-02-zim", "index.html")))
+	check("S13: language not on box (de) ignored, untagged (es) untouched", not mains["es"]["content"])
+	check("S13: single-language fra ZIM in en folder is NOT cross-listed", "cuisine_fr_2025-03-zim" not in fr)
+	check("S13: one card added in total", added == 1, str(added))
+	check("S13: cross-listing twice adds nothing",
+		mmiLoader.cross_list_zim_cards(mains, content_dir, {"en": {"english": ["English"]}, "fr": {"english": ["French"]},
+			"eng": {"english": ["English"]}, "fra": {"english": ["French"]}, "deu": {"english": ["German"]}}) == 0)
+	mmiLoader._zim_books = {}
+	mmiLoader._zim_cards = []
+
+
 if __name__ == '__main__':
 	scenarios = [
 		scenario_flat_english,
@@ -904,6 +1014,10 @@ if __name__ == '__main__':
 		sub12 = os.path.join(tmp, "s12")
 		os.makedirs(sub12, exist_ok=True)
 		scenario_interface_translations(sub12)
+
+		sub13 = os.path.join(tmp, "s13")
+		os.makedirs(sub13, exist_ok=True)
+		scenario_zim(sub13)
 
 	print(f"\n{'='*60}")
 	print(f"Results: {PASS} passed, {FAIL} failed")

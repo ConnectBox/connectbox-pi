@@ -1,0 +1,15 @@
+[Unit]
+Description=Kiwix server for ZIM files on the ConnectBox USB
+After=network.target
+
+[Service]
+# Only reachable through nginx (location ^~ /kiwix/ in the enhanced vhost).
+# The library is rewritten by mmiLoader on every USB insert and emptied by
+# PxUSBm on removal; --monitorLibrary picks changes up within ~2 s.
+User={{ kiwix_user }}
+ExecStart=/usr/local/bin/kiwix-serve --library {{ kiwix_library }} --monitorLibrary --address=127.0.0.1 --port={{ kiwix_port }} --urlRootLocation=/kiwix --threads={{ kiwix_threads }}
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -11,6 +11,7 @@ dependencies:
 #  - { role: moodle, when: build_moodle}
   - { role: enhanced-content, when: enhanced_interface}
   - nginx
+  - { role: kiwix, when: enhanced_interface }
   - captive-portal
   - webserver-content
   - usb-content

@@ -1,0 +1,69 @@
+---
+- name: Pick the Kiwix build for this board
+  set_fact:
+    kiwix_build: "{{ kiwix_builds[ansible_architecture] }}"
+    kiwix_release: "kiwix-tools_{{ kiwix_builds[ansible_architecture] }}-{{ kiwix_version }}"
+
+- name: Create Kiwix install directory
+  file:
+    path: "{{ kiwix_install_dir }}"
+    state: directory
+    mode: 0755
+
+# Checksum is fetched from the .md5 file published next to each release
+- name: Download kiwix-tools {{ kiwix_version }}
+  get_url:
+    url: "https://download.kiwix.org/release/kiwix-tools/{{ kiwix_release }}.tar.gz"
+    dest: "/tmp/{{ kiwix_release }}.tar.gz"
+    checksum: "md5:https://download.kiwix.org/release/kiwix-tools/{{ kiwix_release }}.tar.gz.md5"
+    timeout: 300
+
+- name: Unpack kiwix-tools
+  unarchive:
+    src: "/tmp/{{ kiwix_release }}.tar.gz"
+    dest: "{{ kiwix_install_dir }}"
+    remote_src: yes
+    creates: "{{ kiwix_install_dir }}/{{ kiwix_release }}/kiwix-serve"
+
+- name: Link kiwix-serve and kiwix-manage into /usr/local/bin
+  file:
+    src: "{{ kiwix_install_dir }}/{{ kiwix_release }}/{{ item }}"
+    dest: "/usr/local/bin/{{ item }}"
+    state: link
+    force: yes
+  loop:
+    - kiwix-serve
+    - kiwix-manage
+  notify: restart kiwix-serve
+
+- name: Create Kiwix library directory
+  file:
+    path: "{{ kiwix_library | dirname }}"
+    state: directory
+    mode: 0755
+
+# Empty library until mmiLoader lists a USB's ZIM files.  force: no keeps the
+# current library if the role is re-run with a USB inserted.
+- name: Create empty Kiwix library
+  copy:
+    dest: "{{ kiwix_library }}"
+    content: |
+      <?xml version="1.0" encoding="UTF-8"?>
+      <library version="20110515">
+      </library>
+    force: no
+    mode: 0644
+
+- name: Install kiwix-serve service
+  template:
+    src: kiwix-serve.service.j2
+    dest: /etc/systemd/system/kiwix-serve.service
+    mode: 0644
+  notify: restart kiwix-serve
+
+- name: Enable and start kiwix-serve
+  systemd:
+    name: kiwix-serve
+    enabled: yes
+    state: started
+    daemon_reload: yes

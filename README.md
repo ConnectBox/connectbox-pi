@@ -61,6 +61,10 @@ The app's own text (section titles, media types, the footer's Configuration link
 
 Online translations of short interface words are often poor; check new files in `/usr/local/connectbox/translations/` and correct the `text` values (corrections are kept). A string is re-translated only when its English changes.
 
+### ZIM files (offline websites)
+
+Put `.zim` files (from https://library.kiwix.org) in a language folder on the USB, e.g. `content/en/wikipedia_en_100_2025-01.zim`. Each one becomes a card in that language with the ZIM's own title and icon, and opens in Kiwix; a ZIM tagged with several languages also appears in its other languages that are on the box. Search inside a ZIM is Kiwix's own. Files over 4 GB need an exFAT or ext4 USB. After adding ZIMs to a USB that already has `saved.zip`, delete `saved.zip` so the USB is re-indexed.
+
 ### USB file systems
 
 `PxUSBm.py` is the only USB mounter (it polls `lsblk` every ~3 s). It mounts FAT32, exFAT and NTFS sticks, and Linux file systems (ext2/3/4, xfs, btrfs, f2fs), including sticks formatted on the whole disk with no partition table (`mkfs.ext4 /dev/sdX`). Use ext4 or exFAT for files over 4 GB (FAT32's limit).

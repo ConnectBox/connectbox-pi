@@ -115,6 +115,16 @@ The `patch_*.py` scripts in `ansible/roles/enhanced-content/files/` are idempote
 
 `ansible/roles/bootstrap/files/test_mmiLoader.py` covers the mmiLoader helper functions (loads the file via `importlib.util.spec_from_file_location`; kept Python 3.7 compatible with `contextlib.ExitStack`). Run it after any mmiLoader change. `test_PxUSBm_mount.py` (same folder) simulates `PxUSBm.mountCheck()` with fake `lsblk` output — run it after any change to USB mounting.
 
+## ZIM files (Kiwix)
+
+ZIM files (offline websites: Wikipedia, Stack Exchange, LibreTexts...) are served by `kiwix-serve` (role `kiwix`: kiwix-tools 3.8.2, `linux-armv6` build on 32-bit ARM, `linux-aarch64` on 64-bit; service `kiwix-serve` as www-data on 127.0.0.1:8090, `--urlRootLocation=/kiwix --monitorLibrary`). nginx proxies `location ^~ /kiwix/` to it (with the home button).
+
+- **Library:** `/var/lib/connectbox/kiwix/library.xml`. mmiLoader rebuilds it from the USB's `.zim` files on every insert (`rebuild_kiwix_library()`, before both the saved.zip restore and a full index — the library lives on the device). PxUSBm empties it when usb0 is removed. kiwix-serve picks changes up within ~2 s; no restart.
+- **Cards:** each `.zim` becomes a stand-alone web-content card (`mediaType: html`, `mimeType: application/x-zim`), even inside a collection folder: title, description and icon come from the ZIM's library entry; `html/<slug>/index.html` redirects to `/kiwix/content/<zim file name without .zim>/`. The detail page's download button is hidden for ZIM cards (`patch_zim_download.py`).
+- **Languages:** the folder decides. A multi-language ZIM (library `language` like `eng,fra`) is also listed in its other tagged languages that the box has; a single-language ZIM in another language's folder only gets a log note.
+- New ZIMs on a stick that has `saved.zip` appear only after `saved.zip` is deleted (same as any new content).
+- Caching: for Kiwix HTML only, nginx replaces Kiwix's `Cache-Control: max-age=3600` and book-level ETag with `no-cache` (maps `$kiwix_cache_control` / `$kiwix_etag`), because nginx changes the page (home button) and browsers would otherwise keep old copies. Other ZIM files keep Kiwix's caching.
+
 ## Home button on web content
 
 Pages inside web content (and, later, ZIM files) have no way back to the menu, so nginx adds a floating house button before `</body>` as each HTML page is served (`ansible/roles/nginx/files/connectbox_home_button.conf`, included from the web-content location). It needs the `subs_filter` module (`libnginx-mod-http-subs-filter`; nginx-light has no `sub_filter`) and `include /etc/nginx/modules-enabled/*.conf;` in nginx.conf, which the template previously lacked. For a proxied backend such as kiwix-serve, set `proxy_set_header Accept-Encoding "";` so the upstream HTML is uncompressed, and use `location ^~ /kiwix/` - otherwise the vhost's `location ~ \.json$` regex takes `.json` requests away from the proxy.

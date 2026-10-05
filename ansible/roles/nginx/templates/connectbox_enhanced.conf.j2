@@ -20,6 +20,20 @@ map "$html_item_root|$request_uri" $html_broken_link_target {
     "~^(?<target>[^|]+)\|"  $target;
 }
 
+# Kiwix HTML pages are changed on the way out (home button), but Kiwix's
+# caching headers describe its original page: max-age=3600 plus an ETag that
+# only identifies the ZIM.  Browsers would then keep pages without the button
+# (or with an old one).  For HTML only, replace them with no-cache and no ETag;
+# images, styles and scripts inside ZIMs keep Kiwix's caching.
+map $upstream_http_content_type $kiwix_cache_control {
+    "~^text/html"  "no-cache";
+    default        $upstream_http_cache_control;
+}
+map $upstream_http_content_type $kiwix_etag {
+    "~^text/html"  "";
+    default        $upstream_http_etag;
+}
+
 server {
     listen 80;
     # Wildcard .local i.e. respond to anything that comes in on that domain
@@ -69,6 +83,23 @@ server {
       location ~ \.json$ {
         expires -1;
       }
+    }
+
+    # ZIM files (offline websites) served by kiwix-serve (role "kiwix").
+    #  - ^~ so the regex locations below (e.g. \.json$) never take ZIM files
+    #    away from Kiwix (LibreTexts ZIMs broke without it);
+    #  - Accept-Encoding "" so Kiwix sends plain HTML that nginx can add the
+    #    home button to (nginx gzips the response itself).
+    location ^~ /kiwix/ {
+      proxy_pass http://127.0.0.1:{{ kiwix_port | default(8090) }};
+      proxy_set_header Host $http_host;
+      proxy_http_version 1.1;
+      proxy_set_header Accept-Encoding "";
+      proxy_hide_header Cache-Control;
+      proxy_hide_header ETag;
+      add_header Cache-Control $kiwix_cache_control;
+      add_header ETag $kiwix_etag;
+      include snippets/connectbox_home_button.conf;
     }
 
     location @html_broken_link {
