@@ -126,6 +126,10 @@ ZIM files (offline websites: Wikipedia, Stack Exchange, LibreTexts...) are serve
 - New ZIMs on a stick that has `saved.zip` appear only after `saved.zip` is deleted (same as any new content).
 - Caching: for Kiwix HTML only, nginx replaces Kiwix's `Cache-Control: max-age=3600` and book-level ETag with `no-cache` (maps `$kiwix_cache_control` / `$kiwix_etag`), because nginx changes the page (home button) and browsers would otherwise keep old copies. Other ZIM files keep Kiwix's caching.
 
+## Same file name in different folders
+
+Each language has one flat `media/` folder of links, and a card's slug comes from its file name, so two files with the same name in different folders used to share a link, a data file and a thumbnail (the second card played the first file). `unique_media_name()` in mmiLoader keeps the first file's name; a later file with the same name shares it if it is an identical copy (same size, same first/last 64 KB), otherwise it gets `<name>--<folder><ext>` (then `-2`, `-3`...) as its link name and slug. The card title stays the original file name. Files that never collide keep their names, so slugs, usage stats and cached thumbnails are stable.
+
 ## Home button on web content
 
 Pages inside web content (and, later, ZIM files) have no way back to the menu, so nginx adds a floating house button before `</body>` as each HTML page is served (`ansible/roles/nginx/files/connectbox_home_button.conf`, included from the web-content location). It needs the `subs_filter` module (`libnginx-mod-http-subs-filter`; nginx-light has no `sub_filter`) and `include /etc/nginx/modules-enabled/*.conf;` in nginx.conf, which the template previously lacked. For a proxied backend such as kiwix-serve, set `proxy_set_header Accept-Encoding "";` so the upstream HTML is uncompressed, and use `location ^~ /kiwix/` - otherwise the vhost's `location ~ \.json$` regex takes `.json` requests away from the proxy.

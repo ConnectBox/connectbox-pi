@@ -1809,6 +1809,68 @@ def apply_fallback_image(content, collection, extension, types, directoryImage):
 	return content, collection
 
 
+# ── Duplicate file names across folders ─────────────────────────────────────
+#
+# Every language has one flat media/ folder of links, and a card's slug (its ID
+# in data/<slug>.json, thumbnails and usage stats) comes from the file name.
+# Two files with the same name in different folders would therefore share one
+# link (the second card played the first file), one data file and one
+# thumbnail.  The first file keeps its name.  A later file with the same name
+# shares it only if it is the same content (a copy); otherwise it gets its own
+# name with its folder added, e.g. "Lesson01--Series_B.mp3".  Files that never
+# collide keep their names, so slugs, stats and cached thumbnails are stable.
+
+# language -> {name used in media/: full path of the file it links to}
+_media_names = {}
+
+
+def same_file_content(path_a, path_b, chunk=65536):
+	"""
+	True if two files look identical: same size and same first and last 64 KB.
+	Enough to recognise copies of a media file without reading it all.
+	"""
+	try:
+		size = os.path.getsize(path_a)
+		if size != os.path.getsize(path_b):
+			return False
+		with open(path_a, "rb") as fa, open(path_b, "rb") as fb:
+			if fa.read(chunk) != fb.read(chunk):
+				return False
+			if size > chunk:
+				fa.seek(max(0, size - chunk))
+				fb.seek(max(0, size - chunk))
+				return fa.read(chunk) == fb.read(chunk)
+			return True
+	except OSError:
+		return False
+
+
+def unique_media_name(language, filename, fullFilename):
+	"""
+	Return the name to use for this file in <language>/media/ (and to derive
+	its slug from): the file name itself, unless a different file already uses
+	that name in this language.
+	"""
+	names = _media_names.setdefault(language, {})
+	owner = names.get(filename)
+	if owner is None:
+		names[filename] = fullFilename
+		return filename
+	if os.path.realpath(owner) == os.path.realpath(fullFilename) or same_file_content(owner, fullFilename):
+		return filename
+	stem, ext = os.path.splitext(filename)
+	folder = re.sub(r'[^\w\-]+', '_', os.path.basename(os.path.dirname(fullFilename))).strip('_') or "folder"
+	candidate, n = stem + "--" + folder + ext, 2
+	while candidate in names:
+		if same_file_content(names[candidate], fullFilename):
+			return candidate
+		candidate, n = stem + "--" + folder + "-" + str(n) + ext, n + 1
+	names[candidate] = fullFilename
+	print("	Duplicate name: " + fullFilename + " differs from " + owner + "; listed as " + candidate)
+	logging.info("Duplicate file name " + filename + " in " + language + ": " + fullFilename + " listed as " + candidate)
+	return candidate
+
+
 def process_file_entry(filename, path, thisDirectory, language, directoryType, directoryImage,
 						collectionCoverImage, types, templatesDirectory, mediaDirectory, contentDirectory,
 						webpaths, collection):
@@ -1855,6 +1917,17 @@ def process_file_entry(filename, path, thisDirectory, language, directoryType, d
 		print("		Skipping: Extension not supported: " + fullFilename)
 		return None, collection
 
+	# A different file with the same name elsewhere in this language gets its
+	# own media/ name and slug (see unique_media_name); web/Android index
+	# files are handled separately below.
+	mediaName = filename
+	if '.htm' not in extension and extension != '.xml':
+		mediaName = unique_media_name(language, filename, fullFilename)
+		if mediaName != filename:
+			slug = (mediaName.replace('.', '-')).replace('--', '-')
+			img_name = re.sub(r'[^\w\-]', '_', slug) + ".png"
+			print("  Slug is now: " + slug)
+
 	# Load item or episode template
 	if "collection" in directoryType:
 		print("** Starting a collection: Loading Collection and Episode JSON **")
@@ -1874,7 +1947,7 @@ def process_file_entry(filename, path, thisDirectory, language, directoryType, d
 
 	# Populate core fields
 	if filename != 'AndroidManifest.xml':
-		content["filename"] = filename
+		content["filename"] = mediaName
 	else:
 		content["filename"] = thisDirectory
 	content["mediaType"] = types[extension]["mediaType"]
@@ -1987,8 +2060,13 @@ def process_file_entry(filename, path, thisDirectory, language, directoryType, d
 
 	# Symlink the media file
 	print("	Creating symlink for the content")
-	run_cmd(f"ln -s {shlex.quote(fullFilename)} {shlex.quote(contentDirectory + '/' + language + '/media/')}")
-	print("	Symlink: " + contentDirectory + '/' + language + '/media/' + filename)
+	link = contentDirectory + '/' + language + '/media/' + mediaName
+	if os.path.lexists(link):
+		# An identical copy in another folder already provides this link
+		print("	Symlink already present (identical copy shares it): " + link)
+	else:
+		run_cmd(f"ln -s {shlex.quote(fullFilename)} {shlex.quote(link)}")
+		print("	Symlink: " + link)
 	print("	COMPLETE: " + fullFilename + " added for language " + language)
 
 	return content, collection

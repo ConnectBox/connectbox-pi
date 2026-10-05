@@ -204,6 +204,8 @@ def run_scenario(label, media_dir, tpl_dir, brand_path, content_dir, expect_fn):
 	print(f"\n{'='*60}")
 	print(f"Scenario: {label}")
 	print('='*60)
+	# Each scenario is a separate mmiLoader run: start with no media/ names used
+	mmiLoader._media_names.clear()
 
 	# Patch external calls (ExitStack for Python 3.7 compatibility)
 	with contextlib.ExitStack() as stack:
@@ -1025,6 +1027,77 @@ def scenario_card_icons(base):
 		mmiLoader.png_decode_rgba(mmiLoader.card_icon_png(half))[2][1] == (127, 127, 127, 255))
 
 
+def scenario_duplicate_names(base):
+	"""
+	Scenario 15: files with the same name in different folders.
+
+	A different file with an already-used name gets its own media/ link name
+	and slug (folder added); an identical copy shares the existing link; files
+	that never collide keep their names.
+	"""
+	print("\n-- Scenario 15: duplicate file names across folders --")
+	mmiLoader._media_names.clear()
+	media = os.path.join(base, "usb", "content")
+
+	def put(rel, data):
+		p = os.path.join(media, *rel.split("/"))
+		os.makedirs(os.path.dirname(p), exist_ok=True)
+		with open(p, "wb") as f:
+			f.write(data)
+		return p
+
+	a = put("en/Series A/Lesson01.mp3", b"A" * 200000)
+	b = put("en/Series B/Lesson01.mp3", b"B" * 200000)                  # different content
+	copy = put("en/Series A copy/Lesson01.mp3", b"A" * 200000)          # identical to A
+	tail = put("en/Series C/Lesson01.mp3", b"A" * 150000 + b"C" * 50000)   # same size, different end
+	b2 = put("en/Other/Series B/Lesson01.mp3", b"D" * 200000)           # different, same folder name as B
+	solo = put("en/Series A/Only.mp3", b"O" * 10)
+	other_lang = put("es/Series B/Lesson01.mp3", b"E" * 10)
+
+	u = mmiLoader.unique_media_name
+	check("S15: first file keeps its name", u("en", "Lesson01.mp3", a) == "Lesson01.mp3")
+	check("S15: same file again keeps its name", u("en", "Lesson01.mp3", a) == "Lesson01.mp3")
+	check("S15: different file gets folder-qualified name", u("en", "Lesson01.mp3", b) == "Lesson01--Series_B.mp3")
+	check("S15: identical copy shares the first file's name", u("en", "Lesson01.mp3", copy) == "Lesson01.mp3")
+	check("S15: same size but different ending is not a copy", u("en", "Lesson01.mp3", tail) == "Lesson01--Series_C.mp3")
+	check("S15: second different file from a same-named folder gets -2",
+		u("en", "Lesson01.mp3", b2) == "Lesson01--Series_B-2.mp3")
+	check("S15: repeat of a renamed file reuses its name", u("en", "Lesson01.mp3", b) == "Lesson01--Series_B.mp3")
+	check("S15: names are per language", u("es", "Lesson01.mp3", other_lang) == "Lesson01.mp3")
+	check("S15: non-colliding file keeps its name", u("en", "Only.mp3", solo) == "Only.mp3")
+
+	# Through process_directory_files: two collection folders, links and slugs
+	mmiLoader._media_names.clear()
+	tpl = make_templates(os.path.join(base, "t"))
+	content_dir = os.path.join(base, "www")
+	for sub in ("data", "html", "images", "media"):
+		os.makedirs(os.path.join(content_dir, "en", sub), exist_ok=True)
+	mains = {"en": {"content": []}}
+	types = {".mp3": {"image": "sound.png", "mediaType": "audio", "category": "Audios", "mimeType": "audio/mpeg"}}
+	links = []
+	with contextlib.ExitStack() as stack:
+		stack.enter_context(mock.patch.object(mmiLoader, "run_cmd", lambda c: links.append(c) if c.startswith("ln -s") else None))
+		stack.enter_context(mock.patch.object(mmiLoader, "update_display", lambda m: None))
+		stack.enter_context(mock.patch.object(mmiLoader, "usb_is_present", lambda: True))
+		cols = []
+		# Stand-in for the link the first file creates (run_cmd is mocked)
+		open(os.path.join(content_dir, "en", "media", "Lesson01.mp3"), "w").close()
+		for folder in ("Series A", "Series B", "Series A copy"):
+			col = mmiLoader.process_directory_files(os.path.join(media, "en", folder), [], ["Lesson01.mp3"],
+				"en", "collection", "blank.gif", "blank.gif", [], types, tpl, media, content_dir, mains)
+			cols.append(col)
+	eps = [c["episodes"][0] for c in cols]
+	check("S15: card titles stay the original file name", all(e["title"] == "Lesson01" for e in eps), str([e["title"] for e in eps]))
+	check("S15: Series B episode links its own file",
+		eps[1]["filename"] == "Lesson01--Series_B.mp3" and any("media/Lesson01--Series_B.mp3'" in c and "Series B/" in c for c in links), str(links))
+	check("S15: Series B episode has its own slug", eps[1]["slug"] != eps[0]["slug"], eps[1]["slug"])
+	check("S15: no second link attempted for the identical copy",
+		not any("Series A copy/" in c for c in links), str(links))
+	check("S15: identical copy shares Series A's link and slug",
+		eps[2]["filename"] == "Lesson01.mp3" and eps[2]["slug"] == eps[0]["slug"])
+	mmiLoader._media_names.clear()
+
+
 if __name__ == '__main__':
 	scenarios = [
 		scenario_flat_english,
@@ -1064,6 +1137,10 @@ if __name__ == '__main__':
 		sub14 = os.path.join(tmp, "s14")
 		os.makedirs(sub14, exist_ok=True)
 		scenario_card_icons(sub14)
+
+		sub15 = os.path.join(tmp, "s15")
+		os.makedirs(sub15, exist_ok=True)
+		scenario_duplicate_names(sub15)
 
 	print(f"\n{'='*60}")
 	print(f"Results: {PASS} passed, {FAIL} failed")

@@ -272,6 +272,13 @@ categories and their behaviour:
 Files with extensions not in `types.json` are silently skipped.
 Files and directories whose names start with `.` or `_` are also skipped.
 
+### Same file name in different folders
+
+Files with the same name in different folders (e.g. `Series A/Lesson01.mp3` and
+`Series B/Lesson01.mp3`) each play their own file.  Identical copies of a file in
+several folders are recognised and share one link.  Card titles always show the
+original file name.
+
 ---
 
 ## 4. Folder art
