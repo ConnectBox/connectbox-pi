@@ -140,6 +140,7 @@ The app's UI strings (`<lang>/data/interface.json`) exist only in English upstre
 
 ## Important invariants
 
+- **dhcpcd must not manage the WiFi client interface**: `denyinterfaces` in `etc_dhcpcd.conf.j2` is a global option and must come before any `interface` block (inside one it is ignored, and the box got two IPs from dhcpcd + dhclient). Never release/reconfigure `wlan1` live over SSH on that link (`dhcpcd -k wlan1` dropped the box off the LAN) - apply network changes with a reboot.
 - **Captive portal must support very old phones**: devices are deployed in disadvantaged countries with iOS 9 / Android 4–5 era phones. The old-OS checks in `captiveportal/views.py` (sibling repo `simple-offline-captive-portal`) are intentional — do not remove or "modernize" them.
 - **Video must be H.264 in MP4**: browsers don't play MPEG-4 Part 2 (`mp4v`). `content["mimeType"]` must be the real MIME type (`video/mp4`), not the media type (`video`).
 

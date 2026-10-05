@@ -161,6 +161,10 @@ content/
       banner.jpg
 ```
 
+Readers get a small house button (bottom-left) on every page to return to the
+ConnectBox menu.  Links to pages that are not on the USB (common in partial
+copies of websites) go back to the item's start page.
+
 ### 2d. Android app — directory with AndroidManifest.xml
 
 **Trigger**: `AndroidManifest.xml` present in the directory.
