@@ -73,6 +73,21 @@ global mnt
 mnt=[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]
 d=["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""]
 
+# Drive letters (e.g. 'b') whose file system is on the whole disk (/dev/sdb)
+# instead of the first partition (/dev/sdb1).  Linux users often format a USB
+# stick with no partition table (mkfs.ext4 /dev/sdb).
+global whole_disk
+whole_disk = set()
+
+# Devices (e.g. 'sdb1') that failed to mount.  They are not retried on every
+# 3 s poll; the entry is dropped when the device is unplugged.
+global failed_mounts
+failed_mounts = set()
+
+# File systems that store Unix permissions (Linux formats).  They reject the
+# FAT-only utf8 mount option and are not checked with dosfsck/ntfsfix.
+POSIX_FILESYSTEMS = ('ext2', 'ext3', 'ext4', 'xfs', 'btrfs', 'f2fs')
+
 global net_stat
 net_stat = 1
 
@@ -82,6 +97,62 @@ global connectbox_scroll
 
 global max_partition
 max_partiton = 0
+
+
+def usb_device_name(letter):
+    """
+    Return the block device name mounted for a drive letter: 'sdb' when the
+    file system is on the whole disk, otherwise the first partition 'sdb1'.
+    """
+    return 'sd' + letter + ('' if letter in whole_disk else '1')
+
+
+def get_fstype(dev):
+    """
+    Return the file system type of /dev/<dev> (e.g. 'vfat', 'ext4'), or '' if
+    the device has none.  lsblk reads udev's database, so this does no disk I/O.
+    """
+    try:
+        out = subprocess.run(['lsblk', '-dno', 'FSTYPE', '/dev/' + dev],
+                             capture_output=True, text=True, timeout=10).stdout
+        return out.strip()
+    except Exception:
+        return ''
+
+
+def match_usb_device(line, listing):
+    """
+    Return a regex match naming the USB device on one lsblk line, or None.
+
+    Matches the first partition (sdX1, the usual case) or a whole disk (sdX)
+    that carries a file system itself and has no partitions.  Disk lines start
+    at column 0 in lsblk's tree output; partition lines are indented.  `listing`
+    is the full lsblk output, used to skip disks that have partitions without
+    running lsblk again for them.
+    """
+    e = re.search('sd[a-z]1', line)
+    if e:
+        return e
+    e = re.match(r'sd[a-z]\b', line)
+    if e and ' disk' in line and not re.search(e.group() + r'\d', listing):
+        if get_fstype(e.group()) != '':
+            return e
+    return None
+
+
+def start_content_loader():
+    """
+    Start mmiLoader.py to index the USB mounted at /media/usb0.
+
+    Runs in a transient systemd unit (connectbox-loader) so indexing continues
+    in the background while this daemon keeps polling.  --remain-after-exit
+    keeps the unit visible after mmiLoader finishes.  Any previous run is
+    stopped first: --wait blocks until it is fully gone so systemd-run can
+    reuse the unit name (without it, a second USB insert can fail silently).
+    """
+    logger.info("Starting mmiLoader content load, time is " + time.asctime())
+    os.system("systemctl stop --wait connectbox-loader.service 2>/dev/null; systemctl reset-failed connectbox-loader.service 2>/dev/null")
+    os.system("/usr/bin/systemd-run --unit=connectbox-loader --description='ConnectBox Content Loader' --remain-after-exit /usr/bin/python3 /usr/local/connectbox/bin/mmiLoader.py")
 
 
 def mountCheck():
@@ -165,14 +236,23 @@ def mountCheck():
     process = os.popen('lsblk')
     b = process.read()
     process.close()
+    # Forget failed mounts for devices that have been unplugged, so the same
+    # stick is retried when it is plugged back in.
+    for dev in list(failed_mounts):
+      if dev not in b:
+        failed_mounts.discard(dev)
     while (j < 11):
       if DEBUG > 2: print("loop 1, unmount",j)
       if (mnt[j] >= 0):
-        if not ('sd'+chr(mnt[j])+'1' in b):
-          c = '/dev/sd' + chr(mnt[j])+'1'
-          print("unmount "+c)
-          c = 'umount '+c
-          if DEBUG > 2: print("No longer present sd"+chr(mnt[j])+"1  so well "+c)
+        if not (usb_device_name(chr(mnt[j])) in b):
+          if loc[j] == ord('0'):
+            # Stop indexing before the mount goes away under mmiLoader
+            os.system("systemctl stop connectbox-loader.service 2>/dev/null")
+          # Unmount by mount point, lazily: the /dev node is already gone, so
+          # `umount /dev/sdX1` would fail and leave a stale mount behind.
+          c = 'umount -l /media/usb' + chr(loc[j])
+          print("unmount /dev/"+usb_device_name(chr(mnt[j])))
+          if DEBUG > 2: print("No longer present "+usb_device_name(chr(mnt[j]))+" so well "+c)
           if DEBUG > 2: print("the value of b is"+b)
           res = os.system(c)
           if DEBUG > 2: print("completed "+c)
@@ -196,7 +276,7 @@ def mountCheck():
               except:
                   pass
           else:
-            logger.info("Umount returned non-zero (likely already unmounted by udev) for "+c)
+            logger.info("Umount returned non-zero (already unmounted?) for "+c)
           # Always clear sentinel and table when device is gone from lsblk,
           # regardless of whether our umount call succeeded
           if loc[j] == ord('0'):
@@ -204,23 +284,23 @@ def mountCheck():
                   os.remove('/tmp/.usb0_indexed')
               except Exception:
                   pass
+          whole_disk.discard(chr(mnt[j]))
           loc[j]= -1
           mnt[j] = -1
           j += 1
         else:
         #Were here with the device still mounted
-          print("device still mounted /dev/sd"+chr(mnt[j])+"1 Device present")
+          print("device still mounted /dev/"+usb_device_name(chr(mnt[j]))+" Device present")
+          # First poll after usb0 is mounted (or after boot, since the sentinel
+          # lives in /tmp): index the USB once.  The sentinel stops it re-running
+          # every poll; it is removed when the USB is unplugged.
           if loc[j] == ord('0') and not os.path.isfile('/tmp/.usb0_indexed'):
             logger.info("Start load content for menu's, time is " + time.asctime())
             try:
-                os.system("rm /usr/local/connectbox/complex_dir")
+                os.system("rm /usr/local/connectbox/complex_dir 2>/dev/null")
             except:
                 pass
-            logger.info("Finished load content for menu's, time is" + time.asctime())
-            try:
-                os.system("rm /usr/local/connectbox/complex_dir")
-            except:
-                pass
+            start_content_loader()
             try:
                 open('/tmp/.usb0_indexed', 'w').close()
             except Exception:
@@ -264,12 +344,15 @@ def mountCheck():
     j=0                       #used for finding sdx1's
     k=0                       #used for usb mount
     c = b.partition("\n")
+    listing = b               # b is reused below for mount commands; keep the lsblk text
 # while we have lines to parse we check each line for an sdx1 device and mount it if not already
     while ((c[0] != "") and (i<35)):
       if DEBUG > 2: print("Loop 2, iterate:",i, c[0])
       d[i] = c[0]
-      e=re.search('sd[a-z]1', d[i])
-      if e:
+      e = match_usb_device(d[i], listing)                 # sdX1, or a whole-disk sdX with a file system
+      if e and not (('usb' in d[i]) or ('part /' in d[i])) and (e.group() in failed_mounts):
+        if DEBUG > 2: print("/dev/"+e.group()+" failed to mount earlier; not retrying until it is re-inserted")
+      elif e:
         if not (('usb' in d[i]) or ('part /' in d[i])):     #True if were not mounted but should be
           a = ord('0')
           j = 9
@@ -301,32 +384,43 @@ def mountCheck():
           x = Popen(["uname", "-r"], stdout=PIPE)
           y = str(x.communicate()[0])
           x.stdout.close()
-          if y>="5.15.0":
+          # Linux file systems (ext4 etc.) are mounted by their own type and
+          # without the utf8 option, which only FAT-family drivers accept.
+          fstype = get_fstype(e.group())
+          if fstype in POSIX_FILESYSTEMS:
+            b = "mount /dev/" + e.group() + " -t " + fstype + " -o noatime,nodev,nosuid" + " /media/usb" + chr(a)
+          elif y>="5.15.0":
             b = "mount /dev/" + e.group() + " -t auto -o noatime,nodev,nosuid,utf8" + " /media/usb" + chr(a)
           else:
             b = "mount /dev/" + e.group() + " -t auto -o noatime,nodev,nosuid,iocharset=utf8" + " /media/usb" + chr(a)
-          c = "dosfsck -a /dev/" + e.group()
-          starttime = time.time()
-          print("checking the files system before mount with: "+ c)
-          logger.info("Looking to mount "+c+" but checking file system, time is "+time.asctime())
-          try:
-            res = os.system(c) 				#do a file system check befor the mount.  if it is corrupted we will get a system stop PxUSBm
-            if res ==256:
-              print("failed to do dosfsck -a /dev/" + e.group())
-              c = "ntfsfix -d /dev/" + e.group()
-              try:
-                res = os.system(c)
-              except:
-                print("failed to do ntfsfix -f")
-                logger.info("Failed to do ntfsfix -d on "+ e.group() + " time is " + time.asctime())
-          except:
-            print("Failed to do dosfsck")
-            logger.info("Failed to do Dosfsck on " + e.group() + " time is " + time.asctime())
-          print("Did "+c+"  result is: "+str(res))
-          endtime = time.time()
-          deltatime = endtime - starttime
-          print('total time was: ' + str(deltatime) + ' seconds' )
-          logger.info("Completed "+c+" in "+str(deltatime)+ "seconds")
+          # dosfsck/ntfsfix only understand FAT/NTFS; Linux file systems are
+          # mounted as-is (the kernel replays the ext4/xfs journal on mount).
+          if fstype in POSIX_FILESYSTEMS:
+            print("/dev/" + e.group() + " is " + fstype + ": skipping dosfsck/ntfsfix")
+            logger.info("/dev/" + e.group() + " is " + fstype + ", no FAT/NTFS check needed, time is " + time.asctime())
+          else:
+            c = "dosfsck -a /dev/" + e.group()
+            starttime = time.time()
+            print("checking the files system before mount with: "+ c)
+            logger.info("Looking to mount "+c+" but checking file system, time is "+time.asctime())
+            try:
+              res = os.system(c) 				#do a file system check befor the mount.  if it is corrupted we will get a system stop PxUSBm
+              if res ==256:
+                print("failed to do dosfsck -a /dev/" + e.group())
+                c = "ntfsfix -d /dev/" + e.group()
+                try:
+                  res = os.system(c)
+                except:
+                  print("failed to do ntfsfix -f")
+                  logger.info("Failed to do ntfsfix -d on "+ e.group() + " time is " + time.asctime())
+            except:
+              print("Failed to do dosfsck")
+              logger.info("Failed to do Dosfsck on " + e.group() + " time is " + time.asctime())
+            print("Did "+c+"  result is: "+str(res))
+            endtime = time.time()
+            deltatime = endtime - starttime
+            print('total time was: ' + str(deltatime) + ' seconds' )
+            logger.info("Completed "+c+" in "+str(deltatime)+ "seconds")
 
 ###################### OK now mount the key ############################################
           print("trying to do mount: " + b)
@@ -353,8 +447,16 @@ def mountCheck():
               print("on NTFS mount of USB key errored,  res =" + str(res))
               res = -1
           if DEBUG > 2: print("completed mount /dev/",e.group)
-          if res >= 0:
-            mnt[j]=ord(e.group()[len(e.group())-2])
+          # os.system returns 0 only on success.  (This used to test res >= 0,
+          # which is always true, so a failed mount was recorded as mounted and
+          # an empty /media/usb0 got indexed.)
+          if res != 0:
+            failed_mounts.add(e.group())
+            logger.info("Could not mount /dev/" + e.group() + " (" + (fstype or "unknown") + "), will retry when re-inserted, time is " + time.asctime())
+          else:
+            mnt[j]=ord(e.group()[2])                        # drive letter: 'sdb1' or 'sdb' -> 'b'
+            if e.group() == 'sd' + e.group()[2]:
+              whole_disk.add(e.group()[2])
             loc[j]=a
             total += 1
             print("value of a is: "+chr(a))
@@ -401,7 +503,9 @@ def mountCheck():
 # We know if we found usb? in the table if k < 10
                 if k == 10 and j < 10:                          #mount was not in table to so add it
                   loc[j] = l                                    #set loc to usb(l) at j sice we didn't find it
-                  mnt[j] = ord(e.group()[len(e.group())-2])     #set mnt to sd(?)1 finish the mount registration
+                  mnt[j] = ord(e.group()[2])                    #set mnt to the drive letter to finish the mount registration
+                  if e.group() == 'sd' + e.group()[2]:
+                    whole_disk.add(e.group()[2])
                   if DEBUG > 2: print("/dev/"+e.group()+" is already mounted as usb"+chr(l)+"but we added it to the table")
                   if l == 0:
                       logger.info("We already had a USB that was mounted but added it to our mount table so starting loading cocntent, time is "+ time.asctime())

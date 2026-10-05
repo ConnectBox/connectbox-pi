@@ -1,5 +1,11 @@
 # ConnectBox Modular System Scripts
 
+> **Status (2026-10-05):** `PxUSBm.py` is the official USB mounter. Ansible no longer installs
+> `usb_mounter.py` or `99-usb-automount.rules`, and removes them from provisioned devices,
+> because udev and PxUSBm both mounting every inserted USB raced each other. PxUSBm now also
+> starts `mmiLoader.py`. The USB part of this kit is kept for reference only — do not install
+> it alongside PxUSBm.
+
 This directory contains the modernized, event-driven replacements for `PxUSBm.py`. By breaking apart the monolithic script, we achieve lower CPU usage, higher stability, and faster USB mounting.
 
 ## 1. File Placements

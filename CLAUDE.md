@@ -39,7 +39,7 @@ The Vagrant file provides three local VMs (stretch, focal, ubuntu) for developme
 | `nginx` | Five vhosts: captive portal, classic UI, enhanced UI, static site, icon-only |
 | `captive-portal` | Flask captive portal (Python venv at `/var/www/connectbox/captiveportal_venv`) |
 | `webserver-content` | Clones `connectbox-client` repo, installs Flask/gunicorn for chat and admin APIs |
-| `usb-content` | udev rules at `ansible/roles/usb-content/files/99-usb-automount.rules` (identical copy in `system_scripts/`) — mounts USB to `/media/usb0`, calls `usb_mounter.py` |
+| `usb-content` | systemd-udevd drop-in; removes the retired `99-usb-automount.rules` udev rule. USB mounting itself is done by `PxUSBm.py` (see USB content pipeline) |
 
 ### Source file naming convention
 
@@ -58,7 +58,7 @@ Device configuration is stored as JSON in `/usr/local/connectbox/brand.j2`. This
 
 ### USB content pipeline
 
-1. USB inserted → udev ADD event → `usb_mounter.py` → launches `mmiLoader.py` in background. The udev rule matches partitions (`sda1`) and also whole disks that carry a file system with no partition table (`mkfs.ext4 /dev/sdb`).
+1. USB inserted → `PxUSBm.py` (the only USB mounter, a service polling `lsblk` every ~3 s) mounts it at `/media/usb0`, then on its next poll starts `mmiLoader.py` in the transient `connectbox-loader` systemd unit (`/tmp/.usb0_indexed` stops it re-running). It mounts the first partition (`sda1`) or a whole disk that holds a file system with no partition table (`mkfs.ext4 /dev/sdb`); Linux file systems are mounted without the FAT-only `utf8` option and skip `dosfsck`. On removal it stops the loader and lazily unmounts `/media/usb0`. Do not reintroduce a udev mounter (`usb_mounter.py` was retired 2026-10-05) — two mounters race. Simulation tests: `ansible/roles/bootstrap/files/test_PxUSBm_mount.py`.
    - On file systems with Unix permissions (ext2/3/4, xfs, btrfs, f2fs) `mmiLoader.py` first runs `make_usb_world_readable()` — the equivalent of `chmod -R a+rX` that skips symlinks and only touches entries missing bits — so nginx (`www-data`) can read files written by another computer's user account. FAT/exFAT/NTFS are left alone.
 2. `mmiLoader.py` checks for `saved.zip` on the USB:
    - **Found + same mtime**: fast unzip into `/var/www/enhanced/content/www/assets/content/`
@@ -109,7 +109,7 @@ The `3.js` patch matches an exact compiled string with `ignore_errors: yes`, so 
 
 ## Tests
 
-`ansible/roles/bootstrap/files/test_mmiLoader.py` covers the mmiLoader helper functions (loads the file via `importlib.util.spec_from_file_location`; kept Python 3.7 compatible with `contextlib.ExitStack`). Run it after any mmiLoader change.
+`ansible/roles/bootstrap/files/test_mmiLoader.py` covers the mmiLoader helper functions (loads the file via `importlib.util.spec_from_file_location`; kept Python 3.7 compatible with `contextlib.ExitStack`). Run it after any mmiLoader change. `test_PxUSBm_mount.py` (same folder) simulates `PxUSBm.mountCheck()` with fake `lsblk` output — run it after any change to USB mounting.
 
 ## Important invariants
 

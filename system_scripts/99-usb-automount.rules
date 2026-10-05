@@ -1,9 +1,2 @@
-# Partitioned USB drives (the usual case): mount the partition, e.g. sda1.
 ACTION=="add", KERNEL=="sd[a-z][0-9]", RUN+="/usr/bin/python3 /usr/local/connectbox/bin/usb_mounter.py add /dev/%k"
 ACTION=="remove", KERNEL=="sd[a-z][0-9]", RUN+="/usr/bin/python3 /usr/local/connectbox/bin/usb_mounter.py remove /dev/%k"
-# Drives formatted without a partition table (e.g. `mkfs.ext4 /dev/sdb` on
-# Linux): the file system is on the whole disk.  ID_FS_USAGE is set by udev's
-# blkid probe only when the whole disk holds a file system, so partitioned
-# drives never match these lines.
-ACTION=="add", KERNEL=="sd[a-z]", ENV{ID_FS_USAGE}=="filesystem", RUN+="/usr/bin/python3 /usr/local/connectbox/bin/usb_mounter.py add /dev/%k"
-ACTION=="remove", KERNEL=="sd[a-z]", ENV{ID_FS_USAGE}=="filesystem", RUN+="/usr/bin/python3 /usr/local/connectbox/bin/usb_mounter.py remove /dev/%k"

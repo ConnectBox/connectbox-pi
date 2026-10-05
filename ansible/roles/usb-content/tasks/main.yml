@@ -1,12 +1,12 @@
 ---
 
-- name: Install USB automount udev rules
-  copy:
-    src: 99-usb-automount.rules
-    dest: /etc/udev/rules.d/99-usb-automount.rules
-    owner: root
-    group: root
-    mode: 0644
+# USB drives are mounted by PxUSBm.py (bootstrap role), not udev.  Remove the
+# old automount rule from devices provisioned while udev also mounted USBs —
+# having both react to every insert raced and stacked mounts.
+- name: Remove retired USB automount udev rule
+  file:
+    path: /etc/udev/rules.d/99-usb-automount.rules
+    state: absent
   notify:
     - Reload udev rules
 
