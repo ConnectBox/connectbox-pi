@@ -20,10 +20,13 @@ Summary Of Changes:
 
 | Scenario | Behaviour |
 |---|---|
-| First insert or no `saved.zip` | Full index walk — scans all files, extracts thumbnails, writes JSON, creates `saved.zip` at end |
-| Re-insert same USB key | `saved.zip` found, mtime matches cached marker → `unzip -n` skips files already on disk (fast) |
-| Swap to different USB key | `saved.zip` found, mtime differs → wipes content directory, full extract, writes new marker |
+| No `saved.zip` on the USB | Full index walk — scans all files, extracts thumbnails, writes JSON, creates `saved.zip` at end |
+| `saved.zip` on the USB (in `content/` or the USB root) | Content directory is wiped and `saved.zip` is extracted in full (fast); no indexing |
 | `saved.zip` deleted from USB | Falls through to full index walk |
+
+After a `saved.zip` restore, mmiLoader also rewrites every language's `interface.json`
+(translations) and the right-to-left flags in `languages.json`, because the zip holds the
+versions from when it was made.
 
 To force a full re-index on a USB key that already has `saved.zip`, delete `saved.zip` from the USB drive.
 
@@ -31,6 +34,7 @@ To force a full re-index on a USB key that already has `saved.zip`, delete `save
 
 | Message | Meaning |
 |---|---|
+| `Checking USB Permissions` | Linux-formatted USB (ext4 etc.): making files readable by the web server |
 | `Loading USB` | Checking for `saved.zip` |
 | `Unzipping USB` | Restoring from `saved.zip` (fast path) |
 | `Indexing USB` | Full index walk in progress |
@@ -45,9 +49,27 @@ Thumbnails are extracted from video files using `ffmpeg`. mmiLoader tries frames
 
 Regional language variants (e.g. `zh-CN`, `pt-BR`) on the USB are handled by aliasing the base code (`zh`, `pt`) to the full variant directory. The media interface always requests content using the base code, so this symlink ensures the correct content is served.
 
-### Single-instance guard
+Language folders and `.language` may use 2- or 3-letter codes; `per` and `fa` are both Farsi, `ara` and `ar` both Arabic. Right-to-left languages (Arabic, Farsi, Hebrew, Urdu, ...) are flagged `"rtl": true` in `languages.json`, which flips the interface. The language button on the home page shows the active language's own name (e.g. فارسی).
 
-mmiLoader uses `pgrep` at startup to prevent concurrent duplicate runs. `PxUSBm.py` (the USB monitor daemon) also guards each mmiLoader launch site with `pgrep` and sets a sentinel after a successful index to avoid re-triggering on every poll cycle.
+### Interface translations
+
+The app's own text (section titles, media types, the footer's Configuration link, chat labels) comes from each language's `interface.json`. Upstream only has English, so mmiLoader writes each language's file from `/usr/local/connectbox/translations/<code>.json`:
+
+1. Reviewed files are shipped by Ansible for Farsi, Arabic, Spanish, Portuguese and Chinese (`ansible/roles/bootstrap/files/translations/`).
+2. For any other language, if the box has internet, the English text is translated online (MyMemory) and saved there, so it keeps working offline afterwards.
+3. With no internet, English is shown and the lookup is retried on the next USB insert.
+
+Online translations of short interface words are often poor; check new files in `/usr/local/connectbox/translations/` and correct the `text` values (corrections are kept). A string is re-translated only when its English changes.
+
+### USB file systems
+
+`PxUSBm.py` is the only USB mounter (it polls `lsblk` every ~3 s). It mounts FAT32, exFAT and NTFS sticks, and Linux file systems (ext2/3/4, xfs, btrfs, f2fs), including sticks formatted on the whole disk with no partition table (`mkfs.ext4 /dev/sdX`). Use ext4 or exFAT for files over 4 GB (FAT32's limit).
+
+On Linux file systems, files keep the owner and permissions of the computer that wrote them, which can stop the web server reading them (cards show but open with 403). mmiLoader therefore adds read permission for everyone (like `chmod -R a+rX`, skipping symlinks and never adding execute to files) before indexing. Only files missing permission are changed, so re-inserting the same stick is quick.
+
+### Starting the indexer and single-instance guard
+
+`PxUSBm.py` starts mmiLoader on the poll after `/media/usb0` is mounted, in the transient systemd unit `connectbox-loader`, and stops it when the USB is removed. The sentinel `/tmp/.usb0_indexed` stops it re-running on every poll. mmiLoader itself refuses to run twice at once (it checks `/proc/*/cmdline`).
 
 # ConnectBox
 

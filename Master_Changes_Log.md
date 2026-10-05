@@ -22,3 +22,14 @@ This file tracks the architecture changes, thinking process, and code refactors 
 4. Modified `buttons.py`, `usb.py`, `hats.py`, and `mmiLoader.py` to correctly reflect the updated `brand.j2` references, eliminating confusing/outdated comments referencing `brand.txt`.
 5. Removed the `sync_brand()` logic entirely from `network-watchdog.py`.
 6. Moving forward, the source of truth for device branding and specific flag configurations like `usb0NoMount` will exclusively be `brand.j2`.
+
+## 3. USB, languages and performance (2026-10-05)
+**Goal:** Make Linux-formatted USBs, non-English USBs and the web interface work reliably on the NanoPi NEO test unit.
+**Changes Made:**
+* **One owner per job.** `PxUSBm.py` is the only USB mounter and starts `mmiLoader.py` itself (transient unit `connectbox-loader`); it also owns network recovery and first-boot partition expansion. The parallel `usb_mounter.py`/udev rule, `network-watchdog` and `first-boot-expand` were retired (see section 1). `mmiLoader.py` is the only writer of `interface.json` (`apply_translations.py`, hand-installed on the test unit, was merged in and retired).
+* **Linux file systems.** PxUSBm mounts ext2/3/4, xfs, btrfs and f2fs without the FAT-only `utf8` option and skips `dosfsck`, and mounts whole-disk sticks with no partition table. mmiLoader makes Linux-formatted content world-readable before indexing (nginx got 403 otherwise).
+* **Bug fixes found on the device:** `systemctl stop --wait` is invalid on systemd 247, so re-indexing after the first USB insert since boot had silently failed since May; a failed mount was recorded as mounted (`res >= 0`) and an empty mount point was indexed.
+* **Interface translations and right-to-left.** Each language's `interface.json` comes from `/usr/local/connectbox/translations/<code>.json` (reviewed fa/ar/es/pt/zh-CN shipped; other languages looked up online with MyMemory and saved; English offline). RTL languages get `"rtl": true`. `saved.zip` restores refresh both. App patches (`ansible/roles/enhanced-content/files/patch_*.py`): language button shows the language name, footer Configuration link and chat page translated, chat right-to-left, returning visitors pick up `rtl`.
+* **Usage stats.** Opening web (HTML) content is counted again: the `6.js` patch that opens it directly now sends the view report the detail page used to send. The earlier patch had never applied on stock installs (YAML indentation).
+* **Web content links.** Broken links inside web content redirect to that item's start page instead of a blank page (nginx).
+* **Speed.** nginx gzip for CSS/JS/JSON: the 4.9 MB app bundle is sent as 1.0 MB (first load ~44 s -> ~7 s over WiFi).

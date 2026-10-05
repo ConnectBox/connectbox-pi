@@ -6,6 +6,22 @@ structure it recognises and how each one is rendered.
 
 ---
 
+## 0. Preparing the USB drive
+
+| Format | Works | Notes |
+|--------|-------|-------|
+| FAT32 | Yes | Files must be under 4 GB |
+| exFAT | Yes | No 4 GB limit |
+| NTFS | Yes | |
+| ext4 (and ext2/3, xfs, btrfs, f2fs) | Yes | Partitioned or whole-disk (`mkfs.ext4 /dev/sdX`) |
+
+Put everything under a top-level `content/` folder.  On Linux formats the box makes the
+files readable by its web server automatically (it only adds read permission), so the
+owner or permissions used when the stick was written do not matter.  File names on
+Linux formats are case-sensitive: a web page linking `Image.JPG` will not find `image.jpg`.
+
+---
+
 ## 1. Top-level layout — language vs. flat
 
 ### 1a. Multi-language USB (language folders)
@@ -51,6 +67,12 @@ content/
 
 Place a plain-text file `.language` in `content/` containing a single language code
 (e.g. `zh`).  Overrides the default `en` when no language-named directories exist.
+The file name may be in any case (`.Language` works), and 2- or 3-letter codes are
+accepted (`per` and `fa` are both Farsi).
+
+The interface around the content (titles, media types, buttons) is shown in that
+language too; see "Interface translations" in the README.  Right-to-left languages
+such as Farsi and Arabic flip the page layout.
 
 ```
 content/
@@ -248,7 +270,7 @@ These hidden files in `content/` (or USB root) modify mmiLoader's behaviour.
 
 | File | Location | Effect |
 |------|----------|--------|
-| `.language` | `content/` | Sets the language code for a flat (no language dirs) USB |
+| `.language` | `content/` | Sets the language code for a flat (no language dirs) USB (file name in any case) |
 | `.compress` | `content/` | Auto-creates a downloadable zip of every multi-file directory |
 | `.NoWebcompress` | `content/` | Suppresses zip creation for all web content directories |
 | `saved.zip` | `content/` or USB root | Fast-load cache — mmiLoader extracts it and exits immediately |
