@@ -35,7 +35,16 @@ http {
 
     server_tokens on;
 
-    # gzip on;
+    # Compress text assets only.  The app bundle (build/vendor.js 4.9 MB,
+    # main.css 720 KB) otherwise goes out uncompressed and took 15-45 s to load
+    # over WiFi.  Level 2 keeps CPU low on NanoPi NEO-class boards; media files
+    # (video, audio, images, zip) are already compressed and are not listed.
+    gzip on;
+    gzip_comp_level 2;
+    gzip_min_length 1024;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_types text/css application/javascript application/json text/plain text/xml application/xml image/svg+xml;
 
 
 
