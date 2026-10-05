@@ -58,9 +58,16 @@ slaac private
 #interface eth0
 #fallback static_eth0
 
-interface {{ client_facing_if }}
-static ip_address=10.129.0.1
+# dhcpcd must not manage these: eth0 and the WiFi client interface get their
+# address from dhclient (ifupdown / PxUSBm).  denyinterfaces is a global option
+# and must come before any "interface" block - it used to sit inside the
+# client_facing_if block below, where dhcpcd ignored it, so the client interface
+# had two DHCP clients and two IP addresses.
 denyinterfaces eth0
 denyinterfaces {{ eth_facing_if }}
+
+# The access point interface has a fixed address.
+interface {{ client_facing_if }}
+static ip_address=10.129.0.1
 
 
