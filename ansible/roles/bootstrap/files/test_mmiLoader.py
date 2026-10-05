@@ -648,6 +648,98 @@ def scenario_load_config(base):
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
+def scenario_usb_permissions(base):
+	"""
+	Scenario 11: make_usb_world_readable / get_mount_fstype.
+
+	File modes are faked through a patched os.lstat and chmod calls are
+	recorded instead of applied, so the logic is checked on any OS (Windows
+	cannot represent Unix permission bits).  A real directory tree supplies the
+	paths that os.walk visits.
+	"""
+	import stat as st
+	print("\n-- Scenario 11: USB permissions on Linux filesystems --")
+	usb = os.path.join(base, "usb")
+	os.makedirs(os.path.join(usb, "content", "en", "private_dir"))
+	for rel in ("content/en/private.mp4", "content/en/public.pdf", "content/en/script.sh",
+				"content/en/private_dir/page.html", "content/en/link"):
+		with open(os.path.join(usb, *rel.split("/")), "w") as f:
+			f.write("x")
+
+	def key(path):
+		return os.path.normcase(os.path.normpath(path))
+
+	modes = {
+		key(usb):                                         st.S_IFDIR | 0o755,
+		key(os.path.join(usb, "content")):                st.S_IFDIR | 0o755,
+		key(os.path.join(usb, "content", "en")):          st.S_IFDIR | 0o711,  # traversable, not listable
+		key(os.path.join(usb, "content", "en", "private_dir")): st.S_IFDIR | 0o700,
+		key(os.path.join(usb, "content", "en", "private.mp4")): st.S_IFREG | 0o600,
+		key(os.path.join(usb, "content", "en", "public.pdf")):  st.S_IFREG | 0o644,
+		key(os.path.join(usb, "content", "en", "script.sh")):   st.S_IFREG | 0o750,
+		key(os.path.join(usb, "content", "en", "private_dir", "page.html")): st.S_IFREG | 0o600,
+		key(os.path.join(usb, "content", "en", "link")):  st.S_IFLNK | 0o777,  # symlink — must be skipped
+	}
+	chmods = {}
+
+	def fake_lstat(path):
+		return os.stat_result((modes[key(path)], 0, 0, 1, 0, 0, 0, 0, 0, 0))
+
+	def fake_chmod(path, mode):
+		chmods[key(path)] = mode
+		modes[key(path)] = st.S_IFMT(modes[key(path)]) | mode
+
+	mounts = os.path.join(base, "mounts")
+	def write_mounts(fstype):
+		with open(mounts, "w") as f:
+			f.write("/dev/mmcblk0p2 / ext4 rw 0 0\n")
+			f.write("/dev/sda1 " + usb + " " + fstype + " rw,noexec 0 0\n")
+
+	# get_mount_fstype
+	write_mounts("vfat")
+	check("S11: fstype vfat detected", mmiLoader.get_mount_fstype(usb, mounts) == "vfat")
+	check("S11: unmounted path gives None", mmiLoader.get_mount_fstype("/nowhere", mounts) is None)
+	with open(mounts, "a") as f:
+		f.write("/dev/sdb " + usb + " ext4 rw 0 0\n")
+	check("S11: last (visible) mount wins", mmiLoader.get_mount_fstype(usb, mounts) == "ext4")
+	check("S11: missing mounts file gives None",
+		mmiLoader.get_mount_fstype(usb, os.path.join(base, "no_such_file")) is None)
+
+	with contextlib.ExitStack() as stack:
+		stack.enter_context(mock.patch.object(mmiLoader.os, "lstat", fake_lstat))
+		stack.enter_context(mock.patch.object(mmiLoader.os, "chmod", fake_chmod))
+		stack.enter_context(mock.patch.object(mmiLoader, "update_display", lambda m: None))
+		present = stack.enter_context(mock.patch.object(mmiLoader, "usb_is_present", return_value=True))
+
+		# FAT-family filesystems are never touched
+		for fs in ("vfat", "exfat", "ntfs3", "fuseblk"):
+			write_mounts(fs)
+			check(f"S11: {fs} USB left alone", mmiLoader.make_usb_world_readable(usb, mounts) == 0 and not chmods)
+
+		# ext4: only entries missing bits are changed
+		write_mounts("ext4")
+		changed = mmiLoader.make_usb_world_readable(usb, mounts)
+		en = os.path.join(usb, "content", "en")
+		check("S11: ext4 changed 5 entries", changed == 5, f"changed={changed} {chmods}")
+		check("S11: private file -> 0644", chmods.get(key(os.path.join(en, "private.mp4"))) == 0o644)
+		check("S11: private dir -> 0755", chmods.get(key(os.path.join(en, "private_dir"))) == 0o755)
+		check("S11: traverse-only dir -> 0755", chmods.get(key(en)) == 0o755)
+		check("S11: nested private file -> 0644", chmods.get(key(os.path.join(en, "private_dir", "page.html"))) == 0o644)
+		check("S11: executable file keeps bits, others get read only",
+			chmods.get(key(os.path.join(en, "script.sh"))) == 0o754)
+		check("S11: already-readable file untouched", key(os.path.join(en, "public.pdf")) not in chmods)
+		check("S11: symlink never chmodded", key(os.path.join(en, "link")) not in chmods)
+
+		# Second insert of the same USB: nothing left to change
+		chmods.clear()
+		check("S11: re-run changes nothing", mmiLoader.make_usb_world_readable(usb, mounts) == 0 and not chmods)
+
+		# USB pulled out mid-walk: stop without touching anything else
+		modes[key(os.path.join(en, "private.mp4"))] = st.S_IFREG | 0o600
+		present.return_value = False
+		check("S11: removed USB stops the walk", mmiLoader.make_usb_world_readable(usb, mounts) == 0 and not chmods)
+
+
 if __name__ == '__main__':
 	scenarios = [
 		scenario_flat_english,
@@ -671,6 +763,10 @@ if __name__ == '__main__':
 		sub10 = os.path.join(tmp, "s10")
 		os.makedirs(sub10, exist_ok=True)
 		scenario_load_config(sub10)
+
+		sub11 = os.path.join(tmp, "s11")
+		os.makedirs(sub11, exist_ok=True)
+		scenario_usb_permissions(sub11)
 
 	print(f"\n{'='*60}")
 	print(f"Results: {PASS} passed, {FAIL} failed")

@@ -3,3 +3,4 @@
 *.py    eol=lf
 *.pl    eol=lf
 *.j2    eol=lf
+*.rules eol=lf

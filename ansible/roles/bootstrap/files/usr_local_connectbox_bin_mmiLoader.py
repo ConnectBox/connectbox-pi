@@ -14,6 +14,7 @@ import sys
 import time
 import shlex
 import signal
+import stat
 from indexer import *
 
 
@@ -65,6 +66,93 @@ def run_cmd(cmd):
 		subprocess.run(cmd, shell=True, check=True)
 	except subprocess.CalledProcessError as e:
 		logging.error(f"Command failed: {cmd}")
+
+
+# ── USB permission helpers ────────────────────────────────────────────────────
+
+# Filesystems that store Unix owners and permissions.  Files on these keep the
+# permissions they had on the computer that wrote the USB, so they may not be
+# readable by nginx (www-data) even though mmiLoader (root) indexes them fine —
+# the cards appear but opening them gives 403 Forbidden.  FAT, exFAT and NTFS
+# mounts have no per-file permissions and are always world-readable.
+POSIX_PERMISSION_FILESYSTEMS = ('ext2', 'ext3', 'ext4', 'xfs', 'btrfs', 'f2fs')
+
+# Bits every directory (read + traverse) and regular file (read) must carry.
+DIR_READABLE_BITS  = stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
+FILE_READABLE_BITS = stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH
+
+
+def get_mount_fstype(mount_point, mounts_path="/proc/mounts"):
+	"""
+	Return the filesystem type mounted at mount_point (e.g. 'ext4'), or None
+	if nothing is mounted there.
+
+	Reads /proc/mounts.  The last matching entry wins because a later mount on
+	the same point is the one that is visible.
+	"""
+	fstype = None
+	try:
+		with open(mounts_path) as f:
+			for line in f:
+				fields = line.split()
+				if len(fields) >= 3 and fields[1] == mount_point:
+					fstype = fields[2]
+	except OSError:
+		pass
+	return fstype
+
+
+def make_usb_world_readable(mount_point="/media/usb0", mounts_path="/proc/mounts"):
+	"""
+	On Linux-formatted USBs, add read permission (and traverse permission on
+	directories) for everyone, so the web server can serve every file.
+
+	Equivalent to `chmod -R a+rX`, with these differences:
+	  - Only runs when the USB filesystem stores Unix permissions; FAT, exFAT
+	    and NTFS are left alone.
+	  - Symlinks are never followed or changed, so a link on the USB cannot be
+	    used to change permissions of files on the device itself.
+	  - Only entries missing a bit are changed.  A USB that was fixed on an
+	    earlier insert costs one stat per entry and no writes.
+	  - Never removes permissions and never makes regular files executable.
+
+	Returns the number of entries whose mode was changed.
+	"""
+	fstype = get_mount_fstype(mount_point, mounts_path)
+	if fstype not in POSIX_PERMISSION_FILESYSTEMS:
+		return 0
+
+	print("	USB filesystem is " + fstype + ": making content readable by the web server")
+	logging.info("Fixing read permissions on " + fstype + " USB at " + mount_point)
+	update_display('Checking USB' + chr(10) + 'Permissions')
+	changed = 0
+
+	def ensure_bits(path, wanted):
+		# Add the wanted bits if any are missing.  Symlinks and special files
+		# (devices, FIFOs, sockets) are skipped.
+		nonlocal changed
+		try:
+			st = os.lstat(path)
+			if not (stat.S_ISDIR(st.st_mode) or stat.S_ISREG(st.st_mode)):
+				return
+			if (st.st_mode & wanted) != wanted:
+				os.chmod(path, stat.S_IMODE(st.st_mode) | wanted)
+				changed += 1
+		except OSError as e:
+			logging.error("Could not fix permissions on " + path + ": " + str(e))
+
+	# Walk the whole USB.  os.walk does not descend into symlinked directories,
+	# and each real directory appears exactly once as `root`.
+	for root, dirs, files in os.walk(mount_point):
+		if not usb_is_present():
+			break
+		ensure_bits(root, DIR_READABLE_BITS)
+		for name in files:
+			ensure_bits(os.path.join(root, name), FILE_READABLE_BITS)
+
+	print("	Permissions fixed on " + str(changed) + " USB entries")
+	logging.info("Permissions fixed on " + str(changed) + " USB entries")
+	return changed
 
 
 # ── Thumbnail helpers ─────────────────────────────────────────────────────────
@@ -1424,6 +1512,7 @@ def mmiloader_code():
 
 	Coordinates the following phases in order:
 	  1.  initialize_run        — drop caches, clear OLED display
+	      make_usb_world_readable — ext4 etc. only: add read permission for nginx
 	  2.  restore_from_saved_zip — fast path: unzip and exit if zip present
 	  3.  setup_fresh_content_dir — create clean content directory from templates
 	  4.  load_config           — read brand, language codes, types, interface
@@ -1456,6 +1545,11 @@ def mmiloader_code():
 
 	# Phase 1
 	initialize_run(comsFileName)
+
+	# Linux-formatted USBs keep the file permissions from the computer that
+	# wrote them.  Make everything readable before either the saved.zip restore
+	# or a full index, so nginx can serve whatever ends up in the menus.
+	make_usb_world_readable("/media/usb0")
 
 	# Remove old content dir before checking for zip so we start clean
 	try:

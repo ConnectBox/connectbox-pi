@@ -39,7 +39,7 @@ The Vagrant file provides three local VMs (stretch, focal, ubuntu) for developme
 | `nginx` | Five vhosts: captive portal, classic UI, enhanced UI, static site, icon-only |
 | `captive-portal` | Flask captive portal (Python venv at `/var/www/connectbox/captiveportal_venv`) |
 | `webserver-content` | Clones `connectbox-client` repo, installs Flask/gunicorn for chat and admin APIs |
-| `usb-content` | udev rules at `system_scripts/99-usb-automount.rules` — mounts USB to `/media/usb0`, calls `usb_mounter.py` |
+| `usb-content` | udev rules at `ansible/roles/usb-content/files/99-usb-automount.rules` (identical copy in `system_scripts/`) — mounts USB to `/media/usb0`, calls `usb_mounter.py` |
 
 ### Source file naming convention
 
@@ -58,7 +58,8 @@ Device configuration is stored as JSON in `/usr/local/connectbox/brand.j2`. This
 
 ### USB content pipeline
 
-1. USB inserted → udev ADD event → `usb_mounter.py` → launches `mmiLoader.py` in background
+1. USB inserted → udev ADD event → `usb_mounter.py` → launches `mmiLoader.py` in background. The udev rule matches partitions (`sda1`) and also whole disks that carry a file system with no partition table (`mkfs.ext4 /dev/sdb`).
+   - On file systems with Unix permissions (ext2/3/4, xfs, btrfs, f2fs) `mmiLoader.py` first runs `make_usb_world_readable()` — the equivalent of `chmod -R a+rX` that skips symlinks and only touches entries missing bits — so nginx (`www-data`) can read files written by another computer's user account. FAT/exFAT/NTFS are left alone.
 2. `mmiLoader.py` checks for `saved.zip` on the USB:
    - **Found + same mtime**: fast unzip into `/var/www/enhanced/content/www/assets/content/`
    - **Found + different mtime or missing**: full index walk — scans files, extracts thumbnails via ffmpeg, generates JSON, writes `saved.zip` at the end
