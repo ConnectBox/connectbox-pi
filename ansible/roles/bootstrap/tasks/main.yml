@@ -787,25 +787,32 @@
   command: systemctl enable PxUSBm.service 
 
 # PxUSBm.py owns network recovery (AP/client interface checks, hostapd
-# restarts).  network-watchdog.py from system_scripts/ was hand-installed on
-# some devices and did the same job in parallel (ifdown/ifup, rmmod/modprobe of
-# the WiFi drivers), so the two raced.  Remove it wherever it exists.
-- name: Stop and disable retired network-watchdog service
+# restarts) and first-boot partition expansion (expand_progress.txt).  Two
+# scripts from system_scripts/ were hand-installed on some devices and did the
+# same jobs in parallel, so they raced PxUSBm.  Remove them wherever they exist:
+#   network-watchdog   - ifdown/ifup, rmmod/modprobe of the WiFi drivers
+#   first-boot-expand  - partition expansion on a new image's first boot
+- name: Stop and disable retired services that duplicated PxUSBm
   systemd:
-    name: network-watchdog.service
+    name: "{{ item }}"
     state: stopped
     enabled: no
+  loop:
+    - network-watchdog.service
+    - first-boot-expand.service
   failed_when: false
 
-- name: Remove retired network-watchdog files
+- name: Remove retired service files that duplicated PxUSBm
   file:
     path: "{{ item }}"
     state: absent
   loop:
     - /etc/systemd/system/network-watchdog.service
     - /usr/local/connectbox/bin/network-watchdog.py
+    - /etc/systemd/system/first-boot-expand.service
+    - /usr/local/connectbox/bin/first-boot-expand.py
 
-- name: Reload systemd after removing network-watchdog
+- name: Reload systemd after removing retired services
   systemd:
     daemon_reload: yes
 
