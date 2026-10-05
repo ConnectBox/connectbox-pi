@@ -1,40 +1,36 @@
-# ConnectBox Modular System Scripts
+# ConnectBox System Scripts
 
-> **Status (2026-10-05):** `PxUSBm.py` is the official USB mounter. Ansible no longer installs
-> `usb_mounter.py` or `99-usb-automount.rules`, and removes them from provisioned devices,
-> because udev and PxUSBm both mounting every inserted USB raced each other. PxUSBm now also
-> starts `mmiLoader.py`. The USB part of this kit is kept for reference only — do not install
-> it alongside PxUSBm.
+> **Status (2026-10-05):** `PxUSBm.py` is the official owner of USB mounting (and starting
+> `mmiLoader.py`) and of network recovery. This folder originally held event-driven
+> replacements for those jobs; they were retired because they ran *alongside* PxUSBm and
+> raced it, and are no longer in the repo:
+>
+> - `usb_mounter.py` + `99-usb-automount.rules` (udev USB mounting)
+> - `network-watchdog.py` + `network-watchdog.service` (WiFi/AP recovery)
+>
+> Ansible removes both from devices where they were installed. Do not reinstall them.
+>
+> Still here: `first-boot-expand.py`, which overlaps PxUSBm's own first-boot partition
+> expansion. Whether to keep it is undecided.
 
-This directory contains the modernized, event-driven replacements for `PxUSBm.py`. By breaking apart the monolithic script, we achieve lower CPU usage, higher stability, and faster USB mounting.
+## first-boot-expand
 
-## 1. File Placements
+One-shot partition expansion on the first boot of a new image, run by
+`first-boot-expand.service`. It is skipped once `/usr/local/connectbox/expand_progress.txt`
+exists (the same progress file PxUSBm uses).
 
-Move the scripts to the ConnectBox binary directory:
 ```bash
-sudo cp *.py /usr/local/connectbox/bin/
+sudo cp first-boot-expand.py /usr/local/connectbox/bin/
 sudo chmod +x /usr/local/connectbox/bin/first-boot-expand.py
-sudo chmod +x /usr/local/connectbox/bin/network-watchdog.py
-sudo chmod +x /usr/local/connectbox/bin/usb_mounter.py
-```
-
-Move the `udev` rule to handle USB automounting:
-```bash
-sudo cp 99-usb-automount.rules /etc/udev/rules.d/
-sudo udevadm control --reload-rules
-```
-
-Move the `systemd` services to `/etc/systemd/system/`:
-```bash
-sudo cp *.service /etc/systemd/system/
+sudo cp first-boot-expand.service /etc/systemd/system/
 sudo systemctl daemon-reload
+sudo systemctl enable first-boot-expand.service
 ```
 
-## 2. Enabling Native Service Restarts
+## Native service restarts
 
-Instead of relying on Python to monitor daemon crashes, we configure `systemd` to automatically restart services if they fail.
-
-Run the following commands to add `Restart=always` to the existing services:
+These systemd overrides make `hostapd` and `neo-battery-shutdown` restart themselves if
+they fail. They are independent of the scripts above.
 
 ### For `hostapd`:
 ```bash
@@ -51,17 +47,4 @@ echo -e "[Service]\nRestart=always\nRestartSec=5" | sudo tee /etc/systemd/system
 Reload `systemd` to apply these overrides:
 ```bash
 sudo systemctl daemon-reload
-```
-
-## 3. Disabling PxUSBm.py
-
-Ensure the old script is disabled. If it was launched from `/etc/rc.local`, edit `/etc/rc.local` and remove or comment out the line calling `PxUSBm.py`.
-
-## 4. Enabling the New Services
-
-```bash
-sudo systemctl enable first-boot-expand.service
-sudo systemctl enable network-watchdog.service
-
-sudo systemctl start network-watchdog.service
 ```

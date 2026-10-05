@@ -7,8 +7,9 @@ This file tracks the architecture changes, thinking process, and code refactors 
 **Changes Made:**
 * Created `first-boot-expand.py` to handle initial filesystem expansion, triggered by a one-shot `systemd` service (`first-boot-expand.service`).
 * Created `usb_mounter.py` triggered natively by `udev` rules (`99-usb-automount.rules`) to handle USB insertion events instead of using a constant polling loop.
-  * **Reversed 2026-10-05:** `PxUSBm.py` is the official mounter again. It now also starts `mmiLoader.py`, and handles Linux file systems (ext4 etc.) and drives with no partition table. Ansible removes `usb_mounter.py` and the udev rule from devices, since udev and PxUSBm were both mounting every USB.
+  * **Reversed 2026-10-05:** `PxUSBm.py` is the official mounter again. It now also starts `mmiLoader.py`, and handles Linux file systems (ext4 etc.) and drives with no partition table. Ansible removes `usb_mounter.py` and the udev rule from devices, since udev and PxUSBm were both mounting every USB. The files were removed from `system_scripts/` too.
 * Created `network-watchdog.py` as a lightweight daemon to handle Wi-Fi recovery (unloading/loading kernel drivers dynamically via `rmmod`/`modprobe`) and restarting `hostapd`.
+  * **Reversed 2026-10-05:** `PxUSBm.py` owns network recovery. `network-watchdog` ran alongside it (both doing `ifdown`/`ifup`, driver reloads and `hostapd` restarts); it was removed from the repo and Ansible removes it from devices.
 * Relied on `systemd` `Restart=always` overrides for process management instead of Python-based checks.
 
 ## 2. Deprecation of `brand.txt` (Completed)

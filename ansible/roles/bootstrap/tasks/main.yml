@@ -786,6 +786,29 @@
 - name: enable the PxUSBm service 
   command: systemctl enable PxUSBm.service 
 
+# PxUSBm.py owns network recovery (AP/client interface checks, hostapd
+# restarts).  network-watchdog.py from system_scripts/ was hand-installed on
+# some devices and did the same job in parallel (ifdown/ifup, rmmod/modprobe of
+# the WiFi drivers), so the two raced.  Remove it wherever it exists.
+- name: Stop and disable retired network-watchdog service
+  systemd:
+    name: network-watchdog.service
+    state: stopped
+    enabled: no
+  failed_when: false
+
+- name: Remove retired network-watchdog files
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/systemd/system/network-watchdog.service
+    - /usr/local/connectbox/bin/network-watchdog.py
+
+- name: Reload systemd after removing network-watchdog
+  systemd:
+    daemon_reload: yes
+
 - name: Make connectbox directory
   file:
     state: directory

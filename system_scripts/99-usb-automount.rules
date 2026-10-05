@@ -1,2 +1,0 @@
-ACTION=="add", KERNEL=="sd[a-z][0-9]", RUN+="/usr/bin/python3 /usr/local/connectbox/bin/usb_mounter.py add /dev/%k"
-ACTION=="remove", KERNEL=="sd[a-z][0-9]", RUN+="/usr/bin/python3 /usr/local/connectbox/bin/usb_mounter.py remove /dev/%k"
