@@ -111,6 +111,10 @@ The `3.js` patch matches an exact compiled string with `ignore_errors: yes`, so 
 
 `ansible/roles/bootstrap/files/test_mmiLoader.py` covers the mmiLoader helper functions (loads the file via `importlib.util.spec_from_file_location`; kept Python 3.7 compatible with `contextlib.ExitStack`). Run it after any mmiLoader change. `test_PxUSBm_mount.py` (same folder) simulates `PxUSBm.mountCheck()` with fake `lsblk` output — run it after any change to USB mounting.
 
+## Broken links in web content
+
+`connectbox_enhanced.conf.j2` sends a 404 under `/assets/content/<lang>/html/` back to the start page of the item it was clicked in (taken from the `Referer`), or to `/` if there is no item or the start page itself is missing. Without this, the server-wide `error_page 404 /index.html` served the app's page at the wrong address and readers got a blank page. Behaviour was verified with real nginx (Windows build, same map/PCRE) against a mock content tree.
+
 ## Important invariants
 
 - **Captive portal must support very old phones**: devices are deployed in disadvantaged countries with iOS 9 / Android 4–5 era phones. The old-OS checks in `captiveportal/views.py` (sibling repo `simple-offline-captive-portal`) are intentional — do not remove or "modernize" them.

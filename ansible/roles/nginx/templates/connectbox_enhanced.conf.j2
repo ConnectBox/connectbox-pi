@@ -1,3 +1,25 @@
+# Web content (index.html sites copied onto the USB) often has links to pages
+# that were never copied, e.g. GospelComics' "Previous Page" -> ../index.html.
+# A broken link is sent back to the start page of the item it was clicked in,
+# found from the Referer: .../assets/content/<lang>/html/<item>/... -> that
+# item's folder.  Paths stay percent-encoded so they can go straight into a
+# Location header.
+map $http_referer $html_item_root {
+    default "";
+    "~^https?://[^/]+(?<item_root>/assets/content/[^/]+/html/[^/?#]+/)" $item_root;
+}
+
+# Where a broken web content link goes:
+#   - no item in the Referer (typed URL, link from outside) -> ConnectBox home
+#   - the item's own start page is the missing file          -> ConnectBox home
+#     (redirecting it to itself would loop)
+#   - otherwise                                              -> the item's start page
+map "$html_item_root|$request_uri" $html_broken_link_target {
+    "~^\|"                  /;
+    "~^([^|]+)\|\1$"        /;
+    "~^(?<target>[^|]+)\|"  $target;
+}
+
 server {
     listen 80;
     # Wildcard .local i.e. respond to anything that comes in on that domain
@@ -15,7 +37,7 @@ server {
 {{ nginx_admin_block }}
 
 	location /admin {
-      alias {{ connectbox_enhanced_admin_root }}/;	
+      alias {{ connectbox_enhanced_admin_root }}/;
 	}
 
 
@@ -33,6 +55,21 @@ server {
       location ~ /$ {
         expires -1;
       }
+    }
+
+    # Web content folders.  A missing file here must not fall through to the
+    # server-wide "error_page 404 /index.html": that serves the app's page at
+    # the wrong address, its scripts 404 and the reader sees a blank page.
+    # Must come before the .json location so it wins for web content files.
+    location ~ ^/assets/content/[^/]+/html/ {
+      error_page 404 = @html_broken_link;
+      location ~ \.json$ {
+        expires -1;
+      }
+    }
+
+    location @html_broken_link {
+      return 302 $html_broken_link_target;
     }
 
     location ~ \.json$ {
