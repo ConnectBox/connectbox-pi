@@ -983,6 +983,48 @@ def scenario_zim(base):
 	mmiLoader._zim_cards = []
 
 
+def scenario_card_icons(base):
+	"""
+	Scenario 14: card icons for ZIMs (card_icon_png / zim_card_icon).
+
+	Uses two real ZIM favicons - Open Music Theory's (1-bit palette, every
+	pixel transparent, i.e. empty) and Stack Exchange Cooking's (8-bit palette
+	with transparency, bright) - plus synthetic icons for the dark-on-
+	transparent, light-on-transparent and opaque cases.
+	"""
+	import base64
+	print("\n-- Scenario 14: card icons --")
+	OMT = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAADAAAAAwAQMAAABtzGvEAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAANQTFRFR3BMgvrS0gAAAAF0Uk5TAEDm2GYAAAANSURBVBjTY2AYBdQEAAFQAAGn4toWAAAAAElFTkSuQmCC")
+	COOKING = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAMAAABg3Am1AAAA/FBMVEX///8AAACbLSWbLSWbLSWbLSWbLSWbLSWbLSWbLSWbLSWbLSWBQDmbLSWbLSWbLSWbLSWBQDmBQDmbLSWBQDmBQDmBQDmBQDmBQDmBQDmBQDmBQDmBQDmBQDmEPjeRNS2BQDmBQDns2NahOjO/TEDmt7PdoJnz5eTMcGbhq6a6b2nuz8zEWE3ViIDHiYS0Ylz///+VMirZlIzgvbu7QDPNlpLTo6CRNC2IOzT58vGONy/my8nasK3BfHfy29mZLiaLOTKbLSWEPjeGPDWQNS7qw7+DPziTMyuBQDmuVE6oR0CMODCWMSmYLyju2df78/L35+bkwL3QfHPIZFmrwVUyAAAAInRSTlMAAEDvEIAwn79gIN+/z3CvUIBAjxBgr9+f789QIHCP7zCP5M9NzAAAAYZJREFUeJztk9FPwjAQxi3DCCaQGJ6M8UHcFNwIJztNSEbMPRAHxrDE//9/sb21rB3tXo0J3wPZ6Pfr197dLi7O+r8Snbqi3RQASAQBosflkoifJ1SAFvmBHuXasCOiN37CDoB4Lf1ZmX0BMe5IiOTCAXFm3Ckipl1H2ih7ZuwLacdjlA8geQCseHmrzNicDApPlYZ5Vm/JWyMmYKlV1r4sCb0DNnLcAOuhA9Cz/n8VyyvP4VSyLRZQeBxHpdpvAaMuf902F6CA9SkEjANbc/9ibsvAAcRSW9zKICfgQQfYwGVhHdco5qFYofE7ZR3va8Am6heOOQXUWOzVPCyO/gUD6ieGnQ8Q4kWtJ01Axu/qDlM/EPFoa6JSe8uUOnLiBUS0gUQPdKXGELcmrl0lo0GCsXf6QsC1HtdZ1ephHgDExvnGLIUACgDrfgCI/MA6CiX0Mh+Qj/x9UFK3PrT8pNe8QHFyJvosy9ubIED7uQ3k9F0a3XkBIR7KV6r18VU2urcTzvpz/QInBqmz3lM0rQAAAABJRU5ErkJggg==")
+
+	w, h, px = mmiLoader.png_decode_rgba(COOKING)
+	check("S14: decodes 8-bit palette + tRNS PNG", (w, h, len(px)) == (48, 48, 2304))
+	check("S14: bright icon on transparent kept", mmiLoader.card_icon_png(COOKING) == COOKING)
+	w, h, px = mmiLoader.png_decode_rgba(OMT)
+	check("S14: decodes 1-bit palette PNG", (w, h) == (48, 48) and all(p[3] == 0 for p in px))
+	check("S14: empty icon -> None (use www.png)", mmiLoader.card_icon_png(OMT) is None)
+	check("S14: ZIM with empty favicon has no icon",
+		mmiLoader.zim_card_icon({"favicon": base64.b64encode(OMT).decode()}) is None)
+	check("S14: ZIM without favicon has no icon", mmiLoader.zim_card_icon({}) is None)
+
+	W = H = 16
+	def square(colour):
+		return [colour if 4 <= x < 12 and 4 <= y < 12 else (0, 0, 0, 0) for y in range(H) for x in range(W)]
+	dark = mmiLoader.png_encode_rgba(W, H, square((20, 20, 20, 255)))
+	out = mmiLoader.card_icon_png(dark)
+	fw, fh, fp = mmiLoader.png_decode_rgba(out)
+	check("S14: dark icon on transparent flattened onto white",
+		out != dark and fp[0] == (255, 255, 255, 255) and fp[8 * W + 8] == (20, 20, 20, 255) and (fw, fh) == (W, H))
+	light = mmiLoader.png_encode_rgba(W, H, square((250, 250, 250, 255)))
+	check("S14: light icon on transparent kept", mmiLoader.card_icon_png(light) == light)
+	opaque = mmiLoader.png_encode_rgba(W, H, [(30, 30, 30, 255)] * (W * H))
+	check("S14: opaque dark icon kept", mmiLoader.card_icon_png(opaque) == opaque)
+	check("S14: unreadable data returned unchanged", mmiLoader.card_icon_png(b"not a png") == b"not a png")
+	half = mmiLoader.png_encode_rgba(W, H, [(0, 0, 0, 128 if (x + y) % 2 else 0) for y in range(H) for x in range(W)])
+	check("S14: semi-transparent dark icon flattened",
+		mmiLoader.png_decode_rgba(mmiLoader.card_icon_png(half))[2][1] == (127, 127, 127, 255))
+
+
 if __name__ == '__main__':
 	scenarios = [
 		scenario_flat_english,
@@ -1018,6 +1060,10 @@ if __name__ == '__main__':
 		sub13 = os.path.join(tmp, "s13")
 		os.makedirs(sub13, exist_ok=True)
 		scenario_zim(sub13)
+
+		sub14 = os.path.join(tmp, "s14")
+		os.makedirs(sub14, exist_ok=True)
+		scenario_card_icons(sub14)
 
 	print(f"\n{'='*60}")
 	print(f"Results: {PASS} passed, {FAIL} failed")

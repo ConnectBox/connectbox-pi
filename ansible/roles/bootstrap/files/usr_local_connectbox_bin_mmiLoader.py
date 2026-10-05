@@ -16,8 +16,10 @@ import shlex
 import signal
 import stat
 import html
+import struct
 import urllib.parse
 import urllib.request
+import zlib
 from indexer import *
 
 
@@ -636,6 +638,176 @@ def refresh_interface_translations(contentDirectory, templatesDirectory):
 		print("	Could not update languages.json: " + str(e))
 
 
+# ── Card icon helpers (pure Python PNG, no imaging library on the device) ─────
+#
+# ZIM icons are small PNGs (typically 48x48).  Many are a dark shape on a
+# transparent background, which disappears on the app's dark cards.  These
+# helpers decode the PNG, measure how dark its visible pixels are and how much
+# of it is transparent, and if needed flatten it onto a light background.
+
+# Icons with fewer visible (at least half opaque) pixels than this are treated
+# as having no icon at all - some ZIMs ship a fully transparent favicon.
+ICON_MIN_VISIBLE_SHARE = 0.02
+# Card icons that are at least this transparent ...
+ICON_TRANSPARENT_SHARE = 0.15
+# ... and whose visible pixels are on average darker than this (0 = black,
+# 1 = white) are flattened onto ICON_LIGHT_BACKGROUND.
+ICON_DARK_LUMINANCE = 0.35
+ICON_LIGHT_BACKGROUND = (255, 255, 255)
+
+
+def png_decode_rgba(data):
+	"""
+	Decode a non-interlaced PNG into (width, height, [(r, g, b, a), ...]).
+	Supports greyscale, RGB, palette, greyscale+alpha and RGBA at bit depths
+	1-8 (and 16, using the high byte), with tRNS transparency.  Returns None
+	for anything it cannot read (the caller then keeps the icon unchanged).
+	"""
+	try:
+		if data[:8] != b"\x89PNG\r\n\x1a\n":
+			return None
+		pos, idat, palette, trns, header = 8, b"", None, None, None
+		while pos + 8 <= len(data):
+			length = struct.unpack(">I", data[pos:pos + 4])[0]
+			kind = data[pos + 4:pos + 8]
+			body = data[pos + 8:pos + 8 + length]
+			pos += 12 + length
+			if kind == b"IHDR":
+				header = struct.unpack(">IIBBBBB", body)
+			elif kind == b"PLTE":
+				palette = [tuple(body[i:i + 3]) for i in range(0, len(body) - 2, 3)]
+			elif kind == b"tRNS":
+				trns = body
+			elif kind == b"IDAT":
+				idat += body
+			elif kind == b"IEND":
+				break
+		width, height, depth, ctype, _, _, interlace = header
+		if interlace or ctype not in (0, 2, 3, 4, 6):
+			return None
+		channels = {0: 1, 2: 3, 3: 1, 4: 2, 6: 4}[ctype]
+		bits_pp = channels * depth
+		stride = (width * bits_pp + 7) // 8
+		bpp = max(1, bits_pp // 8)            # bytes per pixel for filtering
+		raw = zlib.decompress(idat)
+		rows, prev, off = [], bytearray(stride), 0
+		for _ in range(height):
+			ftype, line = raw[off], bytearray(raw[off + 1:off + 1 + stride])
+			off += 1 + stride
+			for i in range(stride):
+				a = line[i - bpp] if i >= bpp else 0
+				b = prev[i]
+				c = prev[i - bpp] if i >= bpp else 0
+				if ftype == 1:
+					line[i] = (line[i] + a) & 0xFF
+				elif ftype == 2:
+					line[i] = (line[i] + b) & 0xFF
+				elif ftype == 3:
+					line[i] = (line[i] + (a + b) // 2) & 0xFF
+				elif ftype == 4:
+					p = a + b - c
+					pa, pb, pc = abs(p - a), abs(p - b), abs(p - c)
+					line[i] = (line[i] + (a if pa <= pb and pa <= pc else b if pb <= pc else c)) & 0xFF
+			rows.append(line)
+			prev = line
+
+		def samples(line):
+			# Unpack one row into integer samples at the PNG's bit depth
+			if depth == 8:
+				return list(line)
+			if depth == 16:
+				return list(line[0::2])
+			out, mask = [], (1 << depth) - 1
+			for byte in line:
+				for shift in range(8 - depth, -1, -depth):
+					out.append((byte >> shift) & mask)
+			return out
+
+		scale = 255 // ((1 << depth) - 1) if depth < 8 else 1
+		pixels = []
+		for line in rows:
+			s = samples(line)
+			for x in range(width):
+				v = s[x * channels:(x + 1) * channels]
+				if ctype == 3:
+					r, g, b = palette[v[0]]
+					a = trns[v[0]] if trns and v[0] < len(trns) else 255
+				elif ctype == 0:
+					grey = v[0] * scale
+					r = g = b = grey
+					a = 0 if trns and len(trns) >= 2 and v[0] == struct.unpack(">H", trns[:2])[0] else 255
+				elif ctype == 4:
+					r = g = b = v[0] * scale
+					a = v[1] * scale
+				elif ctype == 2:
+					r, g, b = v
+					a = 255
+					if trns and len(trns) >= 6 and (r, g, b) == struct.unpack(">HHH", trns[:6]):
+						a = 0
+				else:
+					r, g, b, a = v
+				pixels.append((r, g, b, a))
+		return width, height, pixels
+	except (struct.error, zlib.error, IndexError, KeyError, TypeError, ValueError):
+		return None
+
+
+def png_encode_rgba(width, height, pixels):
+	"""Encode (r, g, b, a) pixels as an 8-bit RGBA PNG."""
+	def chunk(kind, body):
+		return struct.pack(">I", len(body)) + kind + body + struct.pack(">I", zlib.crc32(kind + body) & 0xFFFFFFFF)
+	raw = bytearray()
+	for y in range(height):
+		raw.append(0)
+		for r, g, b, a in pixels[y * width:(y + 1) * width]:
+			raw += bytes((r, g, b, a))
+	return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0))
+			+ chunk(b"IDAT", zlib.compress(bytes(raw), 9)) + chunk(b"IEND", b""))
+
+
+def icon_needs_light_background(pixels):
+	"""
+	True when an icon is a dark shape on a (largely) transparent background,
+	i.e. it would vanish on the app's dark cards.  Visible pixels are those at
+	least half opaque; brightness is their average relative luminance.
+	"""
+	if not pixels:
+		return False
+	visible = [p for p in pixels if p[3] >= 128]
+	transparent_share = 1 - len(visible) / len(pixels)
+	if transparent_share < ICON_TRANSPARENT_SHARE or not visible:
+		return False
+	luminance = sum(0.2126 * r + 0.7152 * g + 0.0722 * b for r, g, b, _ in visible) / (255 * len(visible))
+	return luminance < ICON_DARK_LUMINANCE
+
+
+def flatten_icon(pixels, background=ICON_LIGHT_BACKGROUND):
+	"""Blend every pixel onto an opaque background colour."""
+	br, bg, bb = background
+	out = []
+	for r, g, b, a in pixels:
+		out.append(((r * a + br * (255 - a)) // 255, (g * a + bg * (255 - a)) // 255, (b * a + bb * (255 - a)) // 255, 255))
+	return out
+
+
+def card_icon_png(data):
+	"""
+	Return the PNG bytes to use as a card icon, or None if the icon is empty
+	(the caller then uses the standard web-content icon).  A dark icon on a
+	transparent background is flattened onto a light background; other icons,
+	and PNGs that cannot be read, are returned unchanged.
+	"""
+	decoded = png_decode_rgba(data)
+	if decoded is None:
+		return data
+	width, height, pixels = decoded
+	if not pixels or sum(1 for p in pixels if p[3] >= 128) < ICON_MIN_VISIBLE_SHARE * len(pixels):
+		return None
+	if not icon_needs_light_background(pixels):
+		return data
+	return png_encode_rgba(width, height, flatten_icon(pixels))
+
+
 # ── ZIM (Kiwix) helpers ───────────────────────────────────────────────────────
 #
 # A .zim file holds a whole website.  kiwix-serve (Ansible role "kiwix") serves
@@ -737,13 +909,28 @@ def zim_redirect_page(url_name):
 			'</head><body><a href="' + target + '">Open</a></body></html>\n')
 
 
+def zim_card_icon(book):
+	"""
+	PNG bytes for a ZIM card's icon, from the ZIM's own favicon and adjusted
+	for the dark cards (see card_icon_png), or None if the ZIM has no usable
+	icon (missing, not a PNG we can check is fine - kept as is - or empty).
+	"""
+	import base64
+	try:
+		data = base64.b64decode(book.get("favicon", ""))
+	except (ValueError, TypeError):
+		return None
+	if not data:
+		return None
+	return card_icon_png(data)
+
+
 def write_zim_card_files(content, book, language, contentDirectory):
 	"""
 	Write a ZIM card's files into one language of the content directory: the
 	redirect page html/<slug>/index.html, the card icon images/<slug>.png (from
 	the ZIM's own favicon) and data/<slug>.json.
 	"""
-	import base64
 	slug = content["slug"]
 	page_dir = os.path.join(contentDirectory, language, "html", slug)
 	os.makedirs(page_dir, exist_ok=True)
@@ -752,8 +939,8 @@ def write_zim_card_files(content, book, language, contentDirectory):
 	if content["image"] == slug + ".png":
 		try:
 			with open(os.path.join(contentDirectory, language, "images", slug + ".png"), "wb") as f:
-				f.write(base64.b64decode(book["favicon"]))
-		except (OSError, ValueError, KeyError) as e:
+				f.write(zim_card_icon(book))
+		except (OSError, TypeError) as e:
 			print("	Could not write ZIM icon for " + slug + ": " + str(e))
 	with open(os.path.join(contentDirectory, language, "data", slug + ".json"), "w", encoding="utf-8") as f:
 		json.dump(content, f, ensure_ascii=False, indent=4)
@@ -780,7 +967,7 @@ def make_zim_card(filename, path, language, templatesDirectory, contentDirectory
 	content["title"] = book.get("title") or os.path.splitext(filename)[0]
 	if "description" in content or book.get("description"):
 		content["description"] = book.get("description", "")
-	content["image"] = slug + ".png" if book.get("favicon") else "www.png"
+	content["image"] = slug + ".png" if zim_card_icon(book) else "www.png"
 	write_zim_card_files(content, book, language, contentDirectory)
 	_zim_cards.append((language, content, book))
 	print("	ZIM card: " + content["title"] + " -> " + KIWIX_URL_ROOT + book["url_name"] + "/")
