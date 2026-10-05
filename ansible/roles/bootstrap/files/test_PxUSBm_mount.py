@@ -89,6 +89,8 @@ class FakeDevice:
 		return P(self.lsblk_text() if cmd == 'lsblk' else "")
 
 	def run(self, args, **kwargs):
+		if args[0] == 'systemctl':
+			return types.SimpleNamespace(stdout="not-found\n", returncode=0)
 		dev = args[-1].replace('/dev/', '')
 		return types.SimpleNamespace(stdout=self.fstypes.get(dev, "") + "\n", returncode=0)
 
@@ -164,8 +166,10 @@ def scenario_fat_partition():
 		dev.listing = disk("sda") + part("sda1", "/media/usb0")
 		cmds = dev.poll()
 		check("S1: mmiLoader started on next poll", started_loader(cmds), str(cmds))
-		check("S1: loader stops any previous run first",
-			any("systemctl stop --wait connectbox-loader" in c for c in cmds))
+		stop_i = [i for i, c in enumerate(cmds) if c.startswith("systemctl stop connectbox-loader")]
+		run_i = [i for i, c in enumerate(cmds) if "systemd-run --unit=connectbox-loader" in c]
+		check("S1: loader stops any previous run first", stop_i and run_i and stop_i[0] < run_i[0], str(cmds))
+		check("S1: stop does not use --wait (rejected by systemd 247)", not any("stop --wait" in c for c in cmds))
 
 		cmds = dev.poll()
 		check("S1: mmiLoader not restarted on later polls", not started_loader(cmds) and not mounts(cmds), str(cmds))

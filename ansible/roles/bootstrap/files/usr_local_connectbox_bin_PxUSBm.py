@@ -146,13 +146,23 @@ def start_content_loader():
 
     Runs in a transient systemd unit (connectbox-loader) so indexing continues
     in the background while this daemon keeps polling.  --remain-after-exit
-    keeps the unit visible after mmiLoader finishes.  Any previous run is
-    stopped first: --wait blocks until it is fully gone so systemd-run can
-    reuse the unit name (without it, a second USB insert can fail silently).
+    keeps the unit loaded after mmiLoader finishes, so the previous run must be
+    stopped (which unloads it) before systemd-run can reuse the name; otherwise
+    it fails with "Unit connectbox-loader.service already exists" and nothing
+    is indexed.  `systemctl stop` already waits for the stop to finish.  (Do not
+    add --wait: systemd 247 on Debian 11 rejects it for stop and stops nothing.)
     """
     logger.info("Starting mmiLoader content load, time is " + time.asctime())
-    os.system("systemctl stop --wait connectbox-loader.service 2>/dev/null; systemctl reset-failed connectbox-loader.service 2>/dev/null")
-    os.system("/usr/bin/systemd-run --unit=connectbox-loader --description='ConnectBox Content Loader' --remain-after-exit /usr/bin/python3 /usr/local/connectbox/bin/mmiLoader.py")
+    os.system("systemctl stop connectbox-loader.service 2>/dev/null; systemctl reset-failed connectbox-loader.service 2>/dev/null")
+    # Belt and braces: give systemd up to 5 s to unload the old unit
+    for _ in range(10):
+        state = subprocess.run(['systemctl', 'show', '-p', 'LoadState', '--value', 'connectbox-loader.service'],
+                               capture_output=True, text=True).stdout.strip()
+        if state != 'loaded':
+            break
+        time.sleep(0.5)
+    if os.system("/usr/bin/systemd-run --unit=connectbox-loader --description='ConnectBox Content Loader' --remain-after-exit /usr/bin/python3 /usr/local/connectbox/bin/mmiLoader.py") != 0:
+        logger.info("Could not start mmiLoader (systemd-run failed), time is " + time.asctime())
 
 
 def mountCheck():
