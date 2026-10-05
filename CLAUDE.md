@@ -82,7 +82,7 @@ Port 5001: Python captive portal.
 
 ## Device access
 
-SSH config at `~/.ssh/config` has wildcard for `192.168.1.*` using `root` + `id_ed25519`. Direct SSH: `ssh root@<device_ip>`. Build Pi: `ssh build`.
+SSH config at `~/.ssh/config` has wildcard for `192.168.1.*` using `root` + `id_ed25519`. The WiFi MAC address is deliberately rotated at least on every boot, so a device's IP changes on every boot (and when PxUSBm brings WiFi back up). This is by design; don't try to pin it. Get the current IP from the OLED or the router. Direct SSH: `ssh root@<device_ip>`. Build Pi: `ssh build`.
 
 Deploying a single file for testing:
 ```bash
