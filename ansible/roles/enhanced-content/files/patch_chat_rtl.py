@@ -22,6 +22,7 @@ mediainterface release changed it), so Ansible reports it.
 Usage: patch_chat_rtl.py [build_dir]   (default /var/www/enhanced/content/www/build)
 """
 import os
+import re
 import sys
 
 BUILD = sys.argv[1] if len(sys.argv) > 1 else '/var/www/enhanced/content/www/build'
@@ -33,17 +34,34 @@ CSS_MARKER = '/* ConnectBox: bubble side follows language direction'
 CSS_BLOCK = "/* ConnectBox: bubble side follows language direction; green = your own message */\npage-chat .chat-message .left-bubble.cb-mine { background: #dcf8c6; }\npage-chat .chat-message .left-bubble.cb-mine:after { border-right-color: #dcf8c6; }\npage-chat .chat-message .left-bubble.cb-mine span.msg-name { color: green; }\npage-chat .chat-message .right-bubble:not(.cb-mine) { background: #ffffff; }\npage-chat .chat-message .right-bubble:not(.cb-mine):after { border-left-color: #ffffff; }\npage-chat .chat-message .right-bubble:not(.cb-mine) span.msg-name { color: blue; }\n\n/* ConnectBox: fixed bubble placement that does not depend on the page direction\n   (the original 'left: 15%' pushed right-hand bubbles off-screen on right-to-left pages) */\npage-chat .chat-message .right-bubble { left: 0; margin-left: 15%; margin-right: 30px; }\npage-chat .chat-message .left-bubble { left: 0; margin-left: 30px; margin-right: 15%; }\npage-chat .chat-message .right-bubble p, page-chat .chat-message .left-bubble p { white-space: normal; }\n"
 
 
+# The compiled template comments carry the folder the release was built in on
+# GitHub Actions: /home/runner/work/<repo>/<repo>/.  JS_EDITS were written
+# against RT-coding-team's "mediainterface" builds; releases built from
+# ConnectBox/connectbox-mediainterface (from 2026-10-06) have a different
+# folder, so the edits are adjusted to whatever folder this 2.js was built in.
+STOCK_BUILD_ROOT = '/home/runner/work/mediainterface/mediainterface/'
+
+
+def edits_for(code):
+    """JS_EDITS with the build folder replaced by the one used in this 2.js."""
+    m = re.search(r'ion-inline-start:"(/[^"]*/)src/pages/chat/chat\.html"', code)
+    root = m.group(1) if m else STOCK_BUILD_ROOT
+    return [(old.replace(STOCK_BUILD_ROOT, root), new.replace(STOCK_BUILD_ROOT, root))
+            for old, new in JS_EDITS]
+
+
 def patch_js(path):
     """Apply JS_EDITS to 2.js; returns False if the stock text is not there."""
     with open(path, encoding='utf-8', newline='') as f:
         code = f.read()
-    if all(new in code for _, new in JS_EDITS):
+    edits = edits_for(code)
+    if all(new in code for _, new in edits):
         print('2.js chat page already patched')
         return True
-    if any(new not in code and code.count(old) != 1 for old, new in JS_EDITS):
+    if any(new not in code and code.count(old) != 1 for old, new in edits):
         print('2.js: expected stock text not found - not patched')
         return False
-    for old, new in JS_EDITS:
+    for old, new in edits:
         if new not in code:
             code = code.replace(old, new, 1)
     with open(path, 'w', encoding='utf-8', newline='') as f:
