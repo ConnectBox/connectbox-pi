@@ -45,7 +45,7 @@ language directory exists.
 | Format | Example | Notes |
 |--------|---------|-------|
 | ISO 639-1 two-letter | `en`, `fr`, `zh` | Most common |
-| ISO 639-2 three-letter | `zho`, `fra` | Accepted if in languageCodes.json |
+| ISO 639-2 three-letter | `zho`, `fra`, `spa` | Accepted if in languageCodes.json; mapped to the two-letter code (`spa` → `es`) |
 | IETF regional tag | `zh-CN`, `pt-BR` | Base-code symlink (`zh` → `zh-CN`) created automatically so the frontend can resolve URLs |
 
 Codes longer than 3 characters that do not contain `-` are rejected.
@@ -244,6 +244,12 @@ Each ZIM becomes its own card (title and icon taken from the ZIM), even if it is
 inside a collection folder, and opens in the built-in Kiwix reader, which has its
 own search.  A ZIM tagged with several languages is also listed in its other
 languages that are on the USB.  ZIM cards have no download button.
+
+A ZIM must be inside a language folder.  One placed directly in `content/` is
+registered with Kiwix but gets no card, so visitors cannot find it.  TED ZIMs
+(`ted_*`) have their own language picker; a TED card opens it in the language of
+the menu it was opened from (if the ZIM has that language), not TED's English
+default.  Other multi-language ZIMs open in whatever language they default to.
 
 Large ZIMs: FAT32 cannot hold files over 4 GB - use exFAT or ext4.  Remember to
 delete `saved.zip` after adding ZIM files to a USB that has one.

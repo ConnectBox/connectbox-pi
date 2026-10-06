@@ -52,6 +52,8 @@ Regional language variants (e.g. `zh-CN`, `pt-BR`) on the USB are handled by ali
 
 Language folders and `.language` may use 2- or 3-letter codes; `per` and `fa` are both Farsi, `ara` and `ar` both Arabic. Right-to-left languages (Arabic, Farsi, Hebrew, Urdu, ...) are flagged `"rtl": true` in `languages.json`, which flips the interface. The language button on the home page shows the active language's own name (e.g. فارسی).
 
+A first-time visitor starts in the first of their browser's preferred languages that the box has (exact match such as `pt-BR`, otherwise the same base language, `pt`); if the box has none of them, the default language from `languages.json` is used. A language picked with the language button is remembered and always wins.
+
 ### Interface translations
 
 The app's own text (section titles, media types, the footer's Configuration link, chat labels) comes from each language's `interface.json`. Upstream only has English, so mmiLoader writes each language's file from `/usr/local/connectbox/translations/<code>.json`:
@@ -68,7 +70,7 @@ Every page inside web content (HTML folders) and ZIM files shows a small round h
 
 ### ZIM files (offline websites)
 
-Put `.zim` files (from https://library.kiwix.org) in a language folder on the USB, e.g. `content/en/wikipedia_en_100_2025-01.zim`. Each one becomes a card in that language with the ZIM's own title and icon (a dark icon is put on a white background so it shows on the dark cards; an empty one is replaced by the standard web icon), and opens in Kiwix; a ZIM tagged with several languages also appears in its other languages that are on the box. Search inside a ZIM is Kiwix's own. Files over 4 GB need an exFAT or ext4 USB. After adding ZIMs to a USB that already has `saved.zip`, delete `saved.zip` so the USB is re-indexed.
+Put `.zim` files (from https://library.kiwix.org) in a language folder on the USB, e.g. `content/en/wikipedia_en_100_2025-01.zim`. Each one becomes a card in that language with the ZIM's own title and icon (a dark icon is put on a white background so it shows on the dark cards; an empty one is replaced by the standard web icon), and opens in Kiwix; a ZIM tagged with several languages also appears in its other languages that are on the box. A ZIM placed directly in `content/` (not in a language folder) gets no card. TED ZIMs open in the language of the menu they were opened from instead of TED's English default; other multi-language ZIMs open in their own default language. Search inside a ZIM is Kiwix's own. Files over 4 GB need an exFAT or ext4 USB. After adding ZIMs to a USB that already has `saved.zip`, delete `saved.zip` so the USB is re-indexed.
 
 ### USB file systems
 
