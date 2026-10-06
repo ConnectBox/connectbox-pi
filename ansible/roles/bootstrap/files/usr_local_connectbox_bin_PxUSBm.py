@@ -206,8 +206,7 @@ def mountCheck():
         ``/media/usbN`` slot, run ``dosfsck``/``ntfsfix`` for filesystem integrity,
         then mount with ``noatime,nodev,nosuid,utf8`` flags.  Kernel >=5.15 uses
         ``utf8=`` directly; older kernels need ``iocharset=utf8``.  On a successful
-        usb0 mount, trigger upgrade scripts and (for TheWell brand) Moodle course
-        restore.
+        usb0 mount, trigger the upgrade script.
 
     Pass 3 — compact the mount table:
         After additions and removals the ``mnt[]``/``loc[]`` arrays may have holes.
@@ -371,7 +370,7 @@ def mountCheck():
     #     "iocharset=utf8".  The kernel version is read once via "uname -r".
     #   - Record the successful mount in mnt[j] and loc[j], increment total.
     #   - If the newly mounted drive is usb0, trigger SSH-enabler, upgrade script,
-    #     and (for TheWell brand) Moodle course restore.
+    #     and the upgrade script.
     # If already mounted, register it in the mnt[]/loc[] table if not already there
     # (handles the case where the drive was mounted before this daemon started).
     i=0                       #line iterator
@@ -512,13 +511,6 @@ def mountCheck():
                 logger.info("starting the upgrade process due to /media/usb0/.connectbox/upgrade/upgrade.py, time is "+ time.asctime())
                 os.system("python3 /media/usb0/.connectbox/upgrade/upgrade.py")
                 logger.info("Ended upgrade, time is " + time.asctime())
-##################### The well Code on Mount ########################################## 
-             # Moodle Course Loader
-              if (Brand["Brand"] == 'TheWell'):
-                print("Running the moodel cli restore_courses_directory.php")
-                logger.info("Running the moodel cli restore_courses_directory.php, time is" + time.asctime())
-                os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/*.mbz && /usr/bin/php /var/www/moodle/admin/cli/restore_courses_directory.php /media/usb0/' >/tmp/restore_courses_directory.log 2>&1 &")
-                logger.info("TheWell cli for course diretories finished, time is " + time.asctime())
         else:                                               #True if we are mounted, check for usb(?).
           if ('usb' in d[i]):                               #we need to register a mount or make sure it is
             a = d[i].partition('usb')

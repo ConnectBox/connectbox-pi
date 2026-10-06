@@ -93,9 +93,6 @@ ansible-playbook -i <device_ip>, site.yml \
     -e wireless_country_code=US
 ```
 
-For a **The Well** branded image add
-`-e connectbox_default_hostname=TheWell -e lcd_logo=lcdwell_logo.png`.
-
 `connectbox_version` is the version shown in the admin pages; use the release tag
 you will publish.  The run ends with `PLAY RECAP ... failed=0` and the device
 **shuts itself down**.  With `do_image_preparation=true` the playbook also:
@@ -110,9 +107,8 @@ with `developer_mode=true`.
 
 **Alternative:** from `~/connectbox/connectbox-tools/deployment`, run
 `python3 make_cb.py`.  It asks whether to fetch a fresh copy of connectbox-pi
-(branch or tag, default `master`), the release tag, the device IP and whether to
-build The Well (or other options typed as on the command line, e.g.
-`-e wireless_country_code=AU`), then runs the same playbook from `ansible/` as
+(branch or tag, default `master`), the release tag, the device IP and any extra build options (typed as on the
+command line, e.g. `-e wireless_country_code=AU`), then runs the same playbook from `ansible/` as
 root with `do_image_preparation=True`.  (Fixed in connectbox-tools `5893887`;
 earlier versions ran it from the wrong folder and mangled the options.)
 

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-ConnectBox/TheWell is an offline media-sharing appliance for Raspberry Pi and similar SBCs (NanoPi NEO, Orange Pi Zero 2, Radxa CM3). It creates a WiFi access point with a captive portal, serves media from a USB drive via an enhanced web interface, and optionally includes Moodle LMS. The entire system is provisioned via Ansible onto a target device running Raspbian/Debian.
+ConnectBox is an offline media-sharing appliance for Raspberry Pi and similar SBCs (NanoPi NEO, Orange Pi Zero 2, Radxa CM3). It creates a WiFi access point with a captive portal, serves media from a USB drive via an enhanced web interface, and optionally includes Moodle LMS. The entire system is provisioned via Ansible onto a target device running Raspbian/Debian.
 
 ## Provisioning
 

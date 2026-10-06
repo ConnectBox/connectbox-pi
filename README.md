@@ -1,16 +1,11 @@
 [![Build Status](https://travis-ci.org/ConnectBox/connectbox-pi.svg?branch=master)](https://travis-ci.org/ConnectBox/connectbox-pi)
 
-# This version of ConnectBox
+# ConnectBox
 
-TheWell is a old variant of ConnectBox that adds Moodle Learning Management System (v. 3.9.3), PHP (v. 7.4) and MySQL (MariaDB) (vv 10.3) to bring training system and learning content to the ConnectBox platform.
-
-Summary Of Changes:
-* ConnectBox Ansible roles are updated to build ConnectBox with Moodle, PHP and MySQL
-* TheWell is for Debian OS (Raspbian) on Raspberry Pi (with modifications) or other Linux host
-* Refer to Relay Trust Moodle Repo for Documentation Of Changes
-* Default Moodle MySQL database is located in this repo under ansible/roles/moodle/templates/
-* Legacy Connectbox File Serving is now at {{{hostname}}} such that Connectbox is http://thewell, Moodle is http://learn.thewell and Admin is http://thewell/admin
-* (There will be more as this gets built out)
+ConnectBox is an offline media-sharing appliance: a small single-board computer that
+runs its own WiFi access point with a captive portal and serves media from a USB
+drive through a web interface, with no internet connection needed. To build one, see
+[docs/deployment.md](docs/deployment.md).
 
 ## mmiLoader — USB Content Indexer
 

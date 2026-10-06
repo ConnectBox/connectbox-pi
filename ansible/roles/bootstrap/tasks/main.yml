@@ -129,7 +129,7 @@
   register: sdcard_info
   when: RM3_present or Pi_present
   
-- name: Extend the existing OS partition to 4 GB so we have enough space to load all The Well software
+- name: Extend the existing OS partition to 4 GB so we have enough space to load all the ConnectBox software
   community.general.parted:
     device: /dev/{{ sdcard_name.stdout }}
     number: "{{ sdcard_info.partitions | length }}"

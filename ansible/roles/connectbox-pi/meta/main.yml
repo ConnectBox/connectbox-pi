@@ -7,8 +7,6 @@ dependencies:
   - { role: wifi-ap, when: not aws_instance }
   - { role: mikegleasonjr.firewall, when: not aws_instance }
 #  - { role: php, when: build_moodle}
-#  - { role: ansible-postgresql, when: build_moodle}
-#  - { role: moodle, when: build_moodle}
   - { role: enhanced-content, when: enhanced_interface}
   - nginx
   - { role: kiwix, when: enhanced_interface }
