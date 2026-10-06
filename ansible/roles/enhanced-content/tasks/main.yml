@@ -393,6 +393,14 @@
     executable: python3
   ignore_errors: yes
 
+# First visit: start in the browser's language if the box has it, else the default
+- name: Patch connectbox-mediainterface to start in the browser's language
+  become: true
+  script: patch_browser_language.py
+  args:
+    executable: python3
+  ignore_errors: yes
+
 # ZIM cards: hide the detail page's download button (a ZIM has no .zip)
 - name: Patch connectbox-mediainterface to hide downloads for ZIM cards
   become: true
