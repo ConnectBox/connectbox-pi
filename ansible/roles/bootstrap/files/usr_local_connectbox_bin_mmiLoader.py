@@ -505,9 +505,19 @@ def translation_code(language, languageCodes):
 		return language
 	names = languageCodes.get(language, {}).get('english')
 	if names:
+		# Exact name list first; else the only 2-letter code sharing a name
+		# ('spa' is "Castilian, Spanish", 'es' just "Spanish").  Several
+		# (Norwegian: no/nb/nn) is ambiguous, so the code is kept.
+		shared = []
 		for code, record in languageCodes.items():
-			if len(code) == 2 and record.get('english') == names:
+			if len(code) != 2:
+				continue
+			if record.get('english') == names:
 				return code
+			if set(record.get('english') or []) & set(names):
+				shared.append(code)
+		if len(shared) == 1:
+			return shared[0]
 	return language
 
 

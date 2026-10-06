@@ -753,12 +753,17 @@ def scenario_interface_translations(base):
 	print("\n-- Scenario 12: interface translations --")
 	codes = {
 		"en": {"english": ["English"]}, "fa": {"english": ["Persian"]}, "per": {"english": ["Persian"]},
-		"ar": {"english": ["Arabic"]}, "ara": {"english": ["Arabic"]}, "es": {"english": ["Castilian", "Spanish"]},
+		"ar": {"english": ["Arabic"]}, "ara": {"english": ["Arabic"]}, "es": {"english": ["Spanish"]},
 		"spa": {"english": ["Castilian", "Spanish"]}, "zh": {"english": ["Chinese"]}, "xyz": {"english": ["Nowhere"]},
+		"no": {"english": ["Norwegian"]}, "nb": {"english": ["Bokmål", "Norwegian"]}, "nn": {"english": ["Norwegian", "Nynorsk"]},
+		"nor": {"english": ["Norwegian"]}, "nno": {"english": ["Norwegian", "Nynorsk"]}, "xxn": {"english": ["Norwegian", "Other"]},
 	}
 	check("S12: per -> fa", mmiLoader.translation_code("per", codes) == "fa")
 	check("S12: ara -> ar", mmiLoader.translation_code("ara", codes) == "ar")
-	check("S12: spa -> es (multi-name match)", mmiLoader.translation_code("spa", codes) == "es")
+	check("S12: spa -> es (shares one name)", mmiLoader.translation_code("spa", codes) == "es")
+	check("S12: nor -> no (exact match wins)", mmiLoader.translation_code("nor", codes) == "no")
+	check("S12: nno -> nn (exact match wins)", mmiLoader.translation_code("nno", codes) == "nn")
+	check("S12: ambiguous shared name kept", mmiLoader.translation_code("xxn", codes) == "xxn")
 	check("S12: zh -> zh-CN", mmiLoader.translation_code("zh", codes) == "zh-CN")
 	check("S12: zh-CN kept", mmiLoader.translation_code("zh-CN", codes) == "zh-CN")
 	check("S12: unknown 3-letter code kept", mmiLoader.translation_code("xyz", codes) == "xyz")
