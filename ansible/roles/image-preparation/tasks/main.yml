@@ -256,6 +256,14 @@
     dest: .ssh/authorized_keys
     state: absent
 
+# connectbox-manage signs admin logins with a per-box key it creates on first
+# start; remove the build box's key so every box made from this image makes
+# its own instead of sharing one.
+- name: Remove the admin session key
+  file:
+    dest: /usr/local/connectbox/admin_session.key
+    state: absent
+
 - name: Schedule Final Handlers
   assert:
     that: True
