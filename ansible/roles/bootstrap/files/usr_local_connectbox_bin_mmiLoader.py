@@ -858,6 +858,8 @@ KIWIX_MANAGE = "/usr/local/bin/kiwix-manage"
 KIWIX_LIBRARY = "/var/lib/connectbox/kiwix/library.xml"
 KIWIX_URL_ROOT = "/kiwix/content/"
 ZIM_MIME_TYPE = "application/x-zim"
+# localStorage key where TED ZIMs (ted2zim) keep the chosen language.
+TED_LANGUAGE_KEY = "ted2zim.selectedLanguage"
 EMPTY_KIWIX_LIBRARY = '<?xml version="1.0" encoding="UTF-8"?>\n<library version="20110515">\n</library>\n'
 
 # Filled by rebuild_kiwix_library(): real path of each ZIM -> its library entry.
@@ -932,17 +934,44 @@ def rebuild_kiwix_library(mediaDirectory, library=KIWIX_LIBRARY, kiwix_manage=KI
 	return _zim_books
 
 
-def zim_redirect_page(url_name):
+def zim_redirect_page(url_name, start_language=None):
 	"""
 	The html/<slug>/index.html for a ZIM card: sends the browser to the ZIM in
 	Kiwix.  meta refresh plus location.replace so it works on old browsers and
 	the redirect page does not stay in the back history.
+
+	start_language (TED ZIMs only, see ted_start_language) is saved where the
+	TED ZIM's own language picker looks first - localStorage, which the ZIM
+	shares with this page because Kiwix is proxied on the same host - so the
+	ZIM opens in the card's language instead of its English default.  The
+	script comes before the meta refresh so it runs before the page leaves.
 	"""
 	target = KIWIX_URL_ROOT + urllib.parse.quote(url_name) + "/"
+	store = ""
+	if start_language:
+		store = ("try { localStorage.setItem(\"" + TED_LANGUAGE_KEY + "\", \"" + start_language + "\"); } catch (e) {}\n")
 	return ('<!DOCTYPE html>\n<html><head><meta charset="utf-8">\n'
+			'<script>' + store + 'window.location.replace("' + target + '");</script>\n'
 			'<meta http-equiv="refresh" content="0; url=' + target + '">\n'
-			'<script>window.location.replace("' + target + '");</script>\n'
 			'</head><body><a href="' + target + '">Open</a></body></html>\n')
+
+
+def ted_start_language(book, language, languageCodes):
+	"""
+	The language a TED ZIM should open in when reached from `language`'s menu,
+	or None.  TED ZIMs (tag _category:ted, made by ted2zim) pick their language
+	from localStorage and default to English.  Their picker uses lower-case
+	codes ('zh-cn', 'pt', 'ar'), i.e. the box's codes lower-cased.  Only a
+	language the ZIM is tagged with is returned, so the picker is never handed
+	a language it has no data for (that would leave the page empty).
+	"""
+	if "_category:ted" not in book.get("tags", "").split(";"):
+		return None
+	code = translation_code(language, languageCodes)
+	tags = [t.strip() for t in book.get("language", "").split(",") if t.strip()]
+	if code.split('-')[0] not in [translation_code(t, languageCodes).split('-')[0] for t in tags]:
+		return None
+	return code.lower()
 
 
 def zim_card_icon(book):
@@ -961,17 +990,18 @@ def zim_card_icon(book):
 	return card_icon_png(data)
 
 
-def write_zim_card_files(content, book, language, contentDirectory):
+def write_zim_card_files(content, book, language, contentDirectory, start_language=None):
 	"""
 	Write a ZIM card's files into one language of the content directory: the
-	redirect page html/<slug>/index.html, the card icon images/<slug>.png (from
-	the ZIM's own favicon) and data/<slug>.json.
+	redirect page html/<slug>/index.html (opening a TED ZIM in start_language
+	if given), the card icon images/<slug>.png (from the ZIM's own favicon)
+	and data/<slug>.json.
 	"""
 	slug = content["slug"]
 	page_dir = os.path.join(contentDirectory, language, "html", slug)
 	os.makedirs(page_dir, exist_ok=True)
 	with open(os.path.join(page_dir, "index.html"), "w", encoding="utf-8") as f:
-		f.write(zim_redirect_page(book["url_name"]))
+		f.write(zim_redirect_page(book["url_name"], start_language))
 	if content["image"] == slug + ".png":
 		try:
 			with open(os.path.join(contentDirectory, language, "images", slug + ".png"), "wb") as f:
@@ -1015,11 +1045,18 @@ def cross_list_zim_cards(mains, contentDirectory, languageCodes):
 	Show multi-language ZIMs in every language they are tagged with that is on
 	this box, not just the folder they sit in.  Languages the box does not have
 	are ignored.  A single-language ZIM in another language's folder stays where
-	it is (the folder decides) with a note in the log.  Returns the number of
-	cards added.
+	it is (the folder decides) with a note in the log.  Runs after every card
+	exists because it needs languageCodes, so it also sets TED ZIMs' start
+	language (ted_start_language) on the folder card and on each added card.
+	Returns the number of cards added.
 	"""
 	added = 0
 	for folder_language, content, book in list(_zim_cards):
+		# The folder card was written without a start language (no languageCodes then)
+		folder_start = ted_start_language(book, folder_language, languageCodes)
+		if folder_start:
+			with open(os.path.join(contentDirectory, folder_language, "html", content["slug"], "index.html"), "w", encoding="utf-8") as f:
+				f.write(zim_redirect_page(book["url_name"], folder_start))
 		folder_code = translation_code(folder_language, languageCodes).split('-')[0]
 		tags = [t.strip() for t in book.get("language", "").split(",") if t.strip()]
 		if len(tags) < 2:
@@ -1037,7 +1074,8 @@ def cross_list_zim_cards(mains, contentDirectory, languageCodes):
 				if any(c.get("slug") == content["slug"] for c in mains[box_language]["content"]):
 					continue
 				card = json.loads(json.dumps(content))
-				write_zim_card_files(card, book, box_language, contentDirectory)
+				write_zim_card_files(card, book, box_language, contentDirectory,
+					ted_start_language(book, box_language, languageCodes))
 				mains[box_language]["content"].append(card)
 				added += 1
 				print("	ZIM " + content["title"] + " also listed in " + box_language)

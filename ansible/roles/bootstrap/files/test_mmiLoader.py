@@ -986,6 +986,22 @@ def scenario_zim(base):
 	check("S13: cross-listing twice adds nothing",
 		mmiLoader.cross_list_zim_cards(mains, content_dir, {"en": {"english": ["English"]}, "fr": {"english": ["French"]},
 			"eng": {"english": ["English"]}, "fra": {"english": ["French"]}, "deu": {"english": ["German"]}}) == 0)
+
+	# TED ZIMs open in the card's language (localStorage key read by ted2zim)
+	codes = {"en": {"english": ["English"]}, "eng": {"english": ["English"]}, "zh": {"english": ["Chinese"]},
+		"zho": {"english": ["Chinese"]}, "es": {"english": ["Spanish"]}, "spa": {"english": ["Castilian", "Spanish"]},
+		"fr": {"english": ["French"]}}
+	ted = {"tags": "_category:ted;ted;_videos:yes", "language": "eng,spa,zho", "url_name": "ted_mul_x_2026-09"}
+	check("S13: TED start language zh-CN -> zh-cn", mmiLoader.ted_start_language(ted, "zh-CN", codes) == "zh-cn")
+	check("S13: TED start language es", mmiLoader.ted_start_language(ted, "es", codes) == "es")
+	check("S13: TED not tagged with fr -> none", mmiLoader.ted_start_language(ted, "fr", codes) is None)
+	check("S13: non-TED ZIM -> none",
+		mmiLoader.ted_start_language(dict(ted, tags="_category:other;_videos:yes"), "es", codes) is None)
+	ted_page = mmiLoader.zim_redirect_page("ted_mul_x_2026-09", "zh-cn")
+	check("S13: TED page stores the language before redirecting",
+		'localStorage.setItem("ted2zim.selectedLanguage", "zh-cn")' in ted_page
+		and ted_page.index("localStorage") < ted_page.index("location.replace") < ted_page.index("http-equiv"))
+	check("S13: other pages store nothing", "localStorage" not in mmiLoader.zim_redirect_page("wiki_en_mini_2025-01"))
 	mmiLoader._zim_books = {}
 	mmiLoader._zim_cards = []
 
