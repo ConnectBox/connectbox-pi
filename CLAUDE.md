@@ -12,8 +12,9 @@ ConnectBox/TheWell is an offline media-sharing appliance for Raspberry Pi and si
 # Install Python/Ansible dependencies
 pip install -r requirements.txt
 
-# Provision a connected device
-ansible-playbook -i <device_ip>, ansible/site.yml
+# Provision a connected device - run from ansible/ so ansible/ansible.cfg applies
+# (force_handlers, pipelining); see docs/deployment.md
+cd ansible && ansible-playbook -i <device_ip>, site.yml -e wireless_country_code=US
 
 # Ansible lint (CI check)
 ansible-lint ansible/site.yml

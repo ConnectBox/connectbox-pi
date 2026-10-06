@@ -1,305 +1,156 @@
 # Making a ConnectBox
 
-The ConnectBox runs on a few different devices, with a specific operating system for each. NanoPi NEO devices run on Armbian (Xenial only) and Raspberry Pi devices run Raspbian Lite (Stretch only). Other Armbian devices may work, but are untested. ConnectBox support for the Raspberry Pi can lag behind Armbian devices, but we do want to keep supporting Raspbian, so please let us know if you find problems. Pre-made images are available for select devices, and you can always install to your devices using Ansible (a tool for deployment, configuration management and orchestration) if you have an ethernet connection to the device.
+A ConnectBox is built by running this repo's Ansible playbook from a computer
+(the *workstation*) against a freshly installed single-board computer (the
+*device*) over the network.  The playbook detects the board, installs and
+configures everything, and leaves a working ConnectBox.  Pre-made images are
+also available for some boards.
 
-# Terminology
+## Pre-made images
 
-For simplicity, let's assume the following terms:
-* __workstation__: The machine where you'll run Ansible. It might be a Linux virtual machine, or server or it might be a laptop running MacOS, or something else. When describing commands to run on the workstation, we'll display the workstation prompt as `user@ubuntu: $`.
- Most importantly, the workstation is different to your _device_.
-* __device__: The ConnectBox hardware. It might be a Raspberry Pi 3, or it might be one of the other supported devices. When describing commands to be run on the device, we'll display the device prompt as `pi@rasberrypi: $` even though it will be different on other devices.
+Release images are on GitHub: https://github.com/ConnectBox/connectbox-pi/releases .
+Burn one to a microSD card and boot.  If there is none for your board, build
+from scratch as below.
 
-## Get a pre-made release image for the NanoPi NEO or Raspberry Pi  (zero - RPi4)
+`sshd` is off on release images.  To turn it on, create a folder `.connectbox`
+on a USB stick with an empty file `enable-ssh` in it and insert the stick; you can
+then log in as `root` / `connectbox`.  Change the root password straight away.
 
-Pre-made release images are distributed on GitHub (https://github.com/ConnectBox/connectbox-pi/releases) . If you don't see an image for your device, feel free to raise an issue or email us.
+## Supported devices and operating systems
 
+`ansible/site.yml` reads the board model from `/sys/firmware/devicetree/base/model`
+and handles:
 
-## Building a release from Scratch
+| Board | Operating system | Ansible logs in as |
+|-------|------------------|--------------------|
+| NanoPi NEO | Armbian, Debian 11 (Bullseye) - tested | `root` |
+| Orange Pi Zero 2 | Armbian | `root` |
+| Radxa CM3 | Armbian | `root` |
+| Raspberry Pi models and Compute Module 4 | Raspberry Pi OS **Lite** (Bullseye) | `pi` |
 
-To build a release from scratch follow the build guide.  This can be done on Windows with Oracle VM Virtualbox or MacOS machines or on a Raspberry Pi 3+ or 4 by following the link:  (https://github.com/ConnectBox/connectbox-pi/docs/Making_A_ConnectBox.html)
+The playbook knows Buster and Bullseye (see the comment at the top of
+`site.yml`).  The current test unit is a NanoPi NEO on Armbian Bullseye
+(kernel 5.15); the other boards have not been rebuilt recently, and newer
+releases (Bookworm) are untested.
 
+Use a microSD card of at least 8 GB.  The device needs a wired (Ethernet) or
+second WiFi connection to the internet during the build, because its main WiFi
+adapter becomes the access point.
 
-### Enabling sshd on a pre-made release image
+## 1. Prepare the device
 
-sshd is not running on pre-made release images. To permanently enable it, make a directory called `.connectbox` on your USB storage device and place a file named `enable-ssh` in that folder. Insert your USB storage into the ConnectBox and you will be able to ssh to the ConnectBox as `root/connectbox`. Please change the root password immediately.
+### Armbian boards (NanoPi NEO, Orange Pi Zero 2, Radxa CM3)
 
-## Install Armbian on NanoPi NEO from scratch
+1. Download an Armbian **Bullseye** image for your board (ConnectBox base images:
+   https://github.com/ConnectBox/armbian-build/releases , otherwise
+   https://www.armbian.com/download/) and write it to the microSD card, e.g. with
+   balenaEtcher or Raspberry Pi Imager.
+2. Boot the device on Ethernet, find its IP address (router, or `ping connectbox.local`
+   on later runs) and log in as `root` with password `1234`.  Armbian asks you to
+   set a new root password and create a user on first login; do that and change
+   nothing else - the playbook expects a fresh system.
 
-Download the appropriate Armbian base-image for your device from the [ConnectBox base-image download area](https://github.com/ConnectBox/armbian-build/releases) and put it onto an SD card. If there are no base images for your device at that location, look in the [Armbian download area](https://www.armbian.com/download/). We require an Armbian images running a Mainline kernel, based on Ubuntu Xenial. The [Armbian Getting Started Guide](https://docs.armbian.com/User-Guide_Getting-Started/) is useful. Before running ansible, you need to login and set the root password per the Armbian Getting Started Guide.
+### Raspberry Pi
 
+1. Write **Raspberry Pi OS Lite** (Bullseye) with Raspberry Pi Imager.  In the
+   Imager's settings: enable SSH, create the user **`pi`** with a password (newer
+   images no longer have a default `pi`/`raspberry` account), and set your WiFi
+   country.  If you choose another user name, add `ansible_user=<name>` to the
+   Ansible command or inventory.
+2. Boot the Pi on Ethernet and find its IP address.
 
-## Install Vanilla Raspbian-lite on Raspberry Pi 3 or Raspberry Pi Zero W
+## 2. SSH key
 
-Pre-made release images for the Raspberry Pi are occasionally made and are distributed on GitHub (https://github.com/ConnectBox/connectbox-pi/releases) . If you don't see an image for your device, feel free to raise an issue or email us.
-
-Download the [current Raspbian Lite (Stretch)](https://www.raspberrypi.org/downloads/raspbian/). The Nov 2016 introduced a security update that disables the SSH daemon by default. The connectbox is deployed using Ansible, which connects to the Raspberry Pi over SSH, so ssh needs to be enabled. Enable sshd by one of the methods below (you only need to choose one):
-
-Note: this is a Raspberry Pi device specific step as the other devices have their SSH enabled]
-
-### Enabling sshd on the device using raspi-config
-
-Connect a keyboard and monitor to the Raspberry Pi and boot it up. Log in using the default credentials of:
- username: pi
- password: raspberry
-
-It is important that you _do not_ do anything further to the Raspberry Pi other than the steps outlined below. The Ansible playbook expects an environment that is factory fresh and any other changes can prevent successful execution.
-
-The snippet below is from the _Setup SSH_ section of the offical [Raspbian docs](https://www.raspberrypi.org/documentation/remote-access/ssh/)
-
-From the Raspberry Pi command line, run the following command:
-
-```bash
-pi@raspberrypi: $ sudo raspi-config
-
-1. Select "Interfacing Options" from the window
-3. Navigate to and select "SSH"
-4. Choose "Yes"
-5. Select "Ok"
-6. Choose "Finish"
-```
-
-### Enabling sshd on the operating system image
-
-On your desktop, mount the downloaded image and creating a file called ssh in the `/boot` directory. Once the image has been updated to enabled ssh, [put the image on an SD card](https://www.raspberrypi.org/documentation/installation/installing-images/) and boot the Raspberry Pi from it.
-
-## Setup SSH Keys
-
-Ansible connects to your device over ssh. While it *is* possible to run Ansible without ssh keys (using the `--ask-pass` commandline argument), using ssh keys allow for quick, secure, passwordless access and help avoids the playbook failures that can occur during deployment if a password prompt is left for too long.
-
-### Generating an SSH keypair
-
-If you already have an ssh keypair, you can skip this step.
-
-Once the commands are processed, we now need to create a set of SSH keys on our machine that we will eventually use when running the Ansible script over on the RPi3.
-
-```
-user@ubuntu:~$ ssh-keygen
-```
-
-Hit return to just accept the defaults until you get back to the command prompt.
+Ansible connects over SSH.  A key avoids password prompts, which can time out a
+long run.  On the workstation:
 
 ```bash
-user@ubuntu:~$ ssh-keygen
-Generating public/private rsa key pair.
-Enter file in which to save the key (/home/box/.ssh/id_rsa): 
-Created directory '/home/box/.ssh'.
-Enter passphrase (empty for no passphrase): 
-Enter same passphrase again: 
-Your identification has been saved in /home/box/.ssh/id_rsa.
-Your public key has been saved in /home/box/.ssh/id_rsa.pub.
-The key fingerprint is:
-SHA256:vuUwcoZTkDqakuAT21drYfbSE3WsT36HxBT1g4PzQmI user@ubuntu
-The key's randomart image is:
-+---[RSA 2048]----+
-|              ...|
-|       .    o ...|
-|      o  E = =...|
-|     . .. + =o. .|
-|..  o  =S. o oo  |
-|o.+o .++= . =. . |
-|o+o. .++*+.  o...|
-| .. . .=.*.   . .|
-|        . .      |
-+----[SHA256]-----+
+ssh-keygen -t ed25519            # only if you have no key yet; accept the defaults
+ssh-copy-id root@<device_ip>     # Armbian
+ssh-copy-id pi@<device_ip>       # Raspberry Pi
 ```
 
-# Find the IP address of your device
+Check that `ssh root@<device_ip>` (or `pi@`) now logs in without a password.
 
-The Connectbox supports mDNS/Bonjour so you can find it on your network as <hostname>.local i.e. you can ping connectbox.local and note the IP address (which will be needed in subsequent steps)
+## 3. Get Ansible
 
-### Deploying SSH keys
-
-From the command line on your workstation, we'll log into the device remotely so we can pass over our SSH keys. [From here on our, replace the IP address 192.168.88.26 with your specific device's IP address]
-
+Ansible runs on Linux or macOS (on Windows, use WSL or a Linux VM).  Install it
+with this repo's pinned requirements, in a virtual environment:
 
 ```bash
-user@ubuntu:~$ ssh pi@192.168.88.26
+git clone https://github.com/ConnectBox/connectbox-pi.git
+cd connectbox-pi
+python3 -m venv ~/.virtualenvs/connectbox-pi
+. ~/.virtualenvs/connectbox-pi/bin/activate
+pip install -r requirements.txt
 ```
 
-You'll need to answer "yes" when you are prompted to add in the RPi's fingerprint and then enter in the 's password of "raspberry"
+Build from `master`; it is what the test unit runs.  To build an exact,
+known version, check out its commit or tag after cloning.
+
+## 4. Run the playbook
+
+**Run it from the `ansible/` folder.**  `ansible/ansible.cfg` only applies there,
+and it sets `force_handlers`, which the end-of-run steps (such as turning off
+sshd) rely on.
 
 ```bash
-user@ubuntu:~$ ssh pi@192.168.88.26
-The authenticity of host '192.168.88.26 (192.168.88.26)' can't be established.
-ECDSA key fingerprint is SHA256:P7Eqv0UkjbG9yWSYE5qzDNc5K6vOqCJ4kQ1fakB2aVk.
-Are you sure you want to continue connecting (yes/no)? yes
-Warning: Permanently added '192.168.88.26' (ECDSA) to the list of known hosts.
-pi@192.168.88.26's password: 
-
-The programs included with the Debian GNU/Linux system are free software;
-the exact distribution terms for each program are described in the
-individual files in /usr/share/doc/*/copyright.
-
-Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
-permitted by applicable law.
-Last login: Thu Mar 16 19:48:28 2017 from 192.168.88.212
-pi@raspberrypi:~ $ 
+cd ansible
+ansible -i <device_ip>, all -m ping                 # expect "pong"
+ansible-playbook -i <device_ip>, site.yml -e wireless_country_code=US
 ```
-We are now inside of the RPi3 so you'll notice that the command prompt has changed to: **pi@raspberrypi:** . From here we create an administrative directory for our ssh keys and set standard permissions.
+
+The comma after the IP address makes Ansible treat it as a one-host list.  For
+repeat builds you can instead copy `inventory.example` to `inventory`, put the
+device on one line with its options, and use `-i inventory`:
+
+```
+192.168.1.50 wireless_country_code=US connectbox_default_hostname=Connectbox
+```
+
+**Set `wireless_country_code`** to your two-letter country code (it decides the
+legal WiFi channels and power; default `US`).
+
+The run takes a long time (much longer on a NEO or Pi Zero).  It ends with a
+`PLAY RECAP`; `failed=0` means success.  If a run fails part-way, fix the cause and
+run it again - the playbook can be re-run.
+
+**By default the playbook turns off sshd at the end** (production mode).  For a
+unit you will keep working on, add `-e developer_mode=true` (insecure - not for
+units going into the field).
+
+## 5. Check the build
+
+1. Join the WiFi network **"Connectbox - Free Media"** (or `<hostname> - Free Media`)
+   and open any web page: the captive portal should appear, then the media menu.
+2. Insert a USB stick with content (`content/<language code>/...`; see
+   [mmiLoader-usb-structure.md](mmiLoader-usb-structure.md)).  The OLED shows
+   progress; the menus fill in when indexing finishes.
+3. If you kept SSH (`developer_mode=true`), check the services:
 
 ```bash
-pi@raspberrypi:~ $ mkdir ~/.ssh
-pi@raspberrypi:~ $ chmod 700 ~/.ssh
+systemctl status PxUSBm kiwix-serve nginx
 ```
 
-We want to type `exit` to get back to our Ubuntu prompt:
+To make more units, copy the finished microSD card - there is no need to run
+the playbook again for each one (see `do_image_preparation` below for making a
+distributable image).
 
-```bash
-pi@raspberrypi:~ $ exit
-logout
-Connection to 192.168.88.26 closed.
-user@ubuntu:~$ 
-```
-We now copy over our public SSH key to the RPi3 so we no longer need to log in [use your RPi3's IP address]:
+## Options
 
-```bash
-scp ~/.ssh/id_rsa.pub pi@192.168.88.26:.ssh/authorized_keys
-```
-You'll be prompted for the RPi3's password of "raspberry" one last time.
+Add to the inventory line, or as `-e name=value` on the command line.
 
-```bash
-user@ubuntu:~$ scp ~/.ssh/id_rsa.pub pi@192.168.88.26:.ssh/authorized_keys
-pi@192.168.88.26's password: 
-id_rsa.pub                                    100%  392     0.4KB/s   00:00    
-user@ubuntu:~$ 
-```
+| Option | Default | What it does |
+|--------|---------|--------------|
+| `wireless_country_code` | `US` | WiFi regulatory country (two letters). |
+| `connectbox_default_hostname` | `Connectbox` | Host name shown in the browser's address bar; also used in the default SSID. |
+| `ssid` | `<hostname> - Free Media` | WiFi network name (can also be changed in the admin pages). |
+| `developer_mode` | `false` | `true` keeps sshd running and lets dnsmasq answer DNS on every interface. Insecure: test units only. |
+| `enhanced_interface` | `true` | The current media interface (menus, languages, ZIM files). `false` installs the old icon-only interface and the sample content. |
+| `do_image_preparation` | `false` | Prepares the card for distribution as a release image and halts the device at the end. |
 
-We should test that the SSH key transfer worked by trying to once again SSH into the device.  You shouldn't be prompted for the password but taken right in [Note: look for the `pi@raspberrypi` at the command prompt to verify that you are inside the RPi3]
+## Administration
 
-```bash
-user@ubuntu:~$ ssh pi@192.168.88.26
-
-The programs included with the Debian GNU/Linux system are free software;
-the exact distribution terms for each program are described in the
-individual files in /usr/share/doc/*/copyright.
-
-Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
-permitted by applicable law.
-Last login: Thu Mar 16 19:56:01 2017 from 192.168.88.212
-pi@raspberrypi:~ $ 
-```
-
-Type `exit` to get back to your workstation;
-
-```bash
-pi@raspberrypi:~ $ exit
-logout
-Connection to 192.168.88.26 closed.
-user@ubuntu:~$ 
-```
-
-## Get Ansible
-
-This project uses Ansible v2.7 or above. 
-
-Package managers generally have an out-dated version of ansible, but the [Ansible documentation](http://docs.ansible.com/ansible/intro_installation.html#installing-the-control-machine) lists methods for obtaining a current version of Ansible for common platforms.
-
-e.g. for Ubuntu, only the following is necessary (steps taken from the Ansible docs):
-
-```bash
-user@ubuntu: $ sudo apt-get install software-properties-common
-user@ubuntu: $ sudo apt-add-repository ppa:ansible/ansible
-user@ubuntu: $ sudo apt-get update
-user@ubuntu: $ sudo apt-get install ansible
-```
-
-The developing.md file lists an alternative method for setting up Ansible using python virtual environments. If you are developing playbooks or the ConnectBox software itself, you should follow those instructions.
-
-## Run Ansible
-
-__A default ansible-playbook run will disable sshd. Read "Optional Ansible Arguments" if you don't want this__
-
-The rest of this guide assumes that your device is attached to the network via its ethernet port, so that the wifi interface can be configured as an Access Point.
-
-Clone the ConnectBox Github repository to your workstation with the following commands, if you have not already done so:
-
-```bash
-user@ubuntu: $ mkdir ~/tmp
-user@ubuntu: $ cd ~/tmp
-user@ubuntu: $ git clone https://github.com/ConnectBox/connectbox-pi.git
-user@ubuntu: $ cd connectbox-pi/
-```
-
-Once complete, create a copy of the ansible inventory based on the example file:
-
-```bash
-user@ubuntu: $ cd ansible/
-user@ubuntu: $ cp inventory.example inventory
-```
-
-Open the inventory file in an editor, and uncomment the appropriate line for your device type. For example, you would need to modify the following lines for a RPi3/RPiZero+
-
-```
-#192.168.20.183
-```
-
-We want to modify the second line to first remove the leading `#` comment, change the IP address to our RPi3 device's IP address, change the `wireless_country_code` to an [appropriate regulatory domain](https://git.kernel.org/cgit/linux/kernel/git/sforshee/wireless-regdb.git/tree/db.txt) (00 is the default, and may not be appropriate). If you are experimenting with the system, you may want to activate developer mode by setting `developer_mode=true` but know that __developer_mode=true leaves the connectbox in an insecure state__ . Read the Optional Ansible Arguments documentation below to find out whether this is suitable. __developer_mode=true is unsuitable for real-world use or production deployments__
-
-Once done you will likely have something of this form, and you should save the file:
-
-```
-192.168.88.26
-```
-
-Confirm connectivity by running `ansible -i inventory all -m ping` . If you do not see a **pong** response after entering the password, then you'll have to revisit your connectivity before continuing.
-
-We are now have everything ready to run the Ansible playbook to setup our device.  Start the playbook by using this command:
-
-```bash
-ansible-playbook -i inventory site.yml
-```
-
-The process will start modifying the device and turning it into a ConnectBox.  This process will take a long time so just sit back and surf the internet for cat videos while you monitor its progress:
-
---snippet--
-```bash
-user@ubuntu:~/tmp/connectbox-pi/ansible$ ansible-playbook -i inventory site.yml
-
-PLAY [all] *********************************************************************
-
-TASK [setup] *******************************************************************
-ok: [192.168.88.26]
-
-TASK [bootstrap : Install aptitude] ********************************************
-skipping: [192.168.88.26]
-
-TASK [bootstrap : Add debian signing keys, necessary for backports repo] *******
-changed: [192.168.88.26] => (item=7638D0442B90D010)
-changed: [192.168.88.26] => (item=8B48AD6246925553)
-
-TASK [bootstrap : Populate apt cache to avoid problems when loading jessie backport repo] ***
-changed: [192.168.88.26]
-
-TASK [bootstrap : Enable Jessie backport repo] *********************************
-```
-
-Upon completion, you will presented with a summary of what went right and if there were any errors:
-
-```bash
-PLAY RECAP *********************************************************************
-192.168.88.26              : ok=64   changed=50   unreachable=0    failed=0  
-```
-
-If there are no reported errors, your RPi3 is now running as a ConnectBox.  You can add your own content to it (e.g., videos, books, music, etc).
-
-Once you finish that, duplicate the microSD card to quickly create additional ConnectBoxes - you do not need to run this script again.
-
-### Applying Device-specific configuration (wifi adapter configuration)
-
-Ansible groups are used to apply device-specific configuration to the ConnectBox. The groups are defined under `ansible/group_vars` and the groups for wifi-adapters are most common. The default configuration for wifi adapters is for the rt5372. If you are unsure of your adapter type, put your device in the `generic_wifi_adapter` group in the Ansible inventory. Groups to activate configuration for other wifi adapters is also present in `ansible/group_vars`.
-
-### Optional Ansible Arguments
-
-To use these arguments, add them to the inventory file or add `-e option_name=value` to the `ansible-playbook` commandline e.g. `-e ssid="My Connectbox"` or `-e deploy_sample_content=false`
-
-- __deploy_sample_content__ _(default: true)_: Installs sample files to demonstrate ConnectBox functionality.
-- __ssid__ _(default: ConnectBox - Free Media)_: The Wireless SSID can be changed from the admin interface but it can also be changed at deployment time.
-- __developer_mode__ _(default: false)_: Developer mode leaves the device in an insecure state, but makes it possible to examine the internal state of the ConnectBox. When developer mode is false _(think, production mode)_, sshd is stopped and disabled by default at the end of the ansible playbook run. This is done to prevent unauthorised remote access and console access, particularly if operating system default passwords are not changed. If you have inadvertently locked yourself out, the [Raspbian security update](https://www.raspberrypi.org/blog/a-security-update-for-raspbian-pixel/) describes how to re-enable sshd and you can re-enable the account using information at RaspberryPi Spy - [Reset a lost Raspberry Pi password)[http://www.raspberrypi-spy.co.uk/2014/08/how-to-reset-a-forgotten-raspberry-pi-password/)
-- __connectbox_default_hostname__ _(default: connectbox)_: Change the host name of the Connectbox (visible in the URL field when browsing)
-- __interface_type__ _(default: icon_only)_: This selects how to present the user-defined content (i.e. the attached USB storage or the contents of `/media/usb0` if USB storage is not being used). _"icon_only"_ mode presents an icon-only browseable web interface of the user-defined content. _"static_site"_ mode assumes the user-defined content is a static web site and displays the site.
-- __do_image_preparation__ _(default: false)_: Performs tasks required for preparation of an image for distribution, including halting the device at the end of the ansible run.
-
-## Use the ConnectBox
-
-1. Search for, and connect to the WiFi point named "ConnectBox - Free Media"
-1. Open your browser, go somewhere (anywhere)
+After the build, see [administration.md](administration.md) (admin pages at
+`http://connectbox/admin`, default login `admin` / `connectbox` - change it).
+For developing the playbooks or the software, see [development.md](development.md).
