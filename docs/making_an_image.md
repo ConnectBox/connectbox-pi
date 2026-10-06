@@ -108,10 +108,13 @@ you will publish.  The run ends with `PLAY RECAP ... failed=0` and the device
 As on every normal build, sshd is turned off at the end; never build a release
 with `developer_mode=true`.
 
-**Alternative:** `connectbox-tools/deployment/make_cb.py` asks for the device IP,
-a tag and a The Well choice, then runs the same playbook.  It currently runs
-`site.yml` from outside the `ansible/` folder, so `ansible.cfg` is not applied;
-until that is fixed, prefer the command above.
+**Alternative:** from `~/connectbox/connectbox-tools/deployment`, run
+`python3 make_cb.py`.  It asks whether to fetch a fresh copy of connectbox-pi
+(branch or tag, default `master`), the release tag, the device IP and whether to
+build The Well (or other options typed as on the command line, e.g.
+`-e wireless_country_code=AU`), then runs the same playbook from `ansible/` as
+root with `do_image_preparation=True`.  (Fixed in connectbox-tools `5893887`;
+earlier versions ran it from the wrong folder and mangled the options.)
 
 ## 4. Shrink and compress
 
@@ -165,10 +168,14 @@ since the last release (from `CHANGELOG.md` / `Master_Changes_Log.md`).  Mark it
 ConnectBox repo listed in its `CONNECTBOX_REPOS`, creates a draft pre-release,
 builds the device, shrinks and compresses the card and uploads the image.  It
 needs a GitHub personal access token with write access to all those repos
-(`CONNECTBOX_GITHUB_TOKEN=<token> python3 prepare_release.py`; `--use-existing-tag
---tag=<tag>` resumes after a failure).  It was written for the old Vagrant VM and
-still calls `/vagrant/shrink-image.sh`, so it does not run as-is on the build Pi;
-use the manual steps above unless the script has been updated.
+(`CONNECTBOX_GITHUB_TOKEN=<token> python3 prepare_release.py` from
+`connectbox-tools/deployment`; `--use-existing-tag --tag=<tag>` resumes after a
+failure).  After the build it waits for the card in the USB reader, **asks you to
+confirm the disk** (check with `lsblk`), shrinks it with `shrink-image.sh`, and
+leaves the `.img.xz` in `deployment/Images/` before uploading it.  Write the
+release notes on GitHub afterwards and publish the draft when tested.  (Since
+connectbox-tools `5893887` it runs on the build Pi; before that it only worked in
+the old Vagrant VM.)
 
 ## History
 
