@@ -100,7 +100,9 @@ you will publish.  The run ends with `PLAY RECAP ... failed=0` and the device
 - removes compilers, development libraries and admin tools that a field unit does
   not need (smaller image);
 - resets the WiFi regulatory domain;
-- deletes root's `authorized_keys`, so your key is not in the image.
+- deletes root's `authorized_keys`, so your key is not in the image;
+- deletes the admin session key (`/usr/local/connectbox/admin_session.key`), so
+  every box made from the image creates its own on first boot.
 
 As on every normal build, sshd is turned off at the end; never build a release
 with `developer_mode=true`.
