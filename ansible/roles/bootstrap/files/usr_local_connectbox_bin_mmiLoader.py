@@ -66,11 +66,17 @@ def usb_is_present():
 	return os.path.ismount("/media/usb0")
 
 
-def run_cmd(cmd):
+def run_cmd(cmd, expect_failure=False):
+	"""
+	Run a shell command; a non-zero exit is logged as an error unless
+	expect_failure is set (commands that fail as a normal outcome, e.g. ffmpeg
+	finding no cover art in an mp3 - the caller checks the result itself).
+	"""
 	try:
 		subprocess.run(cmd, shell=True, check=True)
 	except subprocess.CalledProcessError as e:
-		logging.error(f"Command failed: {cmd}")
+		if not expect_failure:
+			logging.error(f"Command failed: {cmd}")
 
 
 # ── USB permission helpers ────────────────────────────────────────────────────
@@ -1845,7 +1851,9 @@ def apply_thumbnails(content, filename, fullFilename, slug, language, mediaDirec
 		print("        Looking for " + ".thumbnail-" + language + "-" + slug + ".png")
 		if not os.path.isfile(thumb_path_on_usb):
 			try:
-				run_cmd(f"ffmpeg -y -i {shlex.quote(fullFilename)} -an -c:v copy {shlex.quote(thumb_path_on_usb)} >/dev/null 2>&1")
+				# ffmpeg fails when the mp3 has no embedded art - normal, checked below
+				run_cmd(f"ffmpeg -y -i {shlex.quote(fullFilename)} -an -c:v copy {shlex.quote(thumb_path_on_usb)} >/dev/null 2>&1",
+						expect_failure=True)
 				if os.path.isfile(thumb_path_on_usb) and os.path.getsize(thumb_path_on_usb) > 100:
 					print("mp3 thumbnail image created")
 					content["image"] = img_name
@@ -2333,10 +2341,8 @@ def finalize_output(mains, languageCodes, contentDirectory, interface, mediaDire
 	run_cmd(f"cd {shlex.quote(contentDirectory)} && zip --symlinks -r {shlex.quote(zipFileName)} *")
 	logging.info("Finished mmiLoader.py run successfully")
 
-	try:
-		run_cmd('rm ' + complex_dir)
-	except Exception:
-		pass
+	# -f: the file only exists when complex folders were found
+	run_cmd(f"rm -f {shlex.quote(complex_dir)}")
 	try:
 		os.remove(comsFileName)
 	except Exception:
