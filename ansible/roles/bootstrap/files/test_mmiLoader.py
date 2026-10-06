@@ -932,6 +932,32 @@ def scenario_zim(base):
 	check("S13: library lists the good ZIMs (not broken, not hidden dirs)",
 		names == ["cuisine_fr_2025-03", "phrasebook_multi_2025-02", "wiki_en_mini_2025-01"], str(names))
 	check("S13: url_name is the file name without .zim", "wiki_en_mini_2025-01" in names)
+	check("S13: library swapped in, no temporary file left", not os.path.exists(library + ".new"))
+
+	# Safety net: restart kiwix-serve only if a book is still not served
+	restarts = []
+	def fake_restart(cmd, capture_output=True, text=True):
+		restarts.append(cmd)
+		return types_module.SimpleNamespace(returncode=0, stdout="", stderr="")
+	with contextlib.ExitStack() as stack:
+		stack.enter_context(mock.patch.object(mmiLoader.subprocess, "run", fake_restart))
+		stack.enter_context(mock.patch.object(mmiLoader.time, "sleep", lambda s: None))
+		served = {"value": set(names)}
+		stack.enter_context(mock.patch.object(mmiLoader, "kiwix_served_names", lambda *a: served["value"]))
+		check("S13: all books served -> no restart", mmiLoader.ensure_kiwix_serves(books) == [] and not restarts)
+		served["value"] = set(names) - {"phrasebook_multi_2025-02"}
+		check("S13: book still missing -> kiwix-serve restarted",
+			mmiLoader.ensure_kiwix_serves(books, wait=4) == ["phrasebook_multi_2025-02"]
+			and restarts == [["systemctl", "restart", "kiwix-serve"]], str(restarts))
+		served["value"] = None
+		restarts.clear()
+		check("S13: kiwix-serve not reachable -> nothing done", mmiLoader.ensure_kiwix_serves(books) == [] and not restarts)
+	catalog = ('<feed><entry><link type="text/html" href="/kiwix/content/phet_pt_all_2026-08" /></entry>'
+		'<entry><link type="text/html" href="/kiwix/content/ted_mul-exercise_2026-09" /></entry></feed>')
+	with mock.patch.object(mmiLoader.urllib.request, "urlopen",
+			lambda url, timeout=5: contextlib.closing(types_module.SimpleNamespace(read=lambda: catalog.encode(), close=lambda: None))):
+		check("S13: served names read from the catalog",
+			mmiLoader.kiwix_served_names() == {"phet_pt_all_2026-08", "ted_mul-exercise_2026-09"})
 	check("S13: no Kiwix installed -> nothing listed",
 		mmiLoader.rebuild_kiwix_library(media, library, os.path.join(base, "missing")) == {})
 	mmiLoader._zim_books = books

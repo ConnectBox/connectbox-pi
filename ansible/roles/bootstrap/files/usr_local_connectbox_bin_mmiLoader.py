@@ -857,6 +857,8 @@ def card_icon_png(data):
 KIWIX_MANAGE = "/usr/local/bin/kiwix-manage"
 KIWIX_LIBRARY = "/var/lib/connectbox/kiwix/library.xml"
 KIWIX_URL_ROOT = "/kiwix/content/"
+# kiwix-serve's OPDS catalog: lists the books it is actually publishing.
+KIWIX_CATALOG_URL = "http://127.0.0.1:8090/kiwix/catalog/v2/entries?count=-1"
 ZIM_MIME_TYPE = "application/x-zim"
 # localStorage key where TED ZIMs (ted2zim) keep the chosen language.
 TED_LANGUAGE_KEY = "ted2zim.selectedLanguage"
@@ -915,7 +917,14 @@ def rebuild_kiwix_library(mediaDirectory, library=KIWIX_LIBRARY, kiwix_manage=KI
 	if not os.path.isfile(kiwix_manage):
 		print("	Kiwix not installed - ZIM files will not be listed")
 		return _zim_books
-	write_empty_kiwix_library(library)
+	# Build the library in a temporary file next to the real one (so the
+	# relative ZIM paths kiwix-manage writes stay valid) and swap it in with a
+	# single rename.  kiwix-serve (--monitorLibrary) reloads whenever the file
+	# changes; writing the live file once per ZIM let it load a half-built
+	# library and miss the last book (2026-10-06: phet_pt gave 404 until
+	# kiwix-serve was restarted).
+	building = library + ".new"
+	write_empty_kiwix_library(building)
 	zims = []
 	for root, dirs, files in os.walk(mediaDirectory):
 		dirs[:] = [d for d in dirs if not d.startswith('.')]
@@ -925,13 +934,58 @@ def rebuild_kiwix_library(mediaDirectory, library=KIWIX_LIBRARY, kiwix_manage=KI
 		if not usb_is_present():
 			break
 		update_display("Adding ZIM" + chr(10) + os.path.basename(zim)[:16])
-		result = subprocess.run([kiwix_manage, library, "add", zim], capture_output=True, text=True)
+		result = subprocess.run([kiwix_manage, building, "add", zim], capture_output=True, text=True)
 		if result.returncode != 0:
 			print("	Kiwix could not add " + zim + ": " + (result.stderr or result.stdout).strip()[:200])
 			logging.error("kiwix-manage add failed for " + zim)
+	os.replace(building, library)
 	_zim_books = read_kiwix_library(library)
 	print("	Kiwix library: " + str(len(_zim_books)) + " of " + str(len(zims)) + " ZIM files registered")
+	ensure_kiwix_serves(_zim_books)
 	return _zim_books
+
+
+def kiwix_served_names(catalog_url=KIWIX_CATALOG_URL):
+	"""
+	The url_names kiwix-serve is publishing right now (from its OPDS catalog),
+	or None if kiwix-serve cannot be reached (not installed, not running).
+	"""
+	try:
+		with urllib.request.urlopen(catalog_url, timeout=5) as response:
+			xml = response.read().decode("utf-8", "replace")
+	except Exception:
+		return None
+	root = KIWIX_URL_ROOT.rstrip("/") + "/"
+	return set(urllib.parse.unquote(h[len(root):].rstrip("/"))
+			   for h in re.findall(r'href="(' + re.escape(root) + r'[^"]+)"', xml))
+
+
+def ensure_kiwix_serves(books, wait=10, step=2):
+	"""
+	Check kiwix-serve publishes every book in the new library; restart it if
+	some are still missing after `wait` seconds.  Safety net for its library
+	monitor, which reloads on a timer and once missed a book for good (see
+	rebuild_kiwix_library).  A restart takes a few seconds and only happens
+	when a USB is inserted.  Does nothing if kiwix-serve is not reachable.
+	Returns the url_names still missing after the check ([] if all served).
+	"""
+	wanted = set(b["url_name"] for b in books.values())
+	missing = []
+	waited = 0
+	while True:
+		served = kiwix_served_names()
+		if served is None:
+			return []
+		missing = sorted(wanted - served)
+		if not missing or waited >= wait:
+			break
+		time.sleep(step)
+		waited += step
+	if missing:
+		print("	kiwix-serve is missing " + ", ".join(missing) + " - restarting it")
+		logging.warning("kiwix-serve missing " + ", ".join(missing) + "; restarting")
+		subprocess.run(["systemctl", "restart", "kiwix-serve"], capture_output=True, text=True)
+	return missing
 
 
 def zim_redirect_page(url_name, start_language=None):
