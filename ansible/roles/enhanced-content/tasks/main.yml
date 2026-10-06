@@ -35,7 +35,6 @@
 
 - name: Get media interface latest release
   ansible.builtin.unarchive:
-    # was: https://github.com/RT-coding-team/mediainterface/releases/download/latest/latest.zip
     src: https://github.com/ConnectBox/connectbox-mediainterface/releases/download/latest/latest.zip
     dest: /var/www/enhanced/content/
     remote_src: yes
@@ -45,7 +44,6 @@
 
 - name: Get admin interface latest release
   ansible.builtin.unarchive:
-    # was: https://github.com/RT-coding-team/cbadmin/releases/download/latest/latest.zip
     src: https://github.com/ConnectBox/connectbox-admin-ui/releases/download/latest/latest.zip
     dest: /var/www/enhanced/admin/
     remote_src: yes
@@ -118,7 +116,6 @@
 
 - name: Get connectbox-manage repo from https://github.com/ConnectBox/connectbox-manage.git
   git:
-    # was: https://github.com/RT-coding-team/connectbox-manage.git
     repo: https://github.com/ConnectBox/connectbox-manage.git
     dest: /var/www/enhanced/connectbox-manage
     clone: yes
@@ -188,7 +185,6 @@
 
 - name: Copy MMI loader to /usr/local/connectbox/bin
   get_url:
-    # was: https://raw.githubusercontent.com/RT-coding-team/mediainterface/main/lazyLoader.py
     url: https://raw.githubusercontent.com/ConnectBox/connectbox-mediainterface/main/lazyLoader.py
     dest: /usr/local/connectbox/bin/lazyLoader.py
     owner: _connectbox

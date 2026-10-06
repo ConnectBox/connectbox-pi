@@ -144,6 +144,10 @@ The app's UI strings (`<lang>/data/interface.json`) exist only in English upstre
 
 `connectbox_enhanced.conf.j2` sends a 404 under `/assets/content/<lang>/html/` back to the start page of the item it was clicked in (taken from the `Referer`), or to `/` if there is no item or the start page itself is missing. Without this, the server-wide `error_page 404 /index.html` served the app's page at the wrong address and readers got a blank page. Behaviour was verified with real nginx (Windows build, same map/PCRE) against a mock content tree.
 
+## OpenWell (content packages)
+
+A live feature, not a The Well leftover - keep it. Boxes can load menus and media from a server package instead of a USB: admin Web Server section -> connectbox-manage (`get.subscriptions`, `set.subscribe`, `doCommand.openwellrefresh`, `doCommand.openwellusb`) -> `/usr/local/connectbox/bin/lazyLoader.py` (installed from connectbox-mediainterface `main`). Server side: connectbox-chathost `/chathost/link/openwell` -> MediaBuilder (Bolt). Subscribing only writes `assets/content/subscription.json`; downloads happen only when the admin presses "Download Missing Content Files" (no cron). "Load Content From USB Flash" also serves as a manual full re-index (deletes `saved.zip`). Details in README "OpenWell".
+
 ## Important invariants
 
 - **dhcpcd must not manage the WiFi client interface**: `denyinterfaces` in `etc_dhcpcd.conf.j2` is a global option and must come before any `interface` block (inside one it is ignored, and the box got two IPs from dhcpcd + dhclient). Never release/reconfigure `wlan1` live over SSH on that link (`dhcpcd -k wlan1` dropped the box off the LAN) - apply network changes with a reboot.

@@ -77,9 +77,34 @@ On Linux file systems, files keep the owner and permissions of the computer that
 
 `PxUSBm.py` starts mmiLoader on the poll after `/media/usb0` is mounted, in the transient systemd unit `connectbox-loader`, and stops it when the USB is removed. The sentinel `/tmp/.usb0_indexed` stops it re-running on every poll. mmiLoader refuses to start while a run is in progress, marked by `/tmp/creating_menus.txt` (removed at the end of a run, when the run is stopped, and by `--clear`).
 
-# ConnectBox
+## OpenWell — content packages from a server
 
-ConnectBox is a media sharing device based on small form factor computers including the Raspberry Pi 3, Raspberry Pi Zero W, NanoPi NEO, Orange Pi Zero and Pine64.
+Besides USB sticks, a box can get its menus and media from a **content package** on a
+ConnectBox server. Packages are made in [MediaBuilder](https://github.com/ConnectBox/mediabuilder)
+(a Bolt CMS site) and listed by the server's chathost; a package is the same
+`languages.json` / `<lang>/data/*.json` / media layout that mmiLoader builds from a USB.
+The box side is `lazyLoader.py` (run by connectbox-manage), the admin pages are in
+connectbox-admin-ui, and the server side is connectbox-chathost.
+
+**Setting up:** the box must have its server set (`server_url` in `brand.j2`, the same
+server it syncs chat with) and an internet connection.
+
+**In the admin pages** (Configuration → *Web Server*):
+
+| Control | What it does |
+|---|---|
+| **Subscribe to Content Package** | Lists the server's packages (`<server>/chathost/link/openwell`, which forwards to MediaBuilder's package list) and saves the chosen one in `assets/content/subscription.json`. This only records the choice - nothing is downloaded yet. |
+| **Download Missing Content Files** | Runs `lazyLoader.py`. If the subscribed package on the server is newer than the one on the box (or none has been downloaded), it downloads the package (`openwell.zip`) into the menus, then downloads every media file or image the menus refer to that is not on the box yet. Press it after subscribing, and again to pick up package updates or retry failed files. |
+| **Load Content From USB Flash** | If the stick has `package/` with a package in it, the menus are linked straight to it. Otherwise it deletes `content/saved.zip` from the stick and runs a full mmiLoader re-index of `content/` - a "re-index now" button for normal sticks. |
+
+There is no automatic schedule: updates arrive only when someone presses
+**Download Missing Content Files**. Progress goes to `/tmp/loadContent.log`; the admin
+pages show the number of files that failed (`Failed Item Count`) and the current
+package's name (`itemName` in the first language's `main.json`).
+
+Known issue: the USB button recognises a package folder by `package/language.json`,
+while packages (like the menus) contain `languages.json`, so a copied package is
+normally loaded through the `content/` re-index path instead.
 
 # Making a ConnectBox
 
@@ -87,7 +112,7 @@ See [docs/deployment.md](docs/deployment.md)
 
 # Making a Connectbox on AWS
 
-See [docs/awsinstall.md](docs /docs/awsinstall.md)
+See [docs/awsinstall.md](docs/awsinstall.md)
 
 # Connectbox setup and administration
 
@@ -98,4 +123,6 @@ See [docs/administration.md](docs/administration.md)
 See [docs/development.md](docs/development.md)
 
 # MicroSD Card Images/Releases
-TBD
+
+Ready-made images are on the [releases page](https://github.com/ConnectBox/connectbox-pi/releases).
+To make one, see [docs/making_an_image.md](docs/making_an_image.md).
