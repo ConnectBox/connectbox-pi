@@ -397,8 +397,9 @@
     executable: python3
   ignore_errors: yes
 
-# ZIM cards: hide the detail page's download button (a ZIM has no .zip)
-- name: Patch connectbox-mediainterface to hide downloads for ZIM cards
+# ZIM cards: hide the detail page's download button (a ZIM has no .zip).
+# Word cards: download the original .docx and show the book icon, as for PDF.
+- name: Patch connectbox-mediainterface detail page buttons for ZIM and Word cards
   become: true
   script: patch_zim_download.py
   args:
