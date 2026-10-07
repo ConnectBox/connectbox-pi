@@ -72,7 +72,9 @@ signal.signal(signal.SIGTERM, _sigterm_handler)
 # /tmp/creating_menus.txt is also written by the hat service's buttons).
 
 INDEXING_PAGE = "/tmp/connectbox-indexing.html"
-_indexing = {"total": 0, "done": 0, "written_done": -1, "written_at": 0.0}
+# messages: (language, right-to-left?, title, text) per language on the USB,
+# set by set_indexing_languages once the language folders are known
+_indexing = {"total": 0, "done": 0, "written_done": -1, "written_at": 0.0, "messages": []}
 
 
 def write_indexing_page():
@@ -80,23 +82,30 @@ def write_indexing_page():
 	Write the "loading new content" page with the current progress.  Written to
 	a temporary file and renamed, so nginx never serves a half-written page.
 	Plain HTML with a meta refresh, for the old phones ConnectBox supports.
+	The visitor's language is not known before the menu loads, so the message
+	is shown in every language on the USB (English until they are known).
+	Progress is plain numbers ("340 / 778"), so it needs no translation.
 	"""
 	done, total = _indexing["done"], _indexing["total"]
 	pct = int(100 * done / total) if total else 0
-	progress = ('<p class="n">%s of %s files</p><div class="bar"><div style="width:%d%%"></div></div>'
+	progress = ('<p class="n">%s / %s</p><div class="bar"><div style="width:%d%%"></div></div>'
 				% ("{:,}".format(done), "{:,}".format(total), pct)) if total else ''
-	page = ('<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8">\n'
+	messages = _indexing["messages"] or [("en", False, EXTRA_INTERFACE_STRINGS["INDEXING_TITLE"],
+										  EXTRA_INTERFACE_STRINGS["INDEXING_TEXT"])]
+	blocks = ''.join('<div class="m" lang="%s" dir="%s"><h1>%s</h1><p>%s</p></div>\n'
+					 % (html.escape(lang), "rtl" if rtl else "ltr", html.escape(title), html.escape(text))
+					 for lang, rtl, title, text in messages)
+	page = ('<!DOCTYPE html>\n<html lang="' + html.escape(messages[0][0]) + '"><head><meta charset="utf-8">\n'
 			'<meta name="viewport" content="width=device-width, initial-scale=1">\n'
 			'<meta http-equiv="refresh" content="20">\n'
-			'<title>Loading new content</title>\n'
-			'<style>body{margin:0;padding:40px 20px;font-family:Arial,Helvetica,sans-serif;background:#1e1e1e;'
-			'color:#eee;text-align:center;}h1{font-size:1.5em;font-weight:normal;margin:0 0 12px;}'
-			'p{font-size:1.05em;line-height:1.5;margin:0 auto 12px;max-width:26em;}.n{color:#bbb;}'
+			'<title>' + html.escape(messages[0][2]) + '</title>\n'
+			'<style>body{margin:0;padding:32px 20px;font-family:Arial,Helvetica,sans-serif;background:#1e1e1e;'
+			'color:#eee;text-align:center;}h1{font-size:1.4em;font-weight:normal;margin:0 0 8px;}'
+			'p{font-size:1.05em;line-height:1.5;margin:0 auto 8px;max-width:26em;}.n{color:#bbb;}'
+			'.m{margin:0 auto 24px;}'
 			'.bar{max-width:20em;height:10px;margin:16px auto;background:#444;border-radius:5px;overflow:hidden;}'
 			'.bar div{height:10px;background:#3fa9f5;}</style>\n'
-			'</head><body>\n<h1>Loading new content</h1>\n'
-			'<p>This ConnectBox is loading new media. The menu will appear here by itself when it is ready.</p>\n'
-			+ progress + '\n</body></html>\n')
+			'</head><body>\n' + blocks + progress + '\n</body></html>\n')
 	try:
 		with open(INDEXING_PAGE + ".tmp", "w", encoding="utf-8") as f:
 			f.write(page)
@@ -138,6 +147,35 @@ def start_indexing_page(mediaDirectory):
 	_indexing.update(total=total, done=0)
 	atexit.register(remove_indexing_page)
 	write_indexing_page()
+
+
+def set_indexing_languages(languages, config):
+	"""
+	Show the page's message in each language on the USB, in the same way and
+	from the same translation files as the menus (get_interface_for_language:
+	shipped or saved translation, else an online lookup, else English).
+	English comes first when present; identical messages (e.g. languages still
+	in English because the box is offline) are shown once.
+	"""
+	if not os.path.exists(INDEXING_PAGE):
+		return
+	ordered = sorted(languages, key=lambda l: (translation_code(l, config['languageCodes']).split('-')[0] != 'en', l))
+	messages, seen = [], set()
+	for language in ordered:
+		try:
+			iface = get_interface_for_language(language, config['interface'], config['languageCodes'])
+		except Exception as e:
+			print("	No indexing message for " + language + ": " + str(e)[:120])
+			continue
+		title = iface.get("INDEXING_TITLE") or EXTRA_INTERFACE_STRINGS["INDEXING_TITLE"]
+		text = iface.get("INDEXING_TEXT") or EXTRA_INTERFACE_STRINGS["INDEXING_TEXT"]
+		if (title, text) in seen:
+			continue
+		seen.add((title, text))
+		messages.append((language, is_rtl_language(language, config['languageCodes']), title, text))
+	if messages:
+		_indexing["messages"] = messages
+		write_indexing_page()
 
 
 def indexing_progress():
@@ -528,12 +566,15 @@ def load_config(templatesDirectory):
 
 # English UI strings the stock interface.json template lacks.  They are used by
 # the ConnectBox patches to the app (see roles/enhanced-content/files/patch_*.py):
-# the footer's admin link and the chat page labels.
+# the footer's admin link and the chat page labels; and by the "loading new
+# content" page mmiLoader shows during a full index (INDEXING_*).
 EXTRA_INTERFACE_STRINGS = {
 	"FOOTER_CONFIGURATION": "Configuration",
 	"CHAT_TITLE": "Chat",
 	"CHAT_NAME": "Name",
 	"CHAT_MESSAGE": "Type a message",
+	"INDEXING_TITLE": "Loading new content",
+	"INDEXING_TEXT": "This ConnectBox is loading new media. The menu will appear here by itself when it is ready.",
 }
 
 
@@ -2651,6 +2692,9 @@ def mmiloader_code():
 
 	# Phase 5: language detection
 	doesRootContainLanguage, language, NoISOCodes = detect_language_dirs(mediaDirectory, languageCodes)
+
+	# The "loading new content" page now shows its message in the USB's languages
+	set_indexing_languages(doesRootContainLanguage or [language], config)
 
 	# Initialise mains with English template; additional languages are added by ensure_language_dir
 	mains = {}

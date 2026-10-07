@@ -1337,7 +1337,7 @@ def scenario_indexing_page(base):
 		check("S18: page written at start", bool(html_text))
 		check("S18: counts 62 items (no hidden files, no saved.zip, web folder = 1)", mmiLoader._indexing["total"] == 62,
 			  str(mmiLoader._indexing["total"]))
-		check("S18: shows 0 of 62", "0 of 62 files" in html_text)
+		check("S18: shows 0 / 62", "0 / 62" in html_text)
 		check("S18: refreshes itself", '<meta http-equiv="refresh" content="20">' in html_text)
 		check("S18: removal registered for every exit", mmiLoader.remove_indexing_page in registered)
 
@@ -1346,18 +1346,37 @@ def scenario_indexing_page(base):
 		mmiLoader._indexing["written_at"] = clock["t"]
 		for _ in range(24):
 			mmiLoader.indexing_progress()
-		check("S18: not rewritten before 25 files", "0 of 62 files" in open(page, encoding="utf-8").read())
+		check("S18: not rewritten before 25 files", "0 / 62" in open(page, encoding="utf-8").read())
 		mmiLoader.indexing_progress()
-		check("S18: rewritten after 25 files", "25 of 62 files" in open(page, encoding="utf-8").read())
+		check("S18: rewritten after 25 files", "25 / 62" in open(page, encoding="utf-8").read())
 		clock["t"] += 11
 		mmiLoader.indexing_progress()
-		check("S18: rewritten after 10 seconds", "26 of 62 files" in open(page, encoding="utf-8").read())
+		check("S18: rewritten after 10 seconds", "26 / 62" in open(page, encoding="utf-8").read())
 		check("S18: no temporary file left", not os.path.exists(page + ".tmp"))
 
+		# Message in each language on the USB, from the same translations as the menus
+		codes = {"en": {"english": ["English"]}, "ar": {"english": ["Arabic"]}, "es": {"english": ["Spanish"]},
+				 "sw": {"english": ["Swahili"]}}
+		fake = {"en": ("Loading new content", "EN text"), "ar": ("جارٍ التحميل", "AR text"),
+				"es": ("Cargando contenido nuevo", "ES text"), "sw": ("Loading new content", "EN text")}
+		cfg = {"interface": {}, "languageCodes": codes}
+		stack.enter_context(mock.patch.object(mmiLoader, "get_interface_for_language",
+			lambda lang, iface, lc: {"INDEXING_TITLE": fake[lang][0], "INDEXING_TEXT": fake[lang][1]}))
+		mmiLoader.set_indexing_languages(["es", "ar", "sw", "en"], cfg)
+		langs = [m[0] for m in mmiLoader._indexing["messages"]]
+		check("S18: English first, then the others", langs[0] == "en" and set(langs) == {"en", "es", "ar"}, str(langs))
+		check("S18: offline language still in English shown once", "sw" not in langs, str(langs))
+		text_now = open(page, encoding="utf-8").read()
+		check("S18: Arabic block right-to-left", '<div class="m" lang="ar" dir="rtl">' in text_now)
+		check("S18: Spanish message on the page", "Cargando contenido nuevo" in text_now and "ES text" in text_now)
+		check("S18: progress kept after languages added", "26 / 62" in text_now)
 		mmiLoader.remove_indexing_page()
 		check("S18: page removed", not os.path.exists(page))
 		mmiLoader.remove_indexing_page()
 		check("S18: removing twice is harmless", not os.path.exists(page))
+		mmiLoader.set_indexing_languages(["es"], cfg)
+		check("S18: no page written when no index is running", not os.path.exists(page))
+		mmiLoader._indexing["messages"] = []
 
 
 def scenario_clear_menus(base):

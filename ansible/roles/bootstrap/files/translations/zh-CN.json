@@ -106,6 +106,16 @@
             "en": "Type a message",
             "text": "输入消息",
             "source": "reviewed on test unit 2026-10-05"
+        },
+        "INDEXING_TITLE": {
+            "en": "Loading new content",
+            "text": "正在加载新内容",
+            "source": "added 2026-10-07 (Claude) - native check advised"
+        },
+        "INDEXING_TEXT": {
+            "en": "This ConnectBox is loading new media. The menu will appear here by itself when it is ready.",
+            "text": "此 ConnectBox 正在加载新的媒体内容。准备就绪后，菜单会自动显示在这里。",
+            "source": "added 2026-10-07 (Claude) - native check advised"
         }
     }
 }

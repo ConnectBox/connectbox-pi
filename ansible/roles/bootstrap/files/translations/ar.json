@@ -106,6 +106,16 @@
             "en": "Type a message",
             "text": "اكتب رسالة",
             "source": "reviewed on test unit 2026-10-05"
+        },
+        "INDEXING_TITLE": {
+            "en": "Loading new content",
+            "text": "جارٍ تحميل محتوى جديد",
+            "source": "added 2026-10-07 (Claude) - native check advised"
+        },
+        "INDEXING_TEXT": {
+            "en": "This ConnectBox is loading new media. The menu will appear here by itself when it is ready.",
+            "text": "يقوم ConnectBox هذا بتحميل وسائط جديدة. ستظهر القائمة هنا تلقائيًا عندما تكون جاهزة.",
+            "source": "added 2026-10-07 (Claude) - native check advised"
         }
     }
 }
