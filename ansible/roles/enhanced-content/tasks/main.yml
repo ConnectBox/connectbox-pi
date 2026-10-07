@@ -407,3 +407,13 @@
   args:
     executable: python3
   ignore_errors: yes
+
+# Every download button shows the file's size ("412 MB") before it is pressed,
+# from a HEAD request.  The button is compiled into several bundles (detail page
+# and viewers); the script patches each.  See the script for details.
+- name: Patch connectbox-mediainterface download buttons to show the file size
+  become: true
+  script: patch_download_size.py
+  args:
+    executable: python3
+  ignore_errors: yes

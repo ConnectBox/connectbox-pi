@@ -108,6 +108,7 @@ The `enhanced-content` role patches compiled mediainterface bundles on the devic
 - `6.js` language button — shows the active language's own name (`patch_language_button.py`)
 - `6.js` footer — the "Configuration" admin link uses `FOOTER_CONFIGURATION` from the language's interface.json (`patch_footer_translation.py`)
 - `2.js` + `main.css` chat page — translated labels (`CHAT_*`), right-to-left message direction, bubble placement (`patch_chat_rtl.py`, reproduces edits first made by hand on the test unit)
+- every bundle with `DownloadButtonComponent` (0/1/3/4/5/7.js: detail page and viewers) — the download button shows the file size ("412 MB") from a HEAD request made when the button first sees its file path; nothing is shown if the size is unknown or nginx answered with the app's index.html (missing file) (`patch_download_size.py`)
 - `main.js` LanguageProvider — a returning visitor's saved language is rebuilt from the current languages.json so `rtl` changes reach them (`patch_saved_language.py`)
 - `main.js` LanguageProvider — a first-time visitor (no saved language) starts in the first of the browser's languages (`navigator.languages`, i.e. its Accept-Language list) the box has: exact code, else same base language, per browser language in order; otherwise the languages.json default. Upstream disabled the browser lookup in mediainterface 70a4923 (2023-07-19, no reason given). A language picked in the menu is saved and always wins (`patch_browser_language.py`)
 
