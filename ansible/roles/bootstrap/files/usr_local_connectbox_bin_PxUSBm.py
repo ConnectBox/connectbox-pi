@@ -2297,6 +2297,15 @@ if __name__ == "__main__":
         os.remove("/usr/local/connectbox/creating_menus.txt")		# Clear any pending mmiLoader states
     except:
         pass
+    # Remove a "loading new content" page left by an indexing run that was
+    # killed outright (power cut on a box whose /tmp survives reboots), so
+    # visitors are not shown it for ever.  Only when no mmiLoader is running.
+    if os.path.exists("/tmp/connectbox-indexing.html") and \
+            subprocess.run(["pgrep", "-f", "mmiLoader.py"], capture_output=True).returncode != 0:
+        try:
+            os.remove("/tmp/connectbox-indexing.html")
+        except OSError:
+            pass
     logger.info("PxUSBm Starting revision is "+version)
 
     # Load brand.j2 configuration.  brand.j2 is the single source of truth for all

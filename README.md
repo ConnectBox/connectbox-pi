@@ -26,6 +26,10 @@ versions from when it was made.
 
 To force a full re-index on a USB key that already has `saved.zip`, delete `saved.zip` from the USB drive.
 
+### Visitors during indexing
+
+A full index rebuilds the menus from scratch (minutes on a large USB). While it runs, anyone opening the menu gets a small **"Loading new content"** page with a progress count ("340 of 778 files") instead of an empty menu; it refreshes itself every 20 seconds and gives way to the menu as soon as the menus are written. mmiLoader writes the page to `/tmp/connectbox-indexing.html` and removes it at the end (also on any exit, on SIGTERM, by `--clear`, and at reboot as `/tmp` is tmpfs); nginx serves it for `/` and `/index.html` only while the file exists, so admin, chat, Kiwix and media keep working. A `saved.zip` restore takes seconds and shows no page.
+
 ### OLED display messages during indexing
 
 | Message | Meaning |

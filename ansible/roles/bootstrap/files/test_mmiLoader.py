@@ -1295,6 +1295,71 @@ def scenario_docx(base):
 	run_scenario("Word documents (single + collection)", media_dir, tpl_dir, brand_path, walk_content, expect)
 
 
+
+def scenario_indexing_page(base):
+	"""
+	Scenario 18: the "loading new content" page shown while a full index runs.
+
+	start_indexing_page counts the USB's files (not hidden ones or saved.zip)
+	and writes the page at 0; indexing_progress rewrites it every 25 files (or
+	10 s); remove_indexing_page deletes it; without a page (no full index, e.g.
+	the test walks or a saved.zip restore) progress calls write nothing.
+	"""
+	print("\n-- Scenario 18: loading new content page --")
+	media = os.path.join(base, "usb", "content")
+	os.makedirs(os.path.join(media, "en", "Lessons"))
+	os.makedirs(os.path.join(media, ".hidden"))
+	for i in range(60):
+		make_content_file(os.path.join(media, "en"), "f%02d.mp3" % i, size=1)
+	make_content_file(os.path.join(media, "en", "Lessons"), "a.pdf", size=1)
+	make_content_file(os.path.join(media, "en"), ".thumbnail-x.png", size=1)
+	make_content_file(os.path.join(media, ".hidden"), "secret.mp4", size=1)
+	make_content_file(media, "saved.zip", size=1)
+	# A web-content folder (index.html + many files) is one item
+	bible = os.path.join(media, "en", "Bible HTML")
+	os.makedirs(os.path.join(bible, "books"))
+	make_content_file(bible, "index.html", size=1)
+	for i in range(40):
+		make_content_file(os.path.join(bible, "books"), "b%02d.html" % i, size=1)
+	page = os.path.join(base, "connectbox-indexing.html")
+
+	with contextlib.ExitStack() as stack:
+		stack.enter_context(mock.patch.object(mmiLoader, "INDEXING_PAGE", page))
+		registered = []
+		stack.enter_context(mock.patch.object(mmiLoader.atexit, "register", lambda f: registered.append(f)))
+		mmiLoader._indexing.update(total=0, done=0, written_done=-1, written_at=0.0)
+
+		mmiLoader.indexing_progress()
+		check("S18: no page before a full index starts", not os.path.exists(page))
+
+		mmiLoader.start_indexing_page(media)
+		html_text = open(page, encoding="utf-8").read() if os.path.exists(page) else ""
+		check("S18: page written at start", bool(html_text))
+		check("S18: counts 62 items (no hidden files, no saved.zip, web folder = 1)", mmiLoader._indexing["total"] == 62,
+			  str(mmiLoader._indexing["total"]))
+		check("S18: shows 0 of 62", "0 of 62 files" in html_text)
+		check("S18: refreshes itself", '<meta http-equiv="refresh" content="20">' in html_text)
+		check("S18: removal registered for every exit", mmiLoader.remove_indexing_page in registered)
+
+		clock = {"t": 1000.0}
+		stack.enter_context(mock.patch.object(mmiLoader.time, "time", lambda: clock["t"]))
+		mmiLoader._indexing["written_at"] = clock["t"]
+		for _ in range(24):
+			mmiLoader.indexing_progress()
+		check("S18: not rewritten before 25 files", "0 of 62 files" in open(page, encoding="utf-8").read())
+		mmiLoader.indexing_progress()
+		check("S18: rewritten after 25 files", "25 of 62 files" in open(page, encoding="utf-8").read())
+		clock["t"] += 11
+		mmiLoader.indexing_progress()
+		check("S18: rewritten after 10 seconds", "26 of 62 files" in open(page, encoding="utf-8").read())
+		check("S18: no temporary file left", not os.path.exists(page + ".tmp"))
+
+		mmiLoader.remove_indexing_page()
+		check("S18: page removed", not os.path.exists(page))
+		mmiLoader.remove_indexing_page()
+		check("S18: removing twice is harmless", not os.path.exists(page))
+
+
 def scenario_clear_menus(base):
 	"""
 	Scenario 16: mmiLoader --clear (clear_menus) after the USB is removed.
@@ -1381,6 +1446,10 @@ if __name__ == '__main__':
 		sub17 = os.path.join(tmp, "s17")
 		os.makedirs(sub17, exist_ok=True)
 		scenario_docx(sub17)
+
+		sub18 = os.path.join(tmp, "s18")
+		os.makedirs(sub18, exist_ok=True)
+		scenario_indexing_page(sub18)
 
 	print(f"\n{'='*60}")
 	print(f"Results: {PASS} passed, {FAIL} failed")

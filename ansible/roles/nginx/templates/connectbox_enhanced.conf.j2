@@ -116,7 +116,21 @@ server {
       add_header Cache-Control "no-cache";
     }
 
+    # While mmiLoader builds new menus (a full USB index takes minutes), it
+    # writes /tmp/connectbox-indexing.html.  Visitors opening the menu get that
+    # "loading new content" page instead of an empty menu; it refreshes itself
+    # and gives way to the menu when the file is removed at the end of the run.
+    # Only the menu page is redirected - app code, admin, chat, Kiwix and media
+    # are served as usual.
+    location = /connectbox-indexing.html {
+      root /tmp;
+      add_header Cache-Control "no-store";
+    }
+
     location / {
+      if (-f /tmp/connectbox-indexing.html) {
+        rewrite ^/(index\.html)?$ /connectbox-indexing.html last;
+      }
       index index.html;
     }
 }

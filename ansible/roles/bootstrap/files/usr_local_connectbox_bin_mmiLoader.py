@@ -12,6 +12,7 @@ import logging
 import subprocess
 import sys
 import time
+import atexit
 import shlex
 import signal
 import stat
@@ -53,9 +54,102 @@ def _sigterm_handler(signum, frame):
 		os.remove("/tmp/creating_menus.txt")
 	except Exception:
 		pass
+	remove_indexing_page()
 
 
 signal.signal(signal.SIGTERM, _sigterm_handler)
+
+
+# ── "Loading new content" page ────────────────────────────────────────────────
+#
+# A full index rebuilds the menus from scratch and takes minutes, during which
+# the menu would be empty.  While it runs, mmiLoader keeps INDEXING_PAGE up to
+# date with its progress, and nginx (connectbox_enhanced.conf) serves it to
+# anyone opening the menu.  The page refreshes itself; once the file is removed
+# (when the menus are written, on any exit via atexit, on SIGTERM, by --clear,
+# or by a reboot since /tmp is tmpfs) visitors get the menu again.  The file is
+# only ever written by mmiLoader, so it is the "indexing" signal (the OLED file
+# /tmp/creating_menus.txt is also written by the hat service's buttons).
+
+INDEXING_PAGE = "/tmp/connectbox-indexing.html"
+_indexing = {"total": 0, "done": 0, "written_done": -1, "written_at": 0.0}
+
+
+def write_indexing_page():
+	"""
+	Write the "loading new content" page with the current progress.  Written to
+	a temporary file and renamed, so nginx never serves a half-written page.
+	Plain HTML with a meta refresh, for the old phones ConnectBox supports.
+	"""
+	done, total = _indexing["done"], _indexing["total"]
+	pct = int(100 * done / total) if total else 0
+	progress = ('<p class="n">%s of %s files</p><div class="bar"><div style="width:%d%%"></div></div>'
+				% ("{:,}".format(done), "{:,}".format(total), pct)) if total else ''
+	page = ('<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8">\n'
+			'<meta name="viewport" content="width=device-width, initial-scale=1">\n'
+			'<meta http-equiv="refresh" content="20">\n'
+			'<title>Loading new content</title>\n'
+			'<style>body{margin:0;padding:40px 20px;font-family:Arial,Helvetica,sans-serif;background:#1e1e1e;'
+			'color:#eee;text-align:center;}h1{font-size:1.5em;font-weight:normal;margin:0 0 12px;}'
+			'p{font-size:1.05em;line-height:1.5;margin:0 auto 12px;max-width:26em;}.n{color:#bbb;}'
+			'.bar{max-width:20em;height:10px;margin:16px auto;background:#444;border-radius:5px;overflow:hidden;}'
+			'.bar div{height:10px;background:#3fa9f5;}</style>\n'
+			'</head><body>\n<h1>Loading new content</h1>\n'
+			'<p>This ConnectBox is loading new media. The menu will appear here by itself when it is ready.</p>\n'
+			+ progress + '\n</body></html>\n')
+	try:
+		with open(INDEXING_PAGE + ".tmp", "w", encoding="utf-8") as f:
+			f.write(page)
+		os.replace(INDEXING_PAGE + ".tmp", INDEXING_PAGE)
+		_indexing["written_done"], _indexing["written_at"] = done, time.time()
+	except OSError as e:
+		print("Could not write the indexing page: " + str(e))
+
+
+def remove_indexing_page():
+	"""Remove the "loading new content" page so visitors get the menu again."""
+	for path in (INDEXING_PAGE, INDEXING_PAGE + ".tmp"):
+		try:
+			os.remove(path)
+		except OSError:
+			pass
+
+
+def start_indexing_page(mediaDirectory):
+	"""
+	Count the files to index (hidden ones are skipped, as by the walk) and
+	show the page from 0.  A web-content folder (one holding index.html below
+	the language folders) becomes a single item however many files it has, so
+	it counts as 1 - otherwise a USB with an HTML Bible counted thousands of
+	files that are never processed one by one.  Registers the page's removal
+	for every way mmiLoader exits.
+	"""
+	total = 0
+	for root, dirs, files in os.walk(mediaDirectory):
+		dirs[:] = [d for d in dirs if not d.startswith('.')]
+		files = [f for f in files if not f.startswith('.') and f != 'saved.zip']
+		below_languages = os.path.normpath(os.path.dirname(root)) not in (
+			os.path.normpath(mediaDirectory), os.path.normpath(os.path.dirname(mediaDirectory)))
+		if below_languages and any(f.lower() in ('index.html', 'index.htm') for f in files):
+			total += 1
+			dirs[:] = []
+			continue
+		total += len(files)
+	_indexing.update(total=total, done=0)
+	atexit.register(remove_indexing_page)
+	write_indexing_page()
+
+
+def indexing_progress():
+	"""
+	Count one processed file; refresh the page every 25 files or 10 seconds,
+	whichever comes first (not on every file - the SD card is slow).
+	"""
+	if not os.path.exists(INDEXING_PAGE):
+		return
+	_indexing["done"] = min(_indexing["done"] + 1, _indexing["total"] or _indexing["done"] + 1)
+	if _indexing["done"] - _indexing["written_done"] >= 25 or time.time() - _indexing["written_at"] >= 10:
+		write_indexing_page()
 
 
 def usb_is_present():
@@ -305,6 +399,7 @@ def clear_menus(contentDirectory, templatesDirectory, comsFileName="/tmp/creatin
 		os.remove(comsFileName)
 	except OSError:
 		pass
+	remove_indexing_page()
 	logging.info("Menus cleared (USB removed)")
 
 
@@ -2358,6 +2453,7 @@ def process_directory_files(path, dirs, files, language, directoryType, director
 
 	for filename in files:
 		update_display("Processing: " + filename)
+		indexing_progress()
 		if not usb_is_present():
 			print("USB removed during file processing -- stopping")
 			return collection
@@ -2464,6 +2560,8 @@ def finalize_output(mains, languageCodes, contentDirectory, interface, mediaDire
 	if not usb_is_present():
 		print("USB removed before saving zip -- skipping zip write")
 		return
+	# The menus are complete: show them now rather than after saved.zip is written
+	remove_indexing_page()
 	print("Copying Metadata to Zip File On USB")
 	run_cmd(f"cd {shlex.quote(contentDirectory)} && zip --symlinks -r {shlex.quote(zipFileName)} *")
 	logging.info("Finished mmiLoader.py run successfully")
@@ -2542,6 +2640,7 @@ def mmiloader_code():
 
 	# Phase 3: fresh content directory
 	setup_fresh_content_dir(mediaDirectory, contentDirectory, templatesDirectory)
+	start_indexing_page(mediaDirectory)
 
 	# Phase 4: configuration
 	config = load_config(templatesDirectory)
