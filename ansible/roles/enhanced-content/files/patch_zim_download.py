@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """
-Detail page buttons (build/3.js) for ZIM files, Word documents and spreadsheets.
+Detail page buttons (build/3.js) for ZIM files, Word documents, spreadsheets and
+presentations.
 
-ZIM files (offline websites) and .docx/.xlsx/.xls files converted to web pages
+ZIM files (offline websites) and .docx/.xlsx/.xls/.pptx files converted to web pages
 (see mmiLoader.py) are html cards.  The stock detail page offers html cards as a
 download of html/<slug>.zip and shows the "exit" (open web page) icon on the
 open button.  Neither kind has a zip:
 
   - ZIM (mimeType application/x-zim): the download button is hidden (a .zim
     is also far too big to download to a phone).
-  - Word and spreadsheets (their own mimeTypes, WEB_DOCUMENTS): the download
+  - Word, spreadsheets and presentations (their own mimeTypes, WEB_DOCUMENTS): the download
     button downloads the original file from media/<fileName> instead, and the
     open button shows the open book icon used for PDF and EPUB, so a folder of
     Word files looks like a folder of PDFs.  The open button shows the page in
@@ -21,7 +22,7 @@ Opening the card is unaffected.  Applies to the single-item buttons and to
 each episode of a collection.
 
 Upgrades a 3.js patched by the earlier versions of this script (ZIM hidden,
-ZIM + Word hidden, Word only).  Idempotent.  Exits non-zero if the expected stock
+ZIM + Word hidden, Word only, Word + spreadsheets).  Idempotent.  Exits non-zero if the expected stock
 text is not found.
 
 Usage: patch_zim_download.py [path/to/3.js]
@@ -33,9 +34,10 @@ DEFAULT_PATH = '/var/www/enhanced/content/www/build/3.js'
 DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 XLS = 'application/vnd.ms-excel'
+PPTX = 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
 
 # Files mmiLoader shows as web pages that keep their own mimeType
-WEB_DOCUMENTS = [DOCX, XLSX, XLS]
+WEB_DOCUMENTS = [DOCX, XLSX, XLS, PPTX]
 
 # Inside 3.js the Angular template is a JavaScript string literal, so quotes
 # inside the template appear escaped as \' in the file.
@@ -91,7 +93,8 @@ EDITS = build_edits(WEB_DOCUMENTS)
 
 # Text written by earlier versions of this script; turned back into the stock
 # text before EDITS are applied, so patched boxes are upgraded.
-OLD_VERSIONS = [(new, stock) for stock, new in build_edits([DOCX])]  # Word only
+OLD_VERSIONS = [(new, stock) for stock, new in build_edits([DOCX, XLSX, XLS])]  # Word + spreadsheets
+OLD_VERSIONS += [(new, stock) for stock, new in build_edits([DOCX])]  # Word only
 for _item in ('media', 'episode'):
     _stock = '<download-button [filePath]="' + _item + '?.downloadPath"'
     # ZIM + Word download hidden
@@ -110,7 +113,7 @@ def main():
     with open(path, encoding='utf-8', newline='') as f:
         code = f.read()
     if all(new in code for _, new in EDITS):
-        print('ZIM/Word/spreadsheet detail page buttons already patched')
+        print('ZIM/document detail page buttons already patched')
         return 0
     # Undo earlier versions of the patch (each old text occurs at most once)
     for old, stock in OLD_VERSIONS:
@@ -125,7 +128,7 @@ def main():
             code = code.replace(old, new, 1)
     with open(path, 'w', encoding='utf-8', newline='') as f:
         f.write(code)
-    print('ZIM/Word/spreadsheet detail page buttons patched')
+    print('ZIM/document detail page buttons patched')
     return 0
 
 

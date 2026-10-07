@@ -79,6 +79,10 @@ Word files on the USB are shown as web pages, so phones without an office app ca
 
 Spreadsheets are shown as web pages the same way as Word files: mmiLoader reads `.xlsx` with [openpyxl](https://openpyxl.readthedocs.io/) and old `.xls` with [xlrd](https://xlrd.readthedocs.io/) (both installed by Ansible) and writes one table per visible sheet, with links between sheets. Cells show the values Excel last saved (formulas show their result); charts, images, colours and number formats are not kept. A sheet is cut at 2,000 rows (the page says how many rows there are), so pages stay quick on phones and on the box; the download button gives the whole file. The card has an XLSX/XLS icon and opens a details page with the book and download buttons, like PDFs and Word files.
 
+### Presentations (.pptx)
+
+PowerPoint files are shown as web pages too, read with Python's standard library (no extra package): one numbered section per visible slide with its title, text (bullet levels kept), pictures, tables and the speaker notes under a translated "Speaker notes" label (`SLIDE_NOTES` in the translation files), and slide-number links at the top. The slide design (backgrounds, positions, colours, animations, charts, diagrams) is not kept, so for decks where the look matters save them as PDF in PowerPoint before copying them to the USB. Old `.ppt` files stay download-only. The stock file-type table had no PowerPoint entries, so Ansible adds `.pptx` and `.ppt` to `types.json`.
+
 ### Download sizes
 
 Every download button (details page and the viewers' top bar) shows the file's size, for example "412 MB", so users know how big a download is before they start it. The app asks the box for the size (a HEAD request, headers only) when the button appears; if the size cannot be found the button is shown without it. Added by `patch_download_size.py` when the enhanced interface is installed.

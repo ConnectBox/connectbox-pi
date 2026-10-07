@@ -264,7 +264,17 @@ a Word card opens a details page with the book (open) and download buttons; the
 download button gives the original `.docx`.  Old `.doc`
 files stay download-only.
 
-### 2i. Spreadsheets
+### 2i. Presentations
+
+`.pptx` files are shown as web pages: each visible slide is a numbered section
+with its title, text (bullet points keep their indent), pictures, tables and the
+speaker notes (under a translated "Speaker notes" label); hidden slides are left
+out.  The slide design is not kept (backgrounds, positions, colours, animations,
+charts, diagrams), so for decks where the look matters, save them as PDF in
+PowerPoint (File > Save As > PDF) before copying them to the USB - the PDF reader
+shows every slide exactly.  Old `.ppt` files stay download-only.
+
+### 2j. Spreadsheets
 
 `.xlsx` and old `.xls` files are shown as web pages too: each visible sheet is a
 table (first row as the header), with links between sheets when there are
@@ -290,7 +300,7 @@ categories and their behaviour:
 | PDF | `.pdf` | — | `pdf.png` |
 | Word document | `.doc .docx` | — | `doc.png` / `docx.png` |
 | Spreadsheet | `.xls .xlsx` | — | `xls.png` / `xlsx.png` |
-| Presentation | `.pptx` | — | `sheet.png` |
+| Presentation | `.ppt .pptx` | — | `ppt.png` / `pptx.png` |
 | Other document | `.h5p .txt` | — | `pdf.png` |
 | ePub | `.epub` | — | `epub.png` |
 | Archive | `.zip .gz .7z .bz2 .tar` | — | `zip.png` |

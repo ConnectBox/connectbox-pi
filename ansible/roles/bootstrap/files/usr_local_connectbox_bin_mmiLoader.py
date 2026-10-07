@@ -568,8 +568,9 @@ def load_config(templatesDirectory):
 
 # English UI strings the stock interface.json template lacks.  They are used by
 # the ConnectBox patches to the app (see roles/enhanced-content/files/patch_*.py):
-# the footer's admin link and the chat page labels; and by the "loading new
-# content" page mmiLoader shows during a full index (INDEXING_*).
+# the footer's admin link and the chat page labels; by the "loading new
+# content" page mmiLoader shows during a full index (INDEXING_*); and by the
+# presentation pages mmiLoader writes (SLIDE_NOTES).
 EXTRA_INTERFACE_STRINGS = {
 	"FOOTER_CONFIGURATION": "Configuration",
 	"CHAT_TITLE": "Chat",
@@ -577,6 +578,7 @@ EXTRA_INTERFACE_STRINGS = {
 	"CHAT_MESSAGE": "Type a message",
 	"INDEXING_TITLE": "Loading new content",
 	"INDEXING_TEXT": "This ConnectBox is loading new media. The menu will appear here by itself when it is ready.",
+	"SLIDE_NOTES": "Speaker notes",
 }
 
 
@@ -1308,6 +1310,15 @@ DOCX_PAGE_STYLE = (
 	"h1{font-size:1.6em;}h2{font-size:1.35em;}h3{font-size:1.15em;}"
 	"th{background:#eef2ee;}td.n{text-align:right;white-space:nowrap;}"
 	".cb-sheets a{display:inline-block;margin:0 14px 6px 0;}.cb-more{color:#666;}"
+	".cb-slide{border:1px solid #ccc;border-radius:8px;padding:4px 16px 12px;margin:0 0 20px;}"
+	".cb-num{display:inline-block;min-width:1.6em;padding:0 4px;margin:0 8px;background:#555;color:#fff;"
+	"border-radius:4px;text-align:center;font-size:.8em;vertical-align:middle;}"
+	".cb-notes{background:#f6f6ef;border-left:4px solid #bbb;padding:6px 12px;margin-top:12px;}"
+	"[dir=rtl] .cb-notes{border-left:0;border-right:4px solid #bbb;}"
+	".cb-notes strong{display:block;color:#555;font-size:.85em;}"
+	".l1{margin-left:1.5em;}.l2{margin-left:3em;}.l3{margin-left:4.5em;}.l4{margin-left:6em;}"
+	"[dir=rtl] .l1,[dir=rtl] .l2,[dir=rtl] .l3,[dir=rtl] .l4{margin-left:0;}"
+	"[dir=rtl] .l1{margin-right:1.5em;}[dir=rtl] .l2{margin-right:3em;}[dir=rtl] .l3{margin-right:4.5em;}[dir=rtl] .l4{margin-right:6em;}"
 )
 
 
@@ -1323,7 +1334,7 @@ def docx_alt_text(alt):
 	return alt
 
 
-def convert_docx_to_html(source_path, page_dir):
+def convert_docx_to_html(source_path, page_dir, language=None):
 	"""
 	Convert a .docx to an HTML fragment with mammoth, saving its images as files
 	in page_dir (image1.png, ...) instead of embedding them, so pages stay small
@@ -1472,7 +1483,7 @@ def sheets_html(sheets):
 	return "\n".join(parts)
 
 
-def convert_xlsx_to_html(source_path, page_dir):
+def convert_xlsx_to_html(source_path, page_dir, language=None):
 	"""
 	Convert a .xlsx workbook to an HTML fragment with openpyxl (read-only
 	streaming mode, so large files do not fill the box's memory).  Hidden
@@ -1513,7 +1524,7 @@ def convert_xlsx_to_html(source_path, page_dir):
 	return sheets_html(sheets)
 
 
-def convert_xls_to_html(source_path, page_dir):
+def convert_xls_to_html(source_path, page_dir, language=None):
 	"""
 	Convert an old-format .xls workbook to an HTML fragment with xlrd.  Hidden
 	sheets are skipped; date cells are turned into dates using the workbook's
@@ -1567,6 +1578,298 @@ def convert_xls_to_html(source_path, page_dir):
 	return sheets_html(sheets)
 
 
+# ── Presentations (.pptx) shown as web pages ──────────────────────────────────
+#
+# A .pptx is a zip of XML parts, read here with the standard library only.
+# Each visible slide becomes a numbered section: its title, text (bullet points
+# keep their indent level), pictures, tables and the speaker notes.  Slides are
+# not drawn as designed (no backgrounds, positions, colours, animations, charts
+# or diagrams), so a design-heavy deck is better saved as PDF before it is put on
+# the USB.  Old binary .ppt files stay download-only, like .doc.
+
+PPTX_MIME_TYPE = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+PPTX_NS = {
+	"a": "http://schemas.openxmlformats.org/drawingml/2006/main",
+	"p": "http://schemas.openxmlformats.org/presentationml/2006/main",
+	"r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
+	"mc": "http://schemas.openxmlformats.org/markup-compatibility/2006",
+}
+PPTX_REL_NS = "{http://schemas.openxmlformats.org/package/2006/relationships}"
+# Picture formats browsers can show (EMF/WMF/TIFF pictures are left out)
+PPTX_WEB_IMAGES = (".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".bmp")
+# Placeholders that repeat on every slide and add nothing to the content
+PPTX_SKIPPED_PLACEHOLDERS = ("sldNum", "dt", "ftr", "hdr")
+
+# The run's config, so pages mmiLoader writes can use translated UI strings
+# (set by set_page_strings_config; English is used until then).
+_page_strings = {"config": None, "cache": {}}
+
+
+def set_page_strings_config(config):
+	"""Remember the run's config for page_string() and forget cached strings."""
+	_page_strings["config"] = config
+	_page_strings["cache"] = {}
+
+
+def page_string(language, key):
+	"""
+	A UI string (EXTRA_INTERFACE_STRINGS key) for a page mmiLoader writes, in
+	the given language: from the same translation files as the menus
+	(get_interface_for_language), cached per language, English as fallback.
+	"""
+	config = _page_strings["config"]
+	if config is None or not language:
+		return EXTRA_INTERFACE_STRINGS[key]
+	cache = _page_strings["cache"]
+	if language not in cache:
+		try:
+			cache[language] = get_interface_for_language(language, config["interface"], config["languageCodes"])
+		except Exception as e:
+			print("	No translated page strings for " + language + ": " + str(e)[:120])
+			cache[language] = {}
+	return cache[language].get(key) or EXTRA_INTERFACE_STRINGS[key]
+
+
+def pptx_rels(z, part):
+	"""
+	The relationships of one part of the zip (e.g. ppt/slides/slide1.xml) as
+	{id: (type, target part path)}; links to outside the file are left out.
+	"""
+	import posixpath
+	import xml.etree.ElementTree as ET
+	folder, name = posixpath.split(part)
+	try:
+		root = ET.fromstring(z.read(folder + "/_rels/" + name + ".rels"))
+	except (KeyError, ET.ParseError):
+		return {}
+	rels = {}
+	for rel in root.iter(PPTX_REL_NS + "Relationship"):
+		target = rel.get("Target", "")
+		if rel.get("TargetMode") == "External" or not target:
+			continue
+		path = target.lstrip("/") if target.startswith("/") else posixpath.normpath(posixpath.join(folder, target))
+		rels[rel.get("Id")] = (rel.get("Type", "").rsplit("/", 1)[-1], path)
+	return rels
+
+
+def pptx_paragraphs(tx_body):
+	"""
+	The paragraphs of a text body as (text, level, bullet), where bullet is
+	True/False when the paragraph says so (buChar/buAutoNum or buNone) and None
+	when it inherits it.  Line breaks inside a paragraph become newlines.
+	"""
+	ns = PPTX_NS
+	out = []
+	for para in tx_body.findall("a:p", ns):
+		parts = []
+		for child in para:
+			tag = child.tag.rsplit("}", 1)[-1]
+			if tag in ("r", "fld"):
+				t = child.find("a:t", ns)
+				parts.append(t.text or "" if t is not None else "")
+			elif tag == "br":
+				parts.append("\n")
+		text = "".join(parts).strip()
+		if not text:
+			continue
+		ppr = para.find("a:pPr", ns)
+		level, bullet = 0, None
+		if ppr is not None:
+			try:
+				level = min(int(ppr.get("lvl", "0")), 4)
+			except ValueError:
+				level = 0
+			if ppr.find("a:buNone", ns) is not None:
+				bullet = False
+			elif ppr.find("a:buChar", ns) is not None or ppr.find("a:buAutoNum", ns) is not None:
+				bullet = True
+		out.append((text, level, bullet))
+	return out
+
+
+def pptx_text_html(paragraphs, bullets_by_default):
+	"""
+	HTML for paragraphs from pptx_paragraphs: bullet paragraphs become list
+	items (indented by level, classes l1..l4), others plain paragraphs.  Body
+	placeholders show bullets unless a paragraph turns them off; text boxes only
+	when a paragraph asks for them.
+	"""
+	out, in_list = [], False
+	for text, level, bullet in paragraphs:
+		is_item = bullet if bullet is not None else bullets_by_default
+		body = html.escape(text).replace("\n", "<br>")
+		if is_item:
+			if not in_list:
+				out.append("<ul>")
+				in_list = True
+			out.append("<li" + (' class="l%d"' % level if level else "") + ">" + body + "</li>")
+		else:
+			if in_list:
+				out.append("</ul>")
+				in_list = False
+			out.append("<p>" + body + "</p>")
+	if in_list:
+		out.append("</ul>")
+	return "".join(out)
+
+
+def pptx_table_html(tbl):
+	"""HTML table for a slide table (a:tbl): the text of each cell."""
+	ns = PPTX_NS
+	rows = []
+	for tr in tbl.findall("a:tr", ns):
+		cells = []
+		for tc in tr.findall("a:tc", ns):
+			if tc.get("hMerge") == "1" or tc.get("vMerge") == "1":
+				continue
+			body = tc.find("a:txBody", ns)
+			text = "\n".join(t for t, _, _ in pptx_paragraphs(body)) if body is not None else ""
+			attrs = ""
+			if tc.get("gridSpan"):
+				attrs += ' colspan="' + html.escape(tc.get("gridSpan")) + '"'
+			if tc.get("rowSpan"):
+				attrs += ' rowspan="' + html.escape(tc.get("rowSpan")) + '"'
+			cells.append("<td" + attrs + ">" + html.escape(text).replace("\n", "<br>") + "</td>")
+		rows.append("<tr>" + "".join(cells) + "</tr>")
+	return "<table>" + "".join(rows) + "</table>" if rows else ""
+
+
+def pptx_shapes_html(tree, z, rels, page_dir, saved_images, slide):
+	"""
+	HTML for the shapes of a slide's shape tree, in the order they are stored,
+	plus the slide title.  Pictures are copied into page_dir once each (a
+	picture used on several slides is shared).  Groups and alternate content
+	are looked into.  Returns (title, [html parts]).
+	"""
+	import posixpath
+	ns = PPTX_NS
+	title, parts = "", []
+	for shape in tree:
+		tag = shape.tag.rsplit("}", 1)[-1]
+		if tag == "sp":
+			ph = shape.find("p:nvSpPr/p:nvPr/p:ph", ns)
+			ph_type = ph.get("type") if ph is not None else None
+			body = shape.find("p:txBody", ns)
+			if ph_type in PPTX_SKIPPED_PLACEHOLDERS or body is None:
+				continue
+			paragraphs = pptx_paragraphs(body)
+			if ph_type in ("title", "ctrTitle") and not title:
+				title = " ".join(t.replace("\n", " ") for t, _, _ in paragraphs)
+				continue
+			parts.append(pptx_text_html(paragraphs, ph is not None and ph_type not in ("subTitle", "title", "ctrTitle")))
+		elif tag == "pic":
+			blip = shape.find(".//a:blip", ns)
+			rid = blip.get("{%s}embed" % ns["r"]) if blip is not None else None
+			target = rels.get(rid, ("", ""))[1]
+			name = posixpath.basename(target)
+			if not name.lower().endswith(PPTX_WEB_IMAGES):
+				continue
+			if target not in saved_images:
+				try:
+					with z.open(target) as src, open(os.path.join(page_dir, name), "wb") as dst:
+						shutil.copyfileobj(src, dst)
+				except KeyError:
+					continue
+				saved_images.add(target)
+			info = shape.find("p:nvPicPr/p:cNvPr", ns)
+			alt = docx_alt_text(info.get("descr", "") if info is not None else "")
+			parts.append('<p><img src="' + html.escape(urllib.parse.quote(name)) + '" alt="' + html.escape(alt) + '"></p>')
+		elif tag == "graphicFrame":
+			tbl = shape.find(".//a:tbl", ns)
+			if tbl is not None:
+				parts.append(pptx_table_html(tbl))
+		elif tag in ("grpSp", "AlternateContent", "Fallback"):
+			inner = shape
+			if tag == "AlternateContent":
+				inner = shape.find("mc:Fallback", ns)
+				if inner is None:
+					continue
+			sub_title, sub_parts = pptx_shapes_html(inner, z, rels, page_dir, saved_images, slide)
+			title = title or sub_title
+			parts.extend(sub_parts)
+	return title, [p for p in parts if p]
+
+
+def pptx_notes_paragraphs(z, notes_part):
+	"""The speaker notes of a slide: the paragraphs of its notes page body."""
+	import xml.etree.ElementTree as ET
+	ns = PPTX_NS
+	try:
+		root = ET.fromstring(z.read(notes_part))
+	except (KeyError, ET.ParseError):
+		return []
+	paragraphs = []
+	for shape in root.iter("{%s}sp" % ns["p"]):
+		ph = shape.find("p:nvSpPr/p:nvPr/p:ph", ns)
+		body = shape.find("p:txBody", ns)
+		if ph is not None and ph.get("type") == "body" and body is not None:
+			paragraphs.extend(pptx_paragraphs(body))
+	return paragraphs
+
+
+def convert_pptx_to_html(source_path, page_dir, language=None):
+	"""
+	Convert a .pptx to an HTML fragment: a row of slide numbers linking to each
+	slide, then one section per visible slide (hidden slides are skipped) with
+	its number and title, text, pictures (saved as files in page_dir), tables,
+	and the speaker notes under a translated "Speaker notes" label.  Returns
+	None if the file cannot be read (the reason is printed).
+	"""
+	import zipfile
+	import xml.etree.ElementTree as ET
+	ns = PPTX_NS
+	try:
+		z = zipfile.ZipFile(source_path)
+	except (OSError, zipfile.BadZipFile) as e:
+		print("	Could not read presentation " + source_path + ": " + str(e)[:200])
+		logging.warning("pptx conversion failed for " + source_path + ": " + str(e)[:200])
+		return None
+	try:
+		with z:
+			# Slide order comes from the presentation's slide list
+			pres = ET.fromstring(z.read("ppt/presentation.xml"))
+			pres_rels = pptx_rels(z, "ppt/presentation.xml")
+			slide_parts = []
+			for sld in pres.findall("p:sldIdLst/p:sldId", ns):
+				rel = pres_rels.get(sld.get("{%s}id" % ns["r"]))
+				if rel:
+					slide_parts.append(rel[1])
+			notes_label = html.escape(page_string(language, "SLIDE_NOTES"))
+			saved_images, sections, links = set(), [], []
+			number = 0
+			for part in slide_parts:
+				try:
+					root = ET.fromstring(z.read(part))
+				except KeyError:
+					continue
+				if root.get("show") == "0":
+					continue
+				number += 1
+				rels = pptx_rels(z, part)
+				tree = root.find("p:cSld/p:spTree", ns)
+				title, parts = pptx_shapes_html(tree if tree is not None else [], z, rels, page_dir, saved_images, number)
+				notes = []
+				for rel_type, target in rels.values():
+					if rel_type == "notesSlide":
+						notes = pptx_notes_paragraphs(z, target)
+				section = ['<div class="cb-slide" id="slide-%d">' % number,
+						   '<h2><span class="cb-num">%d</span>%s</h2>' % (number, html.escape(title))]
+				section.extend(parts)
+				if notes:
+					section.append('<div class="cb-notes"><strong>' + notes_label + "</strong>"
+								   + pptx_text_html(notes, False) + "</div>")
+				section.append("</div>")
+				sections.append("\n".join(section))
+				links.append('<a href="#slide-%d">%d</a>' % (number, number))
+	except Exception as e:
+		print("	Could not read presentation " + source_path + ": " + str(e)[:200])
+		logging.warning("pptx conversion failed for " + source_path + ": " + str(e)[:200])
+		return None
+	if len(links) > 1:
+		sections.insert(0, '<p class="cb-sheets">' + " ".join(links) + "</p>")
+	return "\n".join(sections)
+
+
 # Files shown as web pages: extension -> (converter, mimeType kept on the card,
 # full-width page, name used in messages).  The app patches recognise these
 # mimeTypes to give the cards a details page with the book and download buttons.
@@ -1574,6 +1877,7 @@ WEB_PAGE_CONVERTERS = {
 	".docx": (convert_docx_to_html, DOCX_MIME_TYPE, False, "Word file"),
 	".xlsx": (convert_xlsx_to_html, XLSX_MIME_TYPE, True, "Spreadsheet"),
 	".xls": (convert_xls_to_html, XLS_MIME_TYPE, True, "Spreadsheet"),
+	".pptx": (convert_pptx_to_html, PPTX_MIME_TYPE, False, "Presentation"),
 }
 WEB_PAGE_MIME_TYPES = set(v[1] for v in WEB_PAGE_CONVERTERS.values())
 
@@ -1581,7 +1885,7 @@ WEB_PAGE_MIME_TYPES = set(v[1] for v in WEB_PAGE_CONVERTERS.values())
 def make_document_web_page(content, fullFilename, mediaName, slug, language, contentDirectory, extension=".docx"):
 	"""
 	Write <lang>/html/<slug>/index.html (plus any image files) for a Word
-	document or spreadsheet and turn the card into an html item.  The card keeps
+	document, spreadsheet or presentation and turn the card into an html item.  The card keeps
 	the file's own mimeType, which the app patches use to show the details page
 	with the book icon and a download of the original file (not the html zip).
 	Returns the card, unchanged if the file could not be converted.
@@ -1589,7 +1893,7 @@ def make_document_web_page(content, fullFilename, mediaName, slug, language, con
 	converter, mime_type, wide, kind = WEB_PAGE_CONVERTERS[extension]
 	page_dir = os.path.join(contentDirectory, language, "html", slug)
 	os.makedirs(page_dir, exist_ok=True)
-	body_html = converter(fullFilename, page_dir)
+	body_html = converter(fullFilename, page_dir, language)
 	if body_html is None:
 		shutil.rmtree(page_dir, ignore_errors=True)
 		return content
@@ -2335,7 +2639,7 @@ def apply_fallback_image(content, collection, extension, types, directoryImage):
 
 	Called after all thumbnail attempts are exhausted.  Uses the mediaType
 	string from content to select an icon from the well-known set (sound.png,
-	video.png, zip.png, epub.png, doc.png, docx.png, xls.png, xlsx.png, sheet.png, pdf.png, images.png,
+	video.png, zip.png, epub.png, doc.png, docx.png, xls.png, xlsx.png, ppt.png, pptx.png, pdf.png, images.png,
 	apps.png, www.png).
 
 	For collection items both content['image'] and collection['image'] are
@@ -2363,7 +2667,7 @@ def apply_fallback_image(content, collection, extension, types, directoryImage):
 				if extension == '.docx': content['image'] = 'docx.png'
 				elif extension == '.doc': content['image'] = 'doc.png'
 				elif extension in ('.xls', '.xlsx'): content['image'] = extension[1:] + '.png'
-				elif extension == '.pptx': content['image'] = 'sheet.png'
+				elif extension in ('.pptx', '.ppt'): content['image'] = extension[1:] + '.png'
 				else: content['image'] = 'pdf.png'
 		elif mt in 'pdf':
 			if img == directoryImage: content['image'] = 'pdf.png'
@@ -2391,7 +2695,7 @@ def apply_fallback_image(content, collection, extension, types, directoryImage):
 				if extension == '.docx': collection['image'] = 'docx.png'
 				elif extension == '.doc': collection['image'] = 'doc.png'
 				elif extension in ('.xls', '.xlsx'): collection['image'] = extension[1:] + '.png'
-				elif extension == '.pptx': collection['image'] = 'sheet.png'
+				elif extension in ('.pptx', '.ppt'): collection['image'] = extension[1:] + '.png'
 				else: collection['image'] = 'pdf.png'
 		elif mt in 'pdf':
 			if cimg == directoryImage: collection['image'] = 'pdf.png'
@@ -2628,7 +2932,7 @@ def process_file_entry(filename, path, thisDirectory, language, directoryType, d
 	# Fallback images
 	content, collection = apply_fallback_image(content, collection, extension, types, directoryImage)
 
-	# Word documents and spreadsheets: also show them as a web page
+	# Word documents, spreadsheets and presentations: also show them as a web page
 	# (see make_document_web_page)
 	if extension in WEB_PAGE_CONVERTERS and content["mediaType"] == 'document':
 		content = make_document_web_page(content, fullFilename, mediaName, slug, language, contentDirectory, extension)
@@ -2906,6 +3210,8 @@ def mmiloader_code():
 
 	# The "loading new content" page now shows its message in the USB's languages
 	set_indexing_languages(doesRootContainLanguage or [language], config)
+	# Translated labels on the pages written for presentations
+	set_page_strings_config(config)
 
 	# Initialise mains with English template; additional languages are added by ensure_language_dir
 	mains = {}

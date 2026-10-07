@@ -222,9 +222,9 @@
     - /var/www/enhanced/content/www/assets/imgs/doc.png
     - /var/www/enhanced/content/www/assets/templates/en/images/doc.png
 
-# .docx, .xlsx and .xls get their own icons (DOCX/XLSX/XLS labels, same style
-# as doc.png and pdf.png); old .doc files keep doc.png
-- name: Deploy docx.png, xlsx.png and xls.png icons to enhanced interface assets
+# .docx, .xlsx, .xls, .pptx and .ppt get their own icons (DOCX/XLSX/XLS/PPTX/PPT
+# labels, same style as doc.png and pdf.png); old .doc files keep doc.png
+- name: Deploy Word, spreadsheet and presentation icons to enhanced interface assets
   become: true
   copy:
     src: "{{ item.0 }}"
@@ -232,7 +232,7 @@
     owner: www-data
     group: www-data
     mode: '0644'
-  loop: "{{ ['docx.png', 'xlsx.png', 'xls.png'] | product(['/var/www/enhanced/content/www/assets/imgs', '/var/www/enhanced/content/www/assets/templates/en/images']) | list }}"
+  loop: "{{ ['docx.png', 'xlsx.png', 'xls.png', 'pptx.png', 'ppt.png'] | product(['/var/www/enhanced/content/www/assets/imgs', '/var/www/enhanced/content/www/assets/templates/en/images']) | list }}"
 
 - name: Deploy sheet.png icon to enhanced interface assets
   become: true
@@ -258,7 +258,7 @@
     - /var/www/enhanced/content/www/assets/imgs/folder.png
     - /var/www/enhanced/content/www/assets/templates/en/images/folder.png
 
-- name: Patch types.json to use the Word and spreadsheet icons
+- name: Patch types.json for Word, spreadsheet and presentation files
   become: true
   shell: |
     python3 -c "
@@ -269,6 +269,11 @@
     t['.docx']['image'] = 'docx.png'
     t['.xls']['image'] = 'xls.png'
     t['.xlsx']['image'] = 'xlsx.png'
+    # The stock table has no PowerPoint entries, so .pptx/.ppt files were skipped
+    t['.pptx'] = {'image': 'pptx.png', 'mediaType': 'document', 'category': 'Documents',
+                  'mimeType': 'application/vnd.openxmlformats-officedocument.presentationml.presentation'}
+    t['.ppt'] = {'image': 'ppt.png', 'mediaType': 'document', 'category': 'Documents',
+                 'mimeType': 'application/vnd.ms-powerpoint'}
     with open(path, 'w') as f: json.dump(t, f, indent=4)
     "
 
@@ -301,8 +306,8 @@
     "
   ignore_errors: yes
 
-# HTML items skip the detail page (Word documents and spreadsheets shown as web
-# pages are the exception: like PDFs they open the detail page, with its open
+# HTML items skip the detail page (Word documents, spreadsheets and presentations
+# shown as web pages are the exception: like PDFs they open the detail page, with its open
 # (book) and download buttons - see patch_zim_download.py).  The detail page is where the
 # stock app reports views (media-detail openViewer).  The patched goToDetails therefore reports the view
 # itself: a PUT to /admin/api/weblog with the same body as StatReporterProvider,
@@ -320,7 +325,7 @@
     path = '/var/www/enhanced/content/www/build/6.js'
     with open(path) as f: c = f.read()
     new_code = '''HomePage.prototype.goToDetails = function (resource) {
-            if (resource.mediaType === 'html' && ['application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'].indexOf(resource.mimeType) === -1) {
+            if (resource.mediaType === 'html' && ['application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.presentationml.presentation'].indexOf(resource.mimeType) === -1) {
                 var lang = (this.currentLanguage && this.currentLanguage.code) ? this.currentLanguage.code : 'en';
                 var target = 'assets/content/' + lang + '/html/' + resource.slug;
                 var done = false;
@@ -412,9 +417,9 @@
   ignore_errors: yes
 
 # ZIM cards: hide the detail page's download button (a ZIM has no .zip).
-# Word and spreadsheet cards: download the original file and show the book
-# icon, as for PDF.
-- name: Patch connectbox-mediainterface detail page buttons for ZIM, Word and spreadsheet cards
+# Word, spreadsheet and presentation cards: download the original file and
+# show the book icon, as for PDF.
+- name: Patch connectbox-mediainterface detail page buttons for ZIM, Word, spreadsheet and presentation cards
   become: true
   script: patch_zim_download.py
   args:

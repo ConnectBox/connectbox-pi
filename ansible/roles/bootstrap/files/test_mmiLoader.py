@@ -1464,6 +1464,129 @@ def scenario_sheets(base):
 	run_scenario("Spreadsheets (collection)", media_dir, tpl_dir, brand_path, walk_content, expect)
 
 
+def make_pptx(path, png=None):
+	"""
+	Write a real .pptx with python-pptx: a title slide, a bullet slide (two
+	levels, speaker notes), a hidden slide, a slide with a picture and a table,
+	and a slide with a plain text box.  png is the bytes of a picture to use.
+	"""
+	import io as _io
+	from pptx import Presentation
+	from pptx.util import Inches
+	prs = Presentation()
+	s1 = prs.slides.add_slide(prs.slide_layouts[0])
+	s1.shapes.title.text = "Clean Water"
+	s1.placeholders[1].text = "A short course"
+	s2 = prs.slides.add_slide(prs.slide_layouts[1])
+	s2.shapes.title.text = "Why boil water?"
+	body = s2.placeholders[1].text_frame
+	body.text = "Kills germs & parasites"
+	sub = body.add_paragraph()
+	sub.text = "Boil for 1 minute"
+	sub.level = 1
+	s2.notes_slide.notes_text_frame.text = "Ask the group <how> they store water."
+	s3 = prs.slides.add_slide(prs.slide_layouts[1])
+	s3.shapes.title.text = "Secret slide"
+	s3._element.set("show", "0")
+	s4 = prs.slides.add_slide(prs.slide_layouts[5])
+	s4.shapes.title.text = "Filters"
+	if png:
+		pic = s4.shapes.add_picture(_io.BytesIO(png), Inches(1), Inches(1.5), Inches(2), Inches(2))
+		pic._element.nvPicPr.cNvPr.set("descr", "A sand filter")
+	table = s4.shapes.add_table(2, 2, Inches(4), Inches(1.5), Inches(4), Inches(1)).table
+	table.cell(0, 0).text = "Filter"
+	table.cell(0, 1).text = "Cost"
+	table.cell(1, 0).text = "Sand"
+	table.cell(1, 1).text = "Low"
+	s5 = prs.slides.add_slide(prs.slide_layouts[6])
+	box = s5.shapes.add_textbox(Inches(1), Inches(1), Inches(6), Inches(1)).text_frame
+	box.text = "Thank you"
+	prs.save(path)
+
+
+def scenario_pptx(base):
+	"""
+	Scenario 20: presentations (.pptx) are shown as web pages.
+
+	Each visible slide becomes a numbered section with its title, bullets
+	(indent levels kept), pictures saved as files, tables, plain text boxes and
+	the speaker notes under a translated label; hidden slides are left out; a
+	damaged file stays download-only; .pptx/.ppt get their own icons.
+	"""
+	print("\n-- Scenario 20: presentations as web pages --")
+	try:
+		import pptx  # noqa: F401
+	except ImportError:
+		check("S20: python-pptx installed to write the test file", False, "pip install python-pptx")
+		return
+	content_dir = make_content_dir(base)
+	os.makedirs(os.path.join(content_dir, "en", "html"), exist_ok=True)
+	png = mmiLoader.encode_png(4, 4, [(200, 30, 30, 255)] * 16) if hasattr(mmiLoader, "encode_png") else None
+	if png is None:
+		import base64
+		png = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==")
+	src = os.path.join(base, "Clean Water.pptx")
+	make_pptx(src, png)
+
+	mmiLoader.set_page_strings_config(None)
+	card = {"title": "Clean Water", "mediaType": "document", "mimeType": "x", "image": "pptx.png"}
+	card = mmiLoader.make_document_web_page(card, src, "Clean Water.pptx", "Clean Water-pptx", "en", content_dir, ".pptx")
+	page_dir = os.path.join(content_dir, "en", "html", "Clean Water-pptx")
+	page_file = os.path.join(page_dir, "index.html")
+	page = open(page_file, encoding="utf-8").read() if os.path.isfile(page_file) else ""
+	check("S20: card becomes html", card["mediaType"] == "html")
+	check("S20: card keeps the PowerPoint mimeType", card["mimeType"] == mmiLoader.PPTX_MIME_TYPE)
+	check("S20: numbered slide titles",
+		  '<h2><span class="cb-num">1</span>Clean Water</h2>' in page and '<h2><span class="cb-num">2</span>Why boil water?</h2>' in page,
+		  page[:500])
+	check("S20: subtitle as a paragraph", "<p>A short course</p>" in page)
+	check("S20: bullets with levels, text escaped",
+		  "<ul><li>Kills germs &amp; parasites</li><li class=\"l1\">Boil for 1 minute</li></ul>" in page)
+	check("S20: speaker notes with label, escaped",
+		  '<div class="cb-notes"><strong>Speaker notes</strong><p>Ask the group &lt;how&gt; they store water.</p></div>' in page)
+	check("S20: hidden slide left out and numbering continues",
+		  "Secret slide" not in page and '<span class="cb-num">3</span>Filters' in page and '<span class="cb-num">5</span>' not in page)
+	imgs = [f for f in os.listdir(page_dir) if f.lower().endswith(".png")] if os.path.isdir(page_dir) else []
+	check("S20: picture saved as a file with its description",
+		  len(imgs) == 1 and ('src="%s" alt="A sand filter"' % imgs[0]) in page, str(imgs))
+	check("S20: table", "<td>Filter</td><td>Cost</td>" in page and '<div class="cb-table"><table>' in page)
+	check("S20: plain text box", "<p>Thank you</p>" in page)
+	check("S20: slide number links", '<a href="#slide-1">1</a> <a href="#slide-2">2</a>' in page)
+	check("S20: reading-width page", 'class="cb-doc"' in page)
+
+	# The notes label comes from the language's translated strings
+	mmiLoader.set_page_strings_config({"interface": {}, "languageCodes": {}})
+	mmiLoader._page_strings["cache"]["ar"] = {"SLIDE_NOTES": "ملاحظات المتحدث"}
+	ar = {"title": "x", "mediaType": "document", "mimeType": "x"}
+	os.makedirs(os.path.join(content_dir, "ar", "html"), exist_ok=True)
+	mmiLoader.make_document_web_page(ar, src, "Clean Water.pptx", "cw-pptx", "ar", content_dir, ".pptx")
+	ar_page = open(os.path.join(content_dir, "ar", "html", "cw-pptx", "index.html"), encoding="utf-8").read()
+	check("S20: translated notes label, right-to-left page",
+		  "<strong>ملاحظات المتحدث</strong>" in ar_page and '<html lang="ar" dir="rtl">' in ar_page)
+	mmiLoader.set_page_strings_config(None)
+	check("S20: English label without a config", mmiLoader.page_string("fr", "SLIDE_NOTES") == "Speaker notes")
+	shipped = os.path.join(os.path.dirname(os.path.abspath(__file__)), "translations")
+	missing = [l for l in ("ar", "es", "fa", "pt", "zh-CN")
+			   if "SLIDE_NOTES" not in json.load(open(os.path.join(shipped, l + ".json"), encoding="utf-8"))["strings"]]
+	check("S20: notes label shipped in every reviewed language", not missing, str(missing))
+
+	bad = os.path.join(base, "broken.pptx")
+	with open(bad, "wb") as f:
+		f.write(b"not a presentation")
+	bad_card = mmiLoader.make_document_web_page({"title": "b", "mediaType": "document", "mimeType": "x"},
+												bad, "broken.pptx", "broken-pptx", "en", content_dir, ".pptx")
+	check("S20: damaged presentation stays a document", bad_card["mediaType"] == "document")
+	check("S20: no page left behind for a damaged presentation",
+		  not os.path.exists(os.path.join(content_dir, "en", "html", "broken-pptx")))
+
+	# Icons chosen for presentations
+	types = {".pptx": {"image": "book.png"}, ".ppt": {"image": "book.png"}}
+	for ext in (".pptx", ".ppt"):
+		c = {"mediaType": "document", "image": "blank.gif", "title": "t"}
+		c, _ = mmiLoader.apply_fallback_image(c, None, ext, types, "blank.gif")
+		check("S20: %s icon" % ext, c["image"] == ext[1:] + ".png", c["image"])
+
+
 def scenario_indexing_page(base):
 	"""
 	Scenario 18: the "loading new content" page shown while a full index runs.
@@ -1642,6 +1765,10 @@ if __name__ == '__main__':
 		sub19 = os.path.join(tmp, "s19")
 		os.makedirs(sub19, exist_ok=True)
 		scenario_sheets(sub19)
+
+		sub20 = os.path.join(tmp, "s20")
+		os.makedirs(sub20, exist_ok=True)
+		scenario_pptx(sub20)
 
 	print(f"\n{'='*60}")
 	print(f"Results: {PASS} passed, {FAIL} failed")

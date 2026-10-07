@@ -116,6 +116,11 @@
             "en": "This ConnectBox is loading new media. The menu will appear here by itself when it is ready.",
             "text": "此 ConnectBox 正在加载新的媒体内容。准备就绪后，菜单会自动显示在这里。",
             "source": "added 2026-10-07 (Claude) - native check advised"
+        },
+        "SLIDE_NOTES": {
+            "en": "Speaker notes",
+            "text": "演讲者备注",
+            "source": "added 2026-10-07 (Claude) - native check advised"
         }
     }
 }
