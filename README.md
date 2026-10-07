@@ -67,6 +67,10 @@ Every page inside web content (HTML folders) and ZIM files shows a small round h
 
 Put `.zim` files (from https://library.kiwix.org) in a language folder on the USB, e.g. `content/en/wikipedia_en_100_2025-01.zim`. Each one becomes a card in that language with the ZIM's own title and icon (a dark icon is put on a white background so it shows on the dark cards; an empty one is replaced by the standard web icon), and opens in Kiwix; a ZIM tagged with several languages also appears in its other languages that are on the box. A ZIM placed directly in `content/` (not in a language folder) gets no card. TED ZIMs open in the language of the menu they were opened from instead of TED's English default; other multi-language ZIMs open in their own default language. Search inside a ZIM is Kiwix's own. Files over 4 GB need an exFAT or ext4 USB. After adding ZIMs to a USB that already has `saved.zip`, delete `saved.zip` so the USB is re-indexed.
 
+### Word documents (.docx)
+
+Word files on the USB are shown as web pages, so phones without an office app can read them. When the USB is indexed, mmiLoader converts each `.docx` with [mammoth](https://github.com/mwilliamson/python-mammoth) (installed by Ansible) into `<lang>/html/<slug>/index.html`, with its images saved beside it. The card opens that page (with the home button), and the page starts with a link to download the original file. Text, headings, lists, tables, images and links are kept; exact layout is not (headers and footers, text boxes, columns). A folder of Word files is still a collection, and each document opens its own page. Old `.doc` files and any `.docx` that cannot be converted stay download-only. For documents whose layout matters, save them as PDF before copying them to the USB.
+
 ### USB file systems
 
 `PxUSBm.py` is the only USB mounter (it polls `lsblk` every ~3 s). It mounts FAT32, exFAT and NTFS sticks, and Linux file systems (ext2/3/4, xfs, btrfs, f2fs), including sticks formatted on the whole disk with no partition table (`mkfs.ext4 /dev/sdX`). Use ext4 or exFAT for files over 4 GB (FAT32's limit).

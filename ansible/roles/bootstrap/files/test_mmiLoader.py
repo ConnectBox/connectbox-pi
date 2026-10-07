@@ -123,6 +123,7 @@ def make_templates(base):
 		".html":{"mediaType": "html",     "mimeType": "text/html",       "image": "www.png"},
 		".htm": {"mediaType": "html",     "mimeType": "text/html",       "image": "www.png"},
 		".zip": {"mediaType": "zip",      "mimeType": "application/zip", "image": "zip.png"},
+		".docx":{"mediaType": "document", "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "image": "book.png"},
 	}
 	with open(os.path.join(tpl_en_data, "types.json"), "w") as f:
 		json.dump(types_data, f)
@@ -1145,6 +1146,155 @@ def scenario_duplicate_names(base):
 	mmiLoader._media_names.clear()
 
 
+
+# ── Word documents ────────────────────────────────────────────────────────────
+
+def make_docx(path, heading="Study Guide", text="Read the passage & answer.", image=True):
+	"""
+	Write a small real .docx: a Heading 1, a paragraph, a 2-cell table and
+	(optionally) a 1x1 PNG image, with the styles part so mammoth maps the heading.
+	"""
+	import struct, zipfile, zlib
+
+	def chunk(tag, data):
+		return struct.pack(">I", len(data)) + tag + data + struct.pack(">I", zlib.crc32(tag + data) & 0xffffffff)
+	png = (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", 1, 1, 8, 2, 0, 0, 0))
+		   + chunk(b"IDAT", zlib.compress(b"\x00\xff\x00\x00")) + chunk(b"IEND", b""))
+	W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+	body = ('<w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr><w:r><w:t>%s</w:t></w:r></w:p>'
+			'<w:p><w:r><w:t>%s</w:t></w:r></w:p>'
+			'<w:tbl><w:tr><w:tc><w:p><w:r><w:t>Week</w:t></w:r></w:p></w:tc>'
+			'<w:tc><w:p><w:r><w:t>Topic</w:t></w:r></w:p></w:tc></w:tr></w:tbl>') % (heading, text.replace("&", "&amp;"))
+	if image:
+		body += ('<w:p><w:r><w:drawing><wp:inline><wp:extent cx="914400" cy="914400"/><wp:docPr id="1" name="Picture 1"/>'
+				 '<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic>'
+				 '<pic:nvPicPr><pic:cNvPr id="0" name="pic.png"/><pic:cNvPicPr/></pic:nvPicPr>'
+				 '<pic:blipFill><a:blip r:embed="rId5"/></pic:blipFill><pic:spPr/></pic:pic></a:graphicData></a:graphic>'
+				 '</wp:inline></w:drawing></w:r></w:p>')
+	doc = ('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="%s" '
+		   'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" '
+		   'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" '
+		   'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" '
+		   'xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><w:body>%s</w:body></w:document>') % (W, body)
+	styles = ('<?xml version="1.0" encoding="UTF-8"?><w:styles xmlns:w="%s"><w:style w:type="paragraph" '
+			  'w:styleId="Heading1"><w:name w:val="heading 1"/></w:style></w:styles>') % W
+	types_xml = ('<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+				 '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+				 '<Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/>'
+				 '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'
+				 '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>')
+	rels = ('<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+			'<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>')
+	doc_rels = ('<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+				'<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'
+				'<Relationship Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/image1.png"/></Relationships>')
+	with zipfile.ZipFile(path, "w") as z:
+		z.writestr("[Content_Types].xml", types_xml)
+		z.writestr("_rels/.rels", rels)
+		z.writestr("word/document.xml", doc)
+		z.writestr("word/styles.xml", styles)
+		z.writestr("word/_rels/document.xml.rels", doc_rels)
+		if image:
+			z.writestr("word/media/image1.png", png)
+
+
+def scenario_docx(base):
+	"""
+	Scenario 17: Word (.docx) files are shown as web pages.
+
+	A single .docx becomes an html card with html/<slug>/index.html (heading,
+	text, table, image saved as a file, link to the original in media/); a
+	folder of .docx files stays a document collection whose episodes open their
+	own pages; a damaged file or a missing mammoth leaves a download-only card.
+	"""
+	print("\n-- Scenario 17: Word documents as web pages --")
+	try:
+		import mammoth  # noqa: F401
+	except ImportError:
+		check("S17: mammoth installed for this test", False, "pip install mammoth==1.13.0")
+		return
+
+	# Direct conversion of one document
+	content_dir = make_content_dir(base)
+	os.makedirs(os.path.join(content_dir, "en", "html"), exist_ok=True)
+	src = os.path.join(base, "Guide Book.docx")
+	make_docx(src)
+	card = {"title": "Guide Book.docx", "mediaType": "document", "mimeType": "x", "image": "doc.png"}
+	card = mmiLoader.make_docx_web_page(card, src, "Guide Book.docx", "Guide Book-docx", "en", content_dir)
+	page_dir = os.path.join(content_dir, "en", "html", "Guide Book-docx")
+	page_file = os.path.join(page_dir, "index.html")
+	page = open(page_file, encoding="utf-8").read() if os.path.isfile(page_file) else ""
+	check("S17: card becomes html", card["mediaType"] == "html")
+	check("S17: card keeps the Word mimeType", card["mimeType"] == mmiLoader.DOCX_MIME_TYPE)
+	check("S17: page written", bool(page))
+	check("S17: heading converted", "<h1>Study Guide</h1>" in page)
+	check("S17: text kept and escaped", "Read the passage &amp; answer." in page)
+	check("S17: table wrapped for sideways scrolling", '<div class="cb-table"><table>' in page)
+	check("S17: image saved as a file, not embedded", os.path.isfile(os.path.join(page_dir, "image1.png"))
+		  and 'src="image1.png"' in page and "base64" not in page)
+	check("S17: download link to the original in media/", 'href="../../media/Guide%20Book.docx" download' in page)
+	check("S17: mobile viewport", 'name="viewport"' in page)
+	check("S17: left-to-right for English", 'dir="rtl"' not in page)
+	check("S17: file-path image descriptions dropped",
+		  mmiLoader.docx_alt_text(r"C:\Users\Hanns\Content.Word\header_logo.jpg") == ""
+		  and mmiLoader.docx_alt_text("/home/x/pic.png") == "" and mmiLoader.docx_alt_text("A map of Africa") == "A map of Africa")
+
+	ar = {"title": "x", "mediaType": "document", "mimeType": "x"}
+	os.makedirs(os.path.join(content_dir, "ar", "html"), exist_ok=True)
+	mmiLoader.make_docx_web_page(ar, src, "Guide Book.docx", "g-docx", "ar", content_dir)
+	ar_page = open(os.path.join(content_dir, "ar", "html", "g-docx", "index.html"), encoding="utf-8").read()
+	check("S17: right-to-left for Arabic", '<html lang="ar" dir="rtl">' in ar_page)
+
+	bad = os.path.join(base, "broken.docx")
+	with open(bad, "wb") as f:
+		f.write(b"not a zip")
+	bad_card = mmiLoader.make_docx_web_page({"title": "b", "mediaType": "document", "mimeType": "x"},
+											bad, "broken.docx", "broken-docx", "en", content_dir)
+	check("S17: damaged file stays a document", bad_card["mediaType"] == "document")
+	check("S17: no page left behind for a damaged file",
+		  not os.path.exists(os.path.join(content_dir, "en", "html", "broken-docx")))
+
+	with mock.patch.dict(sys.modules, {"mammoth": None}):
+		no_m = mmiLoader.make_docx_web_page({"title": "n", "mediaType": "document", "mimeType": "x"},
+											src, "Guide Book.docx", "nom-docx", "en", content_dir)
+	check("S17: without mammoth the card stays a document", no_m["mediaType"] == "document")
+
+	# Through the normal indexing walk: one single file and one collection folder
+	walk_base = os.path.join(base, "walk")
+	media_dir = os.path.join(walk_base, "media")
+	lessons = os.path.join(media_dir, "Lessons")
+	os.makedirs(lessons)
+	make_docx(os.path.join(media_dir, "Welcome.docx"), heading="Welcome", image=False)
+	for n in (1, 2, 3):
+		make_docx(os.path.join(lessons, "Lesson %d.docx" % n), heading="Lesson %d" % n, image=False)
+	walk_content = make_content_dir(walk_base)
+	tpl_dir = make_templates(walk_base)
+	brand_path = make_brand(walk_base)
+
+	def expect(mains, content_dir, doesRootContainLanguage, language):
+		items = mains.get("en", {}).get("content", [])
+		single = [c for c in items if c.get("filename") == "Welcome.docx"]
+		cols = [c for c in items if c.get("episodes")]
+		check("S17: single Word card is html", bool(single) and single[0]["mediaType"] == "html", str(single)[:200])
+		if single:
+			check("S17: single card page exists",
+				  os.path.isfile(os.path.join(content_dir, "en", "html", single[0]["slug"], "index.html")))
+		check("S17: Word folder is one collection", len(cols) == 1, str([c.get("title") for c in items]))
+		if cols:
+			col = cols[0]
+			check("S17: collection card stays a document", col["mediaType"] == "document", col["mediaType"])
+			eps = col.get("episodes", [])
+			check("S17: three html episodes", len(eps) == 3 and all(e["mediaType"] == "html" for e in eps))
+			check("S17: each episode has its page", all(
+				os.path.isfile(os.path.join(content_dir, "en", "html", e["slug"], "index.html")) for e in eps))
+			saved = os.path.join(content_dir, "en", "data", col["slug"] + ".json")
+			on_disk = json.load(open(saved, encoding="utf-8")) if os.path.isfile(saved) else {}
+			check("S17: collection data file says document",
+				  on_disk.get("mediaType") == "document", str(on_disk.get("mediaType")))
+
+	run_scenario("Word documents (single + collection)", media_dir, tpl_dir, brand_path, walk_content, expect)
+
+
 def scenario_clear_menus(base):
 	"""
 	Scenario 16: mmiLoader --clear (clear_menus) after the USB is removed.
@@ -1227,6 +1377,10 @@ if __name__ == '__main__':
 		sub16 = os.path.join(tmp, "s16")
 		os.makedirs(sub16, exist_ok=True)
 		scenario_clear_menus(sub16)
+
+		sub17 = os.path.join(tmp, "s17")
+		os.makedirs(sub17, exist_ok=True)
+		scenario_docx(sub17)
 
 	print(f"\n{'='*60}")
 	print(f"Results: {PASS} passed, {FAIL} failed")

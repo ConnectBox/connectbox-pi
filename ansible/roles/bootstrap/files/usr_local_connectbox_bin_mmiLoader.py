@@ -1142,6 +1142,123 @@ def cross_list_zim_cards(mains, contentDirectory, languageCodes):
 	return added
 
 
+# ── Word documents (.docx) shown as web pages ─────────────────────────────────
+#
+# Phones cannot open Word files without an app, so each .docx is also converted
+# to a plain web page with mammoth (pure Python, installed by Ansible) when the
+# USB is indexed.  The card becomes an html item: the app opens
+# <lang>/html/<slug>/ (home page, detail page and collection episodes alike),
+# nginx adds the home button, and views are counted like other web content.
+# The page links back to the original file in <lang>/media/ for download.
+# mammoth keeps text, headings, lists, tables, images and links but not exact
+# layout (headers/footers, text boxes, columns).  If mammoth is missing or a file
+# cannot be converted, the card stays a downloadable document as before.  The
+# pages live in the content directory, so saved.zip restores them too.
+
+DOCX_MIME_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+# Small, old-browser-friendly styling for converted documents (no flexbox/grid).
+DOCX_PAGE_STYLE = (
+	"body{margin:0;padding:12px 16px 72px;font-family:Arial,Helvetica,sans-serif;"
+	"font-size:17px;line-height:1.5;color:#222;background:#fff;}"
+	".cb-doc{max-width:46em;margin:0 auto;}"
+	".cb-download{display:block;margin:0 0 16px;padding:10px 12px;background:#f0f0f0;"
+	"border:1px solid #ccc;border-radius:6px;color:#0645ad;text-decoration:none;word-wrap:break-word;}"
+	"img{max-width:100%;height:auto;}"
+	".cb-table{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:12px 0;}"
+	"table{border-collapse:collapse;}td,th{border:1px solid #bbb;padding:4px 8px;vertical-align:top;}"
+	"h1{font-size:1.6em;}h2{font-size:1.35em;}h3{font-size:1.15em;}"
+)
+
+
+def docx_alt_text(alt):
+	"""
+	An image's description for the converted page.  Word often stores the
+	author's local file path as the description (C:\\Users\\...\\logo.jpg), which
+	means nothing to readers and leaks the path, so paths become "".
+	"""
+	alt = (alt or "").strip()
+	if re.match(r"^[A-Za-z]:[\\/]", alt) or alt.startswith(("/", "\\\\")) or re.search(r"[\\/][^\\/]+\.(jpe?g|png|gif|bmp|emf|wmf|tiff?)$", alt, re.I):
+		return ""
+	return alt
+
+
+def convert_docx_to_html(source_path, page_dir):
+	"""
+	Convert a .docx to an HTML fragment with mammoth, saving its images as files
+	in page_dir (image1.png, ...) instead of embedding them, so pages stay small
+	for phones.  Returns the HTML fragment, or None if mammoth is not installed
+	or the file cannot be converted (the reason is printed).
+	"""
+	try:
+		import mammoth
+	except ImportError:
+		print("	mammoth not installed - Word file stays download-only")
+		return None
+	counter = {"n": 0}
+
+	def save_image(image):
+		# Write each embedded image next to the page; mammoth gives us its type
+		counter["n"] += 1
+		ext = (image.content_type or "image/png").split("/")[-1].split("+")[0].replace("jpeg", "jpg")
+		name = "image%d.%s" % (counter["n"], re.sub(r"[^a-z0-9]", "", ext) or "png")
+		with image.open() as src, open(os.path.join(page_dir, name), "wb") as dst:
+			shutil.copyfileobj(src, dst)
+		return {"src": name, "alt": docx_alt_text(image.alt_text)}
+
+	try:
+		with open(source_path, "rb") as f:
+			result = mammoth.convert_to_html(f, convert_image=mammoth.images.img_element(save_image))
+	except Exception as e:
+		print("	Could not convert Word file " + source_path + ": " + str(e)[:200])
+		logging.warning("docx conversion failed for " + source_path + ": " + str(e)[:200])
+		return None
+	if result.messages:
+		print("	Word conversion notes: " + str(len(result.messages)) + " (layout not kept exactly)")
+	return result.value
+
+
+def docx_page(title, body_html, download_name, language):
+	"""
+	The full web page for a converted Word document: title, a link to download
+	the original file (named by its file name, so it needs no translation),
+	the converted content, and right-to-left direction for RTL languages.
+	Wide tables are wrapped so they scroll sideways instead of breaking the page.
+	"""
+	rtl = language.split('-')[0].lower() in RTL_LANGUAGES
+	body_html = body_html.replace("<table>", '<div class="cb-table"><table>').replace("</table>", "</table></div>")
+	href = "../../media/" + urllib.parse.quote(download_name)
+	return ('<!DOCTYPE html>\n<html lang="' + html.escape(language) + '"' + (' dir="rtl"' if rtl else '') + '>\n'
+			'<head><meta charset="utf-8">\n'
+			'<meta name="viewport" content="width=device-width, initial-scale=1">\n'
+			'<title>' + html.escape(title) + '</title>\n'
+			'<style>' + DOCX_PAGE_STYLE + '</style>\n'
+			'</head>\n<body><div class="cb-doc">\n'
+			'<a class="cb-download" href="' + href + '" download>&#11015; ' + html.escape(download_name) + '</a>\n'
+			+ body_html + '\n</div></body>\n</html>\n')
+
+
+def make_docx_web_page(content, fullFilename, mediaName, slug, language, contentDirectory):
+	"""
+	Write <lang>/html/<slug>/index.html (plus image files) for a .docx and turn
+	the card into an html item.  The card keeps the Word mimeType, which the
+	detail page uses to hide its (non-existent) zip download.  Returns the card,
+	unchanged if the document could not be converted.
+	"""
+	page_dir = os.path.join(contentDirectory, language, "html", slug)
+	os.makedirs(page_dir, exist_ok=True)
+	body_html = convert_docx_to_html(fullFilename, page_dir)
+	if body_html is None:
+		shutil.rmtree(page_dir, ignore_errors=True)
+		return content
+	with open(os.path.join(page_dir, "index.html"), "w", encoding="utf-8") as f:
+		f.write(docx_page(content.get("title") or mediaName, body_html, mediaName, language))
+	content["mediaType"] = "html"
+	content["mimeType"] = DOCX_MIME_TYPE
+	print("	Word file shown as a web page: html/" + slug + "/")
+	return content
+
+
 # ── Phase 2: Language detection ───────────────────────────────────────────────
 
 def detect_language_dirs(mediaDirectory, languageCodes):
@@ -2165,6 +2282,10 @@ def process_file_entry(filename, path, thisDirectory, language, directoryType, d
 	# Fallback images
 	content, collection = apply_fallback_image(content, collection, extension, types, directoryImage)
 
+	# Word documents: also show them as a web page (see make_docx_web_page)
+	if extension == '.docx' and content["mediaType"] == 'document':
+		content = make_docx_web_page(content, fullFilename, mediaName, slug, language, contentDirectory)
+
 	# Compile into collection or singular item
 	if "collection" in directoryType:
 		print("	Adding Episode to collection.json")
@@ -2184,6 +2305,12 @@ def process_file_entry(filename, path, thisDirectory, language, directoryType, d
 			print(" Replacing collection content type with: " + content['mediaType'])
 			collection['mediaType'] = content['mediaType']
 			collection['image'] = content['image']
+
+		# A folder of converted Word files stays a document collection: an html
+		# collection card would try to open html/<collection slug>/, which does
+		# not exist.  Each episode still opens its own page.
+		if collection['mediaType'] == 'html' and content.get('mimeType') == DOCX_MIME_TYPE:
+			collection['mediaType'] = 'document'
 
 		collection["episodes"].append(content)
 		with open(contentDirectory + "/" + language + "/data/" + collection['slug'] + ".json", 'w', encoding='utf-8') as f:

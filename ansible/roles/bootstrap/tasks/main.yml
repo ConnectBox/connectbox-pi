@@ -863,6 +863,22 @@
   pip:
     name: pexpect
 
+# mammoth converts Word (.docx) files on the USB to web pages when mmiLoader.py
+# indexes it (pure Python).  Without it Word files stay download-only.
+# Debian 12+ refuses system-wide pip installs unless told otherwise.
+- name: install mammoth (Word to web page conversion for mmiLoader.py)
+  block:
+    - name: install mammoth
+      pip:
+        name: mammoth==1.13.0
+        executable: pip3
+  rescue:
+    - name: install mammoth (externally managed Python, Debian 12+)
+      pip:
+        name: mammoth==1.13.0
+        executable: pip3
+        extra_args: --break-system-packages
+
 - name: Add items to rc.local
   blockinfile:
     path: /etc/rc.local

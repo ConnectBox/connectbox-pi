@@ -256,6 +256,15 @@ delete `saved.zip` after adding ZIM files to a USB that has one.
 
 ---
 
+### 2h. Word documents
+
+`.docx` files are shown as web pages (converted when the USB is indexed) with a link
+to download the original.  Layout is simplified: headers/footers, text boxes and
+columns are not kept, so save layout-heavy documents as PDF instead.  Old `.doc`
+files stay download-only.
+
+---
+
 ## 3. Supported file types
 
 mmiLoader reads `types.json` for the complete extension map.  The important
