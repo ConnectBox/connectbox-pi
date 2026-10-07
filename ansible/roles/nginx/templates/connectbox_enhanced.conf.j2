@@ -127,9 +127,20 @@ server {
       add_header Cache-Control "no-store";
     }
 
+    # The app's start page: browsers must check with the box every time (a
+    # cheap 304 when unchanged).  Without a Cache-Control header they reused a
+    # copy for months (heuristic caching from its 2023 Last-Modified date), so
+    # the indexing page's refresh, and new app releases, never reached them.
+    location = /index.html {
+      if (-f /tmp/connectbox-indexing.html) {
+        rewrite ^ /connectbox-indexing.html last;
+      }
+      add_header Cache-Control "no-cache";
+    }
+
     location / {
       if (-f /tmp/connectbox-indexing.html) {
-        rewrite ^/(index\.html)?$ /connectbox-indexing.html last;
+        rewrite ^/$ /connectbox-indexing.html last;
       }
       index index.html;
     }

@@ -97,7 +97,9 @@ def write_indexing_page():
 					 for lang, rtl, title, text in messages)
 	page = ('<!DOCTYPE html>\n<html lang="' + html.escape(messages[0][0]) + '"><head><meta charset="utf-8">\n'
 			'<meta name="viewport" content="width=device-width, initial-scale=1">\n'
-			'<meta http-equiv="refresh" content="20">\n'
+			# Refresh to a new address each time: a plain refresh let browsers
+			# show a cached copy of the menu page instead of asking the box
+			'<meta http-equiv="refresh" content="20; url=/?reload=' + str(int(time.time())) + '">\n'
 			'<title>' + html.escape(messages[0][2]) + '</title>\n'
 			'<style>body{margin:0;padding:32px 20px;font-family:Arial,Helvetica,sans-serif;background:#1e1e1e;'
 			'color:#eee;text-align:center;}h1{font-size:1.4em;font-weight:normal;margin:0 0 8px;}'

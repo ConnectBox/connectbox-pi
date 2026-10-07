@@ -12,6 +12,7 @@ Run:  python3 test_mmiLoader.py
 
 import contextlib
 import json
+import re
 import os
 import shutil
 import sys
@@ -1338,7 +1339,8 @@ def scenario_indexing_page(base):
 		check("S18: counts 62 items (no hidden files, no saved.zip, web folder = 1)", mmiLoader._indexing["total"] == 62,
 			  str(mmiLoader._indexing["total"]))
 		check("S18: shows 0 / 62", "0 / 62" in html_text)
-		check("S18: refreshes itself", '<meta http-equiv="refresh" content="20">' in html_text)
+		check("S18: refreshes itself to an uncached address",
+			  re.search(r'<meta http-equiv="refresh" content="20; url=/\?reload=\d+">', html_text) is not None)
 		check("S18: removal registered for every exit", mmiLoader.remove_indexing_page in registered)
 
 		clock = {"t": 1000.0}
