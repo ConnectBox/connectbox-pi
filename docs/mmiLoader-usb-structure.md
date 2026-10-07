@@ -264,6 +264,17 @@ a Word card opens a details page with the book (open) and download buttons; the
 download button gives the original `.docx`.  Old `.doc`
 files stay download-only.
 
+### 2i. Spreadsheets
+
+`.xlsx` and old `.xls` files are shown as web pages too: each visible sheet is a
+table (first row as the header), with links between sheets when there are
+several.  Cells show the values Excel last saved (a formula shows its result);
+charts, images, colours and number formats are not kept, and hidden sheets are
+left out.  Only the first 2,000 rows of a sheet are put on the page (a
+"⋯ 2000 / 5321" line shows how many there are) - the download button gives the
+whole file.  Like Word files, the card opens a details page with the book and
+download buttons.
+
 ---
 
 ## 3. Supported file types
@@ -277,8 +288,9 @@ categories and their behaviour:
 | Audio | `.mp3 .m4a .ogg .aac .flac` | Embedded album art via ffmpeg | `sound.png` |
 | Image | `.jpg .jpeg .png .gif .webp .bmp` | The image itself | `images.png` |
 | PDF | `.pdf` | — | `pdf.png` |
-| Word document | `.doc .docx` | — | `doc.png` |
-| Spreadsheet | `.xls .xlsx .pptx` | — | `sheet.png` |
+| Word document | `.doc .docx` | — | `doc.png` / `docx.png` |
+| Spreadsheet | `.xls .xlsx` | — | `xls.png` / `xlsx.png` |
+| Presentation | `.pptx` | — | `sheet.png` |
 | Other document | `.h5p .txt` | — | `pdf.png` |
 | ePub | `.epub` | — | `epub.png` |
 | Archive | `.zip .gz .7z .bz2 .tar` | — | `zip.png` |

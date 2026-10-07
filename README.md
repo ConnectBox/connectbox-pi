@@ -75,6 +75,10 @@ Put `.zim` files (from https://library.kiwix.org) in a language folder on the US
 
 Word files on the USB are shown as web pages, so phones without an office app can read them. When the USB is indexed, mmiLoader converts each `.docx` with [mammoth](https://github.com/mwilliamson/python-mammoth) (installed by Ansible) into `<lang>/html/<slug>/index.html`, with its images saved beside it. Like a PDF, the card opens a details page with a book button, which opens that page (with the home button) in the same tab, and a download button for the original `.docx`. Text, headings, lists, tables, images and links are kept; exact layout is not (headers and footers, text boxes, columns). A folder of Word files is still a collection, and each document has its own book and download buttons. Old `.doc` files and any `.docx` that cannot be converted stay download-only. For documents whose layout matters, save them as PDF before copying them to the USB.
 
+### Spreadsheets (.xlsx, .xls)
+
+Spreadsheets are shown as web pages the same way as Word files: mmiLoader reads `.xlsx` with [openpyxl](https://openpyxl.readthedocs.io/) and old `.xls` with [xlrd](https://xlrd.readthedocs.io/) (both installed by Ansible) and writes one table per visible sheet, with links between sheets. Cells show the values Excel last saved (formulas show their result); charts, images, colours and number formats are not kept. A sheet is cut at 2,000 rows (the page says how many rows there are), so pages stay quick on phones and on the box; the download button gives the whole file. The card has an XLSX/XLS icon and opens a details page with the book and download buttons, like PDFs and Word files.
+
 ### Download sizes
 
 Every download button (details page and the viewers' top bar) shows the file's size, for example "412 MB", so users know how big a download is before they start it. The app asks the box for the size (a HEAD request, headers only) when the button appears; if the size cannot be found the button is shown without it. Added by `patch_download_size.py` when the enhanced interface is installed.

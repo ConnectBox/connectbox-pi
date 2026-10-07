@@ -125,6 +125,8 @@ def make_templates(base):
 		".htm": {"mediaType": "html",     "mimeType": "text/html",       "image": "www.png"},
 		".zip": {"mediaType": "zip",      "mimeType": "application/zip", "image": "zip.png"},
 		".docx":{"mediaType": "document", "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "image": "book.png"},
+		".xlsx":{"mediaType": "document", "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "image": "book.png"},
+		".xls": {"mediaType": "document", "mimeType": "application/vnd.ms-excel", "image": "book.png"},
 	}
 	with open(os.path.join(tpl_en_data, "types.json"), "w") as f:
 		json.dump(types_data, f)
@@ -1221,7 +1223,7 @@ def scenario_docx(base):
 	src = os.path.join(base, "Guide Book.docx")
 	make_docx(src)
 	card = {"title": "Guide Book.docx", "mediaType": "document", "mimeType": "x", "image": "doc.png"}
-	card = mmiLoader.make_docx_web_page(card, src, "Guide Book.docx", "Guide Book-docx", "en", content_dir)
+	card = mmiLoader.make_document_web_page(card, src, "Guide Book.docx", "Guide Book-docx", "en", content_dir)
 	page_dir = os.path.join(content_dir, "en", "html", "Guide Book-docx")
 	page_file = os.path.join(page_dir, "index.html")
 	page = open(page_file, encoding="utf-8").read() if os.path.isfile(page_file) else ""
@@ -1242,21 +1244,21 @@ def scenario_docx(base):
 
 	ar = {"title": "x", "mediaType": "document", "mimeType": "x"}
 	os.makedirs(os.path.join(content_dir, "ar", "html"), exist_ok=True)
-	mmiLoader.make_docx_web_page(ar, src, "Guide Book.docx", "g-docx", "ar", content_dir)
+	mmiLoader.make_document_web_page(ar, src, "Guide Book.docx", "g-docx", "ar", content_dir)
 	ar_page = open(os.path.join(content_dir, "ar", "html", "g-docx", "index.html"), encoding="utf-8").read()
 	check("S17: right-to-left for Arabic", '<html lang="ar" dir="rtl">' in ar_page)
 
 	bad = os.path.join(base, "broken.docx")
 	with open(bad, "wb") as f:
 		f.write(b"not a zip")
-	bad_card = mmiLoader.make_docx_web_page({"title": "b", "mediaType": "document", "mimeType": "x"},
+	bad_card = mmiLoader.make_document_web_page({"title": "b", "mediaType": "document", "mimeType": "x"},
 											bad, "broken.docx", "broken-docx", "en", content_dir)
 	check("S17: damaged file stays a document", bad_card["mediaType"] == "document")
 	check("S17: no page left behind for a damaged file",
 		  not os.path.exists(os.path.join(content_dir, "en", "html", "broken-docx")))
 
 	with mock.patch.dict(sys.modules, {"mammoth": None}):
-		no_m = mmiLoader.make_docx_web_page({"title": "n", "mediaType": "document", "mimeType": "x"},
+		no_m = mmiLoader.make_document_web_page({"title": "n", "mediaType": "document", "mimeType": "x"},
 											src, "Guide Book.docx", "nom-docx", "en", content_dir)
 	check("S17: without mammoth the card stays a document", no_m["mediaType"] == "document")
 
@@ -1300,6 +1302,166 @@ def scenario_docx(base):
 
 	run_scenario("Word documents (single + collection)", media_dir, tpl_dir, brand_path, walk_content, expect)
 
+
+
+def make_xlsx(path, rows=None, hidden_sheet=True, second_sheet=True):
+	"""
+	Write a small real .xlsx with openpyxl: a "Prices" sheet with a header row,
+	text, whole and decimal numbers, a date, a date-time and a boolean, an
+	optional second sheet "Notes", and an optional hidden sheet "Secret".
+	rows overrides the Prices data (for the row limit test).
+	"""
+	import datetime
+	import openpyxl
+	wb = openpyxl.Workbook()
+	ws = wb.active
+	ws.title = "Prices"
+	data = rows if rows is not None else [
+		["Item", "Price", "Date", "In stock"],
+		["Rice & beans", 12.0, datetime.datetime(2026, 10, 7), True],
+		["Oil", 0.1 + 0.2, datetime.datetime(2026, 10, 7, 14, 30), False],
+	]
+	for row in data:
+		ws.append(row)
+	if second_sheet:
+		wb.create_sheet("Notes").append(["Remember <this>"])
+	if hidden_sheet:
+		secret = wb.create_sheet("Secret")
+		secret.append(["hidden value"])
+		secret.sheet_state = "hidden"
+	wb.save(path)
+
+
+def make_xls(path):
+	"""
+	Write a small real old-format .xls with xlwt: a header row, a number, a
+	date cell (date number format) and a hidden second sheet.
+	"""
+	import datetime
+	import xlwt
+	wb = xlwt.Workbook()
+	ws = wb.add_sheet("Budget")
+	ws.write(0, 0, "Month")
+	ws.write(0, 1, "Amount")
+	ws.write(1, 0, datetime.datetime(2026, 1, 1), xlwt.easyxf(num_format_str="YYYY-MM-DD"))
+	ws.write(1, 1, 1500.5)
+	hidden = wb.add_sheet("Hidden")
+	hidden.write(0, 0, "hidden value")
+	hidden.visibility = 1
+	wb.save(path)
+
+
+def scenario_sheets(base):
+	"""
+	Scenario 19: spreadsheets (.xlsx, .xls) are shown as web pages.
+
+	A .xlsx becomes an html card with one table per visible sheet (header row,
+	values as Excel saved them, numbers right-aligned, sheet links), hidden
+	sheets left out, long sheets cut at SHEET_MAX_ROWS with a "shown / total"
+	line; a .xls is read the same way with xlrd; a damaged file stays a
+	download-only card; a folder of spreadsheets stays a document collection
+	with the XLSX icon.
+	"""
+	print("\n-- Scenario 19: spreadsheets as web pages --")
+	try:
+		import openpyxl  # noqa: F401
+		import xlrd  # noqa: F401
+	except ImportError:
+		check("S19: openpyxl and xlrd installed for this test", False, "pip install openpyxl==3.1.5 xlrd==2.0.1")
+		return
+
+	content_dir = make_content_dir(base)
+	os.makedirs(os.path.join(content_dir, "en", "html"), exist_ok=True)
+
+	def page_for(card_src, name, slug, ext):
+		# Convert one file and return (card, page text)
+		card = {"title": name, "mediaType": "document", "mimeType": "x", "image": "book.png"}
+		card = mmiLoader.make_document_web_page(card, card_src, name, slug, "en", content_dir, ext)
+		f = os.path.join(content_dir, "en", "html", slug, "index.html")
+		return card, (open(f, encoding="utf-8").read() if os.path.isfile(f) else "")
+
+	src = os.path.join(base, "Prices.xlsx")
+	make_xlsx(src)
+	card, page = page_for(src, "Prices.xlsx", "Prices-xlsx", ".xlsx")
+	check("S19: xlsx card becomes html", card["mediaType"] == "html")
+	check("S19: xlsx card keeps its mimeType", card["mimeType"] == mmiLoader.XLSX_MIME_TYPE)
+	check("S19: header row", "<th>Item</th><th>Price</th><th>Date</th><th>In stock</th>" in page, page[:300])
+	check("S19: text escaped", "<td>Rice &amp; beans</td>" in page)
+	check("S19: whole number without .0, right-aligned", '<td class="n">12</td>' in page)
+	check("S19: no float noise", '<td class="n">0.3</td>' in page)
+	check("S19: date and date-time", "<td>2026-10-07</td>" in page and "<td>2026-10-07 14:30</td>" in page)
+	check("S19: booleans", "<td>TRUE</td>" in page and "<td>FALSE</td>" in page)
+	check("S19: sheet links and headings",
+		  '<a href="#sheet-1">Prices</a>' in page and '<h2 id="sheet-2">Notes</h2>' in page)
+	check("S19: second sheet text escaped", "Remember &lt;this&gt;" in page)
+	check("S19: hidden sheet left out", "Secret" not in page and "hidden value" not in page)
+	check("S19: full-width page", 'class="cb-doc cb-wide"' in page)
+	check("S19: tables scroll sideways", '<div class="cb-table"><table>' in page)
+
+	# A single-sheet workbook: no sheet links or headings
+	one = os.path.join(base, "One.xlsx")
+	make_xlsx(one, hidden_sheet=False, second_sheet=False)
+	_, one_page = page_for(one, "One.xlsx", "One-xlsx", ".xlsx")
+	check("S19: one sheet has no sheet links", 'class="cb-sheets"' not in one_page and "<h2" not in one_page)
+
+	# Row limit: only SHEET_MAX_ROWS rows are put on the page
+	big = os.path.join(base, "Big.xlsx")
+	limit = mmiLoader.SHEET_MAX_ROWS
+	make_xlsx(big, rows=[["n"]] + [[i] for i in range(1, limit + 50)], hidden_sheet=False, second_sheet=False)
+	_, big_page = page_for(big, "Big.xlsx", "Big-xlsx", ".xlsx")
+	check("S19: long sheet cut at the row limit", big_page.count("<tr>") == limit, str(big_page.count("<tr>")))
+	check("S19: shown / total line", "&#8943; %d / %d" % (limit, limit + 50) in big_page)
+
+	# Old-format .xls through xlrd
+	try:
+		import xlwt  # noqa: F401
+		xls = os.path.join(base, "Budget.xls")
+		make_xls(xls)
+		xcard, xpage = page_for(xls, "Budget.xls", "Budget-xls", ".xls")
+		check("S19: xls card becomes html", xcard["mediaType"] == "html" and xcard["mimeType"] == mmiLoader.XLS_MIME_TYPE)
+		check("S19: xls header, date and number",
+			  "<th>Month</th><th>Amount</th>" in xpage and "<td>2026-01-01</td>" in xpage and '<td class="n">1500.5</td>' in xpage,
+			  xpage[:400])
+		check("S19: xls hidden sheet left out", "hidden value" not in xpage)
+	except ImportError:
+		print("  [SKIP] xlwt not installed - .xls test files cannot be written (pip install xlwt)")
+
+	# A damaged file stays a download-only document
+	bad = os.path.join(base, "broken.xlsx")
+	with open(bad, "wb") as f:
+		f.write(b"not a spreadsheet")
+	bad_card, _ = page_for(bad, "broken.xlsx", "broken-xlsx", ".xlsx")
+	check("S19: damaged spreadsheet stays a document", bad_card["mediaType"] == "document")
+	check("S19: no page left behind for a damaged spreadsheet",
+		  not os.path.exists(os.path.join(content_dir, "en", "html", "broken-xlsx")))
+
+	# Through the normal indexing walk: a folder of spreadsheets
+	walk_base = os.path.join(base, "walk")
+	media_dir = os.path.join(walk_base, "media")
+	folder = os.path.join(media_dir, "Accounts")
+	os.makedirs(folder)
+	for n in (1, 2, 3):
+		make_xlsx(os.path.join(folder, "Year %d.xlsx" % n), hidden_sheet=False, second_sheet=False)
+	walk_content = make_content_dir(walk_base)
+	tpl_dir = make_templates(walk_base)
+	brand_path = make_brand(walk_base)
+
+	def expect(mains, content_dir, doesRootContainLanguage, language):
+		items = mains.get("en", {}).get("content", [])
+		cols = [c for c in items if c.get("episodes")]
+		check("S19: spreadsheet folder is one collection", len(cols) == 1, str([c.get("title") for c in items]))
+		if cols:
+			col = cols[0]
+			eps = col.get("episodes", [])
+			check("S19: collection stays a document with the XLSX icon",
+				  col["mediaType"] == "document" and col.get("image") == "xlsx.png", str((col["mediaType"], col.get("image"))))
+			check("S19: episodes are html pages with the XLSX icon",
+				  len(eps) == 3 and all(e["mediaType"] == "html" and e.get("image") == "xlsx.png" for e in eps),
+				  str([(e["mediaType"], e.get("image")) for e in eps]))
+			check("S19: each episode has its page", all(
+				os.path.isfile(os.path.join(content_dir, "en", "html", e["slug"], "index.html")) for e in eps))
+
+	run_scenario("Spreadsheets (collection)", media_dir, tpl_dir, brand_path, walk_content, expect)
 
 
 def scenario_indexing_page(base):
@@ -1476,6 +1638,10 @@ if __name__ == '__main__':
 		sub18 = os.path.join(tmp, "s18")
 		os.makedirs(sub18, exist_ok=True)
 		scenario_indexing_page(sub18)
+
+		sub19 = os.path.join(tmp, "s19")
+		os.makedirs(sub19, exist_ok=True)
+		scenario_sheets(sub19)
 
 	print(f"\n{'='*60}")
 	print(f"Results: {PASS} passed, {FAIL} failed")

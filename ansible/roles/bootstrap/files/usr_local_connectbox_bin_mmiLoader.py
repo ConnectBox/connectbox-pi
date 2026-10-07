@@ -1296,15 +1296,18 @@ def cross_list_zim_cards(mains, contentDirectory, languageCodes):
 
 DOCX_MIME_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
-# Small, old-browser-friendly styling for converted documents (no flexbox/grid).
+# Small, old-browser-friendly styling for converted documents and spreadsheets
+# (no flexbox/grid).
 DOCX_PAGE_STYLE = (
 	"body{margin:0;padding:12px 16px 72px;font-family:Arial,Helvetica,sans-serif;"
 	"font-size:17px;line-height:1.5;color:#222;background:#fff;}"
-	".cb-doc{max-width:46em;margin:0 auto;}"
+	".cb-doc{max-width:46em;margin:0 auto;}.cb-wide{max-width:none;}"
 	"img{max-width:100%;height:auto;}"
 	".cb-table{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:12px 0;}"
 	"table{border-collapse:collapse;}td,th{border:1px solid #bbb;padding:4px 8px;vertical-align:top;}"
 	"h1{font-size:1.6em;}h2{font-size:1.35em;}h3{font-size:1.15em;}"
+	"th{background:#eef2ee;}td.n{text-align:right;white-space:nowrap;}"
+	".cb-sheets a{display:inline-block;margin:0 14px 6px 0;}.cb-more{color:#666;}"
 )
 
 
@@ -1355,11 +1358,13 @@ def convert_docx_to_html(source_path, page_dir):
 	return result.value
 
 
-def docx_page(title, body_html, language):
+def document_page(title, body_html, language, wide=False):
 	"""
-	The full web page for a converted Word document: title, the converted
-	content, and right-to-left direction for RTL languages.
+	The full web page for a converted Word document or spreadsheet: title, the
+	converted content, and right-to-left direction for RTL languages.
 	Wide tables are wrapped so they scroll sideways instead of breaking the page.
+	wide=True lets the content use the whole screen width (spreadsheets) instead
+	of a comfortable reading width (documents).
 	"""
 	rtl = language.split('-')[0].lower() in RTL_LANGUAGES
 	body_html = body_html.replace("<table>", '<div class="cb-table"><table>').replace("</table>", "</table></div>")
@@ -1368,29 +1373,231 @@ def docx_page(title, body_html, language):
 			'<meta name="viewport" content="width=device-width, initial-scale=1">\n'
 			'<title>' + html.escape(title) + '</title>\n'
 			'<style>' + DOCX_PAGE_STYLE + '</style>\n'
-			'</head>\n<body><div class="cb-doc">\n'
+			'</head>\n<body><div class="cb-doc' + (' cb-wide' if wide else '') + '">\n'
 			+ body_html + '\n</div></body>\n</html>\n')
 
 
-def make_docx_web_page(content, fullFilename, mediaName, slug, language, contentDirectory):
+# ── Spreadsheets (.xlsx, .xls) shown as web pages ─────────────────────────────
+#
+# Same idea as Word documents: each visible sheet becomes an HTML table, with
+# links between sheets when there are several.  .xlsx is read with openpyxl and
+# the older .xls with xlrd (both pure Python, installed by Ansible).  Cells show
+# the value Excel last saved (a formula shows its result); charts, images,
+# colours and number formats are not kept.  The first row of each sheet is shown
+# as a header row.  Only the first SHEET_MAX_ROWS rows and SHEET_MAX_COLUMNS
+# columns of a sheet are put on the page so it stays usable on a phone and quick
+# to build on the box; a language-neutral "⋯ 2000 / 5321" line says how many
+# rows the sheet has, and the details page offers the whole file for download.
+
+XLSX_MIME_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+XLS_MIME_TYPE = "application/vnd.ms-excel"
+SHEET_MAX_ROWS = 2000
+SHEET_MAX_COLUMNS = 100
+
+
+def sheet_cell_text(value):
 	"""
-	Write <lang>/html/<slug>/index.html (plus image files) for a .docx and turn
-	the card into an html item.  The card keeps the Word mimeType, which the
-	app patches use to show the detail page with the book icon and a download
-	of the original .docx (not the html zip).  Returns the card,
-	unchanged if the document could not be converted.
+	Text for one spreadsheet cell value: numbers without float noise (12.0 ->
+	12, 0.1+0.2 -> 0.3), dates as YYYY-MM-DD (with HH:MM when there is a time),
+	TRUE/FALSE for booleans, "" for empty cells.
 	"""
+	import datetime
+	if value is None:
+		return ""
+	if isinstance(value, bool):
+		return "TRUE" if value else "FALSE"
+	if isinstance(value, datetime.datetime):
+		if (value.hour, value.minute, value.second) == (0, 0, 0):
+			return value.date().isoformat()
+		return value.strftime("%Y-%m-%d %H:%M" if value.second == 0 else "%Y-%m-%d %H:%M:%S")
+	if isinstance(value, datetime.date):
+		return value.isoformat()
+	if isinstance(value, datetime.time):
+		return value.strftime("%H:%M" if value.second == 0 else "%H:%M:%S")
+	if isinstance(value, float):
+		if value.is_integer() and abs(value) < 1e15:
+			return str(int(value))
+		return "%.10g" % value
+	return str(value)
+
+
+def sheet_table_html(rows, total_rows):
+	"""
+	HTML table for one sheet.  rows is a list of rows (lists of cell values),
+	already limited to SHEET_MAX_ROWS; total_rows is how many non-empty rows the
+	sheet really has.  Trailing empty cells and rows are dropped, the first row
+	becomes the header, numbers are right-aligned.
+	"""
+	trimmed = []
+	for row in rows:
+		row = list(row[:SHEET_MAX_COLUMNS])
+		while row and (row[-1] is None or row[-1] == ""):
+			row.pop()
+		trimmed.append(row)
+	while trimmed and not trimmed[-1]:
+		trimmed.pop()
+	if not trimmed:
+		return ""
+	width = max(len(r) for r in trimmed)
+	out = ["<table>"]
+	for i, row in enumerate(trimmed):
+		cells = []
+		for value in row + [None] * (width - len(row)):
+			text = html.escape(sheet_cell_text(value))
+			if i == 0:
+				cells.append("<th>" + text + "</th>")
+			elif isinstance(value, (int, float)) and not isinstance(value, bool):
+				cells.append('<td class="n">' + text + "</td>")
+			else:
+				cells.append("<td>" + text + "</td>")
+		out.append("<tr>" + "".join(cells) + "</tr>")
+	out.append("</table>")
+	if total_rows > len(rows):
+		out.append('<p class="cb-more">&#8943; ' + str(len(rows)) + " / " + str(total_rows) + "</p>")
+	return "".join(out)
+
+
+def sheets_html(sheets):
+	"""
+	The page body for a workbook: sheets is a list of (name, table_html).  With
+	more than one sheet, a row of links at the top jumps to each sheet and each
+	sheet gets its name as a heading.
+	"""
+	if len(sheets) == 1:
+		return sheets[0][1]
+	links = " ".join('<a href="#sheet-%d">%s</a>' % (i + 1, html.escape(name)) for i, (name, _) in enumerate(sheets))
+	parts = ['<p class="cb-sheets">' + links + "</p>"]
+	for i, (name, table) in enumerate(sheets):
+		parts.append('<h2 id="sheet-%d">%s</h2>' % (i + 1, html.escape(name)) + table)
+	return "\n".join(parts)
+
+
+def convert_xlsx_to_html(source_path, page_dir):
+	"""
+	Convert a .xlsx workbook to an HTML fragment with openpyxl (read-only
+	streaming mode, so large files do not fill the box's memory).  Hidden
+	sheets are skipped.  Returns None if openpyxl is not installed or the file
+	cannot be read (the reason is printed).  page_dir is unused (no images).
+	"""
+	try:
+		import openpyxl
+	except ImportError:
+		print("	openpyxl not installed - spreadsheet stays download-only")
+		return None
+	try:
+		wb = openpyxl.load_workbook(source_path, read_only=True, data_only=True)
+	except Exception as e:
+		print("	Could not read spreadsheet " + source_path + ": " + str(e)[:200])
+		logging.warning("xlsx conversion failed for " + source_path + ": " + str(e)[:200])
+		return None
+	try:
+		sheets = []
+		for ws in wb.worksheets:
+			if getattr(ws, "sheet_state", "visible") != "visible":
+				continue
+			rows, total = [], 0
+			# Stream every row: keep the first SHEET_MAX_ROWS, count the rest
+			for row in ws.iter_rows(values_only=True):
+				if len(rows) < SHEET_MAX_ROWS:
+					rows.append(row)
+					total = len(rows)
+				elif any(v is not None for v in row):
+					total += 1
+			sheets.append((ws.title, sheet_table_html(rows, total)))
+	except Exception as e:
+		print("	Could not read spreadsheet " + source_path + ": " + str(e)[:200])
+		logging.warning("xlsx conversion failed for " + source_path + ": " + str(e)[:200])
+		return None
+	finally:
+		wb.close()
+	return sheets_html(sheets)
+
+
+def convert_xls_to_html(source_path, page_dir):
+	"""
+	Convert an old-format .xls workbook to an HTML fragment with xlrd.  Hidden
+	sheets are skipped; date cells are turned into dates using the workbook's
+	date system; error cells show Excel's error text (#DIV/0! ...).  Returns
+	None if xlrd is not installed or the file cannot be read.
+	"""
+	try:
+		import xlrd
+	except ImportError:
+		print("	xlrd not installed - spreadsheet stays download-only")
+		return None
+	try:
+		book = xlrd.open_workbook(source_path, on_demand=True)
+	except Exception as e:
+		print("	Could not read spreadsheet " + source_path + ": " + str(e)[:200])
+		logging.warning("xls conversion failed for " + source_path + ": " + str(e)[:200])
+		return None
+	try:
+		sheets = []
+		for index in range(book.nsheets):
+			sheet = book.sheet_by_index(index)
+			if sheet.visibility != 0:
+				continue
+			rows = []
+			for r in range(min(sheet.nrows, SHEET_MAX_ROWS)):
+				row = []
+				for c in range(min(sheet.ncols, SHEET_MAX_COLUMNS)):
+					cell = sheet.cell(r, c)
+					if cell.ctype == xlrd.XL_CELL_DATE:
+						try:
+							row.append(xlrd.xldate.xldate_as_datetime(cell.value, book.datemode))
+						except Exception:
+							row.append(cell.value)
+					elif cell.ctype == xlrd.XL_CELL_BOOLEAN:
+						row.append(bool(cell.value))
+					elif cell.ctype == xlrd.XL_CELL_ERROR:
+						row.append(xlrd.error_text_from_code.get(cell.value, "#ERR"))
+					elif cell.ctype in (xlrd.XL_CELL_EMPTY, xlrd.XL_CELL_BLANK):
+						row.append(None)
+					else:
+						row.append(cell.value)
+				rows.append(row)
+			sheets.append((sheet.name, sheet_table_html(rows, sheet.nrows)))
+			book.unload_sheet(index)
+	except Exception as e:
+		print("	Could not read spreadsheet " + source_path + ": " + str(e)[:200])
+		logging.warning("xls conversion failed for " + source_path + ": " + str(e)[:200])
+		return None
+	finally:
+		book.release_resources()
+	return sheets_html(sheets)
+
+
+# Files shown as web pages: extension -> (converter, mimeType kept on the card,
+# full-width page, name used in messages).  The app patches recognise these
+# mimeTypes to give the cards a details page with the book and download buttons.
+WEB_PAGE_CONVERTERS = {
+	".docx": (convert_docx_to_html, DOCX_MIME_TYPE, False, "Word file"),
+	".xlsx": (convert_xlsx_to_html, XLSX_MIME_TYPE, True, "Spreadsheet"),
+	".xls": (convert_xls_to_html, XLS_MIME_TYPE, True, "Spreadsheet"),
+}
+WEB_PAGE_MIME_TYPES = set(v[1] for v in WEB_PAGE_CONVERTERS.values())
+
+
+def make_document_web_page(content, fullFilename, mediaName, slug, language, contentDirectory, extension=".docx"):
+	"""
+	Write <lang>/html/<slug>/index.html (plus any image files) for a Word
+	document or spreadsheet and turn the card into an html item.  The card keeps
+	the file's own mimeType, which the app patches use to show the details page
+	with the book icon and a download of the original file (not the html zip).
+	Returns the card, unchanged if the file could not be converted.
+	"""
+	converter, mime_type, wide, kind = WEB_PAGE_CONVERTERS[extension]
 	page_dir = os.path.join(contentDirectory, language, "html", slug)
 	os.makedirs(page_dir, exist_ok=True)
-	body_html = convert_docx_to_html(fullFilename, page_dir)
+	body_html = converter(fullFilename, page_dir)
 	if body_html is None:
 		shutil.rmtree(page_dir, ignore_errors=True)
 		return content
 	with open(os.path.join(page_dir, "index.html"), "w", encoding="utf-8") as f:
-		f.write(docx_page(content.get("title") or mediaName, body_html, language))
+		f.write(document_page(content.get("title") or mediaName, body_html, language, wide))
 	content["mediaType"] = "html"
-	content["mimeType"] = DOCX_MIME_TYPE
-	print("	Word file shown as a web page: html/" + slug + "/")
+	content["mimeType"] = mime_type
+	print("	" + kind + " shown as a web page: html/" + slug + "/")
 	return content
 
 
@@ -2128,7 +2335,7 @@ def apply_fallback_image(content, collection, extension, types, directoryImage):
 
 	Called after all thumbnail attempts are exhausted.  Uses the mediaType
 	string from content to select an icon from the well-known set (sound.png,
-	video.png, zip.png, epub.png, doc.png, docx.png, sheet.png, pdf.png, images.png,
+	video.png, zip.png, epub.png, doc.png, docx.png, xls.png, xlsx.png, sheet.png, pdf.png, images.png,
 	apps.png, www.png).
 
 	For collection items both content['image'] and collection['image'] are
@@ -2155,7 +2362,8 @@ def apply_fallback_image(content, collection, extension, types, directoryImage):
 			if img == directoryImage:
 				if extension == '.docx': content['image'] = 'docx.png'
 				elif extension == '.doc': content['image'] = 'doc.png'
-				elif extension in ('.xls', '.xlsx', '.pptx'): content['image'] = 'sheet.png'
+				elif extension in ('.xls', '.xlsx'): content['image'] = extension[1:] + '.png'
+				elif extension == '.pptx': content['image'] = 'sheet.png'
 				else: content['image'] = 'pdf.png'
 		elif mt in 'pdf':
 			if img == directoryImage: content['image'] = 'pdf.png'
@@ -2182,7 +2390,8 @@ def apply_fallback_image(content, collection, extension, types, directoryImage):
 			if cimg in (directoryImage, 'pdf.png'):
 				if extension == '.docx': collection['image'] = 'docx.png'
 				elif extension == '.doc': collection['image'] = 'doc.png'
-				elif extension in ('.xls', '.xlsx', '.pptx'): collection['image'] = 'sheet.png'
+				elif extension in ('.xls', '.xlsx'): collection['image'] = extension[1:] + '.png'
+				elif extension == '.pptx': collection['image'] = 'sheet.png'
 				else: collection['image'] = 'pdf.png'
 		elif mt in 'pdf':
 			if cimg == directoryImage: collection['image'] = 'pdf.png'
@@ -2419,9 +2628,10 @@ def process_file_entry(filename, path, thisDirectory, language, directoryType, d
 	# Fallback images
 	content, collection = apply_fallback_image(content, collection, extension, types, directoryImage)
 
-	# Word documents: also show them as a web page (see make_docx_web_page)
-	if extension == '.docx' and content["mediaType"] == 'document':
-		content = make_docx_web_page(content, fullFilename, mediaName, slug, language, contentDirectory)
+	# Word documents and spreadsheets: also show them as a web page
+	# (see make_document_web_page)
+	if extension in WEB_PAGE_CONVERTERS and content["mediaType"] == 'document':
+		content = make_document_web_page(content, fullFilename, mediaName, slug, language, contentDirectory, extension)
 
 	# Compile into collection or singular item
 	if "collection" in directoryType:
@@ -2443,10 +2653,10 @@ def process_file_entry(filename, path, thisDirectory, language, directoryType, d
 			collection['mediaType'] = content['mediaType']
 			collection['image'] = content['image']
 
-		# A folder of converted Word files stays a document collection: an html
+		# A folder of converted Word files or spreadsheets stays a document collection: an html
 		# collection card would try to open html/<collection slug>/, which does
 		# not exist.  Each episode still opens its own page.
-		if collection['mediaType'] == 'html' and content.get('mimeType') == DOCX_MIME_TYPE:
+		if collection['mediaType'] == 'html' and content.get('mimeType') in WEB_PAGE_MIME_TYPES:
 			collection['mediaType'] = 'document'
 
 		collection["episodes"].append(content)

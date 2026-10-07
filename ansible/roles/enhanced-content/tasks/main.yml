@@ -222,18 +222,17 @@
     - /var/www/enhanced/content/www/assets/imgs/doc.png
     - /var/www/enhanced/content/www/assets/templates/en/images/doc.png
 
-# .docx gets its own icon (DOCX label); old .doc files keep doc.png
-- name: Deploy docx.png icon to enhanced interface assets
+# .docx, .xlsx and .xls get their own icons (DOCX/XLSX/XLS labels, same style
+# as doc.png and pdf.png); old .doc files keep doc.png
+- name: Deploy docx.png, xlsx.png and xls.png icons to enhanced interface assets
   become: true
   copy:
-    src: docx.png
-    dest: "{{ item }}"
+    src: "{{ item.0 }}"
+    dest: "{{ item.1 }}/{{ item.0 }}"
     owner: www-data
     group: www-data
     mode: '0644'
-  loop:
-    - /var/www/enhanced/content/www/assets/imgs/docx.png
-    - /var/www/enhanced/content/www/assets/templates/en/images/docx.png
+  loop: "{{ ['docx.png', 'xlsx.png', 'xls.png'] | product(['/var/www/enhanced/content/www/assets/imgs', '/var/www/enhanced/content/www/assets/templates/en/images']) | list }}"
 
 - name: Deploy sheet.png icon to enhanced interface assets
   become: true
@@ -259,7 +258,7 @@
     - /var/www/enhanced/content/www/assets/imgs/folder.png
     - /var/www/enhanced/content/www/assets/templates/en/images/folder.png
 
-- name: Patch types.json to use doc.png/docx.png and sheet.png for Word and spreadsheet files
+- name: Patch types.json to use the Word and spreadsheet icons
   become: true
   shell: |
     python3 -c "
@@ -268,8 +267,8 @@
     with open(path) as f: t = json.load(f)
     t['.doc']['image'] = 'doc.png'
     t['.docx']['image'] = 'docx.png'
-    t['.xls']['image'] = 'sheet.png'
-    t['.xlsx']['image'] = 'sheet.png'
+    t['.xls']['image'] = 'xls.png'
+    t['.xlsx']['image'] = 'xlsx.png'
     with open(path, 'w') as f: json.dump(t, f, indent=4)
     "
 
@@ -302,9 +301,9 @@
     "
   ignore_errors: yes
 
-# HTML items skip the detail page (Word documents shown as web pages are the
-# exception: like PDFs they open the detail page, with its open (book) and
-# download buttons - see patch_zim_download.py).  The detail page is where the
+# HTML items skip the detail page (Word documents and spreadsheets shown as web
+# pages are the exception: like PDFs they open the detail page, with its open
+# (book) and download buttons - see patch_zim_download.py).  The detail page is where the
 # stock app reports views (media-detail openViewer).  The patched goToDetails therefore reports the view
 # itself: a PUT to /admin/api/weblog with the same body as StatReporterProvider,
 # honouring the disable_stats live setting.  Navigation waits for the report to
@@ -321,7 +320,7 @@
     path = '/var/www/enhanced/content/www/build/6.js'
     with open(path) as f: c = f.read()
     new_code = '''HomePage.prototype.goToDetails = function (resource) {
-            if (resource.mediaType === 'html' && resource.mimeType !== 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+            if (resource.mediaType === 'html' && ['application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'].indexOf(resource.mimeType) === -1) {
                 var lang = (this.currentLanguage && this.currentLanguage.code) ? this.currentLanguage.code : 'en';
                 var target = 'assets/content/' + lang + '/html/' + resource.slug;
                 var done = false;
@@ -413,8 +412,9 @@
   ignore_errors: yes
 
 # ZIM cards: hide the detail page's download button (a ZIM has no .zip).
-# Word cards: download the original .docx and show the book icon, as for PDF.
-- name: Patch connectbox-mediainterface detail page buttons for ZIM and Word cards
+# Word and spreadsheet cards: download the original file and show the book
+# icon, as for PDF.
+- name: Patch connectbox-mediainterface detail page buttons for ZIM, Word and spreadsheet cards
   become: true
   script: patch_zim_download.py
   args:

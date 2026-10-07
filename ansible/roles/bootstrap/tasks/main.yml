@@ -879,6 +879,26 @@
         executable: pip3
         extra_args: --break-system-packages
 
+# openpyxl (.xlsx) and xlrd (old .xls) turn spreadsheets on the USB into web
+# pages when mmiLoader.py indexes it (pure Python).  Without them spreadsheets
+# stay download-only.
+- name: install openpyxl and xlrd (spreadsheet to web page conversion for mmiLoader.py)
+  block:
+    - name: install openpyxl and xlrd
+      pip:
+        name:
+          - openpyxl==3.1.5
+          - xlrd==2.0.1
+        executable: pip3
+  rescue:
+    - name: install openpyxl and xlrd (externally managed Python, Debian 12+)
+      pip:
+        name:
+          - openpyxl==3.1.5
+          - xlrd==2.0.1
+        executable: pip3
+        extra_args: --break-system-packages
+
 - name: Add items to rc.local
   blockinfile:
     path: /etc/rc.local
