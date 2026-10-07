@@ -2128,7 +2128,7 @@ def apply_fallback_image(content, collection, extension, types, directoryImage):
 
 	Called after all thumbnail attempts are exhausted.  Uses the mediaType
 	string from content to select an icon from the well-known set (sound.png,
-	video.png, zip.png, epub.png, doc.png, sheet.png, pdf.png, images.png,
+	video.png, zip.png, epub.png, doc.png, docx.png, sheet.png, pdf.png, images.png,
 	apps.png, www.png).
 
 	For collection items both content['image'] and collection['image'] are
@@ -2153,7 +2153,8 @@ def apply_fallback_image(content, collection, extension, types, directoryImage):
 			if img == directoryImage: content['image'] = 'epub.png'
 		elif mt in 'document, text, docx, xlsx, pptx, h5p':
 			if img == directoryImage:
-				if extension in ('.doc', '.docx'): content['image'] = 'doc.png'
+				if extension == '.docx': content['image'] = 'docx.png'
+				elif extension == '.doc': content['image'] = 'doc.png'
 				elif extension in ('.xls', '.xlsx', '.pptx'): content['image'] = 'sheet.png'
 				else: content['image'] = 'pdf.png'
 		elif mt in 'pdf':
@@ -2179,7 +2180,8 @@ def apply_fallback_image(content, collection, extension, types, directoryImage):
 			if cimg == directoryImage: collection['image'] = 'epub.png'
 		elif mt in 'document, text, docx, xlsx, pptx, h5p':
 			if cimg in (directoryImage, 'pdf.png'):
-				if extension in ('.doc', '.docx'): collection['image'] = 'doc.png'
+				if extension == '.docx': collection['image'] = 'docx.png'
+				elif extension == '.doc': collection['image'] = 'doc.png'
 				elif extension in ('.xls', '.xlsx', '.pptx'): collection['image'] = 'sheet.png'
 				else: collection['image'] = 'pdf.png'
 		elif mt in 'pdf':

@@ -1280,12 +1280,17 @@ def scenario_docx(base):
 		if single:
 			check("S17: single card page exists",
 				  os.path.isfile(os.path.join(content_dir, "en", "html", single[0]["slug"], "index.html")))
+		if single:
+			check("S17: single Word card has the DOCX icon", single[0].get("image") == "docx.png", str(single[0].get("image")))
 		check("S17: Word folder is one collection", len(cols) == 1, str([c.get("title") for c in items]))
 		if cols:
 			col = cols[0]
 			check("S17: collection card stays a document", col["mediaType"] == "document", col["mediaType"])
 			eps = col.get("episodes", [])
 			check("S17: three html episodes", len(eps) == 3 and all(e["mediaType"] == "html" for e in eps))
+			check("S17: collection and episodes have the DOCX icon",
+				  col.get("image") == "docx.png" and all(e.get("image") == "docx.png" for e in eps),
+				  str([col.get("image")] + [e.get("image") for e in eps]))
 			check("S17: each episode has its page", all(
 				os.path.isfile(os.path.join(content_dir, "en", "html", e["slug"], "index.html")) for e in eps))
 			saved = os.path.join(content_dir, "en", "data", col["slug"] + ".json")

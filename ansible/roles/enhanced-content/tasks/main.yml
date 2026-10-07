@@ -222,6 +222,19 @@
     - /var/www/enhanced/content/www/assets/imgs/doc.png
     - /var/www/enhanced/content/www/assets/templates/en/images/doc.png
 
+# .docx gets its own icon (DOCX label); old .doc files keep doc.png
+- name: Deploy docx.png icon to enhanced interface assets
+  become: true
+  copy:
+    src: docx.png
+    dest: "{{ item }}"
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  loop:
+    - /var/www/enhanced/content/www/assets/imgs/docx.png
+    - /var/www/enhanced/content/www/assets/templates/en/images/docx.png
+
 - name: Deploy sheet.png icon to enhanced interface assets
   become: true
   copy:
@@ -246,7 +259,7 @@
     - /var/www/enhanced/content/www/assets/imgs/folder.png
     - /var/www/enhanced/content/www/assets/templates/en/images/folder.png
 
-- name: Patch types.json to use doc.png and sheet.png for Word and spreadsheet files
+- name: Patch types.json to use doc.png/docx.png and sheet.png for Word and spreadsheet files
   become: true
   shell: |
     python3 -c "
@@ -254,7 +267,7 @@
     path = '/var/www/enhanced/content/www/assets/templates/en/data/types.json'
     with open(path) as f: t = json.load(f)
     t['.doc']['image'] = 'doc.png'
-    t['.docx']['image'] = 'doc.png'
+    t['.docx']['image'] = 'docx.png'
     t['.xls']['image'] = 'sheet.png'
     t['.xlsx']['image'] = 'sheet.png'
     with open(path, 'w') as f: json.dump(t, f, indent=4)
