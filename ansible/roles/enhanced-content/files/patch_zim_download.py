@@ -12,7 +12,9 @@ open button.  Neither kind has a zip:
   - Word (.docx mimeType): the download button downloads the original .docx
     from media/<fileName> instead, and the open button shows the open book
     icon used for PDF and EPUB, so a folder of Word files looks like a folder
-    of PDFs.
+    of PDFs.  The open button shows the Word page in the same tab (the stock
+    code opens web content in a new window after the view report, which old
+    phone browsers block as a popup); the page's home button leads back.
 
 Opening the card is unaffected.  Applies to the single-item buttons and to
 each episode of a collection.
@@ -59,7 +61,13 @@ def icon_edit(item):
     return stock, new
 
 
-EDITS = [download_edit('media'), download_edit('episode'), icon_edit('media'), icon_edit('episode')]
+# Open button: Word pages in the same tab, other web content as before
+OPEN_EDIT = (
+    'subscribe(function () { return window.open(resource.filePath); });',
+    'subscribe(function () { if (resource.mimeType === ' + "'" + DOCX + "'"
+    + ') { window.location.href = resource.filePath; } else { window.open(resource.filePath); } });')
+
+EDITS = [download_edit('media'), download_edit('episode'), icon_edit('media'), icon_edit('episode'), OPEN_EDIT]
 
 # Download button text written by earlier versions of this script; turned back
 # into the stock text before EDITS are applied, so patched boxes are upgraded.

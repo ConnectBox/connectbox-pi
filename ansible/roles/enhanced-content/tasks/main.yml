@@ -289,8 +289,10 @@
     "
   ignore_errors: yes
 
-# HTML items skip the detail page, which is where the stock app reports views
-# (media-detail openViewer).  The patched goToDetails therefore reports the view
+# HTML items skip the detail page (Word documents shown as web pages are the
+# exception: like PDFs they open the detail page, with its open (book) and
+# download buttons - see patch_zim_download.py).  The detail page is where the
+# stock app reports views (media-detail openViewer).  The patched goToDetails therefore reports the view
 # itself: a PUT to /admin/api/weblog with the same body as StatReporterProvider,
 # honouring the disable_stats live setting.  Navigation waits for the report to
 # finish (or 1.5 s, whichever is first) so a slow or failed report never blocks
@@ -306,7 +308,7 @@
     path = '/var/www/enhanced/content/www/build/6.js'
     with open(path) as f: c = f.read()
     new_code = '''HomePage.prototype.goToDetails = function (resource) {
-            if (resource.mediaType === 'html') {
+            if (resource.mediaType === 'html' && resource.mimeType !== 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
                 var lang = (this.currentLanguage && this.currentLanguage.code) ? this.currentLanguage.code : 'en';
                 var target = 'assets/content/' + lang + '/html/' + resource.slug;
                 var done = false;
