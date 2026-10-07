@@ -1233,7 +1233,7 @@ def scenario_docx(base):
 	check("S17: table wrapped for sideways scrolling", '<div class="cb-table"><table>' in page)
 	check("S17: image saved as a file, not embedded", os.path.isfile(os.path.join(page_dir, "image1.png"))
 		  and 'src="image1.png"' in page and "base64" not in page)
-	check("S17: download link to the original in media/", 'href="../../media/Guide%20Book.docx" download' in page)
+	check("S17: no download link on the page (the detail page has it)", 'download' not in page)
 	check("S17: mobile viewport", 'name="viewport"' in page)
 	check("S17: left-to-right for English", 'dir="rtl"' not in page)
 	check("S17: file-path image descriptions dropped",

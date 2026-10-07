@@ -1287,7 +1287,8 @@ def cross_list_zim_cards(mains, contentDirectory, languageCodes):
 # USB is indexed.  The card becomes an html item: the app opens
 # <lang>/html/<slug>/ (home page, detail page and collection episodes alike),
 # nginx adds the home button, and views are counted like other web content.
-# The page links back to the original file in <lang>/media/ for download.
+# The original file stays in <lang>/media/; the app's detail page has its
+# download button (patch_zim_download.py), so the page has no download link.
 # mammoth keeps text, headings, lists, tables, images and links but not exact
 # layout (headers/footers, text boxes, columns).  If mammoth is missing or a file
 # cannot be converted, the card stays a downloadable document as before.  The
@@ -1300,8 +1301,6 @@ DOCX_PAGE_STYLE = (
 	"body{margin:0;padding:12px 16px 72px;font-family:Arial,Helvetica,sans-serif;"
 	"font-size:17px;line-height:1.5;color:#222;background:#fff;}"
 	".cb-doc{max-width:46em;margin:0 auto;}"
-	".cb-download{display:block;margin:0 0 16px;padding:10px 12px;background:#f0f0f0;"
-	"border:1px solid #ccc;border-radius:6px;color:#0645ad;text-decoration:none;word-wrap:break-word;}"
 	"img{max-width:100%;height:auto;}"
 	".cb-table{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:12px 0;}"
 	"table{border-collapse:collapse;}td,th{border:1px solid #bbb;padding:4px 8px;vertical-align:top;}"
@@ -1356,23 +1355,20 @@ def convert_docx_to_html(source_path, page_dir):
 	return result.value
 
 
-def docx_page(title, body_html, download_name, language):
+def docx_page(title, body_html, language):
 	"""
-	The full web page for a converted Word document: title, a link to download
-	the original file (named by its file name, so it needs no translation),
-	the converted content, and right-to-left direction for RTL languages.
+	The full web page for a converted Word document: title, the converted
+	content, and right-to-left direction for RTL languages.
 	Wide tables are wrapped so they scroll sideways instead of breaking the page.
 	"""
 	rtl = language.split('-')[0].lower() in RTL_LANGUAGES
 	body_html = body_html.replace("<table>", '<div class="cb-table"><table>').replace("</table>", "</table></div>")
-	href = "../../media/" + urllib.parse.quote(download_name)
 	return ('<!DOCTYPE html>\n<html lang="' + html.escape(language) + '"' + (' dir="rtl"' if rtl else '') + '>\n'
 			'<head><meta charset="utf-8">\n'
 			'<meta name="viewport" content="width=device-width, initial-scale=1">\n'
 			'<title>' + html.escape(title) + '</title>\n'
 			'<style>' + DOCX_PAGE_STYLE + '</style>\n'
 			'</head>\n<body><div class="cb-doc">\n'
-			'<a class="cb-download" href="' + href + '" download>&#11015; ' + html.escape(download_name) + '</a>\n'
 			+ body_html + '\n</div></body>\n</html>\n')
 
 
@@ -1380,7 +1376,8 @@ def make_docx_web_page(content, fullFilename, mediaName, slug, language, content
 	"""
 	Write <lang>/html/<slug>/index.html (plus image files) for a .docx and turn
 	the card into an html item.  The card keeps the Word mimeType, which the
-	detail page uses to hide its (non-existent) zip download.  Returns the card,
+	app patches use to show the detail page with the book icon and a download
+	of the original .docx (not the html zip).  Returns the card,
 	unchanged if the document could not be converted.
 	"""
 	page_dir = os.path.join(contentDirectory, language, "html", slug)
@@ -1390,7 +1387,7 @@ def make_docx_web_page(content, fullFilename, mediaName, slug, language, content
 		shutil.rmtree(page_dir, ignore_errors=True)
 		return content
 	with open(os.path.join(page_dir, "index.html"), "w", encoding="utf-8") as f:
-		f.write(docx_page(content.get("title") or mediaName, body_html, mediaName, language))
+		f.write(docx_page(content.get("title") or mediaName, body_html, language))
 	content["mediaType"] = "html"
 	content["mimeType"] = DOCX_MIME_TYPE
 	print("	Word file shown as a web page: html/" + slug + "/")

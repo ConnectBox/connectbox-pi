@@ -258,8 +258,7 @@ delete `saved.zip` after adding ZIM files to a USB that has one.
 
 ### 2h. Word documents
 
-`.docx` files are shown as web pages (converted when the USB is indexed) with a link
-to download the original.  Layout is simplified: headers/footers, text boxes and
+`.docx` files are shown as web pages (converted when the USB is indexed).  Layout is simplified: headers/footers, text boxes and
 columns are not kept, so save layout-heavy documents as PDF instead.  Like a PDF,
 a Word card opens a details page with the book (open) and download buttons; the
 download button gives the original `.docx`.  Old `.doc`
