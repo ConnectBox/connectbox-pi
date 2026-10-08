@@ -147,6 +147,7 @@ PDF copies of the current user documents (the Word originals are kept outside th
 - [Getting Started (V10)](docs/manuals/ConnectBox-GettingStarted-V10.pdf): setting up a unit, adding media, the admin pages
 - [Supported File Types (V3)](docs/manuals/ConnectBox-Supported-File-Types-V3.pdf): which files open on the ConnectBox and which are download-only
 - [Translations Guide](docs/manuals/ConnectBox-Translations-Guide.pdf): how the menu wording is translated and how to correct it
+- [Software Specification (V1)](docs/manuals/ConnectBox-Software-Specification-V1.pdf): what the code does - components, provisioning, USB pipeline, content model, interface patches, invariants
 
 # Developing the ConnectBox Software
 
