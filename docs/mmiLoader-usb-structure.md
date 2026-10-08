@@ -295,19 +295,19 @@ categories and their behaviour:
 | Category | Example extensions | Thumbnail | Fallback icon |
 |----------|--------------------|-----------|--------------|
 | Video | `.mp4 .mkv .webm .avi .mov` | ffmpeg frame (progressive seek 1s→5s→15s→30s→60s, skips black frames) | `video.png` |
-| Audio | `.mp3 .m4a .ogg .aac .flac` | Embedded album art via ffmpeg | `sound.png` |
-| Image | `.jpg .jpeg .png .gif .webp .bmp` | The image itself | `images.png` |
+| Audio | `.mp3 .m4a .ogg .aac .wav` | Embedded album art via ffmpeg | `sound.png` |
+| Image | `.jpg .jpeg .png .gif .bmp` | The image itself | `images.png` |
 | PDF | `.pdf` | — | `pdf.png` |
 | Word document | `.doc .docx` | — | `doc.png` / `docx.png` |
 | Spreadsheet | `.xls .xlsx` | — | `xls.png` / `xlsx.png` |
 | Presentation | `.ppt .pptx` | — | `ppt.png` / `pptx.png` |
 | Other document | `.h5p .txt` | — | `pdf.png` |
 | ePub | `.epub` | — | `epub.png` |
-| Archive | `.zip .gz .7z .bz2 .tar` | — | `zip.png` |
+| Archive | `.zip .gzip .tar` | — | `zip.png` |
 | Android app | (directory with `AndroidManifest.xml`) | — | `app.png` |
 | Web app | (directory with `index.html/htm`) | — | `www.png` |
 
-Files with extensions not in `types.json` are silently skipped.
+Files with extensions not in `types.json` are silently skipped (for example `.webp`, `.svg`, `.flac`, `.7z`, `.odt`).
 Files and directories whose names start with `.` or `_` are also skipped.
 
 ### Same file name in different folders

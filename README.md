@@ -145,6 +145,8 @@ PDF copies of the current user documents (the Word originals are kept outside th
 - [What is a ConnectBox (V8)](docs/manuals/What-is-a-ConnectBox-V8.pdf): a short overview
 - [ConnectBox Specification (V9)](docs/manuals/ConnectBox-Specification-V9.pdf): features and hardware
 - [Getting Started (V10)](docs/manuals/ConnectBox-GettingStarted-V10.pdf): setting up a unit, adding media, the admin pages
+- [Supported File Types (V3)](docs/manuals/ConnectBox-Supported-File-Types-V3.pdf): which files open on the ConnectBox and which are download-only
+- [Translations Guide](docs/manuals/ConnectBox-Translations-Guide.pdf): how the menu wording is translated and how to correct it
 
 # Developing the ConnectBox Software
 
