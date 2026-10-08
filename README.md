@@ -138,6 +138,14 @@ See [docs/awsinstall.md](docs/awsinstall.md)
 
 See [docs/administration.md](docs/administration.md)
 
+# User documents
+
+PDF copies of the current user documents (the Word originals are kept outside the repository):
+
+- [What is a ConnectBox (V8)](docs/manuals/What-is-a-ConnectBox-V8.pdf): a short overview
+- [ConnectBox Specification (V9)](docs/manuals/ConnectBox-Specification-V9.pdf): features and hardware
+- [Getting Started (V10)](docs/manuals/ConnectBox-GettingStarted-V10.pdf): setting up a unit, adding media, the admin pages
+
 # Developing the ConnectBox Software
 
 See [docs/development.md](docs/development.md)
