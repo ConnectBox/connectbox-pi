@@ -144,7 +144,7 @@
 - name: Check for drivers that already exisist and we compiled for this release
   copy:
     src: "{{ kernel_num.stdout }}/"
-    dest: "/usr/lib/modules/{{ kernel_num }}/kernel/drivers/net/wireless/"
+    dest: "/usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/"
     owner: root
     group: root
     mode: '0644'
@@ -203,7 +203,6 @@
 - debug:   
     msg: "variable pulled listoutput rtl52audriver: {{ rtl8852ad }}"
 
-- name: check the rtl8812au driver for real or just rtl88xxau driver
 
   
 - name: Let the user know that we found the drivers
@@ -292,7 +291,7 @@
 - name: finish the module dependancies
   command: depmod
   ignore_errors: yes
-  when: changed1.changed or changed2.changed or changed3.changed or changed4.changed 
+  when: found_drivers.changed or changed1.changed or changed2.changed or changed3.changed or changed4.changed
 
 - name: Create a variable based on the results of the finds for compile_a
   command: echo ('true').stdout
@@ -344,6 +343,28 @@
 - debug:
     msg: "connectbox_os is {{ connectbox_os }}"
 
+# Armbian publishes linux-headers-current-sunxi for one kernel per version, and
+#  old ones are dropped from the repository. Building against headers for a
+#  different kernel cannot work (and compiling the newest headers' scripts takes
+#  ~10 min on a NEO), so only compile when headers matching `uname -r` exist.
+- name: Find the linux-headers-current-sunxi version for the running kernel
+  shell: |
+    kver=$(uname -r | cut -d- -f1)
+    apt-cache show linux-headers-current-sunxi 2>/dev/null | awk -v k="$kver" '
+      /^Version:/ {v=$2}
+      /^Description:/ && index($0, "headers " k "-") {print v; exit}'
+  register: matching_headers
+  changed_when: false
+  when: ((connectbox_os != "raspbian") and (compile_all.changed))
+
+- name: Decide whether drivers can be compiled
+  set_fact:
+    can_compile: "{{ connectbox_os == 'raspbian' or (matching_headers.stdout | default('') | length > 0) }}"
+
+- debug:
+    msg: "No linux-headers-current-sunxi for kernel {{ kernel_num.stdout }} - skipping driver compile. Put a pre-built .ko in roles/network-interfaces/files/{{ kernel_num.stdout }}/ to install it."
+  when: (compile_all.changed) and not can_compile
+
 
 - name: apt install build tools
   apt:
@@ -354,7 +375,7 @@
     - libssl-dev
     state: present
   ignore_errors: yes
-  when: (compile_all.changed)
+  when: (compile_all.changed) and can_compile
 
 - name: apt install raspberrypi-kernel-headers
   apt:
@@ -368,10 +389,10 @@
 - name: apt install linux-headers-current-sunxi
   apt:
     pkg:
-    - linux-headers-current-sunxi
+    - "linux-headers-current-sunxi={{ matching_headers.stdout }}"
     state: present
   ignore_errors: yes
-  when: ((connectbox_os != "raspbian") and (compile_all.changed))
+  when: ((connectbox_os != "raspbian") and (compile_all.changed)) and can_compile
 
 
 - name: Copy over 8812au-install script for Raspian
@@ -380,14 +401,14 @@
     dest: /tmp/8812au-install.sh
     mode: "+x"
   ignore_errors: yes
-  when: (compile_a.changed)
+  when: (compile_a.changed) and can_compile
 
 - name: Compile the 8812au driver for Raspbian or NEO
   command:
      chdir: /tmp
      cmd: "sh 8812au-install.sh"
   ignore_errors: yes
-  when: (compile_a.changed)
+  when: (compile_a.changed) and can_compile
 
 - name: Copy over 88x2bu-install script
   copy:
@@ -395,14 +416,14 @@
     dest: /tmp/88x2bu-install.sh
     mode: "+x"
   ignore_errors: yes
-  when: (compile_b.changed)
+  when: (compile_b.changed) and can_compile
 
 - name: Compile the 88x2bu driver for Raspbian or NEO
   command:
      chdir: /tmp
      cmd: "sh 88x2bu-install.sh"
   ignore_errors: yes
-  when: (compile_b.changed)
+  when: (compile_b.changed) and can_compile
 
 
 - name: Copy over 8852au.install script
@@ -411,14 +432,14 @@
     dest: /tmp/8852au-install.sh 
     mode: "+x"
   ignore_errors: yes
-  when: (compile_c.changed)
+  when: (compile_c.changed) and can_compile
 
 - name: Compile the 8852au driver via script for raspbian or neo
   command:
      chdir: /tmp
      cmd: "sh 8852au-install.sh"
   ignore_errors: yes
-  when: (compile_c.changed)
+  when: (compile_c.changed) and can_compile
 
 # Save freshly compiled drivers back to the build host so future provisioning
 # runs for this kernel version can skip compilation entirely.  The directory
@@ -431,7 +452,7 @@
     path: "{{ role_path }}/files/{{ kernel_num.stdout }}"
     state: directory
   delegate_to: localhost
-  when: (compile_all.changed)
+  when: (compile_all.changed) and can_compile
 
 - name: Save compiled 8812au driver to build host
   fetch:
@@ -439,7 +460,7 @@
     dest: "{{ role_path }}/files/{{ kernel_num.stdout }}/8812au.ko"
     flat: yes
   ignore_errors: yes
-  when: (compile_a.changed)
+  when: (compile_a.changed) and can_compile
 
 - name: Save compiled 88x2bu driver to build host
   fetch:
@@ -447,7 +468,7 @@
     dest: "{{ role_path }}/files/{{ kernel_num.stdout }}/88x2bu.ko"
     flat: yes
   ignore_errors: yes
-  when: (compile_b.changed)
+  when: (compile_b.changed) and can_compile
 
 - name: Save compiled 8852au driver to build host
   fetch:
@@ -455,7 +476,7 @@
     dest: "{{ role_path }}/files/{{ kernel_num.stdout }}/8852au.ko"
     flat: yes
   ignore_errors: yes
-  when: (compile_c.changed)
+  when: (compile_c.changed) and can_compile
 
 - name: Remove headers for raspbian
   apt:
@@ -472,7 +493,7 @@
     - linux-headers-current-sunxi
     state: absent
   ignore_errors: yes
-  when: ((connectbox_os != "raspbian") and  (compile_all.changed))
+  when: ((connectbox_os != "raspbian") and  (compile_all.changed)) and can_compile
 
 
 - name: remove build tools
@@ -485,17 +506,17 @@
     - raspbewrrypi-kernel-headers
     state: absent
   ignore_errors: yes
-  when:  (compile_all.changed)
+  when:  (compile_all.changed) and can_compile
 
 - name: remove links
   command: sudo rm /lib/modules/$(uname -r)/build
   ignore_errors: yes
-  when:  (compile_all.changed)
+  when:  (compile_all.changed) and can_compile
 
 - name: remove links
   command: then sudo rm /tmp/$(uname -r)
   ignore_errors: yes
-  when:  (compile_all.changed)
+  when:  (compile_all.changed) and can_compile
 
 - name: unmask systemd-networkd.service
   command: systemctl unmask systemd-networkd.service

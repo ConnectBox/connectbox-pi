@@ -534,6 +534,31 @@
     state: present
   when: connectbox_os == 'armbian'
 
+# Debian has removed buster-/bullseye-backports from deb.debian.org, so an
+#  apt update on older Armbian images fails. Nothing here uses backports.
+- name: Disable retired Debian backports repositories
+  replace:
+    path: /etc/apt/sources.list
+    regexp: '^(deb(-src)?\s+\S+\s+(buster|bullseye)-backports\b.*)$'
+    replace: '# \1'
+  register: apt_backports_disabled
+  when: ansible_os_family == 'Debian'
+
+# Debian 11 (bullseye) security updates have moved from security.debian.org to
+#  archive.debian.org; the old index still lists packages whose files now 404.
+- name: Point bullseye-security at archive.debian.org
+  replace:
+    path: /etc/apt/sources.list
+    regexp: '^(deb(-src)?)\s+http://(security|deb)\.debian\.org/(debian-security/?)?\s+bullseye-security\b(.*)$'
+    replace: '\1 http://archive.debian.org/debian-security bullseye-security\5'
+  register: apt_security_moved
+  when: ansible_os_family == 'Debian'
+
+- name: Refresh apt cache after changing Debian sources
+  apt:
+    update_cache: yes
+  when: (apt_backports_disabled is changed) or (apt_security_moved is changed)
+
 # Only repopulate daily so we don't slow runs down unnecessarily
 - name: Populate apt cache
   apt:
@@ -792,7 +817,7 @@
 
 - name: copy extra poweroff filesystem
   copy:
-    src: usr_local_poweroff_internal
+    src: usr_local_bin_poweroff_poewroff_internal/
     dest: /usr/local/bin/poweroff/_internal 
     mode: 0655
 

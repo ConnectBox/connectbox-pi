@@ -25,7 +25,7 @@
   pip:
     virtualenv: "{{ captiveportal_virtualenv_dir }}"
     virtualenv_python: python3
-    name: git+https://github.com/ConnectBox/simple-offline-captive-portal.git@test1
+    name: git+https://github.com/ConnectBox/simple-offline-captive-portal.git@master
   notify:
     - Restart captiveportal
 

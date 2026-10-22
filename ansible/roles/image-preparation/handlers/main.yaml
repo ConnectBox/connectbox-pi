@@ -19,8 +19,6 @@
 #  present when this is run.
 - name: Perform final shutdown
   shell: sleep 2 && /sbin/shutdown -h now
-  args:
-    warn: no
   async: 1
   poll: 0
   when: shutdown_in_image_preparation

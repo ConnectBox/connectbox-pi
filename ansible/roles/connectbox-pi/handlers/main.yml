@@ -4,8 +4,6 @@
 #  present when this is run.
 - name: Run final disabling commands
   shell: "'{{ final_command | quote }}'"
-  args:
-    warn: no
   when: final_command != ""
   tags:
   - skip_ansible_lint
