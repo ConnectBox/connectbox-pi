@@ -76,9 +76,35 @@
 # Let's avoid a first-time failure by doing the upgrade after the
 #  iptables rules have been updated.
 # Consistent with: https://serverfault.com/questions/593263/iptables-nat-does-not-exist
+# Record the kernel/dtb/u-boot package versions so we can prove the upgrade
+#  below did not replace them (see the holds in the bootstrap role).
+- name: Record kernel package versions before upgrade
+  shell: dpkg-query -W -f='${Package} ${Version}\n' 'linux-image-*' 'linux-dtb-*' 'linux-u-boot-*' 2>/dev/null | sort
+  register: kernel_pkgs_before
+  changed_when: false
+  when: connectbox_os == 'armbian'
+  tags:
+  - full-build-only
+
 - name: Update existing packages
   apt:
     upgrade: safe
+  tags:
+  - full-build-only
+
+- name: Record kernel package versions after upgrade
+  shell: dpkg-query -W -f='${Package} ${Version}\n' 'linux-image-*' 'linux-dtb-*' 'linux-u-boot-*' 2>/dev/null | sort
+  register: kernel_pkgs_after
+  changed_when: false
+  when: connectbox_os == 'armbian'
+  tags:
+  - full-build-only
+
+- name: Fail if the upgrade changed the kernel, dtb or u-boot packages
+  assert:
+    that: kernel_pkgs_after.stdout == kernel_pkgs_before.stdout
+    fail_msg: "Kernel packages changed during upgrade. Before: {{ kernel_pkgs_before.stdout_lines }} After: {{ kernel_pkgs_after.stdout_lines }}"
+  when: connectbox_os == 'armbian'
   tags:
   - full-build-only
 

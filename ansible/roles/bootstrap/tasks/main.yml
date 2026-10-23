@@ -437,8 +437,16 @@
   command: systemctl restart dnsmasq
   when: (OS_Version == 'focal') and  (ansible_os_family|lower == 'debian') and (connectbox_os == 'ubuntu') 
 
+# Fresh Armbian images mount a zram ext4 file system over the tmpfs /tmp, and
+#  ext4 has no size= option, so a plain remount fails. Remount when the top
+#  /tmp is tmpfs; otherwise put a 400M tmpfs on top for the build (gone at reboot).
 - name : Increase size of /tmp to handle upcoming installs
-  command: mount -o remount,size=400M /tmp/
+  shell: |
+    if [ "$(findmnt -n -o FSTYPE /tmp | tail -1)" = "tmpfs" ]; then
+      mount -o remount,size=400M /tmp/
+    else
+      mount -t tmpfs -o size=400M,nosuid tmpfs /tmp
+    fi
   when: (ansible_os_family  == 'Ubuntu' or connectbox_os == 'armbian') and not aws_instance
 
 - name: Get current rfkill state for interface 0 (wireless LAN) on Raspbian
@@ -578,10 +586,20 @@
 #  changed anything (and it's not worth lead-up tasks to work out
 #  whether this task would do anything i.e. using aptitude search ~ahold
 
+# The hold used to include linux-focal-root-current-nanopineo, which does not
+#  exist on Debian-based Armbian; aptitude then exited 255, ignore_errors hid
+#  it, nothing was held, and the final upgrade replaced kernel 5.15.93 with
+#  6.18.44 (no Ethernet link, no 8812au driver). Hold only the packages that
+#  exist, in both aptitude and dpkg, and fail the build if that doesn't work.
 - name: Pin kernel and dtb packages NEO
-  command: aptitude -q hold linux-dtb-current-sunxi linux-image-current-sunxi linux-u-boot-nanopineo-current linux-focal-root-current-nanopineo
+  command: aptitude -q hold linux-dtb-current-sunxi linux-image-current-sunxi linux-u-boot-nanopineo-current
   when: (connectbox_os == 'armbian') and NEO_present
-  ignore_errors: yes
+
+- name: Also hold kernel, dtb and u-boot packages in dpkg NEO
+  command: apt-mark hold linux-dtb-current-sunxi linux-image-current-sunxi linux-u-boot-nanopineo-current
+  register: neo_apt_mark_hold
+  changed_when: "'set on hold.' in neo_apt_mark_hold.stdout and 'already' not in neo_apt_mark_hold.stdout"
+  when: (connectbox_os == 'armbian') and NEO_present
 
 - name: Pin Kernel and dtb packages Orange Pi Zero 2
   command: aptitude -q hold linux-dtb-current-sunxi linux-image-current-sunxi
