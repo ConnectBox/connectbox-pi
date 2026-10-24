@@ -601,6 +601,25 @@
   changed_when: "'set on hold.' in neo_apt_mark_hold.stdout and 'already' not in neo_apt_mark_hold.stdout"
   when: (connectbox_os == 'armbian') and NEO_present
 
+# The final "Update existing packages" also replaced base-files with Armbian's
+#  newer one, upgraded armbian-firmware and removed armbian-bsp-cli-<board>
+#  (losing /etc/armbian-release and every armbian-* service). Hold whatever
+#  armbian-* packages and base-files the image shipped with, in aptitude and dpkg.
+- name: Hold the image's Armbian packages and base-files
+  shell: |
+    # armbian-config is left out: it is a setup tool (not board support) and
+    #  depends on build-essential, so holding it stops image-preparation from
+    #  purging the dev tools. Release any hold an earlier run put on it.
+    apt-mark unhold armbian-config >/dev/null 2>&1 || true
+    if command -v aptitude >/dev/null; then aptitude -q unhold armbian-config >/dev/null 2>&1 || true; fi
+    pkgs=$(dpkg-query -W -f='${db:Status-Abbrev} ${Package}\n' 'armbian-*' base-files 2>/dev/null | awk '$1 ~ /^.i/ && $2 != "armbian-config" {print $2}')
+    [ -n "$pkgs" ] || exit 0
+    if command -v aptitude >/dev/null; then aptitude -q hold $pkgs >/dev/null; fi
+    apt-mark hold $pkgs
+  register: armbian_pkgs_hold
+  changed_when: "'set on hold.' in armbian_pkgs_hold.stdout and 'already' not in armbian_pkgs_hold.stdout"
+  when: connectbox_os == 'armbian'
+
 - name: Pin Kernel and dtb packages Orange Pi Zero 2
   command: aptitude -q hold linux-dtb-current-sunxi linux-image-current-sunxi
   when: (connectbox_os == 'armbian') and OZ2_present 
@@ -969,6 +988,30 @@
           - xlrd==2.0.1
         executable: pip3
         extra_args: --break-system-packages
+
+# antiword (old Word .doc) and olefile (old PowerPoint .ppt) turn those files on
+# the USB into web pages when mmiLoader.py indexes it.  antiword is a small C
+# program from the Debian archive; olefile is pure Python.  Without them the
+# files stay download-only, so a failed install does not stop the build.
+- name: install antiword (old Word .doc to web page conversion for mmiLoader.py)
+  apt:
+    name: antiword
+    state: present
+  ignore_errors: yes
+
+- name: install olefile (old PowerPoint .ppt to web page conversion for mmiLoader.py)
+  block:
+    - name: install olefile
+      pip:
+        name: olefile==0.47
+        executable: pip3
+  rescue:
+    - name: install olefile (externally managed Python, Debian 12+)
+      pip:
+        name: olefile==0.47
+        executable: pip3
+        extra_args: --break-system-packages
+      ignore_errors: yes
 
 - name: Add items to rc.local
   blockinfile:

@@ -26,18 +26,45 @@ from indexer import *
 
 # ── Signal / display helpers ──────────────────────────────────────────────────
 
-def update_display(message):
-	# OLED font only supports latin-1; non-ASCII chars crash the hat service.
-	# Wraps long text at the last word boundary within 15 chars (128px / 8px-per-char).
+def display_text(message):
+	"""
+	The text for the OLED: its bitmap font (HaxM-12.pil in the hat service)
+	has the Latin-1 characters only (accents such as á é ñ ç ã ¿ included), and a
+	character outside Latin-1 makes PIL fail, so those become "?".  Long text
+	is wrapped at the last word boundary within 15 characters (128 px / 8 px).
+	"""
+	safe = message.encode('latin-1', 'replace').decode('latin-1')
+	if '\n' not in safe and len(safe) > 15:
+		wrap_at = safe.rfind(' ', 0, 16)
+		if wrap_at <= 0:
+			wrap_at = 15
+		safe = safe[:wrap_at].rstrip() + '\n' + safe[wrap_at:].lstrip()[:15]
+	return safe
+
+
+def processing_message(filename, language):
+	"""
+	The OLED line for the file being indexed: its name when the display can
+	show it, otherwise (Chinese, Arabic ... names) the language folder and the
+	file's number out of the total, e.g. "Processing\nzh-CN 37/412", rather
+	than a row of question marks.
+	"""
 	try:
-		safe = message.encode('ascii', 'replace').decode('ascii')
-		if '\n' not in safe and len(safe) > 15:
-			wrap_at = safe.rfind(' ', 0, 16)
-			if wrap_at <= 0:
-				wrap_at = 15
-			safe = safe[:wrap_at].rstrip() + '\n' + safe[wrap_at:].lstrip()[:15]
+		filename.encode('latin-1')
+		return "Processing: " + filename
+	except UnicodeEncodeError:
+		pass
+	position = ""
+	if _indexing["total"]:
+		position = " %d/%d" % (min(_indexing["done"] + 1, _indexing["total"]), _indexing["total"])
+	return "Processing\n" + display_text(language)[:15 - len(position)] + position
+
+
+def update_display(message):
+	# Write the hat service's status text (see display_text)
+	try:
 		with open("/tmp/creating_menus.txt", "w", encoding='utf-8') as f:
-			f.write(safe)
+			f.write(display_text(message))
 	except Exception as e:
 		logging.debug(f"Ignored exception: {e}")
 
@@ -1870,6 +1897,576 @@ def convert_pptx_to_html(source_path, page_dir, language=None):
 	return "\n".join(sections)
 
 
+# ── Old Word documents (.doc) shown as web pages ──────────────────────────────
+#
+# The binary Word 97-2003 format is read with antiword (a small C program,
+# installed by Ansible) in its DocBook XML mode, which keeps paragraphs, bold /
+# italic / underline, headings, lists and tables; that XML is turned into the
+# same kind of page as a .docx.  antiword does not extract pictures (they are
+# left out), read very short documents (under about 4 KB of Word data, roughly
+# 300 characters: they are stored differently and stay download-only), keep manual line breaks inside a paragraph, or tell numbered from
+# bulleted lists (all lists show as bullets).  If antiword is missing or fails,
+# the card stays a downloadable document as before.
+
+DOC_MIME_TYPE = "application/msword"
+ANTIWORD = "antiword"
+ANTIWORD_TIMEOUT = 120          # seconds per file
+# DocBook elements antiword uses for headings -> HTML heading level
+DOCBOOK_HEADINGS = {"chapter": 1, "sect1": 2, "sect2": 3, "sect3": 4, "sect4": 4, "sect5": 4}
+DOCBOOK_LISTS = {"itemizedlist": "ul", "orderedlist": "ol"}
+DOCBOOK_TABLES = ("informaltable", "table")
+
+
+def docbook_inline(elem):
+	"""HTML for the text and inline markup (emphasis etc.) inside one element."""
+	parts = [html.escape(elem.text or "")]
+	for child in elem:
+		parts.append(docbook_inline_element(child))
+		parts.append(html.escape(child.tail or ""))
+	return "".join(parts)
+
+
+def docbook_inline_element(child):
+	"""HTML for one inline element (without the text that follows it)."""
+	inner = docbook_inline(child)
+	if child.tag == "emphasis":
+		role = child.get("role", "")
+		if role == "bold":
+			return "<strong>" + inner + "</strong>"
+		if role == "underline":
+			return "<u>" + inner + "</u>"
+		return "<em>" + inner + "</em>"
+	if child.tag == "superscript":
+		return "<sup>" + inner + "</sup>"
+	if child.tag == "subscript":
+		return "<sub>" + inner + "</sub>"
+	return inner
+
+
+def docbook_has_text(fragment):
+	"""True if an HTML fragment shows any text (not just tags and spaces)."""
+	return bool(re.sub(r"<[^>]*>|\s|&nbsp;", "", fragment))
+
+
+def docbook_is_block(elem):
+	"""Elements that start their own block inside a paragraph."""
+	return elem.tag in DOCBOOK_LISTS or elem.tag in DOCBOOK_TABLES or elem.tag in ("para", "beginpage")
+
+
+def docbook_para(elem, out):
+	"""
+	Add a <para> to out: its text as <p>, and any table or list antiword put
+	inside the paragraph as its own block.  Empty paragraphs are left out.
+	"""
+	inline = [html.escape(elem.text or "")]
+
+	def flush():
+		# antiword writes [pic] where a picture was; pictures are not kept
+		text = "".join(inline).replace("[pic]", "").strip()
+		if docbook_has_text(text):
+			out.append("<p>" + text + "</p>")
+		del inline[:]
+
+	for child in elem:
+		if docbook_is_block(child):
+			flush()
+			docbook_blocks([child], out)
+		else:
+			inline.append(docbook_inline_element(child))
+		inline.append(html.escape(child.tail or ""))
+	flush()
+
+
+def docbook_cell(entry):
+	"""HTML for a table cell: its paragraphs separated by line breaks."""
+	blocks = []
+	docbook_para(entry, blocks)
+	text = "<br>".join(re.sub(r"^<p>|</p>$", "", b) for b in blocks)
+	return text
+
+
+def docbook_table(elem):
+	"""HTML table for a DocBook (informal)table: one <tr> per row."""
+	rows = []
+	for row in elem.iter("row"):
+		cells = "".join("<td>" + docbook_cell(entry) + "</td>" for entry in row.findall("entry"))
+		if cells:
+			rows.append("<tr>" + cells + "</tr>")
+	return "<table>" + "".join(rows) + "</table>" if rows else ""
+
+
+def docbook_blocks(elems, out):
+	"""Add HTML for a sequence of DocBook block elements to out."""
+	for elem in elems:
+		tag = elem.tag
+		if tag in ("bookinfo", "title", "colspec"):
+			continue
+		if tag in DOCBOOK_HEADINGS:
+			title = elem.find("title")
+			if title is not None:
+				text = docbook_inline(title).strip()
+				if docbook_has_text(text):
+					level = DOCBOOK_HEADINGS[tag]
+					out.append("<h%d>%s</h%d>" % (level, text, level))
+			docbook_blocks(list(elem), out)
+		elif tag == "para":
+			docbook_para(elem, out)
+		elif tag in DOCBOOK_LISTS:
+			items = []
+			for item in elem.findall("listitem"):
+				inner = []
+				docbook_blocks(list(item), inner)
+				body = "".join(inner)
+				# A list item holding a single paragraph does not need the <p>
+				if len(inner) == 1 and body.startswith("<p>") and body.endswith("</p>"):
+					body = body[3:-4]
+				if docbook_has_text(body):
+					items.append("<li>" + body + "</li>")
+			if items:
+				out.append("<" + DOCBOOK_LISTS[tag] + ">" + "".join(items) + "</" + DOCBOOK_LISTS[tag] + ">")
+		elif tag in DOCBOOK_TABLES:
+			table = docbook_table(elem)
+			if table:
+				out.append(table)
+		elif tag == "beginpage":
+			# A page break: a light rule, never at the start or twice in a row
+			if out and out[-1] != "<hr>":
+				out.append("<hr>")
+		else:
+			docbook_blocks(list(elem), out)
+
+
+def convert_doc_to_html(source_path, page_dir, language=None):
+	"""
+	Convert an old-format Word .doc to an HTML fragment with antiword's
+	DocBook output.  Returns None if antiword is not installed or the file
+	cannot be converted (the reason is printed).  page_dir is unused (antiword
+	does not extract pictures).
+	"""
+	import xml.etree.ElementTree as ET
+	try:
+		result = subprocess.run([ANTIWORD, "-x", "db", source_path], stdout=subprocess.PIPE,
+								stderr=subprocess.PIPE, timeout=ANTIWORD_TIMEOUT)
+	except FileNotFoundError:
+		print("	antiword not installed - Word file stays download-only")
+		return None
+	except subprocess.TimeoutExpired:
+		print("	antiword took too long on " + source_path + " - Word file stays download-only")
+		logging.warning("doc conversion timed out for " + source_path)
+		return None
+	if result.returncode != 0 or not result.stdout.strip():
+		reason = result.stderr.decode("utf-8", "replace").strip()[:200]
+		print("	Could not convert Word file " + source_path + ": " + reason)
+		logging.warning("doc conversion failed for " + source_path + ": " + reason)
+		return None
+	try:
+		root = ET.fromstring(result.stdout)
+	except ET.ParseError as e:
+		print("	Could not read antiword output for " + source_path + ": " + str(e)[:200])
+		logging.warning("doc conversion failed for " + source_path + ": " + str(e)[:200])
+		return None
+	out = []
+	docbook_blocks(list(root), out)
+	while out and out[-1] == "<hr>":
+		out.pop()
+	if not out:
+		print("	No text found in Word file " + source_path + " - stays download-only")
+		return None
+	return "\n".join(out)
+
+
+# ── Old presentations (.ppt) shown as web pages ───────────────────────────────
+#
+# The binary PowerPoint 97-2003 format is an OLE2 compound file (read with the
+# pure-Python olefile module, installed by Ansible) whose "PowerPoint Document"
+# stream is a tree of records (Microsoft's [MS-PPT] specification).  The
+# current version of the file is found through its edit history (Current User
+# stream -> UserEditAtom chain -> persist directory), then each slide's
+# shapes are read in order.  A shape's text is stored either in the shape
+# itself (LibreOffice and some PowerPoint versions) or in the slide's outline
+# text list, which the shape points to (PowerPoint's usual way); both are
+# handled.  Each slide becomes a section like a .pptx slide: number and title,
+# text (with bullet levels when the file states them), and speaker notes.
+# Pictures, tables, charts and hidden-slide markers are not read.  Files saved
+# with a password, PowerPoint 95 files and damaged files stay download-only.
+
+PPT_MIME_TYPE = "application/vnd.ms-powerpoint"
+PPT_RT_DOCUMENT = 0x03E8
+PPT_RT_SLIDE = 0x03EE
+PPT_RT_SLIDE_ATOM = 0x03EF
+PPT_RT_NOTES = 0x03F0
+PPT_RT_SLIDE_PERSIST_ATOM = 0x03F3
+PPT_RT_OUTLINE_TEXT_REF = 0x0F9E
+PPT_RT_TEXT_HEADER = 0x0F9F
+PPT_RT_TEXT_CHARS = 0x0FA0
+PPT_RT_STYLE_TEXT_PROP = 0x0FA1
+PPT_RT_TEXT_BYTES = 0x0FA8
+PPT_RT_SLIDE_LIST_WITH_TEXT = 0x0FF0
+PPT_RT_USER_EDIT = 0x0FF5
+PPT_RT_PERSIST_DIRECTORY = 0x1772
+PPT_RT_PLACEHOLDER = 0x0BC3
+PPT_RT_SHAPE = 0xF004            # OfficeArt shape container
+PPT_RT_CLIENT_DATA = 0xF011
+PPT_RT_CLIENT_TEXTBOX = 0xF00D
+# Text types (TextHeaderAtom)
+PPT_TITLE_TYPES = (0, 6)          # title, centred title
+PPT_BULLET_TYPES = (1, 7, 8)      # body, half body, quarter body
+PPT_NOTES_TYPE = 2
+# Placeholders that repeat on every slide: date, slide number, footer, header
+PPT_SKIPPED_PLACEHOLDERS = (0x07, 0x08, 0x09, 0x0A)
+PPT_NOTES_BODY_PLACEHOLDER = 0x0C
+PPT_MAX_DEPTH = 32                # nesting limit for damaged files
+
+
+def ppt_records(data, start, end):
+	"""
+	The records stored between start and end: (type, instance, is_container,
+	body_start, body_end) each.  Stops at a record running past end.
+	"""
+	off = start
+	while off + 8 <= end:
+		ver_inst, rtype, length = struct.unpack_from("<HHI", data, off)
+		body = off + 8
+		if body + length > end:
+			return
+		yield rtype, ver_inst >> 4, (ver_inst & 0x0F) == 0x0F, body, body + length
+		off = body + length
+
+
+def ppt_record_at(data, offset, expected_type):
+	"""(body_start, body_end) of the record at offset, if it has the expected type."""
+	if offset < 0 or offset + 8 > len(data):
+		raise ValueError("record offset outside the file")
+	_, rtype, length = struct.unpack_from("<HHI", data, offset)
+	if rtype != expected_type or offset + 8 + length > len(data):
+		raise ValueError("unexpected record 0x%04X at %d" % (rtype, offset))
+	return offset + 8, offset + 8 + length
+
+
+def ppt_last_user_edit(data):
+	"""Offset of the last UserEditAtom among the stream's top-level records, or None."""
+	last = None
+	for rtype, _, _, body, _ in ppt_records(data, 0, len(data)):
+		if rtype == PPT_RT_USER_EDIT:
+			last = body - 8
+	return last
+
+
+def ppt_persist_directory(data, current_user):
+	"""
+	Follow the edit history from the newest save: returns ({persist id: offset
+	of that object in the stream}, persist id of the Document record).  Newer
+	saves win over older ones.  The newest save is named by the Current User
+	stream; if that is unusable the stream's last UserEditAtom is used.  A
+	damaged older save ends the history instead of failing the file.
+	"""
+	offset_edit = struct.unpack_from("<I", current_user, 16)[0] if len(current_user) >= 20 else None
+	try:
+		ppt_record_at(data, offset_edit if offset_edit is not None else -1, PPT_RT_USER_EDIT)
+	except ValueError:
+		offset_edit = ppt_last_user_edit(data)
+	persist, document_ref, seen = {}, None, set()
+	while offset_edit and offset_edit not in seen:
+		seen.add(offset_edit)
+		try:
+			body, body_end = ppt_record_at(data, offset_edit, PPT_RT_USER_EDIT)
+			if body_end - body < 20:
+				raise ValueError("UserEditAtom too short")
+			_, _, _, _, offset_last_edit, offset_directory, doc_ref = struct.unpack_from("<IHBBIII", data, body)
+			p, p_end = ppt_record_at(data, offset_directory, PPT_RT_PERSIST_DIRECTORY)
+		except ValueError:
+			if document_ref is None:
+				raise
+			break
+		if document_ref is None:
+			document_ref = doc_ref
+		while p + 4 <= p_end:
+			entry = struct.unpack_from("<I", data, p)[0]
+			first, count = entry & 0xFFFFF, entry >> 20
+			p += 4
+			for i in range(count):
+				if p + 4 > p_end:
+					break
+				persist.setdefault(first + i, struct.unpack_from("<I", data, p)[0])
+				p += 4
+		offset_edit = offset_last_edit
+	if document_ref is None or document_ref not in persist:
+		raise ValueError("no current document record")
+	return persist, document_ref
+
+
+def ppt_text_entries(data, start, end):
+	"""
+	The text pieces stored directly in a container (a slide's outline list or
+	a shape's text box), in order: dicts with the text type, the text, its
+	paragraph style bytes, or ("ref") the index of an outline text the shape
+	points to.
+	"""
+	entries = []
+	for rtype, _, _, body, body_end in ppt_records(data, start, end):
+		if rtype == PPT_RT_TEXT_HEADER and body_end - body >= 4:
+			entries.append({"type": struct.unpack_from("<I", data, body)[0], "text": None, "style": None, "ref": None})
+		elif rtype == PPT_RT_OUTLINE_TEXT_REF and body_end - body >= 4:
+			ref = struct.unpack_from("<i", data, body)[0]
+			if entries and entries[-1]["text"] is None and entries[-1]["ref"] is None:
+				entries[-1]["ref"] = ref
+			else:
+				entries.append({"type": None, "text": None, "style": None, "ref": ref})
+		elif not entries:
+			continue
+		elif rtype == PPT_RT_TEXT_CHARS:
+			entries[-1]["text"] = data[body:body_end].decode("utf-16-le", "replace")
+		elif rtype == PPT_RT_TEXT_BYTES:
+			# Each byte is the low byte of a UTF-16 character whose high byte is 0
+			entries[-1]["text"] = data[body:body_end].decode("latin-1")
+		elif rtype == PPT_RT_STYLE_TEXT_PROP:
+			entries[-1]["style"] = data[body:body_end]
+	return entries
+
+
+def ppt_outline_lists(data, document_start, document_end):
+	"""
+	The Document's outline text lists: {instance: {persist id: (slide id,
+	[text entries])}} plus the slide order, a list of (persist id, slide id)
+	for instance 0 (slides).  Instance 2 holds the notes pages.
+	"""
+	lists, order = {}, []
+	for rtype, instance, _, body, body_end in ppt_records(data, document_start, document_end):
+		if rtype != PPT_RT_SLIDE_LIST_WITH_TEXT:
+			continue
+		pages = lists.setdefault(instance, {})
+		current, chunk_start = None, None
+
+		def close(until):
+			if current is not None:
+				pages[current[0]] = (current[1], ppt_text_entries(data, chunk_start, until))
+
+		for rt2, _, _, b2, e2 in ppt_records(data, body, body_end):
+			if rt2 == PPT_RT_SLIDE_PERSIST_ATOM and e2 - b2 >= 16:
+				close(b2 - 8)
+				persist_ref, _, _, slide_id = struct.unpack_from("<IIiI", data, b2)
+				current, chunk_start = (persist_ref, slide_id), e2
+				if instance == 0:
+					order.append((persist_ref, slide_id))
+		close(body_end)
+	return lists, order
+
+
+def ppt_paragraph_styles(style, text_length):
+	"""
+	Paragraph runs from a StyleTextPropAtom: [(character count, indent level,
+	bullet)] where bullet is True/False when the run states it, else None.
+	Returns [] if the data cannot be read (callers then use the defaults).
+	Field order and sizes follow [MS-PPT] TextPFException.
+	"""
+	runs, p, total = [], 0, 0
+	try:
+		while total < text_length + 1 and p + 10 <= len(style):
+			count, level, mask = struct.unpack_from("<IHI", style, p)
+			p += 10
+			bullet = None
+			if mask & 0x000F:                      # bullet flags
+				flags = struct.unpack_from("<H", style, p)[0]
+				p += 2
+				if mask & 0x0001:
+					bullet = bool(flags & 0x0001)
+			for bit, size in ((0x0080, 2), (0x0010, 2), (0x0040, 2), (0x0020, 4), (0x0800, 2),
+							  (0x1000, 2), (0x2000, 2), (0x4000, 2), (0x0100, 2), (0x0400, 2), (0x8000, 2)):
+				if mask & bit:
+					p += size
+			if mask & 0x100000:                    # tab stops
+				p += 2 + 4 * struct.unpack_from("<H", style, p)[0]
+			for bit in (0x10000, 0x0E0000, 0x200000):   # font align, wrap flags, direction
+				if mask & bit:
+					p += 2
+			if p > len(style) or count == 0:
+				return []
+			runs.append((count, min(level, 4), bullet))
+			total += count
+	except struct.error:
+		return []
+	return runs
+
+
+def ppt_paragraphs(text, style):
+	"""
+	A text's paragraphs as (text, level, bullet), like pptx_paragraphs:
+	paragraphs end at \\r, a vertical tab is a line break, and level / bullet
+	come from the paragraph style runs when present.
+	"""
+	runs = ppt_paragraph_styles(style, len(text)) if style else []
+	out, pos = [], 0
+	for raw in text.split("\r"):
+		level, bullet, run_start = 0, None, 0
+		for count, run_level, run_bullet in runs:
+			if run_start <= pos < run_start + count:
+				level, bullet = run_level, run_bullet
+				break
+			run_start += count
+		pos += len(raw) + 1
+		clean = re.sub(r"[\x00-\x08\x0c\x0e-\x1f]", "", raw.replace("\x0b", "\n").replace("\t", " ")).strip()
+		if clean and clean != "*":
+			out.append((clean, level, bullet))
+	return out
+
+
+def ppt_shape_texts(data, start, end, outline, depth=0):
+	"""
+	The texts of the shapes in a drawing, in the order they are stored:
+	[(text type, placeholder type, paragraphs)].  outline is the page's
+	outline text entries, which shapes may point to.
+	"""
+	found = []
+	if depth > PPT_MAX_DEPTH:
+		return found
+	for rtype, _, is_container, body, body_end in ppt_records(data, start, end):
+		if rtype == PPT_RT_SHAPE:
+			placeholder = None
+			for rt2, _, is_c2, b2, e2 in ppt_records(data, body, body_end):
+				if rt2 == PPT_RT_CLIENT_DATA:
+					for rt3, _, _, b3, e3 in ppt_records(data, b2, e2):
+						if rt3 == PPT_RT_PLACEHOLDER and e3 - b3 >= 5:
+							placeholder = data[b3 + 4]
+			if placeholder in PPT_SKIPPED_PLACEHOLDERS:
+				continue
+			for rt2, _, _, b2, e2 in ppt_records(data, body, body_end):
+				if rt2 != PPT_RT_CLIENT_TEXTBOX:
+					continue
+				for entry in ppt_text_entries(data, b2, e2):
+					text_type, text, style = entry["type"], entry["text"], entry["style"]
+					if entry["ref"] is not None and 0 <= entry["ref"] < len(outline):
+						target = outline[entry["ref"]]
+						target["used"] = True
+						text_type = target["type"] if text_type is None else text_type
+						text, style = target["text"], target["style"]
+					if text:
+						found.append((text_type, placeholder, ppt_paragraphs(text, style)))
+		elif is_container:
+			found.extend(ppt_shape_texts(data, body, body_end, outline, depth + 1))
+	return found
+
+
+def ppt_page_texts(data, persist, persist_id, expected_type, outline):
+	"""
+	Shape texts of one slide or notes page (see ppt_shape_texts), followed by
+	any outline texts no shape pointed to, so no text is lost.  Also returns
+	the page's notes id (slides only, else None).
+	"""
+	for entry in outline:
+		entry["used"] = False
+	offset = persist.get(persist_id)
+	if offset is None:
+		return [], None
+	body, body_end = ppt_record_at(data, offset, expected_type)
+	notes_id = None
+	if expected_type == PPT_RT_SLIDE:
+		for rtype, _, _, b, e in ppt_records(data, body, body_end):
+			if rtype == PPT_RT_SLIDE_ATOM and e - b >= 20:
+				notes_id = struct.unpack_from("<I", data, b + 16)[0]
+	texts = ppt_shape_texts(data, body, body_end, outline)
+	for entry in outline:
+		if not entry["used"] and entry["text"]:
+			texts.append((entry["type"], None, ppt_paragraphs(entry["text"], entry["style"])))
+	return texts, notes_id
+
+
+def convert_ppt_to_html(source_path, page_dir, language=None):
+	"""
+	Convert an old-format PowerPoint .ppt to an HTML fragment laid out like a
+	.pptx page: slide number links, one section per slide with its title and
+	text, and the speaker notes.  Returns None if olefile is not installed or
+	the file cannot be read (password-protected, PowerPoint 95, damaged).
+	"""
+	try:
+		import olefile
+	except ImportError:
+		print("	olefile not installed - presentation stays download-only")
+		return None
+	try:
+		if not olefile.isOleFile(source_path):
+			raise ValueError("not an OLE2 file")
+		with olefile.OleFileIO(source_path) as ole:
+			if ole.exists("EncryptedSummary"):
+				raise ValueError("saved with a password")
+			if not ole.exists("PowerPoint Document") or not ole.exists("Current User"):
+				raise ValueError("no PowerPoint 97-2003 document in the file")
+			data = ole.openstream("PowerPoint Document").read()
+			current_user = ole.openstream("Current User").read()
+		persist, document_ref = ppt_persist_directory(data, current_user)
+		doc_start, doc_end = ppt_record_at(data, persist[document_ref], PPT_RT_DOCUMENT)
+		lists, order = ppt_outline_lists(data, doc_start, doc_end)
+		slide_outlines = lists.get(0, {})
+		notes_by_id = {slide_id: (pid, entries) for pid, (slide_id, entries) in lists.get(2, {}).items()}
+		notes_label = html.escape(page_string(language, "SLIDE_NOTES"))
+		sections, links = [], []
+		for persist_id, _ in order:
+			outline = slide_outlines.get(persist_id, (None, []))[1]
+			try:
+				texts, notes_id = ppt_page_texts(data, persist, persist_id, PPT_RT_SLIDE, outline)
+			except ValueError:
+				continue
+			number = len(sections) + 1
+			title, parts = "", []
+			for text_type, placeholder, paragraphs in texts:
+				if not paragraphs:
+					continue
+				if text_type in PPT_TITLE_TYPES and not title:
+					title = " ".join(t.replace("\n", " ") for t, _, _ in paragraphs)
+					continue
+				parts.append(pptx_text_html(paragraphs, text_type in PPT_BULLET_TYPES))
+			notes = []
+			if notes_id and notes_id in notes_by_id:
+				notes_persist, notes_outline = notes_by_id[notes_id]
+				try:
+					notes_texts, _ = ppt_page_texts(data, persist, notes_persist, PPT_RT_NOTES, notes_outline)
+				except ValueError:
+					notes_texts = []
+				for text_type, placeholder, paragraphs in notes_texts:
+					if text_type == PPT_NOTES_TYPE or placeholder == PPT_NOTES_BODY_PLACEHOLDER:
+						notes.extend(paragraphs)
+			section = ['<div class="cb-slide" id="slide-%d">' % number,
+					   '<h2><span class="cb-num">%d</span>%s</h2>' % (number, html.escape(title))]
+			section.extend(p for p in parts if p)
+			if notes:
+				section.append('<div class="cb-notes"><strong>' + notes_label + "</strong>"
+							   + pptx_text_html(notes, False) + "</div>")
+			section.append("</div>")
+			sections.append("\n".join(section))
+			links.append('<a href="#slide-%d">%d</a>' % (number, number))
+	except Exception as e:
+		print("	Could not read presentation " + source_path + ": " + str(e)[:200])
+		logging.warning("ppt conversion failed for " + source_path + ": " + str(e)[:200])
+		return None
+	if not sections:
+		print("	No slides found in presentation " + source_path + " - stays download-only")
+		return None
+	if len(links) > 1:
+		sections.insert(0, '<p class="cb-sheets">' + " ".join(links) + "</p>")
+	return "\n".join(sections)
+
+
+# ── Same-named PDF ────────────────────────────────────────────────────────────
+#
+# Old .doc and .ppt files are often published next to a PDF of the same
+# document, which shows it exactly as printed.  When the folder has a PDF with
+# the same name (any letter case), the .doc / .ppt is not converted: its card
+# stays a download of the original, and the PDF is the one to read.
+
+PDF_PREFERRED_EXTENSIONS = (".doc", ".ppt")
+
+
+def has_same_named_pdf(fullFilename):
+	"""True if the file's folder also holds <same name>.pdf (any letter case)."""
+	folder, name = os.path.split(fullFilename)
+	stem = os.path.splitext(name)[0].lower()
+	try:
+		names = os.listdir(folder or ".")
+	except OSError:
+		return False
+	return any(os.path.splitext(n)[1].lower() == ".pdf" and os.path.splitext(n)[0].lower() == stem
+			   for n in names)
+
+
 # Files shown as web pages: extension -> (converter, mimeType kept on the card,
 # full-width page, name used in messages).  The app patches recognise these
 # mimeTypes to give the cards a details page with the book and download buttons.
@@ -1878,6 +2475,8 @@ WEB_PAGE_CONVERTERS = {
 	".xlsx": (convert_xlsx_to_html, XLSX_MIME_TYPE, True, "Spreadsheet"),
 	".xls": (convert_xls_to_html, XLS_MIME_TYPE, True, "Spreadsheet"),
 	".pptx": (convert_pptx_to_html, PPTX_MIME_TYPE, False, "Presentation"),
+	".doc": (convert_doc_to_html, DOC_MIME_TYPE, False, "Word file"),
+	".ppt": (convert_ppt_to_html, PPT_MIME_TYPE, False, "Presentation"),
 }
 WEB_PAGE_MIME_TYPES = set(v[1] for v in WEB_PAGE_CONVERTERS.values())
 
@@ -2933,9 +3532,13 @@ def process_file_entry(filename, path, thisDirectory, language, directoryType, d
 	content, collection = apply_fallback_image(content, collection, extension, types, directoryImage)
 
 	# Word documents, spreadsheets and presentations: also show them as a web page
-	# (see make_document_web_page)
+	# (see make_document_web_page).  An old .doc / .ppt with a same-named PDF
+	# beside it stays a download: the PDF is the copy to read.
 	if extension in WEB_PAGE_CONVERTERS and content["mediaType"] == 'document':
-		content = make_document_web_page(content, fullFilename, mediaName, slug, language, contentDirectory, extension)
+		if extension in PDF_PREFERRED_EXTENSIONS and has_same_named_pdf(fullFilename):
+			print("	Same-named PDF found - " + filename + " stays a download")
+		else:
+			content = make_document_web_page(content, fullFilename, mediaName, slug, language, contentDirectory, extension)
 
 	# Compile into collection or singular item
 	if "collection" in directoryType:
@@ -3008,7 +3611,7 @@ def process_directory_files(path, dirs, files, language, directoryType, director
 	collection = None
 
 	for filename in files:
-		update_display("Processing: " + filename)
+		update_display(processing_message(filename, language))
 		indexing_progress()
 		if not usb_is_present():
 			print("USB removed during file processing -- stopping")

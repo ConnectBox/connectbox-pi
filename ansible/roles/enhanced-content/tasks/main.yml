@@ -306,8 +306,32 @@
     "
   ignore_errors: yes
 
-# HTML items skip the detail page (Word documents, spreadsheets and presentations
-# shown as web pages are the exception: like PDFs they open the detail page, with its open
+# The episode list chooses the file to open by title, but a .doc and a .pdf with
+# the same name share a title, so a PDF's view button opened the .doc listed
+# before it (blank viewer, InvalidPDFException).  Match on the slug
+# (<title>-<ext>), which is unique.  Also fixed in connectbox-mediainterface
+# src/pages/media-detail/media-detail.ts; this patches the released build.
+# Re-running is a no-op; fails if neither the old nor the new code is found.
+- name: Patch media-detail page to open the tapped episode (match slug, not title)
+  become: true
+  shell: |
+    python3 -c "
+    path = '/var/www/enhanced/content/www/build/3.js'
+    with open(path, encoding='utf-8') as f: c = f.read()
+    old = 'var playFirst = (episode.title === current.title);'
+    new_code = 'var playFirst = (episode.slug === current.slug);'
+    n = c.count(old)
+    if n:
+        with open(path, 'w', encoding='utf-8') as f: f.write(c.replace(old, new_code))
+    elif new_code not in c:
+        raise SystemExit('playFirst title match not found in 3.js')
+    print('patched %d' % n)
+    "
+  register: episode_slug_patch
+  changed_when: "'patched 0' not in episode_slug_patch.stdout"
+
+# HTML items skip the detail page (Word documents, spreadsheets and presentations,
+# old .doc / .ppt included, shown as web pages are the exception: like PDFs they open the detail page, with its open
 # (book) and download buttons - see patch_zim_download.py).  The detail page is where the
 # stock app reports views (media-detail openViewer).  The patched goToDetails therefore reports the view
 # itself: a PUT to /admin/api/weblog with the same body as StatReporterProvider,
@@ -325,7 +349,7 @@
     path = '/var/www/enhanced/content/www/build/6.js'
     with open(path) as f: c = f.read()
     new_code = '''HomePage.prototype.goToDetails = function (resource) {
-            if (resource.mediaType === 'html' && ['application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.presentationml.presentation'].indexOf(resource.mimeType) === -1) {
+            if (resource.mediaType === 'html' && ['application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'application/msword', 'application/vnd.ms-powerpoint'].indexOf(resource.mimeType) === -1) {
                 var lang = (this.currentLanguage && this.currentLanguage.code) ? this.currentLanguage.code : 'en';
                 var target = 'assets/content/' + lang + '/html/' + resource.slug;
                 var done = false;

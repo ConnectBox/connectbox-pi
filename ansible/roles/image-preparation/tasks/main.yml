@@ -223,6 +223,16 @@
     dest: /var/cache/apt
     state: absent
 
+# PxUSBm.py expands the root partition on first boot only when
+#  /usr/local/connectbox/expand_progress.txt is missing, and writes "running"
+#  to it every time it starts after that. Any boot of the build device (a
+#  reboot during the build, or a re-run) leaves the file behind, so remove it
+#  here or the image never expands.
+- name: Reset the first-boot partition expansion flag
+  file:
+    dest: /usr/local/connectbox/expand_progress.txt
+    state: absent
+
 # File system resize is now handled by PxUSBm.py
 # So the following code was taken out by Kirk Wilson
 # 2022.8.2

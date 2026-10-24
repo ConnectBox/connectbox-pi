@@ -127,6 +127,8 @@ def make_templates(base):
 		".docx":{"mediaType": "document", "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "image": "book.png"},
 		".xlsx":{"mediaType": "document", "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "image": "book.png"},
 		".xls": {"mediaType": "document", "mimeType": "application/vnd.ms-excel", "image": "book.png"},
+		".doc": {"mediaType": "document", "mimeType": "application/msword", "image": "doc.png"},
+		".ppt": {"mediaType": "document", "mimeType": "application/vnd.ms-powerpoint", "image": "ppt.png"},
 	}
 	with open(os.path.join(tpl_en_data, "types.json"), "w") as f:
 		json.dump(types_data, f)
@@ -1706,6 +1708,227 @@ def scenario_clear_menus(base):
 	check("S16: stale 'indexing' marker removed", not os.path.exists(marker))
 
 
+def office_convert(src, ext, out_dir):
+	"""
+	Save src (.docx / .pptx) as an old-format file (ext "doc" / "ppt") with
+	LibreOffice.  Returns the new path, or None when LibreOffice is not
+	installed or the conversion failed.
+	"""
+	import subprocess
+	soffice = shutil.which("soffice") or shutil.which("libreoffice")
+	if not soffice:
+		return None
+	subprocess.run([soffice, "--headless", "--convert-to", ext, "--outdir", out_dir, src],
+				   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=300)
+	path = os.path.join(out_dir, os.path.splitext(os.path.basename(src))[0] + "." + ext)
+	return path if os.path.isfile(path) else None
+
+
+def skip(label, reason):
+	print(f"  [SKIP] {label}: {reason}")
+
+
+def scenario_old_office(base):
+	"""
+	Scenario 21: old Word (.doc) and PowerPoint (.ppt) files are shown as web
+	pages, unless a PDF with the same name is beside them.
+
+	antiword's DocBook output becomes headings, bold/italic, lists, tables and
+	page rules ([pic] markers and empty paragraphs dropped, text escaped); a
+	.ppt becomes numbered slides with titles, bullet levels and speaker notes,
+	including Chinese and Spanish text; non-PowerPoint or missing tools leave the
+	card download-only; a folder with Lesson.doc + Lesson.pdf converts only the
+	.doc that has no PDF, and every file stays listed.
+	"""
+	import io
+	import struct
+	import xml.etree.ElementTree as ET
+	print("\n-- Scenario 21: old Word and PowerPoint files --")
+	content_dir = make_content_dir(base)
+	os.makedirs(os.path.join(content_dir, "en", "html"), exist_ok=True)
+	mmiLoader.set_page_strings_config(None)
+
+	# OLED status text: Latin-1 accents kept, other scripts never sent as text
+	check("S21: display keeps Spanish / Portuguese accents",
+		  mmiLoader.display_text("Jesús Niño") == "Jesús Niño" and mmiLoader.display_text("Lição") == "Lição")
+	check("S21: display text outside Latin-1 becomes ?", mmiLoader.display_text("ab中文") == "ab??")
+	check("S21: display wraps at 15 characters", mmiLoader.display_text("Processing: Cronológico.doc") == "Processing:\nCronológico.doc",
+		  repr(mmiLoader.display_text("Processing: Cronológico.doc")))
+	saved_counts = dict(mmiLoader._indexing)
+	try:
+		mmiLoader._indexing.update(total=412, done=36)
+		check("S21: Latin file name shown", mmiLoader.processing_message("Señor.pdf", "es") == "Processing: Señor.pdf")
+		check("S21: Chinese file name -> language and file number",
+			  mmiLoader.processing_message("他赐给我们先知.pdf", "zh-CN") == "Processing\nzh-CN 37/412",
+			  repr(mmiLoader.processing_message("他赐给我们先知.pdf", "zh-CN")))
+		mmiLoader._indexing.update(total=0, done=0)
+		check("S21: no count known -> language only",
+			  mmiLoader.processing_message("كتاب.pdf", "ar") == "Processing\nar")
+	finally:
+		mmiLoader._indexing.clear()
+		mmiLoader._indexing.update(saved_counts)
+
+	# DocBook to HTML (no antiword needed)
+	docbook = (
+		"<book><bookinfo><title>Lesson Title</title></bookinfo><chapter>"
+		"<title><emphasis role='bold'>Lesson 1</emphasis></title>"
+		"<sect1><title>Part A</title>"
+		"<para>\nRead <emphasis role='bold'>this</emphasis>, <emphasis>that</emphasis> &amp; "
+		"<emphasis role='underline'>more</emphasis> &lt;now&gt;.\n</para>"
+		"<para>\n[pic]\n</para><para>\n   \n</para>"
+		"<itemizedlist><listitem><para>one</para></listitem><listitem><para>two 中文</para></listitem></itemizedlist>"
+		"<para><informaltable><tgroup cols='2'><colspec/><tbody>"
+		"<row><entry>A1</entry><entry>B1</entry></row></tbody></tgroup></informaltable></para>"
+		"<beginpage/><beginpage/><para>Después</para>"
+		"</sect1></chapter></book>")
+	out = []
+	mmiLoader.docbook_blocks(list(ET.fromstring(docbook)), out)
+	frag = "\n".join(out)
+	check("S21: DocBook headings (chapter h1, sect1 h2), book title left out",
+		  "<h1><strong>Lesson 1</strong></h1>" in frag and "<h2>Part A</h2>" in frag and "Lesson Title" not in frag, frag[:300])
+	check("S21: DocBook bold / italic / underline, text escaped",
+		  "<p>Read <strong>this</strong>, <em>that</em> &amp; <u>more</u> &lt;now&gt;.</p>" in frag, frag)
+	check("S21: [pic] and empty paragraphs dropped", "[pic]" not in frag and "<p></p>" not in frag, frag)
+	check("S21: DocBook list and table", "<ul><li>one</li><li>two 中文</li></ul>" in frag
+		  and "<table><tr><td>A1</td><td>B1</td></tr></table>" in frag, frag)
+	check("S21: page breaks become one rule", frag.count("<hr>") == 1 and "<hr>\n<p>Después</p>" in frag, frag)
+
+	# Paragraph styles of a .ppt text: level 1 bullet run, then a no-bullet run
+	style = struct.pack("<IHIH", 6, 1, 0x0001, 0x0001) + struct.pack("<IHIH", 5, 0, 0x0001, 0x0000)
+	check("S21: ppt paragraph runs read", mmiLoader.ppt_paragraph_styles(style, 10) == [(6, 1, True), (5, 0, False)],
+		  str(mmiLoader.ppt_paragraph_styles(style, 10)))
+	check("S21: ppt paragraphs split with levels and line breaks",
+		  mmiLoader.ppt_paragraphs("Uno\x0bdos\rTres", style) == [("Uno\ndos", 1, True), ("Tres", 0, False)],
+		  str(mmiLoader.ppt_paragraphs("Uno\x0bdos\rTres", style)))
+	check("S21: unreadable style data falls back to defaults", mmiLoader.ppt_paragraph_styles(b"\x01\x00", 3) == [])
+
+	# Files that are not old Office documents stay download-only
+	fake = os.path.join(base, "fake.ppt")
+	with open(fake, "wb") as f:
+		f.write(b"not an OLE2 file")
+	card = {"title": "fake", "mediaType": "document", "mimeType": "x", "image": "ppt.png"}
+	with contextlib.redirect_stdout(io.StringIO()):
+		card = mmiLoader.make_document_web_page(card, fake, "fake.ppt", "fake-ppt", "en", content_dir, ".ppt")
+	check("S21: a non-PowerPoint .ppt stays a document",
+		  card["mediaType"] == "document" and not os.path.exists(os.path.join(content_dir, "en", "html", "fake-ppt")))
+	saved_tool = mmiLoader.ANTIWORD
+	mmiLoader.ANTIWORD = "antiword-not-installed-here"
+	try:
+		with contextlib.redirect_stdout(io.StringIO()):
+			no_tool = mmiLoader.convert_doc_to_html(fake, base, "en")
+	finally:
+		mmiLoader.ANTIWORD = saved_tool
+	check("S21: without antiword a .doc stays download-only", no_tool is None)
+
+	# Same-named PDF (any letter case)
+	twins = os.path.join(base, "twins")
+	os.makedirs(twins)
+	for name in ("Lesson 1.doc", "LESSON 1.PDF", "Talk.ppt", "Talk.pptx", "Notes.doc"):
+		open(os.path.join(twins, name), "wb").close()
+	check("S21: same-named PDF found (any case)", mmiLoader.has_same_named_pdf(os.path.join(twins, "Lesson 1.doc")))
+	check("S21: no PDF -> converted", not mmiLoader.has_same_named_pdf(os.path.join(twins, "Talk.ppt"))
+		  and not mmiLoader.has_same_named_pdf(os.path.join(twins, "Notes.doc")))
+
+	# Real files written by LibreOffice, read with antiword / olefile
+	tools = []
+	if not (shutil.which("soffice") or shutil.which("libreoffice")):
+		tools.append("LibreOffice")
+	if not shutil.which(mmiLoader.ANTIWORD):
+		tools.append("antiword")
+	try:
+		import olefile  # noqa: F401
+	except ImportError:
+		tools.append("olefile")
+	try:
+		import pptx  # noqa: F401
+	except ImportError:
+		tools.append("python-pptx")
+	if tools:
+		skip("S21: real .doc / .ppt files", "needs " + ", ".join(tools))
+		return
+	work = os.path.join(base, "office")
+	os.makedirs(work)
+	# A Word file long enough for antiword (very short ones are stored differently)
+	docx_src = os.path.join(work, "Estudio.docx")
+	make_docx(docx_src, heading="Estudio 1", text="Lea el pasaje y conteste. 学习指南。 " * 30, image=False)
+	doc = office_convert(docx_src, "doc", work)
+	from pptx import Presentation
+	prs = Presentation()
+	s = prs.slides.add_slide(prs.slide_layouts[1])
+	s.shapes.title.text = "他赐给我们先知"
+	body = s.placeholders[1].text_frame
+	body.text = "第一课"
+	sub = body.add_paragraph()
+	sub.text = "Niño & acción"
+	sub.level = 1
+	s.notes_slide.notes_text_frame.text = "讲员备注"
+	s2 = prs.slides.add_slide(prs.slide_layouts[1])
+	s2.shapes.title.text = "La Cena del Señor"
+	s2.placeholders[1].text_frame.text = "¿Cómo mostró su fe Noé?"
+	pptx_src = os.path.join(work, "Profetas.pptx")
+	prs.save(pptx_src)
+	ppt = office_convert(pptx_src, "ppt", work)
+	check("S21: LibreOffice wrote the test .doc and .ppt", bool(doc) and bool(ppt), str((doc, ppt)))
+	if not (doc and ppt):
+		return
+
+	card = {"title": "Estudio", "mediaType": "document", "mimeType": "x", "image": "doc.png"}
+	with contextlib.redirect_stdout(io.StringIO()):
+		card = mmiLoader.make_document_web_page(card, doc, "Estudio.doc", "Estudio-doc", "es", content_dir, ".doc")
+	page_file = os.path.join(content_dir, "es", "html", "Estudio-doc", "index.html")
+	page = open(page_file, encoding="utf-8").read() if os.path.isfile(page_file) else ""
+	check("S21: .doc card becomes html with the Word mimeType",
+		  card["mediaType"] == "html" and card["mimeType"] == mmiLoader.DOC_MIME_TYPE, str(card)[:200])
+	check("S21: .doc page has the heading and Spanish / Chinese text",
+		  "Estudio 1" in page and "Lea el pasaje y conteste. 学习指南。" in page, page[:400])
+	check("S21: .doc table kept", "<table><tr><td>Week</td><td>Topic</td></tr></table>" in page, page[-400:])
+
+	card = {"title": "Profetas", "mediaType": "document", "mimeType": "x", "image": "ppt.png"}
+	with contextlib.redirect_stdout(io.StringIO()):
+		card = mmiLoader.make_document_web_page(card, ppt, "Profetas.ppt", "Profetas-ppt", "zh", content_dir, ".ppt")
+	page_file = os.path.join(content_dir, "zh", "html", "Profetas-ppt", "index.html")
+	page = open(page_file, encoding="utf-8").read() if os.path.isfile(page_file) else ""
+	check("S21: .ppt card becomes html with the PowerPoint mimeType",
+		  card["mediaType"] == "html" and card["mimeType"] == mmiLoader.PPT_MIME_TYPE, str(card)[:200])
+	check("S21: .ppt numbered slide titles",
+		  '<h2><span class="cb-num">1</span>他赐给我们先知</h2>' in page
+		  and '<h2><span class="cb-num">2</span>La Cena del Señor</h2>' in page, page[:600])
+	check("S21: .ppt bullets with levels, text escaped",
+		  '<ul><li>第一课</li><li class="l1">Niño &amp; acción</li></ul>' in page, page[:800])
+	check("S21: .ppt speaker notes", '<div class="cb-notes"><strong>Speaker notes</strong><p>讲员备注</p></div>' in page)
+	check("S21: .ppt slide links", '<a href="#slide-2">2</a>' in page)
+
+	# Through the indexing walk: Lesson.doc + Lesson.pdf stay a download and a PDF,
+	# Extra.doc (no PDF) becomes a page; all three are listed
+	walk_base = os.path.join(base, "walk")
+	media_dir = os.path.join(walk_base, "media")
+	lessons = os.path.join(media_dir, "Lessons")
+	os.makedirs(lessons)
+	shutil.copy(doc, os.path.join(lessons, "Lesson.doc"))
+	with open(os.path.join(lessons, "Lesson.pdf"), "wb") as f:
+		f.write(b"%PDF-1.4\n%%EOF\n")
+	shutil.copy(doc, os.path.join(lessons, "Extra.doc"))
+	walk_content = make_content_dir(walk_base)
+	tpl_dir = make_templates(walk_base)
+	brand_path = make_brand(walk_base)
+
+	def expect(mains, content_dir, doesRootContainLanguage, language):
+		cols = [c for c in mains.get("en", {}).get("content", []) if c.get("episodes")]
+		eps = {e.get("filename"): e for c in cols for e in c.get("episodes", [])}
+		check("S21: all three files listed", set(eps) == {"Lesson.doc", "Lesson.pdf", "Extra.doc"}, str(sorted(eps)))
+		lesson = eps.get("Lesson.doc", {})
+		check("S21: .doc with a same-named PDF stays a download",
+			  lesson.get("mediaType") == "document"
+			  and not os.path.exists(os.path.join(content_dir, "en", "html", lesson.get("slug", "-"))), str(lesson)[:200])
+		check("S21: the PDF stays a PDF", eps.get("Lesson.pdf", {}).get("mediaType") == "document"
+			  and eps.get("Lesson.pdf", {}).get("mimeType") == "application/pdf")
+		extra = eps.get("Extra.doc", {})
+		check("S21: .doc without a PDF becomes a page", extra.get("mediaType") == "html" and os.path.isfile(
+			os.path.join(content_dir, "en", "html", extra.get("slug", "-"), "index.html")), str(extra)[:200])
+
+	run_scenario("Old Word files with and without a PDF", media_dir, tpl_dir, brand_path, walk_content, expect)
+
+
 if __name__ == '__main__':
 	scenarios = [
 		scenario_flat_english,
@@ -1769,6 +1992,10 @@ if __name__ == '__main__':
 		sub20 = os.path.join(tmp, "s20")
 		os.makedirs(sub20, exist_ok=True)
 		scenario_pptx(sub20)
+
+		sub21 = os.path.join(tmp, "s21")
+		os.makedirs(sub21, exist_ok=True)
+		scenario_old_office(sub21)
 
 	print(f"\n{'='*60}")
 	print(f"Results: {PASS} passed, {FAIL} failed")

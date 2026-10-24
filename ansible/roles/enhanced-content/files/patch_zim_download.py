@@ -3,7 +3,7 @@
 Detail page buttons (build/3.js) for ZIM files, Word documents, spreadsheets and
 presentations.
 
-ZIM files (offline websites) and .docx/.xlsx/.xls/.pptx files converted to web pages
+ZIM files (offline websites) and .docx/.doc/.xlsx/.xls/.pptx/.ppt files converted to web pages
 (see mmiLoader.py) are html cards.  The stock detail page offers html cards as a
 download of html/<slug>.zip and shows the "exit" (open web page) icon on the
 open button.  Neither kind has a zip:
@@ -22,7 +22,8 @@ Opening the card is unaffected.  Applies to the single-item buttons and to
 each episode of a collection.
 
 Upgrades a 3.js patched by the earlier versions of this script (ZIM hidden,
-ZIM + Word hidden, Word only, Word + spreadsheets).  Idempotent.  Exits non-zero if the expected stock
+ZIM + Word hidden, Word only, Word + spreadsheets, Word + spreadsheets +
+presentations).  Idempotent.  Exits non-zero if the expected stock
 text is not found.
 
 Usage: patch_zim_download.py [path/to/3.js]
@@ -35,9 +36,11 @@ DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 XLS = 'application/vnd.ms-excel'
 PPTX = 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+DOC = 'application/msword'
+PPT = 'application/vnd.ms-powerpoint'
 
 # Files mmiLoader shows as web pages that keep their own mimeType
-WEB_DOCUMENTS = [DOCX, XLSX, XLS, PPTX]
+WEB_DOCUMENTS = [DOCX, XLSX, XLS, PPTX, DOC, PPT]
 
 # Inside 3.js the Angular template is a JavaScript string literal, so quotes
 # inside the template appear escaped as \' in the file.
@@ -93,7 +96,8 @@ EDITS = build_edits(WEB_DOCUMENTS)
 
 # Text written by earlier versions of this script; turned back into the stock
 # text before EDITS are applied, so patched boxes are upgraded.
-OLD_VERSIONS = [(new, stock) for stock, new in build_edits([DOCX, XLSX, XLS])]  # Word + spreadsheets
+OLD_VERSIONS = [(new, stock) for stock, new in build_edits([DOCX, XLSX, XLS, PPTX])]  # + presentations
+OLD_VERSIONS += [(new, stock) for stock, new in build_edits([DOCX, XLSX, XLS])]  # Word + spreadsheets
 OLD_VERSIONS += [(new, stock) for stock, new in build_edits([DOCX])]  # Word only
 for _item in ('media', 'episode'):
     _stock = '<download-button [filePath]="' + _item + '?.downloadPath"'
