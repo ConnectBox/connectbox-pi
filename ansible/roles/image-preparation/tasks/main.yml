@@ -233,6 +233,22 @@
     dest: /usr/local/connectbox/expand_progress.txt
     state: absent
 
+# Leftovers in / from building the Armbian 23.02 base image (2023-02-18):
+# a copy of Armbian's apt signing key (already in apt's trusted keys, so the
+# copy is not used) and a 16 MB core dump from a QEMU crash during that build.
+- name: Find core dumps left in / by the Armbian image build
+  find:
+    paths: /
+    patterns: "qemu_*.core"
+    recurse: no
+  register: armbian_build_cores
+
+- name: Remove Armbian image build leftovers from /
+  file:
+    dest: "{{ item }}"
+    state: absent
+  loop: "{{ ['/armbian.key'] + (armbian_build_cores.files | map(attribute='path') | list) }}"
+
 # File system resize is now handled by PxUSBm.py
 # So the following code was taken out by Kirk Wilson
 # 2022.8.2
