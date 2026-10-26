@@ -69,6 +69,28 @@ def update_display(message):
 		logging.debug(f"Ignored exception: {e}")
 
 
+def other_loader_running():
+	"""True if another mmiLoader.py indexing run (not --clear) is running."""
+	me = os.getpid()
+	try:
+		pids = os.listdir("/proc")
+	except OSError:
+		return True                     # cannot tell: be safe and assume yes
+	for pid in pids:
+		if not pid.isdigit() or int(pid) == me:
+			continue
+		try:
+			with open("/proc/" + pid + "/cmdline", "rb") as f:
+				args = f.read().decode("utf-8", "replace").split("\0")
+		except OSError:
+			continue
+		if not args or "python" not in os.path.basename(args[0]):
+			continue
+		if any(os.path.basename(a) == "mmiLoader.py" for a in args[1:]) and "--clear" not in args:
+			return True
+	return False
+
+
 _shutdown_requested = False
 
 
@@ -99,8 +121,10 @@ signal.signal(signal.SIGTERM, _sigterm_handler)
 # /tmp/creating_menus.txt is also written by the hat service's buttons).
 
 INDEXING_PAGE = "/tmp/connectbox-indexing.html"
-# messages: (language, right-to-left?, title, text) per language on the USB,
-# set by set_indexing_languages once the language folders are known
+# messages: (language, right-to-left?, title, text, code) per language on the
+# USB, default language first; set by set_indexing_languages once the language
+# folders are known.  code is the language code (translation_code) the page's
+# script matches against the phone's languages.
 _indexing = {"total": 0, "done": 0, "written_done": -1, "written_at": 0.0, "messages": []}
 
 
@@ -109,8 +133,12 @@ def write_indexing_page():
 	Write the "loading new content" page with the current progress.  Written to
 	a temporary file and renamed, so nginx never serves a half-written page.
 	Plain HTML with a meta refresh, for the old phones ConnectBox supports.
-	The visitor's language is not known before the menu loads, so the message
-	is shown in every language on the USB (English until they are known).
+	The message is in the page in every language on the USB (English until
+	they are known), but only one is shown: a small script picks the phone's
+	own language (navigator.languages / language - the same phone setting
+	the browser sends as Accept-Language), else the default language (the
+	first message, English when the USB has it).  Without JavaScript the
+	default language is shown.
 	Progress is plain numbers ("340 / 778"), so it needs no translation.
 	"""
 	done, total = _indexing["done"], _indexing["total"]
@@ -118,10 +146,25 @@ def write_indexing_page():
 	progress = ('<p class="n">%s / %s</p><div class="bar"><div style="width:%d%%"></div></div>'
 				% ("{:,}".format(done), "{:,}".format(total), pct)) if total else ''
 	messages = _indexing["messages"] or [("en", False, EXTRA_INTERFACE_STRINGS["INDEXING_TITLE"],
-										  EXTRA_INTERFACE_STRINGS["INDEXING_TEXT"])]
-	blocks = ''.join('<div class="m" lang="%s" dir="%s"><h1>%s</h1><p>%s</p></div>\n'
-					 % (html.escape(lang), "rtl" if rtl else "ltr", html.escape(title), html.escape(text))
-					 for lang, rtl, title, text in messages)
+										  EXTRA_INTERFACE_STRINGS["INDEXING_TEXT"], "en")]
+	blocks = ''.join('<div class="%s" lang="%s" dir="%s" data-code="%s"><h1>%s</h1><p>%s</p></div>\n'
+					 % ("m on" if i == 0 else "m", html.escape(lang), "rtl" if rtl else "ltr",
+						html.escape(code.lower()), html.escape(title), html.escape(text))
+					 for i, (lang, rtl, title, text, code) in enumerate(messages))
+	# data-code: the language's codes separated by spaces (phone_codes)
+	# Show the block for the phone's language (exact code, then the same base
+	# language, e.g. es-MX -> es); written for old browsers (no ES5 needed)
+	chooser = ('<script>(function(){var n=navigator,w=[],i,j,k,b=[],d=document.getElementsByTagName("div"),c=null;'
+			   'if(n.languages)for(i=0;i<n.languages.length;i++)w.push(n.languages[i]);'
+			   'if(n.language)w.push(n.language);if(n.userLanguage)w.push(n.userLanguage);'
+			   'for(i=0;i<d.length;i++)if(d[i].getAttribute("data-code"))b.push(d[i]);'
+			   'for(i=0;i<w.length&&!c;i++){var l=String(w[i]).toLowerCase();'
+			   'for(k=0;k<2&&!c;k++)for(j=0;j<b.length&&!c;j++){var s=b[j].getAttribute("data-code").split(" ");'
+			   'for(var q=0;q<s.length&&!c;q++){var m=s[q];'
+			   'if(k==0?m==l:m.split("-")[0]==l.split("-")[0])c=b[j];}}}'
+			   'if(c){for(j=0;j<b.length;j++)b[j].className=(b[j]==c?"m on":"m");'
+			   'document.title=c.getElementsByTagName("h1")[0].innerHTML.replace(/&amp;/g,"&");'
+			   'document.documentElement.lang=c.getAttribute("lang");}})();</script>\n')
 	page = ('<!DOCTYPE html>\n<html lang="' + html.escape(messages[0][0]) + '"><head><meta charset="utf-8">\n'
 			'<meta name="viewport" content="width=device-width, initial-scale=1">\n'
 			# Refresh to a new address each time: a plain refresh let browsers
@@ -131,10 +174,10 @@ def write_indexing_page():
 			'<style>body{margin:0;padding:32px 20px;font-family:Arial,Helvetica,sans-serif;background:#1e1e1e;'
 			'color:#eee;text-align:center;}h1{font-size:1.4em;font-weight:normal;margin:0 0 8px;}'
 			'p{font-size:1.05em;line-height:1.5;margin:0 auto 8px;max-width:26em;}.n{color:#bbb;}'
-			'.m{margin:0 auto 24px;}'
+			'.m{display:none;margin:0 auto 24px;}.m.on{display:block;}'
 			'.bar{max-width:20em;height:10px;margin:16px auto;background:#444;border-radius:5px;overflow:hidden;}'
 			'.bar div{height:10px;background:#3fa9f5;}</style>\n'
-			'</head><body>\n' + blocks + progress + '\n</body></html>\n')
+			'</head><body>\n' + blocks + chooser + progress + '\n</body></html>\n')
 	try:
 		with open(INDEXING_PAGE + ".tmp", "w", encoding="utf-8") as f:
 			f.write(page)
@@ -180,11 +223,12 @@ def start_indexing_page(mediaDirectory):
 
 def set_indexing_languages(languages, config):
 	"""
-	Show the page's message in each language on the USB, in the same way and
+	Put the page's message in each language on the USB, in the same way and
 	from the same translation files as the menus (get_interface_for_language:
 	shipped or saved translation, else an online lookup, else English).
-	English comes first when present; identical messages (e.g. languages still
-	in English because the box is offline) are shown once.
+	English comes first when present (it is the default shown); identical
+	messages (e.g. languages still in English because the box is offline) are
+	kept once.
 	"""
 	if not os.path.exists(INDEXING_PAGE):
 		return
@@ -201,7 +245,8 @@ def set_indexing_languages(languages, config):
 		if (title, text) in seen:
 			continue
 		seen.add((title, text))
-		messages.append((language, is_rtl_language(language, config['languageCodes']), title, text))
+		messages.append((language, is_rtl_language(language, config['languageCodes']), title, text,
+						 " ".join(phone_codes(language, config['languageCodes']))))
 	if messages:
 		_indexing["messages"] = messages
 		write_indexing_page()
@@ -219,12 +264,25 @@ def indexing_progress():
 		write_indexing_page()
 
 
+# Whether /media/usb0 was a mounted USB key when this run first looked.  The
+# content can also be on the SD card itself (front panel "copy from USB" puts
+# it in /media/usb0/content with no key mounted), so "not a mount point" only
+# means "USB removed" when a key was mounted to begin with.
+_usb0_was_mount = None
+
+
 def usb_is_present():
-	# Returns False if USB has been removed or a shutdown was requested.
+	# Returns False if the USB content went away or a shutdown was requested.
 	# Called at the top of every directory/file loop iteration.
+	global _usb0_was_mount
 	if _shutdown_requested:
 		return False
-	return os.path.ismount("/media/usb0")
+	mounted = os.path.ismount("/media/usb0")
+	if _usb0_was_mount is None:
+		_usb0_was_mount = mounted
+	if _usb0_was_mount:
+		return mounted                                  # key pulled out
+	return os.path.isdir("/media/usb0/content")     # content on the SD card
 
 
 def run_cmd(cmd, expect_failure=False):
@@ -596,8 +654,12 @@ def load_config(templatesDirectory):
 # English UI strings the stock interface.json template lacks.  They are used by
 # the ConnectBox patches to the app (see roles/enhanced-content/files/patch_*.py):
 # the footer's admin link and the chat page labels; by the "loading new
-# content" page mmiLoader shows during a full index (INDEXING_*); and by the
-# presentation pages mmiLoader writes (SLIDE_NOTES).
+# content" page mmiLoader shows during a full index (INDEXING_*); by the
+# presentation pages mmiLoader writes (SLIDE_NOTES); and by the captive portal
+# page (PORTAL_*, read from the translation files by simple-offline-captive-portal
+# captiveportal/translations.py - keep the English identical there).  {name},
+# {url} and {option} are filled in by the portal.  PORTAL_USE_AS_IS is Android's
+# own menu label, so shipped translations use Android's wording.
 EXTRA_INTERFACE_STRINGS = {
 	"FOOTER_CONFIGURATION": "Configuration",
 	"CHAT_TITLE": "Chat",
@@ -606,6 +668,12 @@ EXTRA_INTERFACE_STRINGS = {
 	"INDEXING_TITLE": "Loading new content",
 	"INDEXING_TEXT": "This ConnectBox is loading new media. The menu will appear here by itself when it is ready.",
 	"SLIDE_NOTES": "Speaker notes",
+	"PORTAL_TITLE": "Connected to {name} Wifi",
+	"PORTAL_GO_TO": "Go to {url}",
+	"PORTAL_TYPE_ADDRESS": "Type {url} in your browser",
+	"PORTAL_OK": "OK",
+	"PORTAL_NOT_CLOSING": "If this page does not close after OK,\ntap \u22ee (top right) and choose {option}.",
+	"PORTAL_USE_AS_IS": "Use this network as is",
 }
 
 
@@ -653,7 +721,27 @@ UNTRANSLATED_KEYS = ("APP_NAME", "APP_LOGO")   # branding, not UI text
 
 # Right-to-left scripts.  Languages listed in languages.json with "rtl": true
 # make the app flip the page direction (the stock app reads this flag).
-RTL_LANGUAGES = ("ar", "arc", "ckb", "dv", "fa", "he", "iw", "ps", "sd", "ug", "ur", "yi")
+RTL_LANGUAGES = ("ar", "arc", "arz", "ckb", "dv", "fa", "he", "iw", "pnb", "ps", "sd", "ug", "ur", "yi")
+
+# ISO 639-3 individual languages that use another code's interface text.
+# languageCodes.json names them differently from their macrolanguage
+# ("Standard Arabic" / "Arabic"), so the name match below misses them.
+# Chinese: the spoken varieties are read in standard written Chinese -
+# Simplified for Mandarin, Wu, Jin, Hakka; Hong Kong Traditional for
+# Cantonese; Taiwan Traditional for Min Nan (decided 2026-10-26).  Egyptian
+# Arabic (arz) and Western Punjabi (pnb, Shahmukhi script) have their own files.
+TRANSLATION_CODE_ALIASES = {
+	"arb": "ar", "pes": "fa",
+	"cmn": "zh-CN", "wuu": "zh-CN", "cjy": "zh-CN", "hak": "zh-CN",
+	"yue": "zh-HK", "nan": "zh-TW",
+}
+
+# Language codes a phone reports for content in these folders, besides the
+# translation code (for languages.json, so the menu, the captive portal and
+# the "loading" page can match the phone's language to them).
+EXTRA_PHONE_CODES = {"arz": ["ar-EG"], "pnb": ["pa-PK", "pa-Arab"],
+					 "tgl": ["fil"], "tl": ["fil"],		# Android reports Filipino
+					 "ind": ["in"], "id": ["in"]}		# old Android code for Indonesian
 
 # Set when a lookup fails so the rest of this run does not wait on more
 # timeouts (the usual reason is no internet).
@@ -672,6 +760,8 @@ def translation_code(language, languageCodes):
 	"""
 	if '-' in language:
 		return language
+	if language in TRANSLATION_CODE_ALIASES:
+		return TRANSLATION_CODE_ALIASES[language]
 	if language == 'zh':
 		return 'zh-CN'
 	if len(language) == 2:
@@ -692,6 +782,20 @@ def translation_code(language, languageCodes):
 		if len(shared) == 1:
 			return shared[0]
 	return language
+
+
+def phone_codes(language, languageCodes):
+	"""
+	The "codes" for a content language in languages.json: the folder's code
+	first (the app takes it as the folder name), then the translation code and
+	any other code a phone reports for it (arb -> ar, yue -> zh-HK,
+	arz -> ar-EG), so a phone's language can be matched to the folder.
+	"""
+	codes = [language.split('-')[0] if '-' in language else language]
+	for code in [translation_code(language, languageCodes)] + EXTRA_PHONE_CODES.get(language, []):
+		if code.lower() not in [c.lower() for c in codes]:
+			codes.append(code)
+	return codes
 
 
 def is_rtl_language(language, languageCodes):
@@ -836,6 +940,8 @@ def refresh_interface_translations(contentDirectory, templatesDirectory):
 		with open(languages_path, encoding='utf-8') as f:
 			languages = json.load(f)
 		for record in languages:
+			# Older languages.json (e.g. from a saved.zip) lists only the folder
+			record["codes"] = phone_codes(record["codes"][0], config['languageCodes'])
 			if is_rtl_language(record["codes"][0], config['languageCodes']):
 				record["rtl"] = True
 			else:
@@ -3681,7 +3787,7 @@ def finalize_output(mains, languageCodes, contentDirectory, interface, mediaDire
 			json.dump(get_interface_for_language(language, interface, languageCodes), f, ensure_ascii=False, indent=4)
 
 		languageJsonObject = {}
-		languageJsonObject["codes"] = [language.split('-')[0] if '-' in language else language]
+		languageJsonObject["codes"] = phone_codes(language, languageCodes)
 		lang_key = language if language in languageCodes else language.split('-')[0]
 		try:
 			languageJsonObject["text"] = languageCodes[lang_key]["native"][0]
@@ -3988,14 +4094,21 @@ if __name__ == '__main__':
 
 	# Single-instance guard: exit if a run is already in progress, which is
 	# marked by /tmp/creating_menus.txt (written by initialize_run, removed at
-	# the end of a run and by the SIGTERM handler).
-	try:
-		f = open("/tmp/creating_menus.txt", "r", encoding="utf-8")
-		print("Ok the comsFileName file is present. we can't try to load since system is doing something else")
-		logging.info("Skipped mmiLoader.py since complex_dir file was present")
-		sys.exit()
-	except Exception:
-		pass
+	# the end of a run and by the SIGTERM handler).  A run that stopped early
+	# (e.g. "USB removed during ...") leaves the file behind; with no other
+	# mmiLoader running it is stale, so remove it rather than refusing every
+	# later run until the next reboot.
+	if os.path.exists("/tmp/creating_menus.txt"):
+		if other_loader_running():
+			print("Ok the comsFileName file is present. we can't try to load since system is doing something else")
+			logging.info("Skipped mmiLoader.py: another run is in progress")
+			sys.exit()
+		print("Removing a stale /tmp/creating_menus.txt left by an earlier run")
+		logging.info("Removed stale /tmp/creating_menus.txt (no other mmiLoader running)")
+		try:
+			os.remove("/tmp/creating_menus.txt")
+		except OSError:
+			pass
 
 	print("Ok now we will start the loader")
 	mmiloader_code()

@@ -1,0 +1,156 @@
+{
+    "language": "th",
+    "_note": "ConnectBox interface translations. 'en' is the English each string was translated from; mmiLoader re-translates a string when its English changes. Edit 'text' to correct a translation.",
+    "strings": {
+        "CATEGORIES_TITLE": {
+            "en": "Categories",
+            "text": "หมวดหมู่",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "EPISODES_TEXT": {
+            "en": "Episodes",
+            "text": "ตอน",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "LANGUAGE_BUTTON": {
+            "en": "Language",
+            "text": "ภาษา",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "OTHER_MEDIA_TITLE": {
+            "en": "Media",
+            "text": "สื่อ",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.AUDIO": {
+            "en": "Audio",
+            "text": "เสียง",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.DOCUMENT": {
+            "en": "Document",
+            "text": "เอกสาร",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.IMAGE": {
+            "en": "Image",
+            "text": "รูปภาพ",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.HTML": {
+            "en": "Web Document",
+            "text": "เอกสารเว็บ",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.TEXT": {
+            "en": "Text File",
+            "text": "ไฟล์ข้อความ",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.VIDEO": {
+            "en": "Video",
+            "text": "วิดีโอ",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.ZIP": {
+            "en": "Archive",
+            "text": "ไฟล์บีบอัด",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.APPLICATION": {
+            "en": "App",
+            "text": "แอป",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MISSING_MEDIA_TITLE": {
+            "en": "Media is missing!",
+            "text": "ไม่พบสื่อ!",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MISSING_MEDIA_TEXT": {
+            "en": "We're working on collecting the data or\nSomething went wrong! The media is missing!",
+            "text": "เรากำลังรวบรวมข้อมูล หรือ\nเกิดข้อผิดพลาดบางอย่าง! ไม่พบสื่อ!",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "RECOMMENDED_TITLE": {
+            "en": "For You",
+            "text": "สำหรับคุณ",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "RECOMMENDED_TEXT": {
+            "en": "Recommended",
+            "text": "แนะนำ",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "UNSUPPORTED_TEXT": {
+            "en": "Sorry, your browser does not support videos.",
+            "text": "ขออภัย เบราว์เซอร์ของคุณไม่รองรับวิดีโอ",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "FOOTER_CONFIGURATION": {
+            "en": "Configuration",
+            "text": "การตั้งค่า",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "CHAT_TITLE": {
+            "en": "Chat",
+            "text": "แชท",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "CHAT_NAME": {
+            "en": "Name",
+            "text": "ชื่อ",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "CHAT_MESSAGE": {
+            "en": "Type a message",
+            "text": "พิมพ์ข้อความ",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "INDEXING_TITLE": {
+            "en": "Loading new content",
+            "text": "กำลังโหลดเนื้อหาใหม่",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "INDEXING_TEXT": {
+            "en": "This ConnectBox is loading new media. The menu will appear here by itself when it is ready.",
+            "text": "ConnectBox นี้กำลังโหลดสื่อใหม่ เมนูจะปรากฏที่นี่โดยอัตโนมัติเมื่อพร้อม",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "SLIDE_NOTES": {
+            "en": "Speaker notes",
+            "text": "บันทึกของผู้บรรยาย",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "PORTAL_TITLE": {
+            "en": "Connected to {name} Wifi",
+            "text": "เชื่อมต่อกับ Wi-Fi {name} แล้ว",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "PORTAL_GO_TO": {
+            "en": "Go to {url}",
+            "text": "ไปที่ {url}",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "PORTAL_TYPE_ADDRESS": {
+            "en": "Type {url} in your browser",
+            "text": "พิมพ์ {url} ในเบราว์เซอร์ของคุณ",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "PORTAL_OK": {
+            "en": "OK",
+            "text": "ตกลง",
+            "source": "Android CaptivePortalLogin ok (values-th, AOSP main, checked 2026-10-26)"
+        },
+        "PORTAL_NOT_CLOSING": {
+            "en": "If this page does not close after OK,\ntap ⋮ (top right) and choose {option}.",
+            "text": "หากหน้านี้ไม่ปิดหลังจากแตะตกลง\nให้แตะ ⋮ (ด้านขวาบน) แล้วเลือก \"{option}\"",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "PORTAL_USE_AS_IS": {
+            "en": "Use this network as is",
+            "text": "ใช้เครือข่ายนี้ตามที่เป็นอยู่",
+            "source": "Android CaptivePortalLogin action_use_network (values-th, AOSP main, checked 2026-10-26)"
+        }
+    }
+}

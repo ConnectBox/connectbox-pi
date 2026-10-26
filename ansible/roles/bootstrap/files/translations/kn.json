@@ -1,0 +1,156 @@
+{
+    "language": "kn",
+    "_note": "ConnectBox interface translations. 'en' is the English each string was translated from; mmiLoader re-translates a string when its English changes. Edit 'text' to correct a translation.",
+    "strings": {
+        "CATEGORIES_TITLE": {
+            "en": "Categories",
+            "text": "ವರ್ಗಗಳು",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "EPISODES_TEXT": {
+            "en": "Episodes",
+            "text": "ಸಂಚಿಕೆಗಳು",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "LANGUAGE_BUTTON": {
+            "en": "Language",
+            "text": "ಭಾಷೆ",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "OTHER_MEDIA_TITLE": {
+            "en": "Media",
+            "text": "ಮೀಡಿಯಾ",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.AUDIO": {
+            "en": "Audio",
+            "text": "ಆಡಿಯೋ",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.DOCUMENT": {
+            "en": "Document",
+            "text": "ಡಾಕ್ಯುಮೆಂಟ್",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.IMAGE": {
+            "en": "Image",
+            "text": "ಚಿತ್ರ",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.HTML": {
+            "en": "Web Document",
+            "text": "ವೆಬ್ ಡಾಕ್ಯುಮೆಂಟ್",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.TEXT": {
+            "en": "Text File",
+            "text": "ಪಠ್ಯ ಫೈಲ್",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.VIDEO": {
+            "en": "Video",
+            "text": "ವೀಡಿಯೊ",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.ZIP": {
+            "en": "Archive",
+            "text": "ಆರ್ಕೈವ್",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.APPLICATION": {
+            "en": "App",
+            "text": "ಆ್ಯಪ್",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MISSING_MEDIA_TITLE": {
+            "en": "Media is missing!",
+            "text": "ಮೀಡಿಯಾ ಇಲ್ಲ!",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MISSING_MEDIA_TEXT": {
+            "en": "We're working on collecting the data or\nSomething went wrong! The media is missing!",
+            "text": "ನಾವು ಡೇಟಾವನ್ನು ಸಂಗ್ರಹಿಸುತ್ತಿದ್ದೇವೆ ಅಥವಾ\nಏನೋ ತಪ್ಪಾಗಿದೆ! ಮೀಡಿಯಾ ಇಲ್ಲ!",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "RECOMMENDED_TITLE": {
+            "en": "For You",
+            "text": "ನಿಮಗಾಗಿ",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "RECOMMENDED_TEXT": {
+            "en": "Recommended",
+            "text": "ಶಿಫಾರಸು ಮಾಡಲಾಗಿದೆ",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "UNSUPPORTED_TEXT": {
+            "en": "Sorry, your browser does not support videos.",
+            "text": "ಕ್ಷಮಿಸಿ, ನಿಮ್ಮ ಬ್ರೌಸರ್ ವೀಡಿಯೊಗಳನ್ನು ಬೆಂಬಲಿಸುವುದಿಲ್ಲ.",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "FOOTER_CONFIGURATION": {
+            "en": "Configuration",
+            "text": "ಸೆಟ್ಟಿಂಗ್‌ಗಳು",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "CHAT_TITLE": {
+            "en": "Chat",
+            "text": "ಚಾಟ್",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "CHAT_NAME": {
+            "en": "Name",
+            "text": "ಹೆಸರು",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "CHAT_MESSAGE": {
+            "en": "Type a message",
+            "text": "ಸಂದೇಶ ಟೈಪ್ ಮಾಡಿ",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "INDEXING_TITLE": {
+            "en": "Loading new content",
+            "text": "ಹೊಸ ವಿಷಯ ಲೋಡ್ ಆಗುತ್ತಿದೆ",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "INDEXING_TEXT": {
+            "en": "This ConnectBox is loading new media. The menu will appear here by itself when it is ready.",
+            "text": "ಈ ConnectBox ಹೊಸ ಮೀಡಿಯಾವನ್ನು ಲೋಡ್ ಮಾಡುತ್ತಿದೆ. ಸಿದ್ಧವಾದಾಗ ಮೆನು ಇಲ್ಲಿ ತಾನಾಗಿಯೇ ಕಾಣಿಸುತ್ತದೆ.",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "SLIDE_NOTES": {
+            "en": "Speaker notes",
+            "text": "ಭಾಷಣಕಾರರ ಟಿಪ್ಪಣಿಗಳು",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "PORTAL_TITLE": {
+            "en": "Connected to {name} Wifi",
+            "text": "{name} ವೈ-ಫೈಗೆ ಸಂಪರ್ಕಗೊಂಡಿದೆ",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "PORTAL_GO_TO": {
+            "en": "Go to {url}",
+            "text": "{url} ಗೆ ಹೋಗಿ",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "PORTAL_TYPE_ADDRESS": {
+            "en": "Type {url} in your browser",
+            "text": "ನಿಮ್ಮ ಬ್ರೌಸರ್‌ನಲ್ಲಿ {url} ಎಂದು ಟೈಪ್ ಮಾಡಿ",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "PORTAL_OK": {
+            "en": "OK",
+            "text": "ಸರಿ",
+            "source": "Android CaptivePortalLogin ok (values-kn, AOSP main, checked 2026-10-26)"
+        },
+        "PORTAL_NOT_CLOSING": {
+            "en": "If this page does not close after OK,\ntap ⋮ (top right) and choose {option}.",
+            "text": "ಸರಿ ಒತ್ತಿದ ನಂತರವೂ ಈ ಪುಟ ಮುಚ್ಚದಿದ್ದರೆ,\n⋮ (ಮೇಲಿನ ಬಲಭಾಗ) ಟ್ಯಾಪ್ ಮಾಡಿ ಮತ್ತು {option} ಆಯ್ಕೆಮಾಡಿ.",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "PORTAL_USE_AS_IS": {
+            "en": "Use this network as is",
+            "text": "ಈ ನೆಟ್‌ವರ್ಕ್ ಅನ್ನು ಹೀಗೆ ಬಳಸಿ",
+            "source": "Android CaptivePortalLogin action_use_network (values-kn, AOSP main, checked 2026-10-26)"
+        }
+    }
+}

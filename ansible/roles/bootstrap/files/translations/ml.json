@@ -1,0 +1,156 @@
+{
+    "language": "ml",
+    "_note": "ConnectBox interface translations. 'en' is the English each string was translated from; mmiLoader re-translates a string when its English changes. Edit 'text' to correct a translation.",
+    "strings": {
+        "CATEGORIES_TITLE": {
+            "en": "Categories",
+            "text": "വിഭാഗങ്ങൾ",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "EPISODES_TEXT": {
+            "en": "Episodes",
+            "text": "എപ്പിസോഡുകൾ",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "LANGUAGE_BUTTON": {
+            "en": "Language",
+            "text": "ഭാഷ",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "OTHER_MEDIA_TITLE": {
+            "en": "Media",
+            "text": "മീഡിയ",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.AUDIO": {
+            "en": "Audio",
+            "text": "ഓഡിയോ",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.DOCUMENT": {
+            "en": "Document",
+            "text": "ഡോക്യുമെന്റ്",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.IMAGE": {
+            "en": "Image",
+            "text": "ചിത്രം",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.HTML": {
+            "en": "Web Document",
+            "text": "വെബ് ഡോക്യുമെന്റ്",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.TEXT": {
+            "en": "Text File",
+            "text": "ടെക്സ്റ്റ് ഫയൽ",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.VIDEO": {
+            "en": "Video",
+            "text": "വീഡിയോ",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.ZIP": {
+            "en": "Archive",
+            "text": "ആർക്കൈവ്",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.APPLICATION": {
+            "en": "App",
+            "text": "ആപ്പ്",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MISSING_MEDIA_TITLE": {
+            "en": "Media is missing!",
+            "text": "മീഡിയ ലഭ്യമല്ല!",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MISSING_MEDIA_TEXT": {
+            "en": "We're working on collecting the data or\nSomething went wrong! The media is missing!",
+            "text": "ഞങ്ങൾ ഡാറ്റ ശേഖരിക്കുകയാണ് അല്ലെങ്കിൽ\nഎന്തോ കുഴപ്പം സംഭവിച്ചു! മീഡിയ ലഭ്യമല്ല!",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "RECOMMENDED_TITLE": {
+            "en": "For You",
+            "text": "നിങ്ങൾക്കായി",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "RECOMMENDED_TEXT": {
+            "en": "Recommended",
+            "text": "ശുപാർശ ചെയ്യുന്നവ",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "UNSUPPORTED_TEXT": {
+            "en": "Sorry, your browser does not support videos.",
+            "text": "ക്ഷമിക്കണം, നിങ്ങളുടെ ബ്രൗസർ വീഡിയോകളെ പിന്തുണയ്ക്കുന്നില്ല.",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "FOOTER_CONFIGURATION": {
+            "en": "Configuration",
+            "text": "ക്രമീകരണം",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "CHAT_TITLE": {
+            "en": "Chat",
+            "text": "ചാറ്റ്",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "CHAT_NAME": {
+            "en": "Name",
+            "text": "പേര്",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "CHAT_MESSAGE": {
+            "en": "Type a message",
+            "text": "ഒരു സന്ദേശം ടൈപ്പ് ചെയ്യുക",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "INDEXING_TITLE": {
+            "en": "Loading new content",
+            "text": "പുതിയ ഉള്ളടക്കം ലോഡ് ചെയ്യുന്നു",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "INDEXING_TEXT": {
+            "en": "This ConnectBox is loading new media. The menu will appear here by itself when it is ready.",
+            "text": "ഈ ConnectBox പുതിയ മീഡിയ ലോഡ് ചെയ്യുകയാണ്. തയ്യാറാകുമ്പോൾ മെനു ഇവിടെ സ്വയം ദൃശ്യമാകും.",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "SLIDE_NOTES": {
+            "en": "Speaker notes",
+            "text": "സ്പീക്കർ കുറിപ്പുകൾ",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "PORTAL_TITLE": {
+            "en": "Connected to {name} Wifi",
+            "text": "{name} വൈഫൈയിലേക്ക് കണക്റ്റ് ചെയ്തു",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "PORTAL_GO_TO": {
+            "en": "Go to {url}",
+            "text": "{url} എന്നതിലേക്ക് പോകുക",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "PORTAL_TYPE_ADDRESS": {
+            "en": "Type {url} in your browser",
+            "text": "നിങ്ങളുടെ ബ്രൗസറിൽ {url} എന്ന് ടൈപ്പ് ചെയ്യുക",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "PORTAL_OK": {
+            "en": "OK",
+            "text": "ശരി",
+            "source": "Android CaptivePortalLogin ok (values-ml, AOSP main, checked 2026-10-26)"
+        },
+        "PORTAL_NOT_CLOSING": {
+            "en": "If this page does not close after OK,\ntap ⋮ (top right) and choose {option}.",
+            "text": "ശരി അമർത്തിയ ശേഷവും ഈ പേജ് അടയുന്നില്ലെങ്കിൽ,\n⋮ (മുകളിൽ വലതുവശത്ത്) ടാപ്പ് ചെയ്ത് {option} തിരഞ്ഞെടുക്കുക.",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "PORTAL_USE_AS_IS": {
+            "en": "Use this network as is",
+            "text": "ഈ നെറ്റ്‌വർക്ക് മാറ്റമൊന്നും വരുത്താതെ ഉപയോഗിക്കുക",
+            "source": "Android CaptivePortalLogin action_use_network (values-ml, AOSP main, checked 2026-10-26)"
+        }
+    }
+}

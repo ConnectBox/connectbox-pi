@@ -1,0 +1,156 @@
+{
+    "language": "te",
+    "_note": "ConnectBox interface translations. 'en' is the English each string was translated from; mmiLoader re-translates a string when its English changes. Edit 'text' to correct a translation.",
+    "strings": {
+        "CATEGORIES_TITLE": {
+            "en": "Categories",
+            "text": "వర్గాలు",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "EPISODES_TEXT": {
+            "en": "Episodes",
+            "text": "ఎపిసోడ్‌లు",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "LANGUAGE_BUTTON": {
+            "en": "Language",
+            "text": "భాష",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "OTHER_MEDIA_TITLE": {
+            "en": "Media",
+            "text": "మీడియా",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.AUDIO": {
+            "en": "Audio",
+            "text": "ఆడియో",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.DOCUMENT": {
+            "en": "Document",
+            "text": "డాక్యుమెంట్",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.IMAGE": {
+            "en": "Image",
+            "text": "చిత్రం",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.HTML": {
+            "en": "Web Document",
+            "text": "వెబ్ డాక్యుమెంట్",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.TEXT": {
+            "en": "Text File",
+            "text": "టెక్స్ట్ ఫైల్",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.VIDEO": {
+            "en": "Video",
+            "text": "వీడియో",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.ZIP": {
+            "en": "Archive",
+            "text": "ఆర్కైవ్",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.APPLICATION": {
+            "en": "App",
+            "text": "యాప్",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MISSING_MEDIA_TITLE": {
+            "en": "Media is missing!",
+            "text": "మీడియా లేదు!",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MISSING_MEDIA_TEXT": {
+            "en": "We're working on collecting the data or\nSomething went wrong! The media is missing!",
+            "text": "మేము డేటాను సేకరిస్తున్నాము లేదా\nఏదో తప్పు జరిగింది! మీడియా లేదు!",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "RECOMMENDED_TITLE": {
+            "en": "For You",
+            "text": "మీ కోసం",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "RECOMMENDED_TEXT": {
+            "en": "Recommended",
+            "text": "సిఫార్సు చేయబడినవి",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "UNSUPPORTED_TEXT": {
+            "en": "Sorry, your browser does not support videos.",
+            "text": "క్షమించండి, మీ బ్రౌజర్ వీడియోలకు సపోర్ట్ చేయదు.",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "FOOTER_CONFIGURATION": {
+            "en": "Configuration",
+            "text": "సెట్టింగ్‌లు",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "CHAT_TITLE": {
+            "en": "Chat",
+            "text": "చాట్",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "CHAT_NAME": {
+            "en": "Name",
+            "text": "పేరు",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "CHAT_MESSAGE": {
+            "en": "Type a message",
+            "text": "మెసేజ్‌ను టైప్ చేయండి",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "INDEXING_TITLE": {
+            "en": "Loading new content",
+            "text": "కొత్త కంటెంట్ లోడ్ అవుతోంది",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "INDEXING_TEXT": {
+            "en": "This ConnectBox is loading new media. The menu will appear here by itself when it is ready.",
+            "text": "ఈ ConnectBox కొత్త మీడియాను లోడ్ చేస్తోంది. సిద్ధమైనప్పుడు మెనూ ఇక్కడ దానంతట అదే కనిపిస్తుంది.",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "SLIDE_NOTES": {
+            "en": "Speaker notes",
+            "text": "స్పీకర్ నోట్స్",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "PORTAL_TITLE": {
+            "en": "Connected to {name} Wifi",
+            "text": "{name} Wi-Fiకి కనెక్ట్ అయింది",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "PORTAL_GO_TO": {
+            "en": "Go to {url}",
+            "text": "{url}కు వెళ్లండి",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "PORTAL_TYPE_ADDRESS": {
+            "en": "Type {url} in your browser",
+            "text": "మీ బ్రౌజర్‌లో {url} అని టైప్ చేయండి",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "PORTAL_OK": {
+            "en": "OK",
+            "text": "సరే",
+            "source": "Android CaptivePortalLogin ok (values-te, AOSP main, checked 2026-10-26)"
+        },
+        "PORTAL_NOT_CLOSING": {
+            "en": "If this page does not close after OK,\ntap ⋮ (top right) and choose {option}.",
+            "text": "సరే నొక్కిన తర్వాత కూడా ఈ పేజీ మూసివేయబడకపోతే,\n⋮ (ఎగువ కుడివైపు) నొక్కి {option}ను ఎంచుకోండి.",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "PORTAL_USE_AS_IS": {
+            "en": "Use this network as is",
+            "text": "ఈ నెట్‌వర్క్‌ని యథావిధిగా ఉపయోగించండి",
+            "source": "Android CaptivePortalLogin action_use_network (values-te, AOSP main, checked 2026-10-26)"
+        }
+    }
+}

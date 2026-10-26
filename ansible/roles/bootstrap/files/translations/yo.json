@@ -1,0 +1,156 @@
+{
+    "language": "yo",
+    "_note": "ConnectBox interface translations. 'en' is the English each string was translated from; mmiLoader re-translates a string when its English changes. Edit 'text' to correct a translation.",
+    "strings": {
+        "CATEGORIES_TITLE": {
+            "en": "Categories",
+            "text": "Àwọn Ẹ̀ka",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "EPISODES_TEXT": {
+            "en": "Episodes",
+            "text": "Àwọn Apá",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "LANGUAGE_BUTTON": {
+            "en": "Language",
+            "text": "Èdè",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "OTHER_MEDIA_TITLE": {
+            "en": "Media",
+            "text": "Mídíà",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.AUDIO": {
+            "en": "Audio",
+            "text": "Ohùn",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.DOCUMENT": {
+            "en": "Document",
+            "text": "Ìwé",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.IMAGE": {
+            "en": "Image",
+            "text": "Àwòrán",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.HTML": {
+            "en": "Web Document",
+            "text": "Ìwé orí ayélujára",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.TEXT": {
+            "en": "Text File",
+            "text": "Fáìlì ọ̀rọ̀",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.VIDEO": {
+            "en": "Video",
+            "text": "Fídíò",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.ZIP": {
+            "en": "Archive",
+            "text": "Fáìlì àkójọ",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MEDIA_TYPE.APPLICATION": {
+            "en": "App",
+            "text": "Áàpù",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MISSING_MEDIA_TITLE": {
+            "en": "Media is missing!",
+            "text": "Kò sí mídíà!",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "MISSING_MEDIA_TEXT": {
+            "en": "We're working on collecting the data or\nSomething went wrong! The media is missing!",
+            "text": "À ń kó dátà jọ tàbí\nnǹkan kan ti bàjẹ́! Kò sí mídíà!",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "RECOMMENDED_TITLE": {
+            "en": "For You",
+            "text": "Fún Ọ",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "RECOMMENDED_TEXT": {
+            "en": "Recommended",
+            "text": "A dámọ̀ràn",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "UNSUPPORTED_TEXT": {
+            "en": "Sorry, your browser does not support videos.",
+            "text": "Má bínú, aṣàwákiri rẹ kò ṣe àtìlẹ́yìn fún fídíò.",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "FOOTER_CONFIGURATION": {
+            "en": "Configuration",
+            "text": "Ètò",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "CHAT_TITLE": {
+            "en": "Chat",
+            "text": "Ìfọ̀rọ̀wérọ̀",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "CHAT_NAME": {
+            "en": "Name",
+            "text": "Orúkọ",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "CHAT_MESSAGE": {
+            "en": "Type a message",
+            "text": "Tẹ ọ̀rọ̀ kan",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "INDEXING_TITLE": {
+            "en": "Loading new content",
+            "text": "À ń gbé àkóónú tuntun wọlé",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "INDEXING_TEXT": {
+            "en": "This ConnectBox is loading new media. The menu will appear here by itself when it is ready.",
+            "text": "ConnectBox yìí ń gbé mídíà tuntun wọlé. Àtòjọ yóò fara hàn níbí fúnra rẹ̀ nígbà tó bá ṣetán.",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "SLIDE_NOTES": {
+            "en": "Speaker notes",
+            "text": "Àkọsílẹ̀ olùsọ̀rọ̀",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "PORTAL_TITLE": {
+            "en": "Connected to {name} Wifi",
+            "text": "O ti sopọ̀ mọ́ Wi-Fi {name}",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "PORTAL_GO_TO": {
+            "en": "Go to {url}",
+            "text": "Lọ sí {url}",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "PORTAL_TYPE_ADDRESS": {
+            "en": "Type {url} in your browser",
+            "text": "Tẹ {url} sínú aṣàwákiri rẹ",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "PORTAL_OK": {
+            "en": "OK",
+            "text": "Ó dáa",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "PORTAL_NOT_CLOSING": {
+            "en": "If this page does not close after OK,\ntap ⋮ (top right) and choose {option}.",
+            "text": "Tí ojú-ìwé yìí kò bá tì lẹ́yìn Ó dáa,\ntẹ ⋮ (òkè ọ̀tún) kí o sì yan {option}.",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "PORTAL_USE_AS_IS": {
+            "en": "Use this network as is",
+            "text": "Use this network as is",
+            "source": "English on purpose: Android has no Yoruba translation, so the phone's menu is in another language (English assumed)"
+        }
+    }
+}

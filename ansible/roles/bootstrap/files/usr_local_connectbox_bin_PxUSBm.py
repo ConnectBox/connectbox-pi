@@ -185,6 +185,45 @@ def start_content_loader():
         logger.info("Could not start mmiLoader (systemd-run failed), time is " + time.asctime())
 
 
+# The box's own content: /media/usb0/content on the SD card, copied there from
+# a key with the front-panel "copy from USB".  A key plugged in is mounted on
+# top of /media/usb0 and its content is shown instead; when it is pulled out
+# (or the box starts without a key) the box's own content is indexed again.
+INTERNAL_CONTENT = "/media/usb0/content"
+INTERNAL_INDEXED = "/tmp/.internal_indexed"      # set once the own content has been indexed
+INTERNAL_STARTUP_WAIT = 20                       # s after start-up, to let a plugged-in key appear
+pxusbm_started = time.time()
+
+
+def check_internal_content():
+    """
+    Index the box's own content when no USB key is mounted at /media/usb0.
+
+    Called after every mountCheck().  Runs the loader once (INTERNAL_INDEXED
+    stops it repeating every poll); mountCheck() removes that marker when a key
+    is pulled out of usb0, so the content is indexed again then.  At start-up
+    it waits INTERNAL_STARTUP_WAIT seconds so that a key that is plugged in is
+    mounted (and indexed) instead.  With no content of its own the box keeps
+    the empty menus left by mmiLoader --clear.
+    """
+    if os.path.isfile(INTERNAL_INDEXED) or os.path.ismount("/media/usb0"):
+        return
+    if time.time() - pxusbm_started < INTERNAL_STARTUP_WAIT:
+        return
+    try:
+        has_content = os.path.isdir(INTERNAL_CONTENT) and any(
+            not name.startswith('.') for name in os.listdir(INTERNAL_CONTENT))
+    except OSError:
+        has_content = False
+    if has_content:
+        logger.info("No USB at /media/usb0: indexing the box's own content, time is " + time.asctime())
+        start_content_loader()
+    try:
+        open(INTERNAL_INDEXED, 'w').close()
+    except OSError:
+        pass
+
+
 def mountCheck():
     """
     Poll the system for USB drive insertion and removal events, then mount or unmount
@@ -315,6 +354,11 @@ def mountCheck():
           if loc[j] == ord('0'):
               try:
                   os.remove('/tmp/.usb0_indexed')
+              except Exception:
+                  pass
+              # Index the box's own content again (check_internal_content)
+              try:
+                  os.remove(INTERNAL_INDEXED)
               except Exception:
                   pass
           whole_disk.discard(chr(mnt[j]))
@@ -2556,6 +2600,7 @@ if __name__ == "__main__":
              if DEBUG > 3: print("PxUSBm Going to start the mount Check")
              logger.info("Doing a mount check "+str(x) + " time is " +time.asctime())
              mountCheck()                   # Do a usb check to see if we have any inserted or removed.
+             check_internal_content()       # No key at usb0: show the box's own content
              if connectbox_scroll: dbCheck()
           else: logger.info("Mount checks are susspended due to  Brand setting "+ str(x) + " time is " + time.asctime())
 

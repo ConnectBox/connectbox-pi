@@ -22,6 +22,19 @@ import neo_batterylevelshutdown.hats as hat
 import neo_batterylevelshutdown.globals as globals
 
 
+def page_enabled(index):
+    """
+    Is status page number index switched on in brand.j2 (globals.screen_enable,
+    set from the admin Configuration menu)?  0, "0", False and "false" mean
+    off (the menu has stored both 0 and "0"); anything else, or no entry, on.
+    """
+    try:
+        value = globals.screen_enable[index]
+    except (IndexError, TypeError):
+        return True
+    return str(value).strip().lower() not in ("0", "false", "off")
+
+
 class DummyDisplay:
 
     # pylint: disable=unused-argument
@@ -100,7 +113,7 @@ class OLED:
         self.pages = self.statusPages
         self.pageStack = 'status'
         DISPLAY_TIMEOUT_SECS=120
-        hat.displayPowerOffTime = time.time() + DISPLAY_TIMEOUT_SECS  # reset
+        self.hat.displayPowerOffTime = time.time() + DISPLAY_TIMEOUT_SECS  # reset
         self._curPage = self.pages[self.STARTING_PAGE_INDEX]
         # callbacks run in another thread, so we need to lock access to the
         #  current page variable as it can be modified from the main loop
@@ -117,6 +130,35 @@ class OLED:
 
     def checkIfLastPage(self):
         return self._curPage == self.pages[-1]
+
+    def showAdminPage(self, name):
+        """Show the admin menu at the item called name (the first item if unknown)."""
+        with self._curPageLock:
+            self.pages = self.adminPages
+            self.pageStack = 'admin'
+            index = self.adminPageNames.index(name) if name in self.adminPageNames else 0
+            self._curPage = self.adminPages[index]
+            self._curPage.draw_page()
+
+    def _nextEnabled(self, index, step):
+        """
+        From status page index, step (+1 / -1) to the next page that is
+        switched on; stays on index if no other page is on (never loops for
+        ever).
+        """
+        count = len(self.statusPages)
+        nxt = (index + step) % count
+        for _ in range(count):
+            if page_enabled(nxt):
+                return nxt
+            nxt = (nxt + step) % count
+        return index
+
+    def _startPage(self):
+        """The first status page that is switched on (the main page if none is)."""
+        if page_enabled(self.STARTING_PAGE_INDEX):
+            return self.STARTING_PAGE_INDEX
+        return self._nextEnabled(self.STARTING_PAGE_INDEX, 1)
 
     def showRemoveUsbPage(self,a=''):
         with self._curPageLock:
@@ -198,9 +240,10 @@ class OLED:
         # First check to make sure the admin page stack is allowed...
         #  The last page in the normal stack is the admin page so we can simply
         #  test if the screen_enable[lastPage] is '0' and bail out in that case
-        screenList = globals.screen_enable
-        adminPage = len(self.statusPages) - 1       # globals.screen_enable maps statusPages onlu
-        if screenList[adminPage] == 0:
+        # Leaving the admin pages is always allowed (so Exit works even if the
+        #  setting was turned off meanwhile); entering them only when switched on.
+        adminPage = len(self.statusPages) - 1       # globals.screen_enable maps statusPages only
+        if self.pageStack != 'admin' and not page_enabled(adminPage):
             return
 
         with self._curPageLock:
@@ -229,21 +272,19 @@ class OLED:
             if self._curPage not in self.pages:
                 # Always start with the starting page if the screen went off
                 #  or if we were showing the low battery page
-                self._curPage = self.pages[self.STARTING_PAGE_INDEX]
+                if self.pages == self.statusPages:
+                    self._curPage = self.pages[self._startPage()]
+                else:
+                    self._curPage = self.pages[self.STARTING_PAGE_INDEX]
 
-            #need to handle both admin and status page stacks!    
+            #need to handle both admin and status page stacks!
             else:
-                # Figure out what the index of the next valid page
-
                 current_page_index = self.pages.index(self._curPage)
-                page_count = len(self.pages)
-                next_page_index = (current_page_index +1) % page_count
-                if self.pages == self.statusPages:      # we are in the status pages stack
-                    screenList = globals.screen_enable          # valid only for status pages... not admi
-                    while screenList[next_page_index % page_count] == 0:
-                        next_page_index = (next_page_index+1) % page_count   # skip page with value 0  
-                self._curPage = \
-                        self.pages[next_page_index]
+                if self.pages == self.statusPages:      # skip the pages switched off
+                    next_page_index = self._nextEnabled(current_page_index, 1)
+                else:                                   # admin pages are never switched off
+                    next_page_index = (current_page_index + 1) % len(self.pages)
+                self._curPage = self.pages[next_page_index]
 
             # draw the page while holding the lock, so that it doesn't change
             #  underneath us
@@ -256,18 +297,18 @@ class OLED:
             if self._curPage not in self.pages:
                 # Always start with the starting page if the screen went off
                 #  or if we were showing the low battery page
-                self._curPage = self.pages[self.STARTING_PAGE_INDEX]
+                if self.pages == self.statusPages:
+                    self._curPage = self.pages[self._startPage()]
+                else:
+                    self._curPage = self.pages[self.STARTING_PAGE_INDEX]
             else:
                 # move backwards in the page list
-                # Figure out what the index of the next valid page
-                screenList = globals.screen_enable
                 current_page_index = self.pages.index(self._curPage)
-                page_count = len(self.pages)
-                next_page_index = (current_page_index + page_count -1) % page_count
-                while screenList[next_page_index % page_count] == 0:
-                    next_page_index = (next_page_index + page_count -1) % page_count   # skip page with value 0  
-                self._curPage = \
-                        self.pages[next_page_index]
+                if self.pages == self.statusPages:      # skip the pages switched off
+                    next_page_index = self._nextEnabled(current_page_index, -1)
+                else:
+                    next_page_index = (current_page_index - 1) % len(self.pages)
+                self._curPage = self.pages[next_page_index]
 
             # draw the page while holding the lock, so that it doesn't change
             #  underneath us
@@ -308,8 +349,8 @@ class OLED:
         if self._curPage == self.blank_page:
             # nothing to do
             return
-        if self.pageStack == 'wait'or self.pageStack == 'remove_usb' :  # we do not want to reset if we're on a wait screen
-            hat.displayPowerOffTime = time.time() + DISPLAY_TIMEOUT_SECS  # reset
+        if self.pageStack in ('wait', 'remove_usb', 'insertUSB'):  # we do not want to blank a wait screen
+            self.hat.displayPowerOffTime = time.time() + DISPLAY_TIMEOUT_SECS  # reset
             return  # keep waiting
         if self.pageStack != 'status':  # if we're not on the default status pages
             self.pageStack = 'admin'  # this is to prep to return to the status pages

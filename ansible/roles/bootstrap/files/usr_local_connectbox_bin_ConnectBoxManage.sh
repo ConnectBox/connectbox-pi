@@ -416,7 +416,9 @@ function check_password () {
     exit 1;
   fi
 
-  local new_hash=`echo $val | openssl passwd -apr1 -salt $PASSWORD_SALT -stdin`
+  # Hash exactly the value given (same as connectbox-manage); "echo $val" split
+  # and expanded it first.
+  local new_hash=`printf '%s\n' "$val" | openssl passwd -apr1 -salt $PASSWORD_SALT -stdin`
   local password=`cat $PASSWORD_CONFIG`
 
   if [ "admin:$new_hash" = "$password" ]; then
@@ -439,7 +441,9 @@ function set_password () {
     echo "Updating password to '$val'"
   fi
 
-  local new_hash=`echo $val | openssl passwd -apr1 -salt $PASSWORD_SALT -stdin`
+  # Hash exactly the value given (same as connectbox-manage); "echo $val" split
+  # and expanded it first.
+  local new_hash=`printf '%s\n' "$val" | openssl passwd -apr1 -salt $PASSWORD_SALT -stdin`
   echo "admin:$new_hash" > $PASSWORD_CONFIG 2>&1 | logger -t $(basename $0)
 
   if [ ${PIPESTATUS[0]} -eq 0 ]

@@ -121,6 +121,36 @@
             "en": "Speaker notes",
             "text": "ملاحظات المتحدث",
             "source": "added 2026-10-07 (Claude) - native check advised"
+        },
+        "PORTAL_TITLE": {
+            "en": "Connected to {name} Wifi",
+            "text": "متصل بشبكة Wi-Fi {name}",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "PORTAL_GO_TO": {
+            "en": "Go to {url}",
+            "text": "انتقل إلى {url}",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "PORTAL_TYPE_ADDRESS": {
+            "en": "Type {url} in your browser",
+            "text": "اكتب {url} في المتصفح",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "PORTAL_OK": {
+            "en": "OK",
+            "text": "حسنًا",
+            "source": "Android CaptivePortalLogin ok (AOSP main, checked 2026-10-26)"
+        },
+        "PORTAL_NOT_CLOSING": {
+            "en": "If this page does not close after OK,\ntap ⋮ (top right) and choose {option}.",
+            "text": "إذا لم تُغلق هذه الصفحة بعد الضغط على حسنًا،\nاضغط على ⋮ (أعلى اليسار) واختر {option}.",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "PORTAL_USE_AS_IS": {
+            "en": "Use this network as is",
+            "text": "استخدام هذه الشبكة كما هي",
+            "source": "Android CaptivePortalLogin action_use_network (AOSP main, checked 2026-10-26)"
         }
     }
 }

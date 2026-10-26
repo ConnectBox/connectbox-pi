@@ -459,3 +459,13 @@
   args:
     executable: python3
   ignore_errors: yes
+
+# Configuration (admin) pages: Exit goes to the main ConnectBox screen, and
+# Configuration always asks for the password (the login page ends any earlier
+# session; the admin page opens only from another /admin page).  See the script.
+- name: Patch connectbox-admin-ui login and exit behaviour
+  become: true
+  script: patch_admin_login.py
+  args:
+    executable: python3
+  ignore_errors: yes

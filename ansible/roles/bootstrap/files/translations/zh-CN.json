@@ -121,6 +121,36 @@
             "en": "Speaker notes",
             "text": "演讲者备注",
             "source": "added 2026-10-07 (Claude) - native check advised"
+        },
+        "PORTAL_TITLE": {
+            "en": "Connected to {name} Wifi",
+            "text": "已连接到 {name} Wi-Fi",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "PORTAL_GO_TO": {
+            "en": "Go to {url}",
+            "text": "前往 {url}",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "PORTAL_TYPE_ADDRESS": {
+            "en": "Type {url} in your browser",
+            "text": "在浏览器中输入 {url}",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "PORTAL_OK": {
+            "en": "OK",
+            "text": "确定",
+            "source": "Android CaptivePortalLogin ok (AOSP main, checked 2026-10-26)"
+        },
+        "PORTAL_NOT_CLOSING": {
+            "en": "If this page does not close after OK,\ntap ⋮ (top right) and choose {option}.",
+            "text": "如果点按“确定”后此页面没有关闭，\n请点按右上角的 ⋮，然后选择“{option}”。",
+            "source": "added 2026-10-26 (Claude) - native check advised"
+        },
+        "PORTAL_USE_AS_IS": {
+            "en": "Use this network as is",
+            "text": "直接使用此网络",
+            "source": "Android CaptivePortalLogin action_use_network (AOSP main, checked 2026-10-26)"
         }
     }
 }

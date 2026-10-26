@@ -1,3 +1,4 @@
+import io
 #!/usr/bin/env python3
 """
 Test harness for mmiLoader.py refactoring.
@@ -1661,7 +1662,10 @@ def scenario_indexing_page(base):
 		check("S18: English first, then the others", langs[0] == "en" and set(langs) == {"en", "es", "ar"}, str(langs))
 		check("S18: offline language still in English shown once", "sw" not in langs, str(langs))
 		text_now = open(page, encoding="utf-8").read()
-		check("S18: Arabic block right-to-left", '<div class="m" lang="ar" dir="rtl">' in text_now)
+		check("S18: Arabic block right-to-left", '<div class="m" lang="ar" dir="rtl" data-code="ar">' in text_now)
+		check("S18: only the default (English) block shown without a script",
+			  '<div class="m on" lang="en"' in text_now and text_now.count('class="m on"') == 1)
+		check("S18: page picks the phone's language with a script", 'navigator' in text_now and 'data-code' in text_now)
 		check("S18: Spanish message on the page", "Cargando contenido nuevo" in text_now and "ES text" in text_now)
 		check("S18: progress kept after languages added", "26 / 62" in text_now)
 		mmiLoader.remove_indexing_page()
@@ -1747,6 +1751,60 @@ def scenario_old_office(base):
 	content_dir = make_content_dir(base)
 	os.makedirs(os.path.join(content_dir, "en", "html"), exist_ok=True)
 	mmiLoader.set_page_strings_config(None)
+
+	# Content on a mounted key vs on the SD card (front panel "copy from USB")
+	def present_seq(mounts, isdir=True):
+		mmiLoader._usb0_was_mount = None
+		out = []
+		with mock.patch.object(mmiLoader.os.path, "ismount", side_effect=mounts), \
+			 mock.patch.object(mmiLoader.os.path, "isdir", return_value=isdir):
+			for _ in mounts:
+				out.append(mmiLoader.usb_is_present())
+		mmiLoader._usb0_was_mount = None
+		return out
+	check("S21: key mounted at start -> present while mounted", present_seq([True, True]) == [True, True])
+	check("S21: key pulled out during the run -> stops", present_seq([True, False]) == [True, False])
+	check("S21: content on the SD card (no key) -> indexes it", present_seq([False, False, False]) == [True, True, True])
+	check("S21: SD-card content folder gone -> stops", present_seq([False, False], isdir=False) == [False, False])
+
+	# Stale busy flag: only another real indexing run counts
+	def running_with(cmdlines):
+		files = {str(1000 + i): c for i, c in enumerate(cmdlines)}
+		real_open = open
+		def fake_open(path, *a, **k):
+			if path.startswith("/proc/") and path.endswith("/cmdline"):
+				return io.BytesIO(files[path.split("/")[2]].encode())
+			return real_open(path, *a, **k)
+		with mock.patch.object(mmiLoader.os, "listdir", return_value=list(files) + ["self"]), \
+			 mock.patch("builtins.open", side_effect=fake_open):
+			return mmiLoader.other_loader_running()
+	check("S21: no other loader -> flag is stale", running_with(["/usr/bin/python3\0/usr/bin/somethingelse.py\0"]) is False)
+	check("S21: another indexing run -> not stale", running_with(["/usr/bin/python3\0/usr/local/connectbox/bin/mmiLoader.py\0"]) is True)
+	check("S21: a --clear run does not count", running_with(["/usr/bin/python3\0/usr/local/connectbox/bin/mmiLoader.py\0--clear\0"]) is False)
+	check("S21: a shell mentioning mmiLoader does not count", running_with(["bash\0-c\0python3 mmiLoader.py\0"]) is False)
+
+	# Language codes (top-50 list): ISO 639-3 folders map to the translation
+	# file and the codes phones report
+	lc = {"arb": {"english": ["Standard Arabic"]}, "ar": {"english": ["Arabic"]},
+		  "pes": {"english": ["Iranian Persian"]}, "fa": {"english": ["Persian"]},
+		  "spa": {"english": ["Spanish"]}, "es": {"english": ["Spanish"]},
+		  "tgl": {"english": ["Tagalog"]}, "tl": {"english": ["Tagalog"]}}
+	tc = mmiLoader.translation_code
+	check("S22: arb uses the Arabic file", tc("arb", lc) == "ar")
+	check("S22: pes uses the Farsi file", tc("pes", lc) == "fa")
+	check("S22: Mandarin, Wu, Jin, Hakka use Simplified Chinese",
+		  [tc(c, lc) for c in ("cmn", "wuu", "cjy", "hak", "zh")] == ["zh-CN"] * 5)
+	check("S22: Cantonese uses Hong Kong, Min Nan Taiwan Traditional", tc("yue", lc) == "zh-HK" and tc("nan", lc) == "zh-TW")
+	check("S22: Egyptian Arabic and Western Punjabi keep their own files", tc("arz", lc) == "arz" and tc("pnb", lc) == "pnb")
+	check("S22: name match still works (spa -> es)", tc("spa", lc) == "es")
+	check("S22: right-to-left: arb, pes, arz, pnb, urd-style codes",
+		  all(mmiLoader.is_rtl_language(c, lc) for c in ("arb", "pes", "arz", "pnb", "ar", "fa")) and
+		  not mmiLoader.is_rtl_language("spa", lc))
+	pc = mmiLoader.phone_codes
+	check("S22: languages.json codes: folder first, then phone codes",
+		  pc("arb", lc) == ["arb", "ar"] and pc("yue", lc) == ["yue", "zh-HK"] and pc("arz", lc) == ["arz", "ar-EG"]
+		  and pc("tgl", lc) == ["tgl", "tl", "fil"] and pc("es", lc) == ["es"] and pc("zh-CN", lc) == ["zh", "zh-CN"],
+		  str([pc(c, lc) for c in ("arb", "yue", "arz", "tgl", "es", "zh-CN")]))
 
 	# OLED status text: Latin-1 accents kept, other scripts never sent as text
 	check("S21: display keeps Spanish / Portuguese accents",
