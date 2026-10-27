@@ -28,7 +28,7 @@ To force a full re-index on a USB key that already has `saved.zip`, delete `save
 
 ### Visitors during indexing
 
-A full index rebuilds the menus from scratch (minutes on a large USB). While it runs, anyone opening the menu gets a small **"Loading new content"** page with a progress count ("340 / 778") instead of an empty menu. The visitor's language is not known before the menu loads, so the message is shown in every language on the USB (English first), using the same translations as the menus (`INDEXING_TITLE`, `INDEXING_TEXT`: shipped for Arabic, Spanish, Farsi, Portuguese and Chinese, looked up online for other languages when the box is online, otherwise English). The page refreshes itself every 20 seconds (to `/?reload=<time>`, an address no browser has cached) and gives way to the menu as soon as the menus are written. The app's start page is sent with `Cache-Control: no-cache`, so browsers check with the box instead of reusing an old copy. mmiLoader writes the page to `/tmp/connectbox-indexing.html` and removes it at the end (also on any exit, on SIGTERM, by `--clear`, and at reboot as `/tmp` is tmpfs); nginx serves it for `/` and `/index.html` only while the file exists, so admin, chat, Kiwix and media keep working. A `saved.zip` restore takes seconds and shows no page.
+A full index rebuilds the menus from scratch (minutes on a large USB). While it runs, anyone opening the menu gets a small **"Loading new content"** page with a progress count ("340 / 778") instead of an empty menu. The page carries the message in every language on the USB but shows only one: the phone's own language (its browser language setting, the same one it sends as Accept-Language) when the USB has that language, otherwise the box's default language. It uses the same translations as the menus (`INDEXING_TITLE`, `INDEXING_TEXT`; see Interface translations). The page refreshes itself every 20 seconds (to `/?reload=<time>`, an address no browser has cached) and gives way to the menu as soon as the menus are written. The app's start page is sent with `Cache-Control: no-cache`, so browsers check with the box instead of reusing an old copy. mmiLoader writes the page to `/tmp/connectbox-indexing.html` and removes it at the end (also on any exit, on SIGTERM, by `--clear`, and at reboot as `/tmp` is tmpfs); nginx serves it for `/` and `/index.html` only while the file exists, so admin, chat, Kiwix and media keep working. A `saved.zip` restore takes seconds and shows no page.
 
 ### OLED display messages during indexing
 
@@ -37,7 +37,8 @@ A full index rebuilds the menus from scratch (minutes on a large USB). While it 
 | `Checking USB Permissions` | Linux-formatted USB (ext4 etc.): making files readable by the web server |
 | `Loading USB` | Checking for `saved.zip` |
 | `Unzipping USB` | Restoring from `saved.zip` (fast path) |
-| `Indexing USB` | Full index walk in progress |
+| `Indexing` | Full index walk starting (files not yet counted) |
+| `Indexing 45%` / `of 778 files` | Full index walk in progress: how far it has got (file names are not shown) |
 | `Creating ZIP File` | Compressing a web archive directory |
 | `Highly Complex Filesystem` | Complex HTML directory structure detected |
 
@@ -51,13 +52,15 @@ Regional language variants (e.g. `zh-CN`, `pt-BR`) on the USB are handled by ali
 
 Language folders and `.language` may use 2- or 3-letter codes; `per` and `fa` are both Farsi, `ara` and `ar` both Arabic. Right-to-left languages (Arabic, Farsi, Hebrew, Urdu, ...) are flagged `"rtl": true` in `languages.json`, which flips the interface. The language button on the home page shows the active language's own name (e.g. فارسی).
 
+The captive portal page (the "Connected to ... Wifi" page a phone shows when it joins) follows the same rule: it is shown in the first of the phone's languages that the box has, otherwise in the box's default language, otherwise English, using the `PORTAL_*` strings in the same translation files.
+
 A first-time visitor starts in the first of their browser's preferred languages that the box has (exact match such as `pt-BR`, otherwise the same base language, `pt`); if the box has none of them, the default language from `languages.json` is used. A language picked with the language button is remembered and always wins.
 
 ### Interface translations
 
 The app's own text (section titles, media types, the footer's Configuration link, chat labels) comes from each language's `interface.json`. Upstream only has English, so mmiLoader writes each language's file from `/usr/local/connectbox/translations/<code>.json`:
 
-1. Reviewed files are shipped by Ansible for Farsi, Arabic, Spanish, Portuguese and Chinese (`ansible/roles/bootstrap/files/translations/`).
+1. Files are shipped by Ansible (`ansible/roles/bootstrap/files/translations/`) for 46 languages covering the 50 most spoken languages, so a box that is never online still has them: Amharic, Arabic, Egyptian Arabic, Bengali, Bhojpuri, Burmese, Chinese (Simplified, Hong Kong Traditional, Taiwan Traditional), Farsi, French, German, Gujarati, Hausa, Hindi, Igbo, Indonesian, Italian, Japanese, Javanese, Kannada, Korean, Maithili, Malayalam, Marathi, Nigerian Pidgin, Odia, Oromo, Portuguese, Romanian, Russian, Sindhi, Spanish, Sundanese, Swahili, Tagalog, Tamil, Telugu, Thai, Turkish, Ukrainian, Urdu, Uzbek, Vietnamese, Western Punjabi (Shahmukhi) and Yoruba. Mandarin, Wu, Jin and Hakka folders use Simplified Chinese, Cantonese uses Hong Kong Traditional and Min Nan uses Taiwan Traditional. Strings added on 2026-10-26 are marked "native check advised" in the files; please have a native speaker check them.
 2. For any other language, if the box has internet, the English text is translated online (MyMemory) and saved there, so it keeps working offline afterwards.
 3. With no internet, English is shown and the lookup is retried on the next USB insert.
 
@@ -69,11 +72,11 @@ Every page inside web content (HTML folders) and ZIM files shows a small round h
 
 ### ZIM files (offline websites)
 
-Put `.zim` files (from https://library.kiwix.org) in a language folder on the USB, e.g. `content/en/wikipedia_en_100_2025-01.zim`. Each one becomes a card in that language with the ZIM's own title and icon (a dark icon is put on a white background so it shows on the dark cards; an empty one is replaced by the standard web icon), and opens in Kiwix; a ZIM tagged with several languages also appears in its other languages that are on the box. A ZIM placed directly in `content/` (not in a language folder) gets no card. TED ZIMs open in the language of the menu they were opened from instead of TED's English default; other multi-language ZIMs open in their own default language. Search inside a ZIM is Kiwix's own. Files over 4 GB need an exFAT or ext4 USB. After adding ZIMs to a USB that already has `saved.zip`, delete `saved.zip` so the USB is re-indexed.
+Put `.zim` files (from https://library.kiwix.org) in a language folder on the USB, e.g. `content/en/wikipedia_en_100_2025-01.zim`. Each one becomes a card in that language with the ZIM's own title and icon (a dark icon is put on a white background so it shows on the dark cards; an empty one is replaced by the standard web icon), and opens in Kiwix; a ZIM tagged with several languages also appears in its other languages that are on the box. A ZIM placed directly in `content/` (not in a language folder) gets no card. TED ZIMs open in the language of the menu they were opened from instead of TED's English default; other multi-language ZIMs open in their own default language. Search inside a ZIM is Kiwix's own. Files over 4 GB need an NTFS, exFAT or ext4 USB. After adding ZIMs to a USB that already has `saved.zip`, delete `saved.zip` so the USB is re-indexed.
 
 ### Word documents (.docx)
 
-Word files on the USB are shown as web pages, so phones without an office app can read them. When the USB is indexed, mmiLoader converts each `.docx` with [mammoth](https://github.com/mwilliamson/python-mammoth) (installed by Ansible) into `<lang>/html/<slug>/index.html`, with its images saved beside it. Like a PDF, the card opens a details page with a book button, which opens that page (with the home button) in the same tab, and a download button for the original `.docx`. Text, headings, lists, tables, images and links are kept; exact layout is not (headers and footers, text boxes, columns). A folder of Word files is still a collection, and each document has its own book and download buttons. Old `.doc` files and any `.docx` that cannot be converted stay download-only. For documents whose layout matters, save them as PDF before copying them to the USB.
+Word files on the USB are shown as web pages, so phones without an office app can read them. When the USB is indexed, mmiLoader converts each `.docx` with [mammoth](https://github.com/mwilliamson/python-mammoth) (installed by Ansible) into `<lang>/html/<slug>/index.html`, with its images saved beside it. Like a PDF, the card opens a details page with a book button, which opens that page (with the home button) in the same tab, and a download button for the original `.docx`. Text, headings, lists, tables, images and links are kept; exact layout is not (headers and footers, text boxes, columns). A folder of Word files is still a collection, and each document has its own book and download buttons. Old `.doc` files are converted too, with [antiword](https://packages.debian.org/bullseye/antiword) (text, headings, bold/italic/underline, lists shown as bullets, tables; no pictures; files under about 300 characters of text stay download-only). A `.doc` with a PDF of the same name in the same folder (any letter case) is not converted: the PDF is the one to read and the `.doc` stays a download. A `.docx` that cannot be converted stays download-only. For documents whose layout matters, save them as PDF before copying them to the USB.
 
 ### Spreadsheets (.xlsx, .xls)
 
@@ -81,7 +84,7 @@ Spreadsheets are shown as web pages the same way as Word files: mmiLoader reads 
 
 ### Presentations (.pptx)
 
-PowerPoint files are shown as web pages too, read with Python's standard library (no extra package): one numbered section per visible slide with its title, text (bullet levels kept), pictures, tables and the speaker notes under a translated "Speaker notes" label (`SLIDE_NOTES` in the translation files), and slide-number links at the top. The slide design (backgrounds, positions, colours, animations, charts, diagrams) is not kept, so for decks where the look matters save them as PDF in PowerPoint before copying them to the USB. Old `.ppt` files stay download-only. The stock file-type table had no PowerPoint entries, so Ansible adds `.pptx` and `.ppt` to `types.json`.
+PowerPoint files are shown as web pages too, read with Python's standard library (no extra package): one numbered section per visible slide with its title, text (bullet levels kept), pictures, tables and the speaker notes under a translated "Speaker notes" label (`SLIDE_NOTES` in the translation files), and slide-number links at the top. The slide design (backgrounds, positions, colours, animations, charts, diagrams) is not kept, so for decks where the look matters save them as PDF in PowerPoint before copying them to the USB. Old `.ppt` files are shown the same way, read with olefile and mmiLoader's own PowerPoint 97-2003 record reader (slide text with bullet levels and speaker notes; no pictures; tables one line per cell; password-protected, PowerPoint 95 and damaged files stay download-only), unless a PDF of the same name is in the same folder. The stock file-type table had no PowerPoint entries, so Ansible adds `.pptx` and `.ppt` to `types.json`.
 
 ### Download sizes
 
@@ -89,13 +92,21 @@ Every download button (details page and the viewers' top bar) shows the file's s
 
 ### USB file systems
 
-`PxUSBm.py` is the only USB mounter (it polls `lsblk` every ~3 s). It mounts FAT32, exFAT and NTFS sticks, and Linux file systems (ext2/3/4, xfs, btrfs, f2fs), including sticks formatted on the whole disk with no partition table (`mkfs.ext4 /dev/sdX`). Use ext4 or exFAT for files over 4 GB (FAT32's limit).
+`PxUSBm.py` is the only USB mounter (it polls `lsblk` every ~3 s). It mounts FAT32, exFAT and NTFS sticks, and Linux file systems (ext2/3/4, xfs, btrfs, f2fs), including sticks formatted on the whole disk with no partition table (`mkfs.ext4 /dev/sdX`). Use NTFS, exFAT or ext4 for files over 4 GB (FAT32's limit). NTFS is read through ntfs-3g, which works but uses more of the box's CPU than FAT; on Windows, eject the stick with "Safely Remove" before pulling it out, as a stick left marked as in use may not mount cleanly.
 
 On Linux file systems, files keep the owner and permissions of the computer that wrote them, which can stop the web server reading them (cards show but open with 403). mmiLoader therefore adds read permission for everyone (like `chmod -R a+rX`, skipping symlinks and never adding execute to files) before indexing. Only files missing permission are changed, so re-inserting the same stick is quick.
 
 ### Starting the indexer and single-instance guard
 
-`PxUSBm.py` starts mmiLoader on the poll after `/media/usb0` is mounted, in the transient systemd unit `connectbox-loader`, and stops it when the USB is removed. The sentinel `/tmp/.usb0_indexed` stops it re-running on every poll. mmiLoader refuses to start while a run is in progress, marked by `/tmp/creating_menus.txt` (removed at the end of a run, when the run is stopped, and by `--clear`).
+`PxUSBm.py` starts mmiLoader on the poll after `/media/usb0` is mounted, in the transient systemd unit `connectbox-loader`, and stops it when the USB is removed. The sentinel `/tmp/.usb0_indexed` stops it re-running on every poll. mmiLoader refuses to start while another run is in progress, marked by `/tmp/creating_menus.txt` (removed at the end of a run, when the run is stopped or exits early, and by `--clear`). If the file is there but no other mmiLoader is running, it is a leftover and is removed. The same file is the front panel's status text; the panel also removes it if it has not changed for 15 seconds and no mmiLoader is running, so it can never stay on "Indexing" with nothing running.
+
+### The box's own content (internal storage)
+
+The front panel's **Copy from USB** copies a stick's `content/` to the box's SD card (`/media/usb0/content`), so the box keeps serving it without a stick. A stick plugged in later is shown instead of the box's own content; when it is pulled out the box re-indexes and goes back to its own content. While copying, the panel shows `Copying 45%` and the size; after a copy or erase that changes the content, it shows the indexing progress and then a single checkmark.
+
+## Configuration (admin) login
+
+The Configuration link always asks for the admin password, and the login does not last: leaving the Configuration page (Exit, Back, another link, closing the tab) logs out, and Exit goes to the main ConnectBox screen. A session also ends after 5 minutes without any admin activity. There is no long-lived login cookie, because a phone left logged in as admin can be dangerous in some countries. The login page does not show the default password.
 
 ## OpenWell — content packages from a server
 
@@ -142,12 +153,12 @@ See [docs/administration.md](docs/administration.md)
 
 PDF copies of the current user documents (the Word originals are kept outside the repository):
 
-- [What is a ConnectBox (V8)](docs/manuals/What-is-a-ConnectBox-V8.pdf): a short overview
-- [ConnectBox Specification (V9)](docs/manuals/ConnectBox-Specification-V9.pdf): features and hardware
-- [Getting Started (V10)](docs/manuals/ConnectBox-GettingStarted-V10.pdf): setting up a unit, adding media, the admin pages
-- [Supported File Types (V3)](docs/manuals/ConnectBox-Supported-File-Types-V3.pdf): which files open on the ConnectBox and which are download-only
-- [Translations Guide](docs/manuals/ConnectBox-Translations-Guide.pdf): how the menu wording is translated and how to correct it
-- [Software Specification (V1)](docs/manuals/ConnectBox-Software-Specification-V1.pdf): what the code does - components, provisioning, USB pipeline, content model, interface patches, invariants
+- [What is a ConnectBox (V9)](docs/manuals/What-is-a-ConnectBox-V9.pdf): a short overview
+- [ConnectBox Specification (V10)](docs/manuals/ConnectBox-Specification-V10.pdf): features and hardware
+- [Getting Started (V11)](docs/manuals/ConnectBox-GettingStarted-V11.pdf): setting up a unit, adding media, the front panel, the admin pages
+- [Supported File Types (V4)](docs/manuals/ConnectBox-Supported-File-Types-V4.pdf): which files open on the ConnectBox and which are download-only
+- [Translations Guide (V3)](docs/manuals/ConnectBox-Translations-Guide-V3.pdf): the 46 shipped languages, how the menu and captive portal wording is translated and how to correct it
+- [Software Specification (V2)](docs/manuals/ConnectBox-Software-Specification-V2.pdf): what the code does - components, provisioning, USB pipeline, content model, interface patches, front panel, invariants
 
 # Developing the ConnectBox Software
 

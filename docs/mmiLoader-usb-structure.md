@@ -12,7 +12,7 @@ structure it recognises and how each one is rendered.
 |--------|-------|-------|
 | FAT32 | Yes | Files must be under 4 GB |
 | exFAT | Yes | No 4 GB limit |
-| NTFS | Yes | |
+| NTFS | Yes | No 4 GB limit. Read through ntfs-3g (more CPU than FAT). On Windows use "Safely Remove" before pulling the stick out |
 | ext4 (and ext2/3, xfs, btrfs, f2fs) | Yes | Partitioned or whole-disk (`mkfs.ext4 /dev/sdX`) |
 
 Put everything under a top-level `content/` folder.  On Linux formats the box makes the
@@ -49,6 +49,12 @@ language directory exists.
 | IETF regional tag | `zh-CN`, `pt-BR` | Base-code symlink (`zh` → `zh-CN`) created automatically so the frontend can resolve URLs |
 
 Codes longer than 3 characters that do not contain `-` are rejected.
+
+Languages with no two-letter code use their three-letter code, for example `arz`
+(Egyptian Arabic), `pnb` (Western Punjabi), `pcm` (Nigerian Pidgin), `bho` (Bhojpuri).
+Chinese varieties can use their own codes; the box's interface text then uses the
+matching written form: `cmn`, `wuu`, `cjy`, `hak` → Simplified Chinese, `yue`
+(Cantonese) → Hong Kong Traditional, `nan` (Min Nan) → Taiwan Traditional.
 
 ### 1b. Flat USB (no language folders)
 
@@ -131,13 +137,18 @@ Language root directories are **exempt** — they may contain an `index.html`
 alongside PDFs/videos without being treated as a web app.
 
 **Frontend**: shown as a tile with a `www.png` icon; tapping opens the web app
-inside the in-app browser.  A zip archive of the whole directory is created on
-the USB (`.webarchive-<lang>-<dir>.zip`) so users can also download it.
+inside the in-app browser.  If `content/` holds a `.webcompress` file, a zip
+archive of the whole directory is also created on the USB
+(`.webarchive-<lang>-<dir>.zip`) so users can download it in one file.
 
 All files inside the web content directory are suppressed from the per-file loop
 (added to `webpaths`); only the `index.html` / `index.htm` generates a JSON entry.
 
-Add `.NoWebcompress` to `content/` to skip the zip step for all web directories.
+The zip is off unless you ask for it: add an empty `.webcompress` file (any letter
+case) to `content/` to turn it on.  Zipping a web folder full of videos takes many
+minutes per folder and doubles the space it uses on the USB.  A zip made on an
+earlier run is kept and still offered.  (`.NoWebcompress`, which used to turn the
+zip off, is no longer needed and is ignored.)
 
 ```
 content/
@@ -245,13 +256,15 @@ inside a collection folder, and opens in the built-in Kiwix reader, which has it
 own search.  A ZIM tagged with several languages is also listed in its other
 languages that are on the USB.  ZIM cards have no download button.
 
-A ZIM must be inside a language folder.  One placed directly in `content/` is
+Put each ZIM in one language folder only - for a multi-language ZIM, the folder of its
+main language; it is listed in its other languages automatically.  A separate `zim/`
+folder does not work.  A ZIM must be inside a language folder.  One placed directly in `content/` is
 registered with Kiwix but gets no card, so visitors cannot find it.  TED ZIMs
 (`ted_*`) have their own language picker; a TED card opens it in the language of
 the menu it was opened from (if the ZIM has that language), not TED's English
 default.  Other multi-language ZIMs open in whatever language they default to.
 
-Large ZIMs: FAT32 cannot hold files over 4 GB - use exFAT or ext4.  Remember to
+Large ZIMs: FAT32 cannot hold files over 4 GB - use NTFS, exFAT or ext4.  Remember to
 delete `saved.zip` after adding ZIM files to a USB that has one.
 
 ---
@@ -262,7 +275,9 @@ delete `saved.zip` after adding ZIM files to a USB that has one.
 columns are not kept, so save layout-heavy documents as PDF instead.  Like a PDF,
 a Word card opens a details page with the book (open) and download buttons; the
 download button gives the original `.docx`.  Old `.doc`
-files stay download-only.
+files are shown as web pages too (text, headings, lists and tables; no pictures),
+unless a PDF with the same name is in the same folder: then the PDF is shown and
+the `.doc` is a download.
 
 ### 2i. Presentations
 
@@ -272,7 +287,9 @@ speaker notes (under a translated "Speaker notes" label); hidden slides are left
 out.  The slide design is not kept (backgrounds, positions, colours, animations,
 charts, diagrams), so for decks where the look matters, save them as PDF in
 PowerPoint (File > Save As > PDF) before copying them to the USB - the PDF reader
-shows every slide exactly.  Old `.ppt` files stay download-only.
+shows every slide exactly.  Old `.ppt` files are shown the same way (slide text and
+speaker notes; no pictures), unless a PDF with the same name is in the same folder:
+then the PDF is shown and the `.ppt` is a download.
 
 ### 2j. Spreadsheets
 
@@ -344,9 +361,8 @@ These hidden files in `content/` (or USB root) modify mmiLoader's behaviour.
 |------|----------|--------|
 | `.language` | `content/` | Sets the language code for a flat (no language dirs) USB (file name in any case) |
 | `.compress` | `content/` | Auto-creates a downloadable zip of every multi-file directory |
-| `.NoWebcompress` | `content/` | Suppresses zip creation for all web content directories |
+| `.webcompress` | `content/` | Creates a downloadable zip of each web content directory (off without it) |
 | `saved.zip` | `content/` or USB root | Fast-load cache — mmiLoader extracts it and exits immediately |
-| `.indexed.idx` | `content/` | Marker written after first complex-directory index run |
 | `.thumbnail-<lang>-<slug>.png` | `content/` root | Cached thumbnail; re-checked for black frames on each run |
 
 Delete `saved.zip` to force a full re-index.  Delete individual `.thumbnail-*` files

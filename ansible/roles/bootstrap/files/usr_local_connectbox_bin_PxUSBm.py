@@ -996,7 +996,9 @@ def check_iwconfig(b):
   wlanx = "wlan"+str(b)
 # check to see if that did it...
   cmd = "iwconfig"
-  rv = subprocess.check_output(cmd)
+  # stderr discarded: iwconfig complains "no wireless extensions" about lo and
+  # eth0 on every call, which only filled the journal.
+  rv = subprocess.check_output(cmd, stderr=subprocess.DEVNULL)
   rvs = rv.decode("utf-8").split(wlanx)
 
   if (len(rvs) >= 2):       # rvs is an array split on wlanx
@@ -2364,7 +2366,14 @@ if __name__ == "__main__":
     except:
         delay = 30
 
-    DEBUG = 4
+    # Debug printing (to the journal): off unless PXUSBM_DEBUG is set (1
+    # networking, 2 mount summary, 3-4 mount detail).  It used to be fixed at
+    # 4, which printed about 600 lines a minute and pushed everything else out
+    # of the box's 50 MB RAM log within a couple of hours.
+    try:
+        DEBUG = int(os.environ.get("PXUSBM_DEBUG", "0"))
+    except ValueError:
+        DEBUG = 0
     SSID=""
     connectbox_scroll=False
     first_time=True
@@ -2647,11 +2656,14 @@ if __name__ == "__main__":
           # because that variant uses a MySQL database for content serving.
           if (int(NoMountUSB) <= 0):
              if DEBUG > 3: print("PxUSBm Going to start the mount Check")
-             logger.info("Doing a mount check "+str(x) + " time is " +time.asctime())
+             logger.debug("Doing a mount check "+str(x) + " time is " +time.asctime())
+             if x % 200 == 0:                  # about every 10 minutes: a sign of life in the log
+                 logger.info("PxUSBm running, mount check " + str(x) + " time is " + time.asctime())
              mountCheck()                   # Do a usb check to see if we have any inserted or removed.
              check_internal_content()       # No key at usb0: show the box's own content
              if connectbox_scroll: dbCheck()
-          else: logger.info("Mount checks are susspended due to  Brand setting "+ str(x) + " time is " + time.asctime())
+          elif x % 200 == 0:                # suspended (e.g. during a front-panel copy): note it now and then
+              logger.info("Mount checks are suspended by usb0NoMount in brand.j2, check " + str(x) + " time is " + time.asctime())
 
 
 
@@ -2662,7 +2674,7 @@ if __name__ == "__main__":
             # escalating steps: ifdown/ifup -> hostapd restart -> full getNetworkClass().
             AP = get_AP()
             AP_up = check_iwconfig(AP)  # returns 1 if up
-            logger.info("checking AP is up "+str(x)+ " time is "+time.asctime())
+            logger.debug("checking AP is up "+str(x)+ " time is "+time.asctime())
             if (not AP_up):
               logger.info("AP was not up and didn't  show correctly")
               try:
@@ -2679,15 +2691,15 @@ if __name__ == "__main__":
                      logging.info("Still not up so having to resort to getNetworkClass")
                      getNetworkClass(1)       # try to fix the problem (shouldn't get here normally)
 
-            logger.info("checking  eth0 " +str(x)+ " time is "+time.asctime())
+            logger.debug("checking  eth0 " +str(x)+ " time is "+time.asctime())
             check_eth0()      # make sure eth0 is up
 
-            logger.info("checkinng Client IF " + str(x) + " time is "+time.asctime())
+            logger.debug("checkinng Client IF " + str(x) + " time is "+time.asctime())
             CI = get_CI()
             check_stat_CI(CI)
 
           if ((x % 20)==0):
-            logger.info("PxUSBm Going to do a Network check " + str(x) + " time stamp " + time.asctime())
+            logger.debug("PxUSBm Going to do a Network check " + str(x) + " time stamp " + time.asctime())
 
             # wpa_supplicant country code fix -- every ~60 seconds.
             # Some builds ship with an empty country= line in wpa_supplicant.conf.
@@ -2711,7 +2723,7 @@ if __name__ == "__main__":
           # network block above so it runs even if the x%20 network block is skipped
           # due to a future refactor -- PM2 being down is independently critical.
           if ((x % 20)==0):
-              logger.info("Checking PM2 status " + str(x) + " time is " + time.asctime())
+              logger.debug("Checking PM2 status " + str(x) + " time is " + time.asctime())
               check_PM2()
 
           # Increment loop counter; wrap at 1 trillion to prevent overflow on

@@ -3035,10 +3035,15 @@ def handle_web_content(path, thisDirectory, language, dirs, files, contentDirect
 	Actions taken:
 	  1. Symlink the directory into <contentDirectory>/<language>/html/ so the
 	     web server can serve it.
-	  2. Create a .webarchive-<lang>-<subpath>.zip on the USB if one does not
-	     already exist and a .NoWebcompress flag file is absent.  The zip lets
-	     users download the whole web app for offline use.
-	  3. Symlink the zip into <contentDirectory>/<language>/html/<dir>.zip.
+	  2. Create a .webarchive-<lang>-<subpath>.zip on the USB only when the
+	     USB's content/ folder holds a .webcompress flag file (any letter case)
+	     and the zip does not exist yet.  The zip lets users download the whole
+	     web app in one file, but on a USB with large web folders (videos) it
+	     took many minutes per folder and doubled the space they use, so it is
+	     opt-in (Kirk, 2026-10-27; it used to be opt-out with .NoWebcompress,
+	     which is now ignored).
+	  3. Symlink the zip into <contentDirectory>/<language>/html/<dir>.zip when
+	     there is one (made now or on an earlier run).
 
 	Language root directories are excluded: they can mix HTML with other media
 	types and must not have their non-HTML files suppressed.
@@ -3063,7 +3068,10 @@ def handle_web_content(path, thisDirectory, language, dirs, files, contentDirect
 	print("subpath is now: " + subpath)
 
 	archive_name = (".webarchive-" + language + "-" + subpath + ".zip").replace("/", "-").replace('--', '-')
-	if not os.path.isfile(mediaDirectory + "/" + archive_name) and not os.path.isfile(mediaDirectory + '/.NoWebcompress'):
+	if os.path.isfile(mediaDirectory + "/" + archive_name):
+		print("	webarchive already exists: " + archive_name)
+		x = 1
+	elif has_flag_file(mediaDirectory, ".webcompress"):
 		update_display('Creating ZIP' + chr(10) + "File")
 		logging.info("Trying to archive a web file set for " + thisDirectory)
 		try:
@@ -3079,8 +3087,7 @@ def handle_web_content(path, thisDirectory, language, dirs, files, contentDirect
 			print("	Error making web archive")
 			x = 0
 	else:
-		print(("webarchive already exists " + archive_name + " or .NoWebcompress in root"))
-		x = 1
+		print("	No web archive made (no .webcompress in content/)")
 
 	update_display('Indexing USB')
 
@@ -3101,6 +3108,15 @@ def handle_web_content(path, thisDirectory, language, dirs, files, contentDirect
 		directoryType = "html"
 
 	return directoryType, webpaths, dirs, SkipArchive
+
+
+def has_flag_file(folder, name):
+	"""True if folder holds a file called name, in any letter case (.WebCompress)."""
+	try:
+		return any(f.lower() == name.lower() and os.path.isfile(os.path.join(folder, f))
+				   for f in os.listdir(folder))
+	except OSError:
+		return False
 
 
 def handle_android_content(path, thisDirectory, language, dirs, files, contentDirectory, mediaDirectory,
@@ -3977,12 +3993,10 @@ def mmiloader_code():
 	for path in complex_lst:
 		process_dir(path, path, "recursive")
 	print("Finished the complex directory recursion")
-	if complex_lst:
-		run_cmd("touch " + os.path.join(mediaDirectory, ".indexed.idx"))
+	# (A .indexed.idx marker used to be written on the USB here; nothing read
+	# it, so it is no longer made.  Kirk, 2026-10-27.)
 
 	update_display("Indexing USB")
-
-	indexed_before = os.path.isfile(os.path.join(mediaDirectory, ".indexed.idx"))
 
 	# Phase 8: main content walk
 	for path, dirs, files in os.walk(mediaDirectory):
