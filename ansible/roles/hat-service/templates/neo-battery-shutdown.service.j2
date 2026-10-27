@@ -5,6 +5,9 @@ After=network.target
 
 [Service]
 Type=simple
+# Print messages as they happen, so the journal shows events in order
+# (buffered output only reached the log when the service exited)
+Environment=PYTHONUNBUFFERED=1
 ExecStart={{ hat_service_virtualenv_dir }}/bin/neo_batterylevelshutdown
 Restart=on-failure
 

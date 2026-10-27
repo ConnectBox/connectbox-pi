@@ -44,29 +44,65 @@ def display_text(message):
 
 def processing_message(filename, language):
 	"""
-	The OLED line for the file being indexed: its name when the display can
-	show it, otherwise (Chinese, Arabic ... names) the language folder and the
-	file's number out of the total, e.g. "Processing\nzh-CN 37/412", rather
-	than a row of question marks.
+	The OLED text while files are indexed: how far it has got, not the file's
+	name, e.g. "Indexing 45%\nof 778 files" (two lines of at most 15
+	characters).  The file and language are not shown (names were often too
+	long or in a script the display cannot draw).  Before the files are
+	counted it is just "Indexing".
 	"""
-	try:
-		filename.encode('latin-1')
-		return "Processing: " + filename
-	except UnicodeEncodeError:
-		pass
-	position = ""
-	if _indexing["total"]:
-		position = " %d/%d" % (min(_indexing["done"] + 1, _indexing["total"]), _indexing["total"])
-	return "Processing\n" + display_text(language)[:15 - len(position)] + position
+	done, total = _indexing["done"], _indexing["total"]
+	if not total:
+		return "Indexing"
+	current = min(done + 1, total)              # this file is being processed now
+	percent = int(100 * current / total)
+	second = "of {:,} files".format(total)
+	if len(second) > 15:
+		second = "of {:,}".format(total)
+	return "Indexing %d%%\n%s" % (percent, second)
+
+
+# The front panel's status file: while it exists the panel shows its text as
+# "indexing".  _status_written is the text this run last wrote to it.
+STATUS_FILE = "/tmp/creating_menus.txt"
+_status_written = None
 
 
 def update_display(message):
-	# Write the hat service's status text (see display_text)
+	# Write the hat service's status text (see display_text).  Once mmiLoader
+	# has been told to stop (SIGTERM) nothing more is written: the handler has
+	# removed the file, and writing it again left the panel showing
+	# "Indexing USB" for good after a copy stopped an index (.200, 2026-10-27).
+	global _status_written
+	if _shutdown_requested:
+		return
 	try:
-		with open("/tmp/creating_menus.txt", "w", encoding='utf-8') as f:
-			f.write(display_text(message))
+		text = display_text(message)
+		with open(STATUS_FILE, "w", encoding='utf-8') as f:
+			f.write(text)
+		_status_written = text
 	except Exception as e:
 		logging.debug(f"Ignored exception: {e}")
+
+
+def remove_own_status():
+	"""
+	On any exit: remove the front panel's status file if it still holds what
+	this run wrote, so a run that ends early (USB removed, error, stopped)
+	never leaves the panel showing "indexing".  A file this run did not write
+	is left alone.
+	"""
+	if _status_written is None:
+		return
+	try:
+		with open(STATUS_FILE, encoding='utf-8') as f:
+			if f.read() != _status_written:
+				return
+		os.remove(STATUS_FILE)
+	except OSError:
+		pass
+
+
+atexit.register(remove_own_status)
 
 
 def other_loader_running():
@@ -100,7 +136,7 @@ def _sigterm_handler(signum, frame):
 	print("Received SIGTERM -- USB removed or service stopped, exiting cleanly")
 	_shutdown_requested = True
 	try:
-		os.remove("/tmp/creating_menus.txt")
+		os.remove(STATUS_FILE)
 	except Exception:
 		pass
 	remove_indexing_page()

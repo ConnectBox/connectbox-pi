@@ -1815,13 +1815,20 @@ def scenario_old_office(base):
 	saved_counts = dict(mmiLoader._indexing)
 	try:
 		mmiLoader._indexing.update(total=412, done=36)
-		check("S21: Latin file name shown", mmiLoader.processing_message("Señor.pdf", "es") == "Processing: Señor.pdf")
-		check("S21: Chinese file name -> language and file number",
-			  mmiLoader.processing_message("他赐给我们先知.pdf", "zh-CN") == "Processing\nzh-CN 37/412",
-			  repr(mmiLoader.processing_message("他赐给我们先知.pdf", "zh-CN")))
+		check("S21: OLED shows percent and file count, not the file name",
+			  mmiLoader.processing_message("Señor.pdf", "es") == "Indexing 8%\nof 412 files",
+			  repr(mmiLoader.processing_message("Señor.pdf", "es")))
+		check("S21: same for a Chinese file name (no language, no name)",
+			  mmiLoader.processing_message("他赐给我们先知.pdf", "zh-CN") == "Indexing 8%\nof 412 files")
+		mmiLoader._indexing.update(total=778, done=777)
+		check("S21: last file -> 100%", mmiLoader.processing_message("x.pdf", "en") == "Indexing 100%\nof 778 files")
+		mmiLoader._indexing.update(total=123456, done=0)
+		m = mmiLoader.processing_message("x.pdf", "en")
+		check("S21: big counts keep both lines within 15 characters",
+			  m == "Indexing 0%\nof 123,456" and all(len(l) <= 15 for l in m.split("\n")), repr(m))
+		check("S21: OLED file keeps it unchanged", mmiLoader.display_text(m) == m)
 		mmiLoader._indexing.update(total=0, done=0)
-		check("S21: no count known -> language only",
-			  mmiLoader.processing_message("كتاب.pdf", "ar") == "Processing\nar")
+		check("S21: no count known yet -> 'Indexing'", mmiLoader.processing_message("كتاب.pdf", "ar") == "Indexing")
 	finally:
 		mmiLoader._indexing.clear()
 		mmiLoader._indexing.update(saved_counts)

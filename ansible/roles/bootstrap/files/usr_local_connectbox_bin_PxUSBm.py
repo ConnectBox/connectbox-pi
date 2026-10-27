@@ -99,6 +99,39 @@ global max_partition
 max_partiton = 0
 
 
+def write_brand_file(brand):
+    """
+    Write brand.j2 whole to a temporary file and rename it into place, so
+    the hat service and connectbox-manage never read it half written (the
+    hat service crashed reading an empty brand.j2).  Keeps owner and mode.
+    """
+    tmp = brand_file + ".tmp." + str(os.getpid())
+    with open(tmp, mode="w", encoding='utf-8') as f:
+        f.write(json.dumps(brand))
+        f.flush()
+        os.fsync(f.fileno())
+    try:
+        st = os.stat(brand_file)
+        os.chmod(tmp, st.st_mode & 0o7777)
+        os.chown(tmp, st.st_uid, st.st_gid)
+    except OSError:
+        pass
+    os.replace(tmp, brand_file)
+
+
+def mounted_device(target):
+    """The device mounted at target according to /proc/mounts ('' if none)."""
+    try:
+        with open('/proc/mounts', encoding='utf-8') as f:
+            for line in f:
+                parts = line.split()
+                if len(parts) > 1 and parts[1].replace('\\040', ' ') == target:
+                    return os.path.realpath(parts[0])
+    except OSError:
+        pass
+    return ''
+
+
 def usb_device_name(letter):
     """
     Return the block device name mounted for a drive letter: 'sdb' when the
@@ -365,6 +398,23 @@ def mountCheck():
           loc[j]= -1
           mnt[j] = -1
           j += 1
+        elif mounted_device('/media/usb' + chr(loc[j])) != '/dev/' + usb_device_name(chr(mnt[j])):
+          # The key is still plugged in but no longer mounted where we put it:
+          # another program moved or unmounted it (the front panel's copy
+          # commands move it to /media/usb11).  Forget this slot, or the key
+          # is mounted again at the NEXT free slot (/media/usb1) while usb0
+          # stays booked for it.  A key that was at usb0 is mounted there again
+          # below and indexed again (sentinel removed).
+          logger.info("/dev/" + usb_device_name(chr(mnt[j])) + " is no longer mounted at /media/usb" + chr(loc[j]) +
+                      ": forgetting that mount, time is " + time.asctime())
+          if loc[j] == ord('0'):
+              try:
+                  os.remove('/tmp/.usb0_indexed')
+              except Exception:
+                  pass
+          loc[j] = -1
+          mnt[j] = -1
+          j += 1
         else:
         #Were here with the device still mounted
           print("device still mounted /dev/"+usb_device_name(chr(mnt[j]))+" Device present")
@@ -511,11 +561,13 @@ def mountCheck():
           if res != 0:
 ####################### we didn't mount fat drive try NTFS drive #######################
             try:   #try explicit ntfs mount
+              # (No "sync" option: on ntfs-3g it slowed writes to about
+              # 0.1 MB/s on .200, against about 9 MB/s without it.)
               if (res > 0):		#if we have res > 0 then we have an error
                  if y>= "5.15.0":
-                    b = "mount /dev/" + e.group() + " -t ntfs -o noatime,nodev,nosuid,sync,utf8" + " /media/usb" + chr(a)
+                    b = "mount /dev/" + e.group() + " -t ntfs -o noatime,nodev,nosuid,utf8" + " /media/usb" + chr(a)
                  else:
-                    b = "mount /dev/" + e.group() + " -t ntfs -o noatime,nodev,nosuid,sync,iocharset=utf8" + " /media/usb" + chr(a)
+                    b = "mount /dev/" + e.group() + " -t ntfs -o noatime,nodev,nosuid,iocharset=utf8" + " /media/usb" + chr(a)
                  res = os.system(b)
                  print("tried new NTFS mount of: "+b + "result was: " + str(res))
                  logger.info("Retried NTFS mount of "+b+" with result of "+str(res) + " time is " + time.asctime())
@@ -2395,8 +2447,7 @@ if __name__ == "__main__":
             "server_siteadmin_phone": "",
             "server_siteadmin_country": ""
         }
-        with open(brand_file, mode="w", encoding='utf-8') as f:
-            f.write(json.dumps(Brand))
+        write_brand_file(Brand)
         logger.info("Created new brand.j2 with defaults")
 
     NoMountUSB = Brand["usb0NoMount"] 			   # Note: brand is type dict, so no "find" method
@@ -2416,11 +2467,9 @@ if __name__ == "__main__":
     if (version != "Unknown") and (version != "Error"):
       logger.info("Major type: "+a)
       if Brand["Device_type"].find(a)<=0:                    # Make sure the brand file is what we expect as were on this hardware.
-        f = open(brand_file, mode="w", encoding = 'utf-8')
         Brand["Device_type"] = '"'+a+'"'
         Brand["lcd_pages_multi_bat"] = 0
-        f.write(json.dumps(Brand))
-        f.close()
+        write_brand_file(Brand)
         os.sync()
         SSID = Brand["Brand"]
     else:
