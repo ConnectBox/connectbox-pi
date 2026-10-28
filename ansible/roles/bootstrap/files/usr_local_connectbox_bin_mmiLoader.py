@@ -951,11 +951,12 @@ def get_interface_for_language(language, interface, languageCodes, translationsD
 def refresh_interface_translations(contentDirectory, templatesDirectory):
 	"""
 	Rewrite interface.json in every language folder of the content directory,
-	and set the right-to-left flag in languages.json.
+	and set the right-to-left flags and the default language in languages.json.
 
 	Used after a saved.zip restore: the zip holds the files written when it was
-	made (English-only, no RTL flag, before these features existed), so without
-	this a USB with a saved.zip would never pick them up.
+	made (English-only, no RTL flag, before these features existed; or Arabic
+	as default for an "eng" English folder, fix 47), so without this a USB with
+	a saved.zip would never pick them up.
 	"""
 	try:
 		config = load_config(templatesDirectory)
@@ -982,9 +983,11 @@ def refresh_interface_translations(contentDirectory, templatesDirectory):
 				record["rtl"] = True
 			else:
 				record.pop("rtl", None)
+			record.pop("default", None)
+		mark_default_language(languages)
 		with open(languages_path, 'w', encoding='utf-8') as f:
 			json.dump(languages, f, ensure_ascii=False, indent=4)
-		print("	Refreshed right-to-left flags in languages.json")
+		print("	Refreshed right-to-left flags and default language in languages.json")
 	except (OSError, ValueError, KeyError, IndexError, TypeError) as e:
 		print("	Could not update languages.json: " + str(e))
 
@@ -2648,6 +2651,23 @@ def make_document_web_page(content, fullFilename, mediaName, slug, language, con
 
 # ── Phase 2: Language detection ───────────────────────────────────────────────
 
+def mark_default_language(languageJson):
+	"""
+	Mark one languages.json entry as the default: English when the USB has it,
+	else the first entry.  English is any entry with a code "en" or "eng"
+	(or a regional "en-..."): an English folder named "eng" (ISO 639-2) gets
+	the codes ["eng", "en"], and only checking the first code made the first
+	language (e.g. Arabic) the default instead.
+	"""
+	if not languageJson:
+		return
+	for record in languageJson:
+		if any(str(c).lower().split('-')[0] in ("en", "eng") for c in record.get("codes", [])):
+			record["default"] = True
+			return
+	languageJson[0]["default"] = True
+
+
 def detect_language_dirs(mediaDirectory, languageCodes):
 	"""
 	Determine the default language and valid language directories at the USB
@@ -3861,14 +3881,7 @@ def finalize_output(mains, languageCodes, contentDirectory, interface, mediaDire
 			pass
 		sys.exit()
 
-	# Mark default language (prefer 'en', else first found)
-	hasDefault = 0
-	for record in languageJson:
-		if record["codes"][0] == "en":
-			hasDefault = 1
-			record["default"] = True
-	if hasDefault == 0:
-		languageJson[0]["default"] = True
+	mark_default_language(languageJson)
 
 	print("Writing languages.json")
 	with open(contentDirectory + "/languages.json", 'w', encoding='utf-8') as f:

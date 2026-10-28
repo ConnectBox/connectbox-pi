@@ -874,7 +874,9 @@ def scenario_interface_translations(base):
 		per.get("LANGUAGE_BUTTON") == "Language", str(per.get("LANGUAGE_BUTTON")))
 	check("S12: restore refresh rewrites en", en.get("LANGUAGE_BUTTON") == "Language")
 	langs = {r["codes"][0]: r for r in json.load(open(os.path.join(content, "languages.json"), encoding="utf-8"))}
-	check("S12: restore refresh sets rtl for per", langs["per"].get("rtl") is True and langs["per"]["default"] is True)
+	check("S12: restore refresh sets rtl for per", langs["per"].get("rtl") is True)
+	check("S12: restore refresh makes English the default (fix 47)",
+		langs["en"].get("default") is True and "default" not in langs["per"], str(langs))
 	check("S12: restore refresh clears wrong rtl on en", "rtl" not in langs["en"])
 
 	# .Language file (capital L) is found
