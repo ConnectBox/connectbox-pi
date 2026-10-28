@@ -112,6 +112,12 @@
 # sshd forks child processes to handle connections, so stopping and disabling
 #  sshd doesn't disconnect the session that's actually doing the stopping and
 #  disabling (or the control session if pipelining is in use)
+- name: Build finished - cron may start PxUSBm again
+  file:
+    path: /run/connectbox-build
+    state: absent
+  when: not (do_image_preparation | default(False) | bool)
+
 - name: Schedule disabling of sshd
   set_fact:
     final_command: "systemctl disable ssh"

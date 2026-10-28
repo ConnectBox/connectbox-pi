@@ -83,7 +83,9 @@
   command: fallocate -l 400M /swapfile
   register: swap_result
   ignore_errors: yes
-  when: connectbox_os != "raspbian" Swap_Val < '400M'
+  # (was missing the "and": the condition could not be evaluated, so this
+  # task always failed, ignored)
+  when: connectbox_os != "raspbian" and Swap_Val < '400M'
 
 - name: show swap_result
   debug:

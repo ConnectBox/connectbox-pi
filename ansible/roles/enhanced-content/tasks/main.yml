@@ -114,6 +114,15 @@
   debug:
     msg: "we loaded version {{ pm2_ver.stdout }} of PM2"
 
+# The folder belongs to www-data (set further down), so on a second run git,
+# running as root, refused it as "dubious ownership" and the update failed.
+- name: Let root's git use the connectbox-manage folder owned by www-data
+  shell: >
+    git config --system --get-all safe.directory | grep -qx /var/www/enhanced/connectbox-manage
+    || { git config --system --add safe.directory /var/www/enhanced/connectbox-manage && echo added; }
+  register: safe_dir
+  changed_when: "'added' in safe_dir.stdout"
+
 - name: Get connectbox-manage repo from https://github.com/ConnectBox/connectbox-manage.git
   git:
     repo: https://github.com/ConnectBox/connectbox-manage.git

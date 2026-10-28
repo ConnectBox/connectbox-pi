@@ -12,6 +12,18 @@
     path: /usr/local/connectbox
     mode: 0755
 
+# While this file exists, TestPxUSBm.py (run by cron every minute, see the
+# connectbox-pi role) does not start PxUSBm.  On a fresh card PxUSBm's first
+# start expands the root partition and reboots twice, which cut the 2026-10-28
+# build off in the middle of its final package upgrade.  /run is cleared at
+# every boot; the connectbox-pi role removes the file at the end of a build
+# that does not prepare an image (an image is shut down at the end instead).
+- name: Mark that a build is running (keeps cron from starting PxUSBm)
+  copy:
+    dest: /run/connectbox-build
+    content: "connectbox-pi playbook running\n"
+    mode: 0644
+
 # Needs to happen prior to partitioning
 #- name: Create moodledata directory that Moodle requires for all its functions
 #  file:

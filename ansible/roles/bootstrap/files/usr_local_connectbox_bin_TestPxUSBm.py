@@ -55,7 +55,14 @@ def runcheck():
         return(0)
 
 
-if __name__ == "__main__":
+# Present while the Ansible playbook is building this box (made by the
+# bootstrap role in /run, so a reboot clears it).  Starting PxUSBm during a
+# build ran its first-boot partition expansion, which reboots the box twice:
+# the 2026-10-28 build was cut off in the middle of its final package upgrade.
+BUILD_MARKER = "/run/connectbox-build"
 
+if __name__ == "__main__":
+    if os.path.exists(BUILD_MARKER):
+        sys.exit(0)                      # the build starts what it needs itself
     runcheck()
 

@@ -235,46 +235,69 @@
     rtl8852audriverp : "{{ (dmesgoutput.find('8852au') >=0 ) }}"
 
 
-- name: lets check for exsisting 8812au driver
-  shell: echo (true |bool)
-  register: driver_a1
-  ignore_errors: yes
-  when: ((rtl8812d) or (rtl88XXd) or (rtl88XXdp) or (rtl8812dp))
-
-- name: lets check for the 8812bu driver
-  shell: echo (true |bool)
-  register: driver_b1
-  ignore_errors: yes
-  when: ((rtl88xbd ) or (rtl88XXd) or (rtw88d) or (rtl88x2bd) or (rtl88XXdp) or (rtl88xbdp) or (rtw88dp) or (rtl88x2bdp))
-
-- name: lets check for the 8852au driver
-  shell: echo (true |bool)
-  register: driver_c1
-  ignore_errors: yes
-  when: ((rtl8852ad) or  (rtl8852adp))
+# (These were "shell: echo (true |bool)" tasks, which is not valid shell: they
+# failed whenever their condition held, and the inserts below then tested the
+# failed result instead of a true/false value.)
+- name: Decide which pre-built drivers to insert
+  set_fact:
+    driver_a1: "{{ rtl8812d or rtl88XXd or rtl88XXdp or rtl8812dp }}"
+    driver_b1: "{{ rtl88xbd or rtl88XXd or rtw88d or rtl88x2bd or rtl88XXdp or rtl88xbdp or rtw88dp or rtl88x2bdp }}"
+    driver_c1: "{{ rtl8852ad or rtl8852adp }}"
 
 - name: Insert the driver into the kernel modules 8812au
-  command: insmod  /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtl8812au/8812au.ko*
+  # The pre-built modules are copied straight into .../wireless/ (see "Check for
+  # drivers that already exisist" above), so find the file instead of assuming a
+  # sub-folder; skip if the module is already loaded.
+  shell: |
+    lsmod | grep -q '^8812au ' && { echo "8812au already loaded"; exit 0; }
+    ko=$(find /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless -name '8812au.ko*' | head -n 1)
+    [ -n "$ko" ] || { echo "no 8812au.ko on this system"; exit 0; }
+    insmod "$ko" && echo "inserted $ko"
   ignore_errors: yes
   register: changed1
-  when: driver_a1
+  changed_when: "'inserted' in changed1.stdout"
+  when: driver_a1 | bool
 
 - name: Insert the driver into the kernel modules 8812au (8812XX)
-  command: insmod  /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtl8812au/88XXau.ko*
+  # The pre-built modules are copied straight into .../wireless/ (see "Check for
+  # drivers that already exisist" above), so find the file instead of assuming a
+  # sub-folder; skip if the module is already loaded.
+  shell: |
+    lsmod | grep -q '^88XXau ' && { echo "88XXau already loaded"; exit 0; }
+    ko=$(find /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless -name '88XXau.ko*' | head -n 1)
+    [ -n "$ko" ] || { echo "no 88XXau.ko on this system"; exit 0; }
+    insmod "$ko" && echo "inserted $ko"
   ignore_errors: yes
-  register: changed1
-  when: driver_a1
+  register: changed1x
+  changed_when: "'inserted' in changed1x.stdout"
+  when: driver_a1 | bool
 
 - name: insert the driver into the kernel modules 88x2bu
-  command: insmod  /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/rtl88x2bu/88x2bu.ko*
+  # The pre-built modules are copied straight into .../wireless/ (see "Check for
+  # drivers that already exisist" above), so find the file instead of assuming a
+  # sub-folder; skip if the module is already loaded.
+  shell: |
+    lsmod | grep -q '^88x2bu ' && { echo "88x2bu already loaded"; exit 0; }
+    ko=$(find /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless -name '88x2bu.ko*' | head -n 1)
+    [ -n "$ko" ] || { echo "no 88x2bu.ko on this system"; exit 0; }
+    insmod "$ko" && echo "inserted $ko"
   ignore_errors: yes
   register: changed2
-  when: (rtl88x2dp or rtl88XXdp or rtl88x2bdp)
+  changed_when: "'inserted' in changed2.stdout"
+  when: (rtl88x2dp | default(false)) or rtl88XXdp or rtl88x2bdp
 
 - name: insert the driver into the kernel modules 8852au
-  command: insmod  /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless/realtek/rtw89/8852au.ko*
+  # The pre-built modules are copied straight into .../wireless/ (see "Check for
+  # drivers that already exisist" above), so find the file instead of assuming a
+  # sub-folder; skip if the module is already loaded.
+  shell: |
+    lsmod | grep -q '^8852au ' && { echo "8852au already loaded"; exit 0; }
+    ko=$(find /usr/lib/modules/{{ kernel_num.stdout }}/kernel/drivers/net/wireless -name '8852au.ko*' | head -n 1)
+    [ -n "$ko" ] || { echo "no 8852au.ko on this system"; exit 0; }
+    insmod "$ko" && echo "inserted $ko"
   ignore_errors: yes
   register: changed3
+  changed_when: "'inserted' in changed3.stdout"
   when: (rtl8852adp)
 
 #- name: Insert the driver into the kernel module rtw88 
@@ -291,7 +314,8 @@
 - name: finish the module dependancies
   command: depmod
   ignore_errors: yes
-  when: found_drivers.changed or changed1.changed or changed2.changed or changed3.changed or changed4.changed
+  # changedN stays a plain "false" when its task is commented out (changed4)
+  when: (found_drivers.changed | default(false)) or (changed1.changed | default(false)) or (changed1x.changed | default(false)) or (changed2.changed | default(false)) or (changed3.changed | default(false)) or (changed4.changed | default(false))
 
 - name: Create a variable based on the results of the finds for compile_a
   command: echo ('true').stdout
@@ -529,7 +553,7 @@
   when: (compile_all.changed)
 
 - name: make_sure_it_starts
-  command: systemctl enabled systemd-networkd.service
+  command: systemctl enable systemd-networkd.service
   ignore_errors: yes
   when: (compile_all.changed)
   

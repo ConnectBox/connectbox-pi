@@ -110,7 +110,10 @@
   apt:
 # (looping deprecated in 2.11)
 #    name: "{{ item }}"
-    name: ['bash-completion', 'command-not-found', 'dnsutils', 'dosfstools', 'html2text', 'file', 'fping', 'htop', 'iotop', 'man-db', 'screen', 'stress', 'sysbench',  'vim', 'vim-runtime']
+    # Not purged: dosfstools (dosfsck checks FAT keys in PxUSBm and the front
+    # panel) and fping (armbian-bsp-cli-<board> depends on it, so asking for it
+    # made apt refuse the whole list and nothing here was removed).
+    name: ['bash-completion', 'command-not-found', 'dnsutils', 'html2text', 'file', 'htop', 'iotop', 'man-db', 'screen', 'stress', 'sysbench',  'vim', 'vim-runtime']
     state: absent
     purge: yes
     autoremove: yes

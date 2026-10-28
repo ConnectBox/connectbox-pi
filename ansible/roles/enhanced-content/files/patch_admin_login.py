@@ -23,7 +23,12 @@ Admin (Configuration) login behaviour (connectbox-admin-ui release bundles).
 
 The session expired redirects (HTTP 401 -> login page) are unchanged.
 
-Idempotent.  Exits non-zero if the expected stock text is not found.
+Since 2026-10 the connectbox-admin-ui release is built from source that does
+all of this itself; each step then finds its BUILT_IN text and changes nothing.
+(Before, the leave step was added a second time on top of the built-in one.)
+
+Idempotent.  Exits non-zero if neither the expected stock text nor the
+built-in version is found.
 
 Usage: patch_admin_login.py [admin dist directory]
 """
@@ -111,6 +116,11 @@ LEAVE_EDITS = [
     ),
 ]
 
+# Text that shows the release already does a step itself (built from source).
+BUILT_IN_ADMIN = ['window.location = "/"', 'document.referrer']
+BUILT_IN_LEAVE = ['sendBeacon(', '"keepalive")', "'back_forward'"]
+BUILT_IN_LOGIN = ['concat(API_URL, "logout")']
+
 LOGIN_EDITS = [
     (
         "document.getElementById('loginForm').addEventListener('submit', login);\n",
@@ -131,12 +141,15 @@ LOGIN_EDITS = [
 ]
 
 
-def patch(path, edits, marker=MARKER, what='login'):
+def patch(path, edits, marker=MARKER, what='login', built_in=()):
     name = os.path.basename(path)
     with open(path, encoding='utf-8', newline='') as f:
         code = f.read()
     if marker in code:
         print(name + ': ' + what + ' already patched')
+        return 0
+    if built_in and all(t in code for t in built_in):
+        print(name + ': ' + what + ' built into this release - not patched')
         return 0
     for old, _ in edits:
         if code.count(old) != 1:
@@ -169,9 +182,9 @@ def remove_default_password_text(path):
 
 def main():
     d = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_DIR
-    rc = patch(os.path.join(d, 'admin.bundle.js'), ADMIN_EDITS)
-    rc |= patch(os.path.join(d, 'admin.bundle.js'), LEAVE_EDITS, LEAVE_MARKER, 'leave')
-    rc |= patch(os.path.join(d, 'login.bundle.js'), LOGIN_EDITS)
+    rc = patch(os.path.join(d, 'admin.bundle.js'), ADMIN_EDITS, built_in=BUILT_IN_ADMIN)
+    rc |= patch(os.path.join(d, 'admin.bundle.js'), LEAVE_EDITS, LEAVE_MARKER, 'leave', BUILT_IN_LEAVE)
+    rc |= patch(os.path.join(d, 'login.bundle.js'), LOGIN_EDITS, built_in=BUILT_IN_LOGIN)
     rc |= remove_default_password_text(os.path.join(d, 'login.html'))
     return rc
 
