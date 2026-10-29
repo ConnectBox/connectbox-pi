@@ -133,16 +133,71 @@ def write_brand_file(brand):
 
 
 def mounted_device(target):
-    """The device mounted at target according to /proc/mounts ('' if none)."""
+    """
+    The device mounted at target according to /proc/mounts ('' if none).
+    When mounts are stacked on the same folder the last one is the one in use,
+    so the last entry is returned (the first one made PxUSBm "forget" a key
+    mounted on top of a dead mount, every 3 s, 2026-10-29).
+    """
+    found = ''
     try:
         with open('/proc/mounts', encoding='utf-8') as f:
             for line in f:
                 parts = line.split()
                 if len(parts) > 1 and parts[1].replace('\\040', ' ') == target:
-                    return os.path.realpath(parts[0])
+                    found = os.path.realpath(parts[0])
     except OSError:
         pass
-    return ''
+    return found
+
+
+def usb_slot_mounts():
+    """(device, mount point) for every /media/usb0../media/usb9 mount, in /proc/mounts order."""
+    out = []
+    try:
+        with open('/proc/mounts', encoding='utf-8') as f:
+            for line in f:
+                parts = line.split()
+                if len(parts) > 1 and re.fullmatch(r'/media/usb[0-9]', parts[1]):
+                    out.append((parts[0], parts[1]))
+    except OSError:
+        pass
+    return out
+
+
+def release_usb_slots():
+    """
+    At start-up, lazily unmount every /media/usb0..9 mount.  PxUSBm starts with
+    empty mount tables, so a key mounted by an earlier PxUSBm (before a restart)
+    was never adopted: when it was pulled out its mount stayed behind, dead,
+    and the next key was mounted on top of it (2026-10-29).  The following
+    mount checks mount the keys that are present again, with the usual check
+    and indexing.  /media/usb11 (the front panel's copy mount) is left alone.
+    """
+    for _ in range(20):
+        mounts = usb_slot_mounts()
+        if not mounts:
+            return
+        dev, target = mounts[-1]
+        logger.info("Start-up: releasing " + dev + " mounted at " + target + " before PxUSBm started, time is " + time.asctime())
+        if target == "/media/usb0":
+            try:
+                os.remove('/tmp/.usb0_indexed')     # index whatever key is mounted there next
+            except OSError:
+                pass
+        if os.system("umount -l " + target + " 2>/dev/null") != 0:
+            return
+
+
+def clear_dead_mounts(target):
+    """Lazily unmount mounts at target whose device no longer exists (so mounts never stack)."""
+    for _ in range(10):
+        dev = mounted_device(target)
+        if not dev or os.path.exists(dev):
+            return
+        logger.info("Removing dead mount of " + dev + " at " + target + ", time is " + time.asctime())
+        if os.system("umount -l " + target + " 2>/dev/null") != 0:
+            return
 
 
 def usb_device_name(letter):
@@ -535,7 +590,7 @@ def mountCheck():
     # Checks for /media/usb0/.connectbox/enable-ssh and starts sshd if found.
     # Running this unconditionally (not just on insertion) ensures a key inserted
     # while the daemon is already running can still trigger SSH activation.
-    os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/.connectbox/enable-ssh && (/bin/systemctl is-active ssh.service || /bin/systemctl enable ssh.service && /bin/systemctl start ssh.service)'")
+    os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/.connectbox/enable-ssh && (/bin/systemctl is-active --quiet ssh.service || /bin/systemctl enable ssh.service && /bin/systemctl start ssh.service)'")
 
 
 
@@ -595,6 +650,7 @@ def mountCheck():
             os.system("/usr/sbin/reboot")
 #          time.sleep(20)    #This ends here.
 # Now we know we need to do a mount and have found the lowest mount point to use in (a)
+          clear_dead_mounts("/media/usb"+chr(a))
           if not (os.path.exists("/media/usb"+chr(a))):  #if the /mount/usbx isn't there create it
             res = os.system("mkdir /media/usb"+chr(a))
             if DEBUG > 2: print("created new direcotry %s","/media/usb"+chr(a))
@@ -689,7 +745,7 @@ def mountCheck():
               print("Ok we have a mount on usb0 so we need to check for ccontent") 
           # Run these functions on mount -- added 20211111
               # SSH Enabler
-              os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/.connectbox/enable-ssh && (/bin/systemctl is-active ssh.service || /bin/systemctl enable ssh.service && /bin/systemctl start ssh.service)'")
+              os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/.connectbox/enable-ssh && (/bin/systemctl is-active --quiet ssh.service || /bin/systemctl enable ssh.service && /bin/systemctl start ssh.service)'")
               # Enhanced Content Load
               print("Start load content for menu's")
               logger.info("Starting content indexing and load on  /dev/sda1, time is " + time.asctime())
@@ -727,7 +783,7 @@ def mountCheck():
                       logger.info("We already had a USB that was mounted but added it to our mount table so starting loading cocntent, time is "+ time.asctime())
                       print("Start load content for menu's")
                       # SSH Enabler
-                      os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/.connectbox/enable-ssh && (/bin/systemctl is-active ssh.service || /bin/systemctl enable ssh.service && /bin/systemctl start ssh.service)'")
+                      os.system("/bin/sh -c '/usr/bin/test -f /media/usb0/.connectbox/enable-ssh && (/bin/systemctl is-active --quiet ssh.service || /bin/systemctl enable ssh.service && /bin/systemctl start ssh.service)'")
                 else:
                   if DEBUG > 2: print("/dev/"+e.group()+" was mounted and in the table at ",k)
               else:
@@ -2762,6 +2818,7 @@ if __name__ == "__main__":
     # x is reset to 0 when it exceeds 1,000,000,000,000 to prevent integer overflow
     # over extremely long uptimes.
     logger.info("Getting ready to start Mount Checks")
+    release_usb_slots()
     while (x == x):                         # main loop that we live in for life of running
 
           # Re-read brand.j2 on every iteration so that admin changes (SSID, feature
