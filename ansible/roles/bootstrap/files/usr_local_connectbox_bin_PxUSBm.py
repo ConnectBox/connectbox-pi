@@ -88,6 +88,19 @@ failed_mounts = set()
 # FAT-only utf8 mount option and are not checked with dosfsck/ntfsfix.
 POSIX_FILESYSTEMS = ('ext2', 'ext3', 'ext4', 'xfs', 'btrfs', 'f2fs')
 
+# Longest a file-system check before a mount may take.  PxUSBm waits for the
+# check (and does nothing else meanwhile, Wi-Fi watching included); a full
+# dosfsck of a 64 GB FAT32 card took over 7 minutes on a NanoPi NEO
+# (2026-10-29).  After the limit the check is stopped and the key mounted.
+FS_CHECK_SECS = 120
+
+# Front-panel message while a check runs ("Checking USB"): refreshed every few
+# seconds, so the hat service shows it while it is fresh.  It is not the
+# indexing status file (/tmp/creating_menus.txt), whose removal makes the panel
+# show its "done" checkmark.
+USB_CHECK_STATUS = "/tmp/connectbox-usbcheck.txt"
+USB_CHECK_TEXT = "Checking USB\nplease wait"
+
 global net_stat
 net_stat = 1
 
@@ -138,6 +151,83 @@ def usb_device_name(letter):
     file system is on the whole disk, otherwise the first partition 'sdb1'.
     """
     return 'sd' + letter + ('' if letter in whole_disk else '1')
+
+
+def fat_needs_check(dev):
+    """
+    True when the FAT volume on /dev/<dev> should be checked before mounting:
+    it was not unmounted cleanly, it records a disk I/O error, or its boot
+    sector cannot be read.  Both places dosfsck looks are read: Windows keeps
+    two flags in FAT entry 1 (bit 1 = clean shutdown, next bit 1 = no I/O
+    error), Linux sets bit 0 of the boot sector's state byte while the volume
+    is mounted.  So a key pulled out without unmounting is checked.  FAT12
+    has no flags and is not checked.
+    """
+    import struct
+    try:
+        with open('/dev/' + dev, 'rb') as f:
+            bs = f.read(512)
+            if len(bs) < 512 or bs[510:512] != b'\x55\xaa':
+                return True
+            bps, spc, res, nfats = struct.unpack_from('<HBHB', bs, 11)
+            root_ents, tot16 = struct.unpack_from('<HH', bs, 17)
+            fatsz16 = struct.unpack_from('<H', bs, 22)[0]
+            tot32, fatsz32 = struct.unpack_from('<II', bs, 32)
+            if bps not in (512, 1024, 2048, 4096) or spc == 0 or nfats == 0:
+                return True
+            fatsz = fatsz16 or fatsz32
+            total = tot16 or tot32
+            root_secs = (root_ents * 32 + bps - 1) // bps
+            clusters = (total - res - nfats * fatsz - root_secs) // spc
+            f.seek(res * bps)
+            fat = f.read(8)
+        if clusters < 4085:                       # FAT12
+            return False
+        if clusters < 65525:                      # FAT16
+            e1 = struct.unpack_from('<H', fat, 2)[0]
+            return (e1 & 0xC000) != 0xC000 or bool(bs[0x25] & 0x01)
+        e1 = struct.unpack_from('<I', fat, 4)[0]  # FAT32
+        return (e1 & 0x0C000000) != 0x0C000000 or bool(bs[0x41] & 0x01)
+    except Exception:
+        return True
+
+
+def show_usb_check(on=True):
+    """Write (refresh) or remove the front panel's "Checking USB" message."""
+    try:
+        if on:
+            with open(USB_CHECK_STATUS, "w", encoding="utf-8") as f:
+                f.write(USB_CHECK_TEXT)
+        elif os.path.exists(USB_CHECK_STATUS):
+            os.remove(USB_CHECK_STATUS)
+    except OSError:
+        pass
+
+
+def run_fs_check(cmd):
+    """
+    Run a file-system check (argument list) with the FS_CHECK_SECS limit,
+    showing "Checking USB" on the front panel meanwhile; its output goes to
+    the journal as before.  Returns the exit code, or None when it was stopped
+    at the limit or could not run.  Stopping dosfsck early writes nothing:
+    without -w it keeps its repairs and writes them at the end.
+    """
+    try:
+        proc = subprocess.Popen(cmd)
+    except Exception as e:
+        logger.info("Could not run " + " ".join(cmd) + ": " + str(e))
+        return None
+    deadline = time.time() + FS_CHECK_SECS
+    while True:
+        show_usb_check(True)
+        try:
+            return proc.wait(timeout=max(0.1, min(5, deadline - time.time())))
+        except subprocess.TimeoutExpired:
+            if time.time() >= deadline:
+                proc.kill()
+                proc.wait()
+                logger.info(" ".join(cmd) + " stopped after " + str(FS_CHECK_SECS) + " s; mounting without it, time is " + time.asctime())
+                return None
 
 
 def get_fstype(dev):
@@ -526,28 +616,27 @@ def mountCheck():
             print("/dev/" + e.group() + " is " + fstype + ": skipping dosfsck/ntfsfix")
             logger.info("/dev/" + e.group() + " is " + fstype + ", no FAT/NTFS check needed, time is " + time.asctime())
           else:
-            c = "dosfsck -a /dev/" + e.group()
-            starttime = time.time()
-            print("checking the files system before mount with: "+ c)
-            logger.info("Looking to mount "+c+" but checking file system, time is "+time.asctime())
-            try:
-              res = os.system(c) 				#do a file system check befor the mount.  if it is corrupted we will get a system stop PxUSBm
-              if res ==256:
-                print("failed to do dosfsck -a /dev/" + e.group())
-                c = "ntfsfix -d /dev/" + e.group()
-                try:
-                  res = os.system(c)
-                except:
-                  print("failed to do ntfsfix -f")
-                  logger.info("Failed to do ntfsfix -d on "+ e.group() + " time is " + time.asctime())
-            except:
-              print("Failed to do dosfsck")
-              logger.info("Failed to do Dosfsck on " + e.group() + " time is " + time.asctime())
-            print("Did "+c+"  result is: "+str(res))
-            endtime = time.time()
-            deltatime = endtime - starttime
-            print('total time was: ' + str(deltatime) + ' seconds' )
-            logger.info("Completed "+c+" in "+str(deltatime)+ "seconds")
+            # The check is chosen by file system type (as the front panel's
+            # usb.py does).  It used to run dosfsck -a on every non-Linux key
+            # and ntfsfix when dosfsck exited 1 - which also means "errors
+            # corrected" on FAT - and it waited with no limit: a clean 64 GB
+            # FAT32 card kept PxUSBm busy for over 7 minutes (2026-10-29).
+            dev = e.group()
+            cmd = None
+            if fstype == 'vfat':
+              if fat_needs_check(dev):
+                cmd = ['dosfsck', '-a', '/dev/' + dev]   # exit 0 = clean, 1 = errors corrected
+              else:
+                logger.info("/dev/" + dev + " FAT marked clean: no dosfsck needed, time is " + time.asctime())
+            elif fstype == 'ntfs':
+              cmd = ['ntfsfix', '-d', '/dev/' + dev]     # clears the dirty flag ntfs-3g refuses
+            else:
+              logger.info("/dev/" + dev + " is " + (fstype or "of unknown type") + ": no check before mount, time is " + time.asctime())
+            if cmd:
+              starttime = time.time()
+              logger.info("Checking the file system before mount: " + " ".join(cmd) + ", time is " + time.asctime())
+              res = run_fs_check(cmd)
+              logger.info("Completed " + " ".join(cmd) + " result " + str(res) + " in " + str(int(time.time() - starttime)) + " seconds")
 
 ###################### OK now mount the key ############################################
           print("trying to do mount: " + b)
@@ -558,6 +647,11 @@ def mountCheck():
           except:
             print("mount" + b + " failed result was: "+str(res))
             logger.info("mount" + b + " failed result was: "+str(res) + " time is " + time.asctime())
+          # After a good mount the "Checking USB" message stays until it goes
+          # stale (15 s) and indexing takes the panel over; after a failed one
+          # the panel goes back to normal at once.
+          if res != 0:
+            show_usb_check(False)
           if res != 0:
 ####################### we didn't mount fat drive try NTFS drive #######################
             try:   #try explicit ntfs mount
@@ -692,6 +786,30 @@ def mountCheck():
 
 
 
+def end_client_dhcp_wait():
+    """
+    Stop dhclient on the Wi-Fi interfaces before an expansion reboot.
+
+    The expansion reboots come about 25 s after start-up.  By then ifup for the
+    client Wi-Fi interface is usually still in dhclient, asking for an address
+    on a network that is not set up; it gives up only after dhclient's 60 s
+    timeout and holds the interface's lock (/run/network/ifstate.wlanN) until
+    then.  The shutdown's ifdown waits for that lock, so the reboot hung for up
+    to a minute on "A stop job is running for ifup for wlan0" (2026-10-29).
+    Ending dhclient lets ifup finish and release the lock.  The access point
+    interface has no dhclient, and eth0 is left alone (its address is released
+    at shutdown as usual).
+    """
+    try:
+        r = subprocess.run(["pkill", "-f", r"dhclient.* wlan[0-9]+( |$)"],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if r.returncode == 0:
+            logger.info("Stopped the client Wi-Fi DHCP wait before the expansion reboot")
+            time.sleep(1)
+    except Exception as e:
+        logger.info("Could not stop dhclient before the reboot: " + str(e))
+
+
 def do_resize2fs(rpi_platform, rm3_platform):
     """
     Expand the root filesystem to fill the full partition that was enlarged by do_fdisk().
@@ -757,6 +875,7 @@ def do_resize2fs(rpi_platform, rm3_platform):
         f.close()
         os.sync()
         logger.info("doing a reboot after the resize")
+        end_client_dhcp_wait()
         os.system('shutdown -r now')
 
 
@@ -967,6 +1086,7 @@ def do_fdisk(rpi_platform, rm3_platform):
     # Disk is now the right size but the OS hasn't necessarily used it.
     logger.info( "PxUSBm is rebooting after fdisk changed")
     os.sync()
+    end_client_dhcp_wait()
     os.system('shutdown -r now')
     return()
 

@@ -95,6 +95,11 @@ class FakeDevice:
 		dev = args[-1].replace('/dev/', '')
 		return types.SimpleNamespace(stdout=self.fstypes.get(dev, "") + "\n", returncode=0)
 
+	def check_popen(self, cmd, *a, **k):
+		"""Stand-in for subprocess.Popen of the file-system check (dosfsck/ntfsfix)."""
+		self.commands.append(" ".join(cmd))
+		return types.SimpleNamespace(wait=lambda timeout=None: 0, kill=lambda: None)
+
 	def isfile(self, path):
 		return path in self.files
 
@@ -150,7 +155,10 @@ def run_with(dev, fn):
 		mock.patch.object(PxUSBm.os.path, "exists", lambda p: True), \
 		mock.patch.object(PxUSBm.subprocess, "run", dev.run), \
 		mock.patch.object(PxUSBm, "Popen", lambda *a, **k: uname), \
-		mock.patch.object(PxUSBm, "open", dev.open, create=True):
+		mock.patch.object(PxUSBm, "open", dev.open, create=True), \
+		mock.patch.object(PxUSBm.subprocess, "Popen", dev.check_popen), \
+		mock.patch.object(PxUSBm, "fat_needs_check", lambda d: True), \
+		mock.patch.object(PxUSBm, "USB_CHECK_STATUS", "/tmp/test_pxusbm_usbcheck.txt"):
 		fn()
 
 
