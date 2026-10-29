@@ -54,7 +54,7 @@ Language folders and `.language` may use 2- or 3-letter codes; `per` and `fa` ar
 
 The captive portal page (the "Connected to ... Wifi" page a phone shows when it joins) follows the same rule: it is shown in the first of the phone's languages that the box has, otherwise in the box's default language, otherwise English, using the `PORTAL_*` strings in the same translation files.
 
-A first-time visitor starts in the first of their browser's preferred languages that the box has (exact match such as `pt-BR`, otherwise the same base language, `pt`); if the box has none of them, the default language from `languages.json` is used. A language picked with the language button is remembered and always wins.
+A first-time visitor starts in the first of their browser's preferred languages that the box has (exact match such as `pt-BR`, otherwise the same base language, `pt`); if the box has none of them, the default language from `languages.json` is used (English when the USB has an `en` or `eng` folder, otherwise the first language folder). A language picked with the language button is remembered and always wins.
 
 ### Interface translations
 

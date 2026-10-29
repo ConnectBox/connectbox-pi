@@ -12,6 +12,7 @@ Run:  python3 test_PxUSBm_mount.py
 
 import os
 import sys
+import io
 import types
 import importlib.util
 import unittest.mock as mock
@@ -100,10 +101,23 @@ class FakeDevice:
 	def remove(self, path):
 		self.files.discard(path)
 
+	def proc_mounts(self):
+		"""/proc/mounts as the kernel would show it for the current lsblk listing
+		(PxUSBm.mounted_device reads it to see what is really mounted)."""
+		out = []
+		for line in self.listing.splitlines():
+			cols = line.split(None, 6)
+			if len(cols) == 7 and cols[6].strip():
+				name = cols[0].lstrip("├└─│ ")
+				out.append("/dev/%s %s auto rw 0 0" % (name, cols[6].strip().replace(" ", "\\040")))
+		return "\n".join(out) + "\n"
+
 	def open(self, path, mode='r', *a, **k):
 		if path == '/tmp/.usb0_indexed':
 			self.files.add(path)
 			return mock.MagicMock()
+		if path == '/proc/mounts':
+			return io.StringIO(self.proc_mounts())
 		return open(path, mode, *a, **k)
 
 	def poll(self):

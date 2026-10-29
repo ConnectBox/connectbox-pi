@@ -1145,7 +1145,7 @@ def scenario_duplicate_names(base):
 	eps = [c["episodes"][0] for c in cols]
 	check("S15: card titles stay the original file name", all(e["title"] == "Lesson01" for e in eps), str([e["title"] for e in eps]))
 	check("S15: Series B episode links its own file",
-		eps[1]["filename"] == "Lesson01--Series_B.mp3" and any("media/Lesson01--Series_B.mp3'" in c and "Series B/" in c for c in links), str(links))
+		eps[1]["filename"] == "Lesson01--Series_B.mp3" and any(c.split()[-1].strip("'").endswith("media/Lesson01--Series_B.mp3") and "Series B/" in c for c in links), str(links))
 	check("S15: Series B episode has its own slug", eps[1]["slug"] != eps[0]["slug"], eps[1]["slug"])
 	check("S15: no second link attempted for the identical copy",
 		not any("Series A copy/" in c for c in links), str(links))

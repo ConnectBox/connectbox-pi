@@ -940,8 +940,8 @@ def do_fdisk(rpi_platform, rm3_platform):
   # send the startSector number
     child.sendline(startSector)
     logger.info("sent starting sector")
-    logger.info("after new starting sector came: ",child.before)
-    logger.info("then :",child.after)
+    logger.info("after new starting sector came: %s", child.before)
+    logger.info("then: %s", child.after)
 #    i = child.expect('Last*')
     logger.info("expected Last* and got it")
 # print("At last sector... the after is: ", child.after)
@@ -2395,13 +2395,18 @@ if __name__ == "__main__":
       else:
           a = version[0:4].rstrip()
 
-    # Clear the creating_menus.txt sentinel so the OLED display does not get stuck
-    # showing a stale "creating menus" message from a previous (possibly crashed) run
-    # of mmiLoader.  The file is harmless if absent, so the exception is silently ignored.
-    try:
-        os.remove("/usr/local/connectbox/creating_menus.txt")		# Clear any pending mmiLoader states
-    except:
-        pass
+    # Clear the creating_menus.txt status file so the OLED display does not get
+    # stuck on a stale "Indexing" message from a run that was killed.  The file
+    # is in /tmp (this used to remove /usr/local/connectbox/creating_menus.txt,
+    # where it never is).  PxUSBm is also restarted while the box is running
+    # (cron TestPxUSBm.py), so only when no mmiLoader is running: a running
+    # index writes this file and treats it as "a run is in progress".
+    if os.path.exists("/tmp/creating_menus.txt") and \
+            subprocess.run(["pgrep", "-f", "mmiLoader.py"], capture_output=True).returncode != 0:
+        try:
+            os.remove("/tmp/creating_menus.txt")
+        except OSError:
+            pass
     # Remove a "loading new content" page left by an indexing run that was
     # killed outright (power cut on a box whose /tmp survives reboots), so
     # visitors are not shown it for ever.  Only when no mmiLoader is running.

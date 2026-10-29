@@ -143,6 +143,9 @@
     
 - name: Delete existing pm2 processes
   command: "pm2 delete all"
+  register: pm2_del
+  # nothing to delete on a first install
+  failed_when: pm2_del.rc != 0 and 'No process found' not in pm2_del.stderr
   ignore_errors: yes
 
 - name: Pause for pm2

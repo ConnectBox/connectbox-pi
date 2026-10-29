@@ -52,6 +52,14 @@ Codes longer than 3 characters that do not contain `-` are rejected.
 
 Languages with no two-letter code use their three-letter code, for example `arz`
 (Egyptian Arabic), `pnb` (Western Punjabi), `pcm` (Nigerian Pidgin), `bho` (Bhojpuri).
+
+**Default language.**  The menu's default language (the one a visitor gets when
+their browser asks for none of the USB's languages) is English when the USB has an
+English folder - named `en`, `eng` or a regional `en-...` - otherwise the first
+language folder.  A `saved.zip` made by an older version (which missed an `eng`
+folder and made the first language the default) is corrected when it is restored.
+A visitor whose browser asks for one of the USB's languages starts in that one, and
+a language picked with the language button is remembered.
 Chinese varieties can use their own codes; the box's interface text then uses the
 matching written form: `cmn`, `wuu`, `cjy`, `hak` → Simplified Chinese, `yue`
 (Cantonese) → Hong Kong Traditional, `nan` (Min Nan) → Taiwan Traditional.
@@ -367,6 +375,23 @@ These hidden files in `content/` (or USB root) modify mmiLoader's behaviour.
 
 Delete `saved.zip` to force a full re-index.  Delete individual `.thumbnail-*` files
 to force re-extraction of those thumbnails.
+
+Zips (`.compress`, `.webcompress`, Android app folders) are written as
+`<name>.zip.part` and renamed when complete; pulling the USB out or stopping the
+loader stops a zip within a few MB and removes the part file.
+
+### Box control files (read by PxUSBm, not mmiLoader)
+
+These are in a `.connectbox/` folder at the **root** of the USB (not in `content/`).
+
+| File | Effect |
+|------|--------|
+| `.connectbox/enable-ssh` | Enables and starts the SSH service when the USB is mounted |
+| `.connectbox/upgrade/upgrade.py` | Run as root (`python3`) when the USB is mounted at `/media/usb0` |
+
+**Known risk (kept by decision, 2026-10-28):** anyone who can plug a USB into the box
+can use these to turn on SSH or run any program as root.  Keep boxes where only
+trusted people can reach the USB ports.
 
 ---
 

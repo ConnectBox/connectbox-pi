@@ -9,10 +9,12 @@
      Swap_Val:  ""
      Temp_Val:  ""
 
+# /swap does not exist on most images (df then fails); Swap_Val keeps its
+# default "" and is set further down when the swap file is made.
 - name: Find the /swap system paramaters
   shell: df -h /swap
   register: swapoutput
-  ignore_errors: yes
+  failed_when: false
 
 - debug:
     msg: "Swap system output: {{swapoutput.stdout}}"
@@ -32,7 +34,7 @@
   set_fact:
      Swap_Val: "{{ swpvl[0] }}"
      cacheable: yes
-  when: swapoutput != ""   
+  when: swapoutput.rc == 0 and swpvl | length > 0
   ignore_errors: yes
  
 - name: Print the temp variables we have found on file size

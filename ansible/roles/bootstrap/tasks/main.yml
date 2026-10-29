@@ -255,6 +255,9 @@
   with_items:
     - 'apt-daily.timer'
     - 'packagekit.service'
+  register: apt_services
+  # a service this image does not have (packagekit on Armbian) is fine
+  failed_when: apt_services.failed | default(false) and 'Could not find the requested service' not in (apt_services.msg | default(''))
   ignore_errors: True
   when: ansible_os_family == 'Debian'
 
@@ -281,13 +284,15 @@
 #  when: NEO_present
 
 
-- name: Check the changes to see if we need to reboot
-  set_fact:
-    rbtreq: dist_upgraded.stdout | regex_search('0 upgraded, 0 newly installed, 0 to remove and 0') 
+# (Removed 2026-10-28: an "rbtreq" fact set without {{ }} - so it held literal
+# text - and "Setup reboot if Upgrade actually occured", which therefore never
+# ran.  Removing both changes nothing; fixing them would add a reboot here.)
 
+# (dist_upgraded has no stdout when the upgrade above is skipped, as on the
+# NEO, so this task failed on every NEO build)
 - name: print the facts of reboot needed
   debug:
-    msg: "the output of dist_upgrade was {{ dist_upgraded.stdout }} and reboot required is {{ rbtreq }}"
+    msg: "the output of dist_upgrade was {{ dist_upgraded.stdout | default('(not run on this board)') }}"
   ignore_errors: True
 
 - name: Auto clean the packages
@@ -297,11 +302,6 @@
 - name: setup the system to ust only multi-user.target if its a PI
   command: systemctl set-default multi-user.target
   when: Pi_present or CM4_present or OZ2_present
-
-- name: Setup reboot if Upgrade actually occured
-  set_fact:
-    reboot_required: True
-  when: rbtreq == ""
 
 # Needs to happen before the initial reboot, given the job triggers actions
 #  on @reboot
@@ -331,7 +331,7 @@
 
 - name: the results from the proceeding wireless
   debug:
-    msg:"armbian replacement of overlays yeilded {{ regxreplace }}"
+    msg: "armbian replacement of overlays yeilded {{ regxreplace }}"
   ignore_errors: True
 
 - name: Remove g_mass_storage device as default
@@ -354,7 +354,7 @@
   template:
      src: 10-switch-role.conf.j2
      dest: /etc/systemd/system/serial-getty@ttyGS0.service.d/10-switch-role.conf
-     mode: '0666'
+     mode: '0644'     # (was 0666: a systemd drop-in must not be writable by everyone)
   when: connectbox_os == 'armbian' and (OS_Version == 'xenial' or OS_Version == 'focal') and not OZ2_present
 
 - name: setup link for ttyGS0 service
@@ -514,8 +514,13 @@
   when: connectbox_os == 'armbian'
 
 # Remove some systrem services for NEO
+# (The Armbian unit is armbian-resize-filesystem, disabled further down for
+# every board; this older name does not exist on Armbian 23.02.)
 - name: Remove armbian-filesystem-resize since we do it in PxUSBm.py 
   shell: systemctl disable armbian-filesystem-resize
+  register: unit_off
+  # a unit this image does not have is fine
+  failed_when: unit_off.rc != 0 and 'does not exist' not in unit_off.stderr
   ignore_errors: yes
   when: NEO_present
 
@@ -525,8 +530,12 @@
   when: OZ2_present
 
 # Remove the smart.service for NEO
+# (smartd.service is only an alias of smartmontools.service, disabled next)
 - name: Remove smart.service for NEO 
   shell: systemctl disable smartd.service
+  register: unit_off
+  # a unit this image does not have is fine
+  failed_when: unit_off.rc != 0 and 'does not exist' not in unit_off.stderr
   ignore_errors: yes
   when: connectbox_os != 'raspbian'
 
@@ -878,7 +887,9 @@
     dest: /etc/systemd/system/PxUSBm.service
     owner: root 
     group: root 
-    mode: 0622
+    # (was 0622: writable by every account, so www-data could change the
+    # command systemd runs as root; systemd also warned about it at every boot)
+    mode: 0644
 
 - name: make poweroff directory
   file:
@@ -942,10 +953,13 @@
     path: /usr/local/connectbox
     mode: 0655
 
+# python-pip (Python 2) is not in Debian 11 and later; python3-pip is next
 - name: Install PIP
   apt:
     name: python-pip
     state: present
+  register: pip2
+  failed_when: pip2.failed | default(false) and 'No package matching' not in (pip2.msg | default(''))
   ignore_errors: yes
 
 - name: Install PIP3

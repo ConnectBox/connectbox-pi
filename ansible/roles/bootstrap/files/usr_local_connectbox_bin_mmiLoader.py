@@ -142,6 +142,58 @@ def _sigterm_handler(signum, frame):
 	remove_indexing_page()
 
 
+class ZipStopped(Exception):
+	"""make_zip() was interrupted by SIGTERM."""
+
+
+def make_zip(base_name, root_dir, chunk=4 * 1024 * 1024):
+	"""
+	Zip the folder root_dir into base_name + ".zip", like
+	shutil.make_archive(base_name, "zip", root_dir) (same names inside, folder
+	entries, deflate, symlinked folders not followed), but:
+	  - it stops within a few MB after SIGTERM (USB pulled, service stopped):
+	    make_archive ran to the end, so systemctl stop waited the full 90 s
+	    and then killed the loader;
+	  - it writes base_name + ".zip.part" and renames it only when complete, so
+	    a stopped run never leaves a half-written zip that a later run would
+	    take as finished.
+	Returns the zip's path.  Raises ZipStopped (part file removed) when stopped.
+	"""
+	import zipfile
+	final = base_name + ".zip"
+	part = final + ".part"
+	try:
+		with zipfile.ZipFile(part, "w", zipfile.ZIP_DEFLATED, allowZip64=True) as zf:
+			for dirpath, dirnames, filenames in os.walk(root_dir):
+				rel_dir = os.path.relpath(dirpath, root_dir)
+				for name in sorted(dirnames):
+					zf.write(os.path.join(dirpath, name), os.path.normpath(os.path.join(rel_dir, name)))
+				for name in filenames:
+					if _shutdown_requested:
+						raise ZipStopped()
+					src = os.path.join(dirpath, name)
+					if not os.path.isfile(src):
+						continue
+					zinfo = zipfile.ZipInfo.from_file(src, os.path.normpath(os.path.join(rel_dir, name)))
+					zinfo.compress_type = zipfile.ZIP_DEFLATED
+					with open(src, "rb") as fin, zf.open(zinfo, "w", force_zip64=True) as fout:
+						while True:
+							block = fin.read(chunk)
+							if not block:
+								break
+							fout.write(block)
+							if _shutdown_requested:
+								raise ZipStopped()
+		os.replace(part, final)
+		return final
+	except BaseException:
+		try:
+			os.remove(part)
+		except OSError:
+			pass
+		raise
+
+
 signal.signal(signal.SIGTERM, _sigterm_handler)
 
 
@@ -3097,9 +3149,9 @@ def handle_web_content(path, thisDirectory, language, dirs, files, contentDirect
 		try:
 			print("	WebPath: Creating web archive zip file on USB for: ", subpath)
 			x = 1
-			shutil.make_archive(
+			make_zip(
 				mediaDirectory + "/" + (".webarchive-" + language + "-" + subpath).replace("/", "-").replace('--', '-'),
-				'zip', path
+				path
 			)
 			SkipArchive = 1
 			logging.info("succeeded in finishing the zip file for " + archive_name)
@@ -3165,9 +3217,9 @@ def handle_android_content(path, thisDirectory, language, dirs, files, contentDi
 		logging.info("Trying to archive an Android XML file set for " + thisDirectory)
 		try:
 			print("	WebPath: Creating web archive zip file on USB at: " + archive_path)
-			shutil.make_archive(
+			make_zip(
 				mediaDirectory + ("/.webarchive-" + language + "-" + thisDirectory).replace('--', '-'),
-				"zip", path
+				path
 			)
 		except Exception:
 			print("	error making web archive")
@@ -3277,7 +3329,7 @@ def handle_compress_dir(path, thisDirectory, language, files, mediaDirectory, co
 			update_display('Creating ZIP' + chr(10) + "File")
 			try:
 				print("Path: Creating archive zip file on USB")
-				shutil.make_archive(archive_base.replace('--', '-'), 'zip', path)
+				make_zip(archive_base.replace('--', '-'), path)
 				zip_path = archive_zip
 				zip_link = (contentDirectory + "/" + language + "/zip/" + thisDirectory + ".zip").replace("--", "-")
 				run_cmd(f"ln -s {shlex.quote(zip_path)} {shlex.quote(zip_link)}")
@@ -3293,9 +3345,9 @@ def handle_compress_dir(path, thisDirectory, language, files, mediaDirectory, co
 			update_display('Creating ZIP' + chr(10) + "File")
 			try:
 				print("Path: Creating archive zip file on USB")
-				shutil.make_archive(
+				make_zip(
 					(mediaDirectory + "/archive-" + language + "-" + thisDirectory).replace('--', '-'),
-					'zip', path
+					path
 				)
 				zip_path = archive_zip
 				zip_link = (contentDirectory + "/" + language + "/zip/" + thisDirectory + ".zip").replace("--", "-")
