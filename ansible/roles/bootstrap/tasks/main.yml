@@ -1115,6 +1115,27 @@
     group: _connectbox
     mode: 0755
 
+# scripts/phonehome.py (copied just above) is the old version that opens
+# brand.txt, which no longer exists, so the cloud check-in failed every 10
+# minutes.  Install the maintained brand.j2 version over it (fix 64).
+- name: Install phonehome.py (brand.j2 version) over the old scripts/ copy
+  copy:
+    src: usr_local_connectbox_bin_phonehome.py
+    dest: /usr/local/connectbox/bin/phonehome.py
+    owner: _connectbox
+    group: _connectbox
+    mode: '0755'
+
+# Same for ConnectBoxManage.sh: the scripts/ copy still uses brand.txt (and
+# echo for the password); the maintained one uses brand.j2 (fix 64).
+- name: Install ConnectBoxManage.sh (brand.j2 version) over the old scripts/ copy
+  copy:
+    src: usr_local_connectbox_bin_ConnectBoxManage.sh
+    dest: /usr/local/connectbox/bin/ConnectBoxManage.sh
+    owner: _connectbox
+    group: _connectbox
+    mode: '0755'
+
 # Fixed eth0 MAC on the NanoPi NEO (fix 63): made from the chip's ID by a udev
 # rule when the interface appears, so the box ID stays the same across reboots.
 - name: Install fixed_eth_mac.sh (fixed MAC for the NEO's built-in ethernet)

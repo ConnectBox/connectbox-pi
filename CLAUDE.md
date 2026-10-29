@@ -84,7 +84,7 @@ Force a full re-index by deleting `saved.zip` from the USB.
 
 ### Admin and stats backend
 
-Port 5002: Node.js (`/var/www/enhanced/connectbox-manage/src/index.js`) managed by PM2. This is the `connectboxmanage` CLI target — all `get`/`set` calls go through HTTP to this process. If port 5002 is down, `connectboxmanage` throws a traceback instead of JSON. It runs on Node.js 22 LTS (v22.23.4, support until 2027-04-30), installed by the enhanced-content role from the nodejs.org linux tarball into /usr/local (pm2 in /usr/local/lib/node_modules; the pm2-root service points there). Node 24 and later have no 32-bit ARM build and NodeSource's armhf packages stop at 22.15.0, so the NEO cannot go past Node 22 this way. Until fix 60 (2026-10-29) it was Node 16 from NodeSource apt.
+Port 5002: Node.js (`/var/www/enhanced/connectbox-manage/src/index.js`) managed by PM2. This is the `connectboxmanage` CLI target — all `get`/`set` calls go through HTTP to this process. If port 5002 is down, `connectboxmanage` throws a traceback instead of JSON. It runs on Node.js 22 LTS (v22.23.4, support until 2027-04-30), installed by the enhanced-content role from the nodejs.org linux tarball into /usr/local (pm2 in /usr/local/lib/node_modules; the pm2-root service points there). Node 24 and later have no 32-bit ARM build and NodeSource's armhf packages stop at 22.15.0, so the NEO cannot go past Node 22 this way. Until fix 60 (2026-10-29) it was Node 16 from NodeSource apt. PxUSBm runs `/usr/bin/pm2` by full path, so the build links /usr/bin/{node,npm,npx,pm2,pm2-*} to /usr/local/bin (fix 60b; without them PxUSBm crash-loops and takes the Wi-Fi down).
 
 Port 5000: Python gunicorn serving `python/main.py` (chat + admin API Flask app).
 

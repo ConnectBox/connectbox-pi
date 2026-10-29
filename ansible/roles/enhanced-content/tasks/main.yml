@@ -136,6 +136,19 @@
     state: present
   become: true  
 
+# Node 22 and pm2 live in /usr/local/bin (fix 60), but PxUSBm runs
+# /usr/bin/pm2 (check_PM2) - the path of the old apt Node 16.  Without it
+# PxUSBm crashed at every start and took the Wi-Fi down each time (fix 60b).
+# Link the old /usr/bin names to the new programs.
+- name: Link /usr/bin/node, npm, npx and pm2 to the Node 22 programs in /usr/local/bin
+  file:
+    src: "/usr/local/bin/{{ item }}"
+    dest: "/usr/bin/{{ item }}"
+    state: link
+    force: yes
+  loop: [node, npm, npx, pm2, pm2-dev, pm2-docker, pm2-runtime]
+  when: connectbox_os == 'armbian'
+
 - name: get the pm2 version we loaded
   command: pm2 --version
   register: pm2_ver
