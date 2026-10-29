@@ -210,6 +210,13 @@ least one subdirectory at any depth.
 (`index.html`) for the directory tree.  The result is linked into the content
 area and served as a web app.
 
+The generated `index.html` files are written **on the USB drive itself**, in the
+directory and each folder below it.  This is intended (Kirk, 2026-10-29): the
+drive then carries its own file browser, so the next unit it is plugged into
+does not have to generate it again, and a copy to a unit's internal memory
+("copy from USB" on the front panel) takes the same, correct pages with it.
+Writing them on the unit instead would leave the drive out of step with it.
+
 **Frontend**: shown as a tile like any other web-content entry; tapping opens the
 generated file browser.
 

@@ -58,26 +58,50 @@
   command: >
     pip3 install pathlib
 
-#- name: Download script to add node to apt cache
-#  get_url:
-#    url: https://github.com/nodesource/distributions/blob/master/scripts/rpm/setup_16.x
-#    dest: /tmp/setup_16.sh
-#    mode: '0755'
-#  when: connectbox_os == "armbian"
-
-- name: Add node to apt cache
-  command: "curl -fsSL https://raw.githubusercontent.com/nodesource/distributions/refs/heads/master/scripts/deb/setup_16.x -o /root/setup_16x.sh"
-  become: true
+# Node.js 22 LTS (support until 2027-04-30) from nodejs.org, replacing
+# NodeSource's Node 16 (end of life 2023).  NodeSource's 32-bit ARM (armhf)
+# packages stop at 22.15.0 and Node 24 has no 32-bit ARM build at all, so the
+# official tarball is used, checked against nodejs.org's SHA-256 list, and
+# unpacked into /usr/local (node, npm, npx in /usr/local/bin).  Tested on the
+# NEO (Armbian 23.02, armv7l) 2026-10-29: connectbox-manage, pm2 7.1.1.
+- name: Choose the Node.js build for this CPU
+  set_fact:
+    node_dist: "node-{{ node_version }}-linux-{{ {'armv7l': 'armv7l', 'aarch64': 'arm64', 'x86_64': 'x64'}[ansible_architecture] }}"
+  vars:
+    node_version: v22.23.4
   when: connectbox_os == 'armbian'
 
-- name: Continue to Add node to apt cache
-  command: "sudo -E bash /root/setup_16x.sh"
-  become: true
+- name: Remove NodeSource's apt source (it supplied Node 16)
+  file:
+    path: /etc/apt/sources.list.d/nodesource.list
+    state: absent
   when: connectbox_os == 'armbian'
 
-- name: apt install nodjs for armbian
-  command: "sudo apt-get install -y nodejs"
-  when: connectbox_os == "armbian"
+- name: Remove the apt Node.js package if present (Node 16 from NodeSource)
+  apt:
+    name: nodejs
+    state: absent
+  when: connectbox_os == 'armbian'
+
+- name: Download Node.js from nodejs.org, checked against its SHA-256 list
+  get_url:
+    url: "https://nodejs.org/dist/{{ node_dist.split('-')[1] }}/{{ node_dist }}.tar.xz"
+    checksum: "sha256:https://nodejs.org/dist/{{ node_dist.split('-')[1] }}/SHASUMS256.txt"
+    dest: "/root/{{ node_dist }}.tar.xz"
+    mode: '0644'
+  when: connectbox_os == 'armbian'
+
+- name: Unpack Node.js into /usr/local
+  command: >
+    tar -xJf /root/{{ node_dist }}.tar.xz -C /usr/local --strip-components=1
+    --no-same-owner --exclude=CHANGELOG.md --exclude=LICENSE --exclude=README.md
+  when: connectbox_os == 'armbian'
+
+- name: Remove the downloaded Node.js archive
+  file:
+    path: "/root/{{ node_dist }}.tar.xz"
+    state: absent
+  when: connectbox_os == 'armbian'
 
 - name: Install nodejs for connectbox-manage when not armbian
   apt:
@@ -92,6 +116,12 @@
 - name: print the node version
   debug:
     msg: "We loaded node version {{ node_ver.stdout }}"
+
+- name: Check that the expected Node.js version is the one in use
+  assert:
+    that: node_ver.stdout == node_dist.split('-')[1]
+    fail_msg: "node --version gave {{ node_ver.stdout }}, expected {{ node_dist.split('-')[1] }} (an older node earlier in PATH?)"
+  when: connectbox_os == 'armbian'
 
 - name: make sure npm is instailled
   apt:
