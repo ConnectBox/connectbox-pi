@@ -102,7 +102,7 @@ The hat service (sibling repo `connectbox-hat-service`, installed with pip from 
 
 ## Device access
 
-SSH config at `~/.ssh/config` has wildcard for `192.168.1.*` using `root` + `id_ed25519`. The WiFi MAC address is deliberately rotated at least on every boot, so a device's IP changes on every boot (and when PxUSBm brings WiFi back up). This is by design; don't try to pin it. Get the current IP from the OLED or the router. Direct SSH: `ssh root@<device_ip>`. Build Pi: `ssh build`.
+SSH config at `~/.ssh/config` has wildcard for `192.168.1.*` using `root` + `id_ed25519`. The WiFi MAC address is deliberately rotated at least on every boot, so a device's IP changes on every boot (and when PxUSBm brings WiFi back up). This is by design; don't try to pin it. The wired eth0 MAC is the opposite: on the NanoPi NEO it is fixed (fix 63) by `/etc/udev/rules.d/72-connectbox-fixed-eth-mac.rules` + `fixed_eth_mac.sh` (02 + SHA-256 of the chip ID), because it is the box ID used by phonehome and the admin page; before that the kernel picked a random one each boot (the NEO device tree has no ethernet0 alias). /etc/machine-id is the same on every box made from the image, so it is not a box identity. Get the current IP from the OLED or the router. Direct SSH: `ssh root@<device_ip>`. Build Pi: `ssh build`.
 
 Deploying a single file for testing:
 ```bash

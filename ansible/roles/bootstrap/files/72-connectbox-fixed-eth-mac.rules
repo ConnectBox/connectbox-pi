@@ -1,0 +1,5 @@
+# Fixed MAC address for the NanoPi NEO's built-in ethernet (dwmac-sun8i), made
+# from the chip's ID, set before ifupdown brings the interface up (fix 63).
+# See /usr/local/connectbox/bin/fixed_eth_mac.sh.  Boards whose ethernet has a
+# real MAC (Raspberry Pi, CM4) use other drivers and are not matched.
+ACTION=="add", SUBSYSTEM=="net", DRIVERS=="dwmac-sun8i", RUN+="/usr/local/connectbox/bin/fixed_eth_mac.sh $name"
