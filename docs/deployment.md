@@ -37,6 +37,17 @@ Use a microSD card of at least 8 GB.  The device needs a wired (Ethernet) or
 second WiFi connection to the internet during the build, because its main WiFi
 adapter becomes the access point.
 
+Use **one or two** USB WiFi adapters.  With two, PxUSBm puts the access point on the
+adapter that can run one (a Realtek RTL88xx first) and uses the other as the client;
+with three or more it leaves the configuration alone ("must be manually managed"),
+and the access point can end up on an adapter that cannot run one (an MT7601U, for
+example).
+
+The admin back end (connectbox-manage) runs on **Node.js 22 LTS**, installed by the
+playbook from the nodejs.org tarball into `/usr/local` (Node 24 and later have no
+32-bit ARM build).  `/usr/bin/node`, `npm`, `npx` and `pm2` link there, because
+PxUSBm calls `/usr/bin/pm2`.
+
 ## 1. Prepare the device
 
 ### Armbian boards (NanoPi NEO, Orange Pi Zero 2, Radxa CM3)
@@ -130,7 +141,12 @@ units going into the field).
 
 ```bash
 systemctl status PxUSBm kiwix-serve nginx
+node --version          # v22.x
+/usr/bin/pm2 status     # connectbox-manage ("index") online
 ```
+
+   The Box ID (Configuration → *Cloud Server Connection*) should stay the same
+   after a reboot.
 
 To make more units, copy the finished microSD card - there is no need to run
 the playbook again for each one (see `do_image_preparation` below for making a

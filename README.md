@@ -108,6 +108,24 @@ The front panel's **Copy from USB** copies a stick's `content/` to the box's SD 
 
 The Configuration link always asks for the admin password, and the login does not last: leaving the Configuration page (Exit, Back, another link, closing the tab) logs out, and Exit goes to the main ConnectBox screen. A session also ends after 5 minutes without any admin activity. There is no long-lived login cookie, because a phone left logged in as admin can be dangerous in some countries. The login page does not show the default password.
 
+## Box ID and cloud check-in (phone-home)
+
+A box identifies itself to a central server by its **Box ID**, shown in
+Configuration → *Cloud Server Connection*. It is the wired (Ethernet) MAC address
+written with dashes (for example `02-03-5c-72-b6-f6`). On the NanoPi NEO the
+kernel would pick a new random MAC at every boot, so a udev rule
+(`72-connectbox-fixed-eth-mac.rules`, running `fixed_eth_mac.sh`) sets it at boot
+from the processor's unique ID: the same box always has the same Box ID, also
+after re-imaging, and every box has a different one. The Wi-Fi MACs still change
+on purpose. The wired IP address is still given by the router and may change.
+
+`phonehome.py` runs every 10 minutes (cron, as www-data). It stops at once while
+no Cloud Server URL or Site Name is set. Otherwise it sends
+`Authorization: Bearer <Box ID>|<key>`, where the key is `server_authorization` in
+`brand.j2`: made the first time phone-home runs, or set by the server. It then
+reports the box details and usage statistics, applies any settings the server has
+queued, and starts **Download Missing Content Files** in the background.
+
 ## OpenWell — content packages from a server
 
 Besides USB sticks, a box can get its menus and media from a **content package** on a
@@ -120,7 +138,9 @@ connectbox-admin-ui, and the server side is connectbox-chathost.
 **Setting up:** the box must have its server set (`server_url` in `brand.j2`, the same
 server it syncs chat with) and an internet connection.
 
-**In the admin pages** (Configuration → *Web Server*):
+**In the admin pages** (Configuration → *Cloud Server Connection*; the first two
+controls appear only when the box shows a Box ID and a Cloud Server URL is saved;
+*Load Content From USB Flash* is under *Web Server*):
 
 | Control | What it does |
 |---|---|

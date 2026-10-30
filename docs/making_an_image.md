@@ -61,8 +61,9 @@ same for `connectbox-tools`).
    [deployment.md, step 1](deployment.md#1-prepare-the-device) (Armbian Bullseye
    for the NanoPi NEO, Raspberry Pi OS Lite for a Pi).  Use an 8 GB card: the image
    is copied from the whole card, so a bigger one only makes shrinking slower.
-2. Plug in the **USB WiFi adapter** the box will use; the build fails without
-   the WiFi hardware it expects.
+2. Plug in the **USB WiFi adapter(s)** the box will use - one or two, not more
+   (with three or more PxUSBm does not place the access point); the build fails
+   without the WiFi hardware it expects.
 3. Release builds log in as **root** with your SSH key:
 
    - **Armbian:** `ssh-copy-id root@<device_ip>`
@@ -152,6 +153,11 @@ Imager (both read `.xz` directly), boot a device from it and check it as in
 [deployment.md, step 5](deployment.md#5-check-the-build): WiFi network and captive
 portal, a USB stick with content, the language menus and a ZIM file.  On first
 boot the box grows its file system to fill the card.
+
+Every box made from the image gets its own Box ID: on the NanoPi NEO the wired MAC
+is set at each boot from the processor's unique ID (`fixed_eth_mac.sh`), not from
+`/etc/machine-id`, which is the same on every card made from the image.  Check that
+two boxes show different Box IDs and that a reboot does not change them.
 
 ## 6. Publish
 
