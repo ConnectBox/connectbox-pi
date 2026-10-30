@@ -2,18 +2,18 @@
 
 `mmiLoader.py` walks `/media/usb0/content` and converts whatever it finds into JSON
 consumed by the Angular/Ionic media-interface frontend.  This document describes every
-structure it recognises and how each one is rendered.
+structure it recognizes and how each one is rendered.
 
 ---
 
 ## 0. Preparing the USB drive
 
-| Format | Works | Notes |
-|--------|-------|-------|
-| FAT32 | Yes | Files must be under 4 GB |
-| exFAT | Yes | No 4 GB limit |
-| NTFS | Yes | No 4 GB limit. Read through ntfs-3g (more CPU than FAT). On Windows use "Safely Remove" before pulling the stick out |
-| ext4 (and ext2/3, xfs, btrfs, f2fs) | Yes | Partitioned or whole-disk (`mkfs.ext4 /dev/sdX`) |
+| Format 				| Works | Notes 														|
+|---------------------------------------|-------|-----------------------------------------------------------------------------------------------------------------------|
+| FAT32 				| Yes 	| Files must be under 4 GB 												|
+| exFAT 				| Yes 	| No 4 GB limit 													|
+| NTFS 					| Yes 	| No 4 GB limit. Read through ntfs-3g (more CPU than FAT). On Windows use "Safely Remove" before pulling the stick out 	|
+| ext4 (and ext2/3, xfs, btrfs, f2fs) 	| Yes 	| Partitioned or whole-disk (`mkfs.ext4 /dev/sdX`) 									|
 
 Put everything under a top-level `content/` folder.  On Linux formats the box makes the
 files readable by its web server automatically (it only adds read permission), so the
@@ -42,11 +42,11 @@ language directory exists.
 
 **Supported language code formats**
 
-| Format | Example | Notes |
-|--------|---------|-------|
-| ISO 639-1 two-letter | `en`, `fr`, `zh` | Most common |
-| ISO 639-2 three-letter | `zho`, `fra`, `spa` | Accepted if in languageCodes.json; mapped to the two-letter code (`spa` → `es`) |
-| IETF regional tag | `zh-CN`, `pt-BR` | Base-code symlink (`zh` → `zh-CN`) created automatically so the frontend can resolve URLs |
+| Format 			| Example 		| Notes 											|
+|-------------------------------|-----------------------|-----------------------------------------------------------------------------------------------|
+| ISO 639-1 two-letter 		| `en`, `fr`, `zh` 	| Most common 											|
+| ISO 639-2 three-letter 	| `zho`, `fra`, `spa` 	| Accepted if in languageCodes.json; mapped to the two-letter code (`spa` → `es`) 		|
+| IETF regional tag 		| `zh-CN`, `pt-BR` 	| Base-code symlink (`zh` → `zh-CN`) created automatically so the frontend can resolve URLs 	|
 
 Codes longer than 3 characters that do not contain `-` are rejected.
 
@@ -66,7 +66,7 @@ matching written form: `cmn`, `wuu`, `cjy`, `hak` → Simplified Chinese, `yue`
 
 ### 1b. Flat USB (no language folders)
 
-All content sits directly under `content/`.  mmiLoader defaults to English (`en`).
+All content sits directly under `content/'.  defaults to English (`en`).
 
 ```
 content/
@@ -324,20 +324,21 @@ download buttons.
 mmiLoader reads `types.json` for the complete extension map.  The important
 categories and their behaviour:
 
-| Category | Example extensions | Thumbnail | Fallback icon |
-|----------|--------------------|-----------|--------------|
-| Video | `.mp4 .mkv .webm .avi .mov` | ffmpeg frame (progressive seek 1s→5s→15s→30s→60s, skips black frames) | `video.png` |
-| Audio | `.mp3 .m4a .ogg .aac .wav` | Embedded album art via ffmpeg | `sound.png` |
-| Image | `.jpg .jpeg .png .gif .bmp` | The image itself | `images.png` |
-| PDF | `.pdf` | — | `pdf.png` |
-| Word document | `.doc .docx` | — | `doc.png` / `docx.png` |
-| Spreadsheet | `.xls .xlsx` | — | `xls.png` / `xlsx.png` |
-| Presentation | `.ppt .pptx` | — | `ppt.png` / `pptx.png` |
-| Other document | `.h5p .txt` | — | `pdf.png` |
-| ePub | `.epub` | — | `epub.png` |
-| Archive | `.zip .gzip .tar` | — | `zip.png` |
-| Android app | (directory with `AndroidManifest.xml`) | — | `app.png` |
-| Web app | (directory with `index.html/htm`) | — | `www.png` |
+| Category 		| Example extensions 				| Thumbnail 								| Fallback icon 	|
+|-----------------------|-----------------------------------------------|-----------------------------------------------------------------------|-----------------------|
+| Video 		| `.mp4 .mkv .webm .avi .mov` 			| ffmpeg frame (progressive seek 1s→5s→15s→30s→60s, skips black frames) | `video.png` 		|
+| Audio 		| `.mp3 .m4a .ogg .aac .wav` 			| Embedded album art via ffmpeg 					| `sound.png` 		|
+| Image 		| `.jpg .jpeg .png .gif .bmp` 			| The image itself 							| `images.png` 		|
+| PDF 			| `.pdf` 					| .pdf card								| `pdf.png` 		|
+| Word document 	| `.doc .docx` 					| .doc or .docx card 							| `doc.png` / `docx.png`|
+| Spreadsheet 		| `.xls .xlsx` 					| .xls or .xlsx card							| `xls.png` / `xlsx.png`|
+| Presentation 		| `.ppt .pptx`		 			| .ppt or .pptx card							| `ppt.png` / `pptx.png`|
+| Other document 	| `.h5p .txt` 					| .web card or .txt card						| `pdf.png` 		|
+| ePub 			| `.epub` 					| .epub card								| `epub.png` 		|
+| Archive 		| `.zip .gzip .tar` 				| .zip card								| `zip.png` 		|
+| Android app 		| (directory with `AndroidManifest.xml`) 	| application card							| `app.png` 		|
+| Web app 		| (directory with `index.html/htm`) 		| .html card								| `www.png` 		|
+| Zim Wiki files	| -.zim	(single or multi-lingual)		| zim internal image							| -			|
 
 Files with extensions not in `types.json` are silently skipped (for example `.webp`, `.svg`, `.flac`, `.7z`, `.odt`).
 Files and directories whose names start with `.` or `_` are also skipped.
@@ -372,16 +373,15 @@ subdirectory.  Language roots and HTML content directories ignore folder art.
 
 These hidden files in `content/` (or USB root) modify mmiLoader's behaviour.
 
-| File | Location | Effect |
-|------|----------|--------|
-| `.language` | `content/` | Sets the language code for a flat (no language dirs) USB (file name in any case) |
-| `.compress` | `content/` | Auto-creates a downloadable zip of every multi-file directory |
-| `.webcompress` | `content/` | Creates a downloadable zip of each web content directory (off without it) |
-| `saved.zip` | `content/` or USB root | Fast-load cache — mmiLoader extracts it and exits immediately |
-| `.thumbnail-<lang>-<slug>.png` | `content/` root | Cached thumbnail; re-checked for black frames on each run |
+| File 					| Location 			| Effect 										|
+|---------------------------------------|-------------------------------|---------------------------------------------------------------------------------------|
+| `.language` 				| `content/` 			| Sets the language code for a flat (no language dirs) USB (file name in any case) 	|
+| `.compress` 				| `content/` 			| Auto-creates a downloadable zip of every multi-file directory 			|
+| `.webcompress` 			| `content/` 			| Creates a downloadable zip of each web content directory (off without it) 		|
+| `saved.zip` 				| `content/` or USB root 	| Fast-load cache — mmiLoader extracts it and exits immediately 			|
+| `.thumbnail-<lang>-<slug>.png` 	| `content/` root 		| Cached thumbnail; re-checked for black frames on each run 				|
 
-Delete `saved.zip` to force a full re-index.  Delete individual `.thumbnail-*` files
-to force re-extraction of those thumbnails.
+Delete `saved.zip` to force a full re-index.  Delete individual `.thumbnail-*` files to force re-extraction of those thumbnails.
 
 Zips (`.compress`, `.webcompress`, Android app folders) are written as
 `<name>.zip.part` and renamed when complete; pulling the USB out or stopping the
@@ -391,15 +391,47 @@ loader stops a zip within a few MB and removes the part file.
 
 These are in a `.connectbox/` folder at the **root** of the USB (not in `content/`).
 
-| File | Effect |
-|------|--------|
-| `.connectbox/enable-ssh` | Enables and starts the SSH service when the USB is mounted |
-| `.connectbox/upgrade/upgrade.py` | Run as root (`python3`) when the USB is mounted at `/media/usb0` |
+| File 					| Effect 								|
+|---------------------------------------|-----------------------------------------------------------------------|
+| `.connectbox/enable-ssh` 		| Enables and starts the SSH service when the USB is mounted 		|
+| `.connectbox/upgrade/upgrade.py` 	| Run as root (`python3`) when the USB is mounted at `/media/usb0` 	|
 
 **Known risk (kept by decision, 2026-10-28):** anyone who can plug a USB into the box
 can use these to turn on SSH or run any program as root.  Keep boxes where only
 trusted people can reach the USB ports.
+Upgrade may have several folders.
 
+In the main folder is upgrade.py if it exsists then it will be copied along with all folders in upgrade directory to the local /tmp directory
+Then PxUSBm will execute the python3 upgrade.py tool
+
+The USB key should be formatted:
+
+USB root
+       .connectbox (directory)
+	         upgrade (directory)
+		     upgrade.py  (python app)
+			 update (directory)
+			 	run.txt - required file to make update work if missing update will not execute!
+				     files to be updated with the following URL format
+					 /xxxx,yyyyy,zzzzz....file-folder or
+					 /xxxx_yyyyy_zzzzz....file-folder_folder
+					 note the / at the beginning is not used but that is where the copy will start from. if you need the , or _ in the path or name preceed it by a % character
+		                         	CM4version (directory)
+			                             	 hex file to burn to CM4 ATTiny code like
+			                             	 CM4_xxxx.ino.hex
+	                     			  Prerun (directory)
+			                              	a set of files with bash script commands within or, a python3 program ending in .py or a php program ending in .php
+	                     			 Postrun (directory))
+			                              	a set of files with bash script commands within or, a python3 program ending in .py or a php program ending in .php
+							  
+					 
+Editing of upgrade.py is done to customize any additional you may need that is not covered by this strucutre..  Otherwise just using the update folder  with appropriate files-folders will copy
+by themselves when the USB  is plugged in.  And execute any commands in the run directory either as bash scripts or as python or php code.
+Python code will always end in .py  and php will end in .php everything else will be treated as bash commands
+
+NOTE: PxUSBm.py service on the device is responsible for copying  over the upgrade directory to the /tmp directory and initiating the run of upgrade.py.  This service is stopped during the upgrade by the 
+upgrade.py program so please do not start/stop this service in the Prerun folder or Postrun folder it will be restartaed automatically on exit of the upgrade.py program.  Further all upgrade files/folders are
+deleted from the /tmp directory as the script runs.  
 ---
 
 ## 6. Complete worked example
@@ -407,6 +439,7 @@ trusted people can reach the USB ports.
 ```
 content/
   .language          ← not needed here since we have language dirs
+  xxxxx.zim 	(multilingual zim file)
   en/
     welcome.mp4                      ← singular item
     study-guide.pdf                  ← singular item
@@ -424,6 +457,7 @@ content/
         lesson.pdf
       module-2/
         lesson.pdf
+    xxxxxx.zim	  (english only zim)
   zh-CN/
     welcome.mp4                      ← singular (zh symlink auto-created → zh-CN)
     sermons/
@@ -433,10 +467,12 @@ content/
 
 **What the frontend sees (English home screen)**
 
-| Card | Type | Thumbnail |
-|------|------|-----------|
-| welcome | Video | ffmpeg frame |
-| study-guide | PDF | pdf.png icon |
-| sermons | Collection | cover.jpg |
-| gospel-comics | Web app | www.png |
-| training | Web app (file browser) | www.png |
+| Card 		| Type 				| Thumbnail 	|
+|---------------|-------------------------------|---------------|
+| zim card (en) | zim (english)  		| zim site      |
+| welcome 	| Video 			| ffmpeg frame 	|
+| study-guide	| PDF 				| pdf.png icon 	|
+| sermons 	| Collection 			| cover.jpg 	|
+| gospel-comics | Web app 			| www.png 	|
+| training 	| Web app (file browser) 	| www.png 	|
+| zim card (en) | zim (english)			| zim site	|
