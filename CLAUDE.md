@@ -136,7 +136,7 @@ The `patch_*.py` scripts in `ansible/roles/enhanced-content/files/` are idempote
 
 ## Tests
 
-`ansible/roles/bootstrap/files/test_mmiLoader.py` covers the mmiLoader helper functions (loads the file via `importlib.util.spec_from_file_location`; kept Python 3.7 compatible with `contextlib.ExitStack`). Run it after any mmiLoader change. `test_PxUSBm_mount.py` (same folder) simulates `PxUSBm.mountCheck()` with fake `lsblk` output and the matching `/proc/mounts` — run it after any change to USB mounting.  Both pass in full (2026-10-28: 301 and 32); test_mmiLoader's Word-document tests need `pip install mammoth==1.13.0`.  `test_RestartWLAN.py` is not a unit test (it restarts Wi-Fi on a real box); `tests/test_connectbox_static.py` checks a live box over the network.
+`ansible/roles/bootstrap/files/test_mmiLoader.py` covers the mmiLoader helper functions (loads the file via `importlib.util.spec_from_file_location`; kept Python 3.7 compatible with `contextlib.ExitStack`). Run it after any mmiLoader change. `test_PxUSBm_mount.py` (same folder) simulates `PxUSBm.mountCheck()` with fake `lsblk` output and the matching `/proc/mounts` — run it after any change to USB mounting.  Both pass in full (2026-10-28: 301 and 32); test_mmiLoader's Word-document tests need `pip install mammoth==1.13.0`.  `test_RestartWLAN.py` is not a unit test (it restarts Wi-Fi on a real box); `tests/test_connectbox_static.py` checks a live box over the network. **[docs/testing.md](docs/testing.md)** is the full list: every suite and harness (including those kept in `Hobby - ConnectBox\Claude\hatbox`, not in a repo), how to run each, the on-box, build and image checks, what is not tested yet, and a dated test record - add a line there whenever a test is run.
 
 ## ZIM files (Kiwix)
 
