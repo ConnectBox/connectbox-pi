@@ -1,0 +1,2 @@
+# keep Unix line endings: these files are run on Linux and copied to boxes
+* text=auto eol=lf

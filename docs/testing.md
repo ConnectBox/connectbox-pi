@@ -20,9 +20,13 @@ row to the right table whenever a new test or harness is written.
 | `connectbox-pi/tests/test_connectbox_static.py` | 27 checks against a **live box** over the network (not run in these sessions) |
 | `connectbox-mediainterface/src/**/*.spec.ts`, `e2e/` | Angular unit and end-to-end tests of the media app (not run in these sessions) |
 | `connectbox-pi/ansible/roles/bootstrap/files/test_RestartWLAN.py` | Not a unit test: it restarts the Wi-Fi on a real box |
-| `Hobby - ConnectBox\Claude\hatbox\` | Harnesses written for fixes 21–66: front panel, PxUSBm, mmiLoader, connectbox-manage, admin page, phone-home. **Not in a repository** – keep the folder backed up. |
+| `connectbox-hat-service/tests/harness/` | Front-panel harnesses (fixes 21–51), `run_all.sh` |
+| `connectbox-pi/tests/harness/` | PxUSBm and mmiLoader harnesses (fixes 35–53), `run_all.sh`; `phonehome64/` and `node22/` for a box |
+| `connectbox-manage/tests/` | Setter, client Wi-Fi, setBrand, body-parser and admin-login harnesses (fixes 26, 48, 61–66) |
+| `connectbox-admin-ui/tests/` | Cloud-items visibility (fix 55) |
+| `Hobby - ConnectBox\Claude\hatbox\` | Earlier versions of the harnesses, the portal language test, the screenshot script |
 
-The `hatbox` harnesses each take the file(s) under test as arguments, so they can
+The harnesses each take the file(s) under test as arguments, so they can
 be pointed at the repository copy, a copy fetched from a box, or an older version
 (to prove the test fails on the old code).
 
@@ -66,34 +70,27 @@ be pointed at the repository copy, a copy fetched from a box, or an older versio
 | Ansible syntax | Playbook loads | on Rpi-Build: `cd connectbox-pi/ansible && ansible-playbook --syntax-check site.yml`; YAML: `python3 -c "import yaml;yaml.safe_load(open('roles/<role>/tasks/main.yml'))"` | OK 2026-10-30 (build ran) |
 | Script syntax | Changed scripts | `bash -n x.sh`, `sh -n x.sh`, `python3 -m py_compile x.py`, `node --check x.js` | run with each fix |
 
-## 2. Harnesses in `Claude\hatbox` (run when the program they cover changes)
+## 2. Test harnesses in the repositories (run when the program they cover changes)
 
-Run from the `hatbox` folder; paths in angle brackets are the files under test.
+The harnesses written for fixes 21–66 are in the repository of the code they test. Each folder has a
+README with the details; the `run_all.sh` scripts run every harness in that folder against the
+checkout and end with `ALL PASSED` or `SOME TESTS FAILED`. Linux only (they read `/proc`).
+Each harness takes the file(s) under test as arguments, so it can also be pointed at a copy fetched
+from a box or at an older version (to prove the test fails on the old code).
 
-| Harness | Covers | How to run | Last result |
+| Where | Run | Harnesses (what they cover) | Last result |
 |---|---|---|---|
-| `tests41/sim43.py` (latest front-panel simulation; earlier `sim_test.py`, `sim41.py`) | hat-service admin commands with fake GPIO/display/mounts and real files: copy from/to USB, erase, space check, error pages that stay lit, key held after a failed copy, progress %, one checkmark, button timing | `python3 tests41/sim43.py <dir with buttons.py, displays.py>` (connectbox-hat-service/neo_batterylevelshutdown) | 84/84 ×3 (fix 44) |
-| `usb_test.py` | hat-service usb.isUsbPresent(): /dev/sdX1 and whole-disk keys | `python3 usb_test.py <usb.py>` | 10/10 (fix 43) |
-| `tests41/fscheck_test.py` | usb._check_file_system by type (FAT exit 1, NTFS, exFAT) | `python3 tests41/fscheck_test.py <usb.py>` | 8/8; old code fails 4 |
-| `tests41/movemount_test.py` | usb.moveMount to /media/usb11 per file system | `python3 tests41/movemount_test.py <usb.py>` | 4/4; old code fails 2 |
-| `tests41/unit35c.py` (earlier `unit35.py`, `unit35b.py`) | brand.j2 atomic write/read, no dosfsck on a mounted key, one success page | `python3 tests41/unit35c.py <neo_batterylevelshutdown dir with globals.py, buttons.py, usb.py>` | 23/23 |
-| `tests35/px35.py` | PxUSBm mountCheck slot booking (usb0+usb1 double booking) | `python3 tests35/px35.py <dir>` where `<dir>/orig/PxUSBm.py` is the old and `<dir>/new/PxUSBm.py` the new version | 5/5 |
-| `tests38/test38.py` | stale front-panel status file; mmiLoader SIGTERM/early exit | `python3 tests38/test38.py <new mmiLoader.py> <old mmiLoader.py> <hats.py>` | 19/19 (18/19 after fix 51 with the harness updated) |
-| `tests38/testwc.py` | `.webcompress` opt-in download zips | `python3 tests38/testwc.py <mmiLoader.py>` | 7/7 |
-| `tests47/test47.py` | default language (eng/en/en-GB, no English → first) | `python3 tests47/test47.py <mmiLoader.py>` | 9/9 |
-| `tests48/test_make_zip.py` | mmiLoader.make_zip (same as make_archive, SIGTERM stops, no .part left) | `python3 tests48/test_make_zip.py <mmiLoader.py>` | 8/8 |
-| `tests48/test_px_status.py` | PxUSBm start-up removes /tmp/creating_menus.txt only when no loader runs | `python3 tests48/test_px_status.py <PxUSBm.py>` (run from its own shell call: `pgrep -f` matches a shell whose command line names mmiLoader.py) | 4/4 |
-| `tests48/cbm_test.js` | connectbox-manage setters: old shell+sed vs new Node edits give byte-identical files; injection attempts; refused values; exact program arguments | in a throw-away Linux container as root (it writes /etc files): `node tests48/cbm_test.js <old connectbox-manage> <new connectbox-manage>` | 62/62 (Node 16) |
-| `tests48/bp_test.js` | body-parser json/form/text as index.js sets it up | `node tests48/bp_test.js <connectbox-manage dir with node_modules>` | OK (fix 48e) |
-| `tests51/test51_px.py` | PxUSBm fat_needs_check (Windows/Linux dirty flags on mkfs.fat images), run_fs_check 120 s limit, "Checking USB" message | `python3 tests51/test51_px.py <PxUSBm.py>` (Linux; needs mkfs.fat, dosfsck) | 21/21 |
-| `tests51/test51_hats.py` | front panel shows "Checking USB" | `python3 tests51/test51_hats.py <hats.py>` | 9/9 |
-| `tests53/test53.py` | dead/stacked mounts after a PxUSBm restart | `python3 tests53/test53.py <PxUSBm.py>` | 11/11 |
-| `tests55/test.mjs`, `test2.mjs`, `test3.mjs` | admin page: Sync / Subscribe / Download Missing shown only with a Box ID and a saved Cloud Server URL | copy `connectbox-admin-ui/src/js/admin/cloudpackage.js` to `tests55/cloudpackage.mjs`, then `node tests55/test3.mjs` (test.mjs/test2.mjs are the earlier rules) | 8/8 (fix 55c) |
-| `test_clientwifi.js` | client SSID/passphrase change only the first network block; scan_ssid kept | on a box: `node test_clientwifi.js <connectbox-manage>/src/functions.js` | 10/10; committed ee1b02a 5/10 |
-| `test_setbrand.js` | setBrand number rule, `=` in values, phone saved, security key without wget (copy of brand.j2, writes intercepted) | on a box: copy into connectbox-manage/src or give the full path: `node test_setbrand.js <functions.js>` | 11/11; old 6/11 |
-| `phonehome64/run_test.sh` (+ `mock_cloud.py`, `new_phonehome.py`) | phonehome.py end to end as www-data against a fake cloud server, with a bind-mounted test brand.j2 | copy the folder to the box's `/tmp/phonehome64`, put the phonehome.py to test there as `new_phonehome.py`, `bash /tmp/phonehome64/run_test.sh` as root; **afterwards remove the `{"sync":true}` line it adds** (rule 6) | key made, 4 requests with `Bearer <Box ID>|<key>` |
-| `node22_test.sh` | Node 22 beside Node 16: 24 read-only get.* outputs identical; second server on port 5012 answers like 5002 | on a box with Node 22 in /opt: `bash node22_test.sh` | identical except wifistatus counters |
-| `spec_shots/shoot.py` | (not a test) phone-size screenshots via headless Chromium | Rpi-Build's Chromium currently fails (zygote error) | – |
+| `connectbox-hat-service/tests/harness/` | `bash tests/harness/run_all.sh [connectbox-pi]` – tests the **deployed** set: this repo's package with connectbox-pi's `displays.py` and `page_display_image.py` copied over it, as the build does | `sim43.py` (admin commands, copy/erase, error pages, progress, button timing), `unit35c.py` (brand.j2 atomic write/read, status file), `usb_test.py` (isUsbPresent), `fscheck_test.py` (file-system check by type), `movemount_test.py` (moveMount), `test51_hats.py` ("Checking USB" on the panel) | 84, 23, 10, 8, 4, 9 – all pass (2026-11-01) |
+| `connectbox-pi/tests/harness/` | `bash tests/harness/run_all.sh [connectbox-hat-service]` – copies the files to neutral names (some tests look for processes named `mmiLoader.py`) and takes the pre-fix code (d1913b5) from git, or from `OLD_DIR` | `px35.py` (mount slot booking), `test38.py` (stale status file, SIGTERM), `testwc.py` (`.webcompress`), `test47.py` (default language), `test_make_zip.py`, `test_px_status.py` (start-up status file), `test51_px.py` (FAT dirty check; needs dosfstools), `test53.py` (dead/stacked mounts) | 5, 19, 7, 9, 8, 4, 21, 11 – all pass (2026-11-01) |
+| `connectbox-pi/tests/harness/phonehome64/` | on a box as root, see its README; afterwards remove the `{"sync":true}` line it adds (rule 6) | phonehome.py end to end as www-data against `mock_cloud.py` with a bind-mounted test brand.j2 | key made, 4 requests with `Bearer <Box ID>\|<key>` (fix 64) |
+| `connectbox-pi/tests/harness/node22/` | on a box as root, in order: fetch, test, switch, after | moving an existing box from Node 16 to Node 22 by hand (new builds install Node 22); `node22_test.sh` compares 24 read-only `get.*` answers and a second server on port 5012 | identical except wifistatus counters (fix 60) |
+| `connectbox-manage/tests/` | `npm ci`, then `bash tests/run_all.sh` | `test_clientwifi.js` (first network block only, scan_ssid kept), `test_setbrand.js` (number rule, `=`, phone, security key without wget), `bp_test.js` (body-parser) | 10, 11, 4 – all pass (2026-11-01) |
+| `connectbox-manage/tests/` (container only, root) | see the README | `cbm_test.js` + `fake_sudo.sh` (setters: old sed vs new Node, injection, refused values, exact arguments; needs 44a66bf), `admin_login/` (password checks and login session in Playwright Chromium) | 62/62; 30/30 (2026-11-01) |
+| `connectbox-admin-ui/tests/` | `bash tests/run.sh` | `test_cloudpackage.mjs` (Sync / Subscribe / Download Missing shown only with a Box ID and a saved Cloud Server URL) | 8/8 (2026-11-01) |
+
+`Hobby - ConnectBox\Claude\hatbox\` still holds the earlier versions of these harnesses, the portal
+language test (`portal-test`) and `spec_shots/shoot.py` (not a test: phone-size screenshots via headless
+Chromium; Rpi-Build's Chromium currently fails with a zygote error).
 
 Patch scripts for the released apps (`connectbox-pi/ansible/roles/enhanced-content/files/patch_*.py`,
 and the inline 3.js/6.js patch tasks) are tested the same way each time:
@@ -188,8 +185,8 @@ Build history: 2026-10-23 ok (after fixes 1–11), 2026-10-24 ok (24 ignored),
 - Client Wi-Fi (`ifup@wlan1`) failing once at boot right after DHCP (2026-10-29 15:48) – cause unknown.
 - Three or more Wi-Fi adapters (PxUSBm leaves them alone; AP can end up on an MT7601U).
 - `test_connectbox_static.py` (live box) and the mediainterface spec tests.
-- wifi-configurator and hat-service repository suites; consider moving the `hatbox`
-  harnesses into their repositories so they are versioned.
+- wifi-configurator and hat-service repository suites.
+- connectbox-manage `admin_login/` with a current admin-ui build (run on 2026-11-01 with the 26 Oct build).
 - Raspberry Pi, CM4, Orange Pi Zero 2, Radxa CM3 builds on current OS releases (only
   the NanoPi NEO on Armbian 23.02 is tested).
 - Central server (connectbox-chathost) build on a real Ubuntu 24.04 server, and
@@ -203,6 +200,7 @@ Most recent first. One line per test run: date, what, result, where it is descri
 
 | Date | Test | Result | Reference |
 |---|---|---|---|
+| 2026-11-01 | Harnesses moved into the repositories; `run_all.sh` for hat-service and connectbox-pi and admin-ui run on the real checkouts; connectbox-manage in a test container | all pass: hat-service 138, connectbox-pi 84, connectbox-manage 25 + cbm_test 62 + admin_login 30, admin-ui 8; test_PxUSBm_mount 32/32, test_mmiLoader 317/317 | `tests/harness/README.md` in each repo |
 | 2026-10-30 | Build on fresh card (.153) | failed=0, 3 expected ignores | fix log "Build 2026-10-30" |
 | 2026-10-29 | test_setbrand.js on .156 | 11/11 (old 6/11) | fix 66 |
 | 2026-10-29 | /usr/bin links task against .156 + `/usr/bin/pm2 status` | ok=4 failed=0 | fix 60b |
