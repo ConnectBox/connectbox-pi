@@ -185,7 +185,8 @@ Build history: 2026-10-23 ok (after fixes 1–11), 2026-10-24 ok (24 ignored),
 - Client Wi-Fi (`ifup@wlan1`) failing once at boot right after DHCP (2026-10-29 15:48) – cause unknown.
 - Three or more Wi-Fi adapters (PxUSBm leaves them alone; AP can end up on an MT7601U).
 - `test_connectbox_static.py` (live box) and the mediainterface spec tests.
-- wifi-configurator and hat-service repository suites.
+- wifi-configurator suite: 14 of 29 fail (2026-11-01). Most tests are out of date (old function signatures, `range` instead of a list), but they also show a real bug: `scan.get_country_rules_block` matches the country code anywhere in a line (`AU` in `AUTO-BW`, `IR` in `NO-IR`, `JP` in `DFS-JP`), so with the test regulatory database AU, NO, IR, TD, DM and DO get no channels (hostapd then gets `channel=0`), SE and ET get 1–11, JP gets another country's list. Not fixed yet.
+- hat-service repository suite: only a placeholder test (`assertTrue(True)`); the real front-panel tests are in `tests/harness/`.
 - connectbox-manage `admin_login/` with a current admin-ui build (run on 2026-11-01 with the 26 Oct build).
 - Raspberry Pi, CM4, Orange Pi Zero 2, Radxa CM3 builds on current OS releases (only
   the NanoPi NEO on Armbian 23.02 is tested).
@@ -200,6 +201,7 @@ Most recent first. One line per test run: date, what, result, where it is descri
 
 | Date | Test | Result | Reference |
 |---|---|---|---|
+| 2026-11-01 | wifi-configurator `pytest` (Python 3.10, copy of the repo); hat-service `pytest tests` | wifi-configurator 11 passed, 14 failed, 4 skipped (country-block bug, see section 7); hat-service 1 passed (placeholder) | section 7 |
 | 2026-11-01 | Harnesses moved into the repositories; `run_all.sh` for hat-service and connectbox-pi and admin-ui run on the real checkouts; connectbox-manage in a test container | all pass: hat-service 138, connectbox-pi 84, connectbox-manage 25 + cbm_test 62 + admin_login 30, admin-ui 8; test_PxUSBm_mount 32/32, test_mmiLoader 317/317 | `tests/harness/README.md` in each repo |
 | 2026-10-30 | Build on fresh card (.153) | failed=0, 3 expected ignores | fix log "Build 2026-10-30" |
 | 2026-10-29 | test_setbrand.js on .156 | 11/11 (old 6/11) | fix 66 |
