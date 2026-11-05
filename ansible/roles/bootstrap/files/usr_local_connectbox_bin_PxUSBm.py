@@ -50,6 +50,7 @@ import re
 import os
 from subprocess import Popen, PIPE
 import subprocess
+import shutil
 import io
 import json
 import sys
@@ -1180,11 +1181,53 @@ def check_iwconfig(b):
   if (len(rvs) >= 2):       # rvs is an array split on wlanx
     wlanx_flags = str(rvs[1]).find("Mode:Master")
     if (wlanx_flags) >= 0:
-      # we are up
-      return(1)
+      # Master mode alone is not enough: after a USB re-plug of the AP adapter
+      #  the interface stayed in Master mode with its link down and nothing on
+      #  the air, while hostapd kept saying ENABLED or had given up (CM4 on
+      #  Trixie, 2026-11-04).  So also check the link and hostapd.
+      return(1 if ap_really_up(wlanx) else 0)
     else:
       return 0
   return(0)
+
+
+def ap_really_up(wlanx):
+  """
+  Extra AP checks for check_iwconfig(): the AP link must not be down, and
+  hostapd must be running ENABLED on this interface.
+
+  Only clear failures count, so a working AP is never restarted by mistake:
+  an operstate other than "down" (e.g. "unknown" from older drivers) is
+  accepted, and the hostapd check is skipped when hostapd_cli is not installed.
+  (iw's ssid line is not used: the 8812au driver does not always report it
+  while beaconing.)
+
+  Returns True when no failure was found.
+  """
+  try:
+    with open("/sys/class/net/"+wlanx+"/operstate") as f:
+      if f.read().strip() == "down":
+        logger.info("AP check: "+wlanx+" is in Master mode but its link is down")
+        return False
+  except OSError:
+    return False
+  if shutil.which("hostapd_cli"):
+    try:
+      out = subprocess.run(["hostapd_cli", "-i", wlanx, "status"], stdout=subprocess.PIPE,
+                           stderr=subprocess.STDOUT, timeout=10).stdout.decode("utf-8", "replace")
+    except subprocess.TimeoutExpired:
+      return True             # hostapd busy: do not decide on that
+    if "state=ENABLED" not in out:
+      logger.info("AP check: hostapd is not ENABLED on "+wlanx+": "+out.strip().replace("\n", " ")[:120])
+      return False
+  return True
+
+
+def restart_hostapd():
+  """Restart hostapd, clearing a failed state first: after several quick
+  failures systemd refuses starts for a while ("Start request repeated too
+  quickly")."""
+  os.system("/bin/systemctl reset-failed hostapd 2>/dev/null; /bin/systemctl restart hostapd")
 
 
 
@@ -2308,6 +2351,7 @@ def checkServices():
         stdout, stderr = process.communicate()
         if stderr != "":
           logger.info("tried to unmask hostapd but got an error.  Don't know what to do now.")
+      os.system("/bin/systemctl reset-failed hostapd 2>/dev/null")   # a failed hostapd may be rate-limited
       process = Popen(['/bin/systemctl', 'restart', 'hostapd'], shell=False, stdout=PIPE, stderr= PIPE)
       stdout, stderr = process.communicate()
       serva = str(stdout)
@@ -2888,7 +2932,7 @@ if __name__ == "__main__":
               except:
                   pass
               if not(check_iwconfig(AP)):
-                  os.system("/bin/systemctl restart hostapd")
+                  restart_hostapd()
                   if not(check_iwconfig(AP)):
                      logging.info("Still not up so having to resort to getNetworkClass")
                      getNetworkClass(1)       # try to fix the problem (shouldn't get here normally)
