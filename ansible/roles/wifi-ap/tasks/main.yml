@@ -4,11 +4,28 @@
     name: hostapd
     state: present
 
+# Raspberry Pi OS ships hostapd.service masked; ifupdown's hostapd line, the
+#  wifi_configurator restart and PxUSBm's check then all fail (CM4 on Trixie,
+#  2026-11-04).
+- name: Unmask hostapd (Raspberry Pi OS)
+  systemd:
+    name: hostapd
+    masked: no
+  when: connectbox_os == "raspbian"
+
+# crda is not in Debian 13 (trixie); bootstrap installs wireless-regdb there
+- name: Check whether this release has crda
+  command: apt-cache show crda
+  register: crda_available_ap
+  changed_when: false
+  failed_when: false
+  when: connectbox_os == "raspbian"
+
 - name: Install crda so regulatory db is present
   apt:
     name: crda
     state: present
-  when: connectbox_os == "raspbian"
+  when: connectbox_os == "raspbian" and crda_available_ap.rc == 0
 
 - name: Copy hostapd config
   template:

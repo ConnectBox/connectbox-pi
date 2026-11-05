@@ -52,11 +52,14 @@
 
 - name: Install python2 requests library
   command: >
-    pip3 install requests 
+    pip3 install requests {{ '--break-system-packages' if python_externally_managed | default(false) else '' }}
 
+# pathlib is part of Python 3 itself; the PyPI package is an old backport.
+#  Debian 12+ refuses system-wide pip installs, so it is not installed there.
 - name: Install python3 pathlib library
   command: >
     pip3 install pathlib
+  when: not (python_externally_managed | default(false))
 
 # Node.js 22 LTS (support until 2027-04-30) from nodejs.org, replacing
 # NodeSource's Node 16 (end of life 2023).  NodeSource's 32-bit ARM (armhf)
@@ -148,6 +151,19 @@
     force: yes
   loop: [node, npm, npx, pm2, pm2-dev, pm2-docker, pm2-runtime]
   when: connectbox_os == 'armbian'
+
+# Elsewhere (Raspberry Pi OS) node and npm are Debian's in /usr/bin, but npm
+#  puts pm2 in /usr/local/bin: link the pm2 commands, or PxUSBm's check_PM2
+#  (/usr/bin/pm2) crashes at every start and takes the Wi-Fi down each time
+#  (CM4 on Trixie, 2026-11-04; fix 60b on the NEO).
+- name: Link /usr/bin/pm2 to npm's pm2 in /usr/local/bin (not Armbian)
+  file:
+    src: "/usr/local/bin/{{ item }}"
+    dest: "/usr/bin/{{ item }}"
+    state: link
+    force: yes
+  loop: [pm2, pm2-dev, pm2-docker, pm2-runtime]
+  when: connectbox_os != 'armbian'
 
 - name: get the pm2 version we loaded
   command: pm2 --version

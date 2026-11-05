@@ -165,9 +165,11 @@
     state: present
   when: connectbox_os != 'raspbian' and (OS_Version == 'bullseye' or OS_Version == "buster")
 
+# Raspberry Pi OS Bookworm/Trixie package names (libjpeg9 and libtiff5 do not
+#  exist there; tested on Trixie 2026-11-04)
 - name: Install packages to run OLED (raspbian, !bullseye, !buster)
   apt:
-    name: [ 'libjpeg9-dev', 'python3-dev', 'libjpeg9', 'libfreetype6', 'libfreetype6-dev', 'zlib1g', 'zlib1g-dev', 'libopenjp2-7', 'libtiff5', 'lshw', 'libjpeg-dev']
+    name: [ 'libjpeg62-turbo-dev', 'python3-dev', 'libjpeg62-turbo', 'libfreetype6', 'libfreetype-dev', 'zlib1g', 'zlib1g-dev', 'libopenjp2-7', 'libtiff6', 'lshw', 'libjpeg-dev']
     state: present
   when: connectbox_os == 'raspbian' and (OS_Version != 'bullseye' and OS_Version != 'buster')
 
@@ -199,9 +201,12 @@
     virtualenv: "{{ hat_service_virtualenv_dir }}"
   ignore_errors: yes                                              #If already installed don't fail on the failed git.
 
+# Pillow 6.2.1 does not build on the newer Python of Debian 12+ (3.13 on
+#  Trixie); there use the version Debian 13 ships.  The display code uses
+#  nothing that Pillow removed since 6.2.1.
 - name: Install Pillow and psutil in virtual environment
   pip:
-    name: ['Pillow==6.2.1', 'psutil']
+    name: ["{{ 'Pillow==11.1.0' if python_externally_managed | default(false) else 'Pillow==6.2.1' }}", 'psutil']
     state: present
     virtualenv: "{{ hat_service_virtualenv_dir }}"
 
@@ -215,7 +220,7 @@
 
 - name: parse the python version
   vars:
-     pythonversion: "{{ python_version_raw.stdout | regex_replace('P[a-z]*\\s(\\d\\.\\d).*', 'python\\1') }}"
+     pythonversion: "{{ python_version_raw.stdout | regex_replace('P[a-z]*\\s(\\d\\.\\d+).*', 'python\\1') }}"
   set_fact:
      python_ver: "{{ pythonversion }}"
      cacheable: yes
@@ -369,6 +374,31 @@
 - name: Install RPi.GPIO for Bullseye build
   command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install RPi.GPIO==0.7.1"
   when: OS_Version == 'bullseye' and (connectbox_os == 'raspbian' or connectbox_os == 'debian')
+
+# Raspberry Pi OS Bookworm and later: RPi.GPIO cannot add edge detection on
+#  these kernels ("Failed to add edge detection" for the buttons, CM4 on
+#  Trixie 6.18, 2026-11-04).  rpi-lgpio provides the same RPi.GPIO module on
+#  top of the kernel's GPIO character device; it builds lgpio, which needs
+#  liblgpio-dev and swig.  (With rpi-lgpio the kernel must not own the button
+#  pins: on the CM4, config.txt turns i2c_arm off.)
+- name: Install what rpi-lgpio needs to build (later Raspberry Pi OS builds)
+  apt:
+    name: ['liblgpio-dev', 'swig']
+    state: present
+  when: OS_Version not in ['buster', 'bullseye'] and connectbox_os == 'raspbian'
+
+- name: Remove RPi.GPIO from the hat service venv (later Raspberry Pi OS builds)
+  pip:
+    name: RPi.GPIO
+    state: absent
+    virtualenv: "{{ hat_service_virtualenv_dir }}"
+  when: OS_Version not in ['buster', 'bullseye'] and connectbox_os == 'raspbian'
+
+- name: Install rpi-lgpio as RPi.GPIO for later Raspberry Pi OS builds
+  pip:
+    name: rpi-lgpio==0.6
+    virtualenv: "{{ hat_service_virtualenv_dir }}"
+  when: OS_Version not in ['buster', 'bullseye'] and connectbox_os == 'raspbian'
 
 
 

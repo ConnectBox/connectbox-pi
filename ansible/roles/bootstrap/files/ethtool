@@ -13,5 +13,11 @@ ${IF_DRIVER_MESSAGE_LEVEL:+ msglvl $IF_DRIVER_MESSAGE_LEVEL}\
 "
 [ -z "$SETTINGS" ] || $ETHTOOL --change "$IFACE" $SETTINGS
 
-$ETHTOOL --change eth0 advertise 0x008
+# ConnectBox CM4: advertise 100baseT/Full only on eth0.  Only for eth0, and a
+#  failure must not stop ifup: on Raspberry Pi OS Trixie (kernel 6.18) it fails
+#  before the link is up, and ifup then gave up on eth0 and wlan1 (2026-11-04).
+if [ "$IFACE" = "eth0" ]; then
+    $ETHTOOL --change eth0 advertise 0x008 2>/dev/null || true
+fi
+exit 0
 

@@ -52,6 +52,19 @@
   set_fact:
       OS_Version: "{{ OS_Release.stdout.partition('Codename:')[2].strip() }}"
 
+# Debian 12+ marks its Python "externally managed" (PEP 668): pip then needs
+#  --break-system-packages for system-wide installs.  Ubuntu 22.04 does not,
+#  and its older pip rejects that option, so look for the marker file.
+- name: Check whether the system Python is externally managed (PEP 668)
+  shell: ls /usr/lib/python3*/EXTERNALLY-MANAGED
+  register: pep668_marker
+  changed_when: false
+  failed_when: false
+
+- name: Remember whether pip needs --break-system-packages
+  set_fact:
+    python_externally_managed: "{{ pep668_marker.rc == 0 }}"
+
 - name: Display the Codename
   debug:
     msg: "The version your running is {{ OS_Version }} for Codename:" 
@@ -127,14 +140,22 @@
 # Raspberry Pi partitioning for building via Ansible
 - name: Get Name of SD card - RPi
   shell: lsblk -d | grep mmcblk0 | awk '{print $1;}'
-  register: sdcard_name
+  register: sdcard_name_pi
   when: (connectbox_os == "raspbian") and Pi_present
 
 # Radxa build
 - name: Get Name of SD card - Radxa
   shell: lsblk -d | grep mmcblk1 | awk '{print $1;}'
-  register: sdcard_name
+  register: sdcard_name_rm3
   when:  RM3_present
+
+# Each task above keeps its own result: a skipped task still registers its
+#  variable, so with one shared name the skipped Radxa task wiped out the Pi
+#  task's answer ("'dict object' has no attribute 'stdout'", 2026-11-04 CM4).
+- name: Pick the SD card name for this board
+  set_fact:
+    sdcard_name: "{{ sdcard_name_rm3 if RM3_present else sdcard_name_pi }}"
+  when: RM3_present or Pi_present
 
 - name: Read SD card information 
   community.general.parted: device=/dev/{{ sdcard_name.stdout }} unit=MiB
@@ -193,11 +214,96 @@
   when: old_style_names.changed
   tags: skip_ansible_lint
 
+# Raspberry Pi OS Bookworm and later keep config.txt in /boot/firmware, and
+#  /boot/config.txt is only a "moved" note.  There, add only the ConnectBox
+#  lines to the OS's own file: copying the old full file over it would drop
+#  the OS's lines (arm_64bit=1, auto_initramfs=1, ...).  Older releases get
+#  the old file as before.
+- name: Check for /boot/firmware/config.txt (Raspberry Pi OS Bookworm and later)
+  stat:
+    path: /boot/firmware/config.txt
+  register: firmware_config_txt
+  when: connectbox_os == 'raspbian'
+
 - name: Install boot for Raspian on i2c and usbhost
   copy:
-    src: config.txt 
+    src: config.txt
     dest: /boot/config.txt
+  when: connectbox_os == 'raspbian' and not firmware_config_txt.stat.exists
+
+# CM4 (2026-11-04, ConnectBox CM4 carrier): the front panel (OLED 0x3C,
+#  AXP209 0x34, ATtiny88 0x14) is on I2C bus 10, which needs i2c_vc; the
+#  carrier uses the external Wi-Fi antenna (ant2).  USB host comes from the
+#  OS's own otg_mode=1.  i2c_arm (I2C-1 on GPIO2/3) is off: the left button is
+#  on GPIO3 (CM4 pin 56), and the kernel would otherwise own that pin, so
+#  hat-service could not claim it through the kernel (rpi-lgpio).
+#  USB on the DWC2 controller, as the Bullseye config had it: on the XHCI
+#  controller (Trixie's otg_mode=1) the RTL8812AU dropped off USB 12 times in
+#  85 minutes; on DWC2 none in the first test (2026-11-04, see the fix log).
+- name: Add the ConnectBox lines to /boot/firmware/config.txt
+  blockinfile:
+    path: /boot/firmware/config.txt
+    marker: "# {mark} CONNECTBOX"
+    block: |
+      [cm4]
+      dtparam=i2c_vc=on
+      dtparam=i2c_arm=off
+      dtparam=ant2
+      otg_mode=0
+      dtoverlay=dwc2,dr_mode=host
+      [all]
+      dtoverlay=disable-bt
+  register: firmware_config_changed
+  when: connectbox_os == 'raspbian' and firmware_config_txt.stat.exists
+
+# The udev mask above is not enough on Raspberry Pi OS Bookworm and later: the
+#  board boots through an initramfs, which still renames the interfaces (end0,
+#  wlx...).  net.ifnames=0 on the kernel command line keeps the old names
+#  (eth0, wlan0, wlan1) from the start of boot.
+- name: Keep the old interface names on the kernel command line (Raspberry Pi OS)
+  replace:
+    path: /boot/firmware/cmdline.txt
+    regexp: '^((?!.*\bnet\.ifnames=0\b)\S.*?)[ \t]*$'
+    replace: '\1 net.ifnames=0'
+  register: cmdline_ifnames
+  when: connectbox_os == 'raspbian' and firmware_config_txt.stat.exists
+
+- name: Request reboot if config.txt changed
+  set_fact:
+    reboot_required: True
+  when: firmware_config_changed is changed or cmdline_ifnames is changed
+
+# "changed" is not enough on a re-run: a build that stopped after making these
+#  changes but before the reboot leaves them "ok" next time.  So also look at
+#  the board itself: new-style interface names (end0, wlx..., enp...) still in
+#  use, or a CM4 without the front panel's I2C bus 10.
+- name: Check for the CM4 front panel I2C bus
+  stat:
+    path: /dev/i2c-10
+  register: i2c10
+  when: CM4_present
+
+- name: Request reboot if the board is not running with these settings yet
+  set_fact:
+    reboot_required: True
+  when: (ansible_interfaces | select('match', '^(en|wl(?!an[0-9]))') | list | length > 0) or
+        (CM4_present and firmware_config_txt.stat.exists | default(false) and not i2c10.stat.exists)
+
+# Raspberry Pi Imager's first boot is done by cloud-init (user, SSH, Wi-Fi).
+#  Stop it running on later boots, so it does not redo the network or the
+#  host name the playbook sets.
+- name: Check for cloud-init
+  stat:
+    path: /etc/cloud
+  register: cloud_init_dir
   when: connectbox_os == 'raspbian'
+
+- name: Disable cloud-init after its first boot
+  copy:
+    content: ""
+    dest: /etc/cloud/cloud-init.disabled
+    force: no
+  when: connectbox_os == 'raspbian' and cloud_init_dir.stat.exists
 
 - name: Install i2c modules
   copy:
@@ -269,7 +375,10 @@
   apt: 
     upgrade: yes
     update_cache: yes
-  ##  need to comment "allow_downgrade: yes" if this is the second pass throught the code
+    # Always use apt-get: once hat-service has installed aptitude, the module
+    #  would use it for the upgrade, and aptitude has no --allow-downgrades
+    #  (so a second pass through the build failed here).
+    force_apt_get: yes
     allow_downgrade: yes
     state: fixed
   register: dist_upgraded
@@ -318,8 +427,15 @@
     state: absent
   when: OZ2_present 
 
+# Raspberry Pi OS Trixie has no systemd-resolved: only disable it where it is
+- name: Check for systemd-resolved
+  stat:
+    path: /lib/systemd/system/systemd-resolved.service
+  register: resolved_unit_bootstrap
+
 - name: Disable systemd-resolve to remove port conflicts
   command: systemctl disable systemd-resolved
+  when: resolved_unit_bootstrap.stat.exists
 
 - name: Add i2c0 to /boot/armbianEnv.txt
   replace:
@@ -398,7 +514,10 @@
     post_reboot_delay: 35
     connect_timeout: 90
     reboot_timeout: 120
-  when: (reboot_required and (confirm_reboot.user_input | bool)) or (confirm_reboot.user_input | bool)
+  # Raspberry Pi OS: also reboot when the prompt got no answer (unattended
+  #  builds), since the old interface names and config.txt need it.
+  when: (reboot_required and (confirm_reboot.user_input | bool)) or (confirm_reboot.user_input | bool) or
+        (reboot_required and connectbox_os == 'raspbian' and confirm_reboot.user_input == '')
   tags: reboot1
 
 - name: Install PHP if this is an OrangePi Zero2 
@@ -419,10 +538,25 @@
     name: fdisk
     state: present
 
-- name: Install crda 
+# crda is not in Debian 13 (trixie): the kernel reads wireless-regdb's
+#  regulatory.db itself.  Install crda where the release still has it.
+- name: Check whether this release has crda
+  command: apt-cache show crda
+  register: crda_available
+  changed_when: false
+  failed_when: false
+
+- name: Install crda
   apt:
-    name: crda    
+    name: crda
     state: present
+  when: crda_available.rc == 0
+
+- name: Install wireless-regdb (release without crda)
+  apt:
+    name: wireless-regdb
+    state: present
+  when: crda_available.rc != 0
 
 - name: Copy over the ATTiny.bat file
   copy:
@@ -976,9 +1110,29 @@
     - Install PxUSBm.py
   changed_when: True
 
+# Debian 12+ (Raspberry Pi OS Bookworm/Trixie): use Debian's package.  The
+#  pip task below reported pexpect as present there (Trixie has only
+#  pexpect-stubs) and installed nothing, so PxUSBm crashed at start (CM4,
+#  2026-11-04).
+- name: install pexpect from Debian (externally managed Python, Debian 12+)
+  apt:
+    name: python3-pexpect
+    state: present
+  when: python_externally_managed | default(false)
+
+# Debian 12+ (Raspberry Pi OS Bookworm/Trixie) refuses system-wide pip
+#  installs unless told otherwise: retry with --break-system-packages, as for
+#  mammoth below.
 - name: install pexpect (needed for PxUSBm.py script)
-  pip:
-    name: pexpect
+  block:
+    - name: install pexpect
+      pip:
+        name: pexpect
+  rescue:
+    - name: install pexpect (externally managed Python, Debian 12+)
+      pip:
+        name: pexpect
+        extra_args: --break-system-packages
 
 # mammoth converts Word (.docx) files on the USB to web pages when mmiLoader.py
 # indexes it (pure Python).  Without it Word files stay download-only.
@@ -1039,6 +1193,30 @@
         executable: pip3
         extra_args: --break-system-packages
       ignore_errors: yes
+
+# Armbian ships /etc/rc.local; Raspberry Pi OS Bookworm and later do not.
+#  systemd still runs it at boot when it exists and is executable
+#  (systemd-rc-local-generator), so create the usual Debian one if missing.
+- name: Create /etc/rc.local if the OS has none
+  copy:
+    dest: /etc/rc.local
+    force: no
+    owner: root
+    group: root
+    mode: '0755'
+    content: |
+      #!/bin/sh -e
+      #
+      # rc.local
+      #
+      # This script is executed at the end of each multiuser runlevel.
+      # Make sure that the script will "exit 0" on success or any other
+      # value on error.
+      #
+      # By default this script does nothing.
+
+      exit 0
+  when: not aws_instance
 
 - name: Add items to rc.local
   blockinfile:
@@ -1269,10 +1447,18 @@
   when: CM4_present
 
 - name: install smbus2
-  pip:
-    name: smbus2 
-    executable: pip3
-  ignore_errors: yes
+  block:
+    - name: install smbus2
+      pip:
+        name: smbus2
+        executable: pip3
+  rescue:
+    - name: install smbus2 (externally managed Python, Debian 12+)
+      pip:
+        name: smbus2
+        executable: pip3
+        extra_args: --break-system-packages
+      ignore_errors: yes
 
 #- name: install urllib3
 #  pip:

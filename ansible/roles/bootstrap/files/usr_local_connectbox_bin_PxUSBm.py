@@ -1306,8 +1306,12 @@ def Revision():
       elif revision== "c03114": version="PI 4B 4GB 1.4"
       elif revision== "d03114": version="PI 4B 8GB 1.4"
       elif revision== "902120": version="PI Z2W 512MB 1.0-"
-      elif revision== "b03140": version="CM4 1GB 1.0"
-      elif revision== "c03140": version="CM4 2GB 1.0"
+      # CM4 (with or without eMMC: the Lite has the same codes).  The third hex
+      #  digit is the memory size: a=1GB b=2GB c=4GB d=8GB (a 4GB CM4 Lite
+      #  reports c03140, 2026-11-04).
+      elif revision== "a03140": version="CM4 1GB 1.0"
+      elif revision== "b03140": version="CM4 2GB 1.0"
+      elif revision== "c03140": version="CM4 4GB 1.0"
       elif revision== "d03140": version="CM4 8GB 1.0"
       elif revision== "0000": version="NEO NANOPI"
       elif revision== "4" : version="OrangePi Zero 2"
@@ -1626,11 +1630,13 @@ def getNetworkClass(level):
         logger.info("wlan"+netwk[0][0]+" with driver "+netwk[0][1])
         logger.info("wlan"+netwk[1][0]+" with driver "+netwk[1][1])
             # we have an rtl driver on this first wlan
-        if "rtl88" in netwk[0][1]:                                  #if we have an rtl on the first wlan we will use it for AP
+        # Realtek USB adapters: out-of-tree drivers are rtl88xx..., the kernel's
+        #  own are rtw88_... (e.g. rtw88_8812au on Raspberry Pi OS Trixie)
+        if "rtl88" in netwk[0][1] or "rtw88" in netwk[0][1]:      #if we have an rtl on the first wlan we will use it for AP
             AP = netwk[0][0]
             CI = netwk[1][0]
             #regardless of what we have there since its RTL-X we will use it for AP since we have no others
-        elif "rtl88" in netwk[1][1]:                                  #if we have an rtl on the second wlan we will use it for AP
+        elif "rtl88" in netwk[1][1] or "rtw88" in netwk[1][1]:      #if we have an rtl on the second wlan we will use it for AP
             AP = netwk[1][0]                                    #interface 2 has the rtl and will be AP
             CI = netwk[0][0]                                    #interface 1 is on board or other andd will be the client side for network
         elif "brcmfmac" in netwk[0][1]:
@@ -2242,6 +2248,20 @@ def checkServices():
     process = Popen(["/bin/systemctl",'status','networking'], shell = False, stdout=PIPE, stderr=PIPE)
     stdout, stderr = process.communicate()
     serva = str(stdout)
+    # Still starting is not failed: wait for it (up to 2 minutes) before
+    #  deciding.  On Raspberry Pi OS networking.service is still activating
+    #  here, and restarting it then deadlocked with the AP's ifup (its pre-up
+    #  wifi_configurator restarts hostapd, which waited for the networking
+    #  stop, which waited for that ifup) - CM4, 2026-11-04.
+    waited = 0
+    while serva.find("Active: activating") >= 0 and waited < 120:
+        time.sleep(5)
+        waited += 5
+        process = Popen(["/bin/systemctl",'status','networking'], shell = False, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = process.communicate()
+        serva = str(stdout)
+    if waited:
+        logger.info("networking.service was still starting; waited "+str(waited)+" s")
     x = serva.find("Active: active")
     print("looking for networking.serice : "+str(x))
     if x < 0:

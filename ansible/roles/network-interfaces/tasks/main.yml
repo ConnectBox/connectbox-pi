@@ -1,5 +1,20 @@
 ---
 
+# Raspberry Pi OS Bookworm and later run the network with NetworkManager and
+#  have no ifupdown, dhclient or dhcpcd.  Install them while NetworkManager
+#  still keeps the network up: it is removed below, and ConnectBox uses
+#  ifupdown (/etc/network/interfaces) as on Armbian.  eth0 ("inet dhcp") needs
+#  dhclient (isc-dhcp-client), as Armbian has: dhcpcd.conf denies eth0.
+#  Without it eth0 had no IPv4 address after the reboot (CM4, 2026-11-04).
+- name: Install ifupdown, dhclient and dhcpcd before NetworkManager is removed
+  apt:
+    pkg:
+    - ifupdown
+    - isc-dhcp-client
+    - dhcpcd5
+    state: present
+  when: connectbox_os == "raspbian"
+
 - name: Check if NetworkManager package is installed
   command: dpkg -s network-manager
   register: nm_installed_check
@@ -20,12 +35,42 @@
   apt:
     pkg: network-manager
     state: absent
+    purge: "{{ connectbox_os == 'raspbian' }}"
+
+# Raspberry Pi Imager's network settings (netplan files for NetworkManager,
+#  and cloud-init's copy) include the build network's Wi-Fi name and
+#  password: remove them so they are not left on the box or in an image.
+- name: Find Raspberry Pi Imager netplan files
+  find:
+    paths: /etc/netplan
+    patterns: "*.yaml"
+  register: imager_netplan
+  when: connectbox_os == "raspbian"
+
+- name: Remove Raspberry Pi Imager netplan files
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ imager_netplan.files | default([]) }}"
+  when: connectbox_os == "raspbian"
+
+- name: Remove cloud-init's network settings from the boot partition
+  file:
+    path: /boot/firmware/network-config
+    state: absent
+  when: connectbox_os == "raspbian"
+
+- name: Check for systemd-resolved
+  stat:
+    path: /lib/systemd/system/systemd-resolved.service
+  register: resolved_unit
 
 - name: Make sure systemd-resolved is not running
   service:
     name: systemd-resolved
     state: stopped
     enabled: no
+  when: resolved_unit.stat.exists
 
 - name: Install usbmuxd for Tethering iPhones
   apt:
@@ -128,6 +173,67 @@
   debug:
     msg: "Current Kernel # is: {{ kernel_num.stdout }}"
 
+# RTL8812AU on Raspberry Pi OS Trixie (kernel 6.18, CM4, 2026-11-04): the
+#  kernel's own rtw88_8812au dropped off USB every few minutes in AP mode and
+#  the AP then stopped beaconing.  Use the 8812au driver ConnectBox used before
+#  (morrownr/8812au-20210820, pinned to the tested commit), built by DKMS so it
+#  is rebuilt for each new kernel, and blacklist rtw88_8812au.  The headers
+#  meta-package (linux-headers-rpi-v8 for a 64-bit Pi 4/CM4 kernel) keeps
+#  headers installed for future kernels.
+- name: Check whether the kernel has its own rtw88_8812au driver
+  command: modinfo -F filename rtw88_8812au
+  register: rtw88_8812au_mod
+  changed_when: false
+  failed_when: false
+
+- name: Use the 8812au driver instead of rtw88_8812au (Raspberry Pi OS)
+  when: connectbox_os == 'raspbian' and rtw88_8812au_mod.rc == 0
+  vars:
+    rtl8812au_commit: 4722250273e4316daf9d8688e9916ea94c36a5ff
+    rtl8812au_version: 5.13.6-23
+    kernel_flavour: "{{ kernel_num.stdout.split('+rpt-')[-1] }}"
+  block:
+    - name: Install DKMS and the kernel headers for the 8812au driver
+      apt:
+        name:
+          - dkms
+          - "linux-headers-{{ kernel_num.stdout }}"
+          - "linux-headers-{{ kernel_flavour }}"
+        state: present
+
+    - name: Get the 8812au driver source (tested commit)
+      git:
+        repo: https://github.com/morrownr/8812au-20210820
+        dest: "/usr/src/rtl8812au-{{ rtl8812au_version }}"
+        version: "{{ rtl8812au_commit }}"
+        force: yes
+
+    - name: Add the 8812au driver to DKMS
+      command: dkms add -m rtl8812au -v {{ rtl8812au_version }}
+      args:
+        creates: "/var/lib/dkms/rtl8812au/{{ rtl8812au_version }}"
+
+    - name: Build and install the 8812au driver with DKMS (takes ~10 minutes on a CM4)
+      command: dkms install -m rtl8812au -v {{ rtl8812au_version }} -k {{ kernel_num.stdout }}
+      register: dkms_8812au
+      changed_when: "'already installed' not in (dkms_8812au.stdout + dkms_8812au.stderr)"
+
+    - name: Blacklist the kernel's rtw88_8812au driver
+      copy:
+        dest: /etc/modprobe.d/connectbox-8812au.conf
+        mode: '0644'
+        content: |
+          # ConnectBox: use the 8812au driver (morrownr/8812au-20210820, DKMS) for
+          #  the RTL8812AU AP adapter.  The kernel's rtw88_8812au dropped off USB
+          #  every few minutes in AP mode on Trixie 6.18 (CM4, 2026-11-04).
+          blacklist rtw88_8812au
+      register: rtw88_blacklist
+
+    - name: Note that the 8812au driver takes the adapter at the next boot
+      debug:
+        msg: "rtw88_8812au is blacklisted; the RTL8812AU uses the 8812au driver after the next reboot."
+      when: rtw88_blacklist is changed
+
 - name: set the default values for variables for drivers
   ansible.builtin.set_fact:
     compile_a : false
@@ -182,7 +288,8 @@
     rtl8812driver: "{{ (listoutput.find('8812au.ko') >=0 ) }}"
     rtw88driver: "{{ (listoutput.find('rtw88' ) >=0 ) }}"
     rtl88xbudriver: "{{ (listoutput.find('88xbu.ko') >=0 ) }}"
-    rtl88x2budriver: "{{ (listoutput.find('88x2bu.ko') >=0 ) }}"
+    # newer kernels have the 88x2bu chip as rtw88_8822bu (Trixie 6.18, 2026-11-04)
+    rtl88x2budriver: "{{ (listoutput.find('88x2bu.ko') >=0 ) or (listoutput.find('rtw88_8822bu') >=0 ) }}"
     rtl8852audriver: "{{ (listoutput.find('8852au.ko') >=0 ) }}"
 
 - debug:
@@ -550,12 +657,24 @@
 - name: start systemd-networkd.service
   command: systemctl start systemd-networkd.service
   ignore_errors: yes
-  when: (compile_all.changed)
+  when: (compile_all.changed) and connectbox_os != 'raspbian'
 
 - name: make_sure_it_starts
   command: systemctl enable systemd-networkd.service
   ignore_errors: yes
-  when: (compile_all.changed)
+  when: (compile_all.changed) and connectbox_os != 'raspbian'
+
+# Raspberry Pi OS: the network is ifupdown's.  An enabled systemd-networkd with
+#  nothing to manage only adds systemd-networkd-wait-online's 2-minute timeout
+#  to every boot (CM4 on Trixie, 2026-11-04).
+- name: Keep systemd-networkd off on Raspberry Pi OS
+  systemd:
+    name: "{{ item }}"
+    enabled: no
+    state: stopped
+  loop: [systemd-networkd-wait-online.service, systemd-networkd.service, systemd-networkd.socket]
+  failed_when: false
+  when: connectbox_os == 'raspbian'
   
 # Note: this is not a handler because we need the network configuration in
 # effect before proceeding with the wifi-ap and firewall roles, which will

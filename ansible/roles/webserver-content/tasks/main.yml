@@ -49,12 +49,14 @@
     name: setuptools
     state: absent
 
+# setuptools below 81: gunicorn 20.1.0 imports pkg_resources, which newer
+#  setuptools no longer has (Raspberry Pi OS Trixie, 2026-11-04)
 - name: reinstall setuptools
   pip:
     virtualenv: "{{ connectbox_web_root }}/connectbox_virtualenv"  # XXX Could do better?
     virtualenv_python: python3
-    name: setuptools
-    state: latest     
+    name: "setuptools<81"
+    state: present
 
 # The chat and admin backend
 - name: Install packages for connectbox server process flask
@@ -97,7 +99,9 @@
   pip:
     virtualenv: "{{ connectbox_web_root }}/connectbox_virtualenv"  # XXX Could do better?
     virtualenv_python: python3
-    name: 'six==1.11.0'
+    # six 1.16+: 1.11's six.moves import hook does not work on Python 3.12+
+    #  ("No module named 'six.moves'", Trixie 2026-11-04); 1.17 still runs on 3.9
+    name: 'six==1.17.0'
     state: present
   tags:
     - captive_portal

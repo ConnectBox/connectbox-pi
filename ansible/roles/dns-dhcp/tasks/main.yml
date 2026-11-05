@@ -1,4 +1,34 @@
 ---
+# Debian 13's dnsmasq unit has Requires= and After=network-online.target.
+#  ConnectBox starts dnsmasq from the AP interface's post-up (ifupdown), so
+#  that start then waited for the network to be online, which waited for the
+#  same ifup: boot hung with no DHCP and no web server (CM4 on Trixie,
+#  2026-11-04).  Order it after network.target only, as in Debian 11.
+- name: Make the systemd drop-in directory for dnsmasq
+  file:
+    path: /etc/systemd/system/dnsmasq.service.d
+    state: directory
+    mode: '0755'
+
+- name: Order dnsmasq after network.target only (not network-online.target)
+  copy:
+    dest: /etc/systemd/system/dnsmasq.service.d/connectbox.conf
+    mode: '0644'
+    content: |
+      # ConnectBox: dnsmasq is started by ifupdown (post-up on the AP interface)
+      #  once the AP has its address.  Debian 13 orders it after
+      #  network-online.target, which deadlocks that post-up start.
+      [Unit]
+      Requires=
+      After=
+      After=network.target
+  register: dnsmasq_dropin
+
+- name: Reload systemd after the dnsmasq drop-in
+  systemd:
+    daemon_reload: yes
+  when: dnsmasq_dropin is changed
+
 - name: Copy dnsmasq configuration
   template:
     src: etc_dnsmasq.conf.j2

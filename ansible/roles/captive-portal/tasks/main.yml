@@ -21,6 +21,15 @@
     virtualenv_python: python3
     name: Werkzeug==1.0.0
 
+# Python 3.12+ venvs come without setuptools, and gunicorn 20.0.4 (pinned by
+#  simple-offline-captive-portal) imports pkg_resources from it.  setuptools
+#  81 is due to drop pkg_resources, so stay below it (CM4 on Trixie, 2026-11-04).
+- name: Install setuptools with pkg_resources for gunicorn 20
+  pip:
+    virtualenv: "{{ captiveportal_virtualenv_dir }}"
+    virtualenv_python: python3
+    name: "setuptools<81"
+
 - name: Setup captive portal virtualenv
   pip:
     virtualenv: "{{ captiveportal_virtualenv_dir }}"

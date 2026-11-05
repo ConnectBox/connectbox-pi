@@ -16,7 +16,9 @@ if locale.getlocale()[1] != "UTF-8":
 
 
 config_parser = configparser.ConfigParser()
-config_parser.readfp(open('%s/defaults.cfg' % os.path.dirname(os.path.abspath(__file__))))
+# read_file: readfp was removed in Python 3.12 (Raspberry Pi OS Trixie has 3.13)
+with open('%s/defaults.cfg' % os.path.dirname(os.path.abspath(__file__))) as defaults:
+    config_parser.read_file(defaults)
 config_parser.read(['/usr/local/connectbox/etc/connectbox.conf'])
 
 DATABASE_DIRECTORY = config_parser.get('main', 'DATABASE_DIRECTORY')

@@ -8,5 +8,7 @@
 
 - name: Install urllib3
   pip:
-    name: urllib3 
+    name: urllib3
+    # Debian 12+ refuses system-wide pip installs unless told otherwise
+    extra_args: "{{ '--break-system-packages' if python_externally_managed | default(false) else omit }}"
 

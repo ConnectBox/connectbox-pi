@@ -1,6 +1,8 @@
 ---
+# Bullseye and later (Raspberry Pi OS Trixie has only nftables until iptables
+#  is installed, 2026-11-04)
 - include_tasks: bullseye-debian.yml
-  when: OS_Version == 'bullseye'
+  when: OS_Version not in ['stretch', 'buster']
 
 - include_tasks: rules.yml
 
