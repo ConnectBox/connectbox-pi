@@ -22,7 +22,9 @@ splash_x = 7
 splash_y = 0
 splash_font = 26
 enable_mass_storage = ""        # additive to the g_device paramater
-screen_enable = [1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+# one per status page (displays.py statusPages); the internet page (second to
+#  last) is switched by displays.internetPageWanted()
+screen_enable = [1,1,1,1,1,1,1,1,1,1,1,1,1,0,1]
 
 # font sizes are just specified here
 font30 = 26
@@ -117,6 +119,7 @@ def init():
             js['lcd_pages_stats_week_two'],
             js['lcd_pages_stats_month_one'],
             js['lcd_pages_stats_month_two'],
+            0,      # internet page: displays.internetPageWanted() sets it
             js['lcd_pages_admin'],
         ]
     except:

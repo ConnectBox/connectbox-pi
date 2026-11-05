@@ -549,3 +549,21 @@
   args:
     executable: python3
   ignore_errors: yes
+
+# Configuration page: Advanced "Share Internet With Wi-Fi Users" switch
+# (brand.j2 internet_sharing, applied by PxUSBm).  See the script.
+- name: Patch connectbox-admin-ui internet sharing switch
+  become: true
+  script: patch_admin_internet_sharing.py
+  args:
+    executable: python3
+  ignore_errors: yes
+
+# Configuration page: "Enable Advanced Options" is remembered in the browser
+# and pressing it again hides them.  See the script.
+- name: Patch connectbox-admin-ui Advanced options remembered
+  become: true
+  script: patch_admin_advanced.py
+  args:
+    executable: python3
+  ignore_errors: yes

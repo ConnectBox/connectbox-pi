@@ -1381,12 +1381,24 @@
   when: CM4_present and ansible_facts['os_family'] == 'Debian'
 
 
+# Multi-battery page on by default when the front panel's ATtiny (battery
+#  controller, I2C address 0x14) answers (Kirk, 2026-11-05: any Raspberry Pi
+#  build with the ATtiny, not only a CM4).  The front panel uses I2C bus 10 on
+#  a Compute Module and bus 1 on other Pis; the hat service still turns the
+#  page off by itself if the ATtiny stops answering.
+- name: Look for the ATtiny battery controller (I2C 0x14)
+  command: python3 -c "import smbus2; smbus2.SMBus({{ 10 if CM4_present else 1 }}).read_byte(0x14)"
+  register: attiny_probe
+  changed_when: false
+  failed_when: false
+  when: connectbox_os == 'raspbian'
+
 - name: Check if multiple-batteries are not available
   replace:
     path: /usr/local/connectbox/brand.j2
     regexp: 'lcd_pages_multi_bat": .*,'
     replace: 'lcd_pages_multi_bat": 1,'
-  when: CM4_present
+  when: CM4_present or (attiny_probe.rc is defined and attiny_probe.rc == 0)
 
 
 - name: Check for device_type PI

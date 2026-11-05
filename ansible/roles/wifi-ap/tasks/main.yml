@@ -13,6 +13,19 @@
     masked: no
   when: connectbox_os == "raspbian"
 
+# ...but do not let systemd start it on its own at boot: the AP's ifup runs
+#  wifi_configurator, which scans, writes hostapd.conf and then starts
+#  hostapd once.  systemd's early start held the RTL8812AU while it scanned
+#  ("Device or resource busy"): the scan found no channels in use and the
+#  channel was chosen blind, and hostapd was started three times in 15 s
+#  (CM4 on Trixie, 2026-11-05).  PxUSBm starts hostapd if it is still not
+#  running after that ifup.  (Not changed on the NEO, not tested there.)
+- name: Do not start hostapd from systemd at boot (Raspberry Pi OS)
+  systemd:
+    name: hostapd
+    enabled: no
+  when: connectbox_os == "raspbian"
+
 # crda is not in Debian 13 (trixie); bootstrap installs wireless-regdb there
 - name: Check whether this release has crda
   command: apt-cache show crda

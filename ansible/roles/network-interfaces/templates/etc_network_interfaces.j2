@@ -12,7 +12,12 @@ iface eth0 inet dhcp
 
 allow-hotplug wlan0
 iface wlan0 inet static
-    hostapd /etc/hostapd/hostapd.conf
+    # No "hostapd /etc/hostapd/hostapd.conf" line (2026-11-05): ifupdown's
+    #  hostapd hook then started a second hostapd next to the one
+    #  wifi_configurator starts (systemd's hostapd.service), and the AP was
+    #  left "ENABLED" with a dead radio (no channel, txpower -100 dBm, no
+    #  beacon) on the CM4's RTL8812AU after every boot and every ifup.
+    #  wifi_configurator (pre-up below) starts hostapd; PxUSBm checks it.
     address 10.129.0.1
     netmask 255.255.0.0
     # Need to set locale because our standard locale settings cause problems with

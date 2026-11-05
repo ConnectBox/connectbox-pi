@@ -17,6 +17,7 @@ from . import page_battery_low
 from . import page_power_down
 from . import page_display_image
 from . import page_multi_bat
+from . import page_internet
 
 import neo_batterylevelshutdown.hats as hat
 import neo_batterylevelshutdown.globals as globals
@@ -95,6 +96,7 @@ class OLED:
             page_stats.PageStats(self.display_device, 'week', 2),
             page_stats.PageStats(self.display_device, 'month', 1),
             page_stats.PageStats(self.display_device, 'month', 2),
+            page_internet.PageInternet(self.display_device),   # shown only while wanted()
             page_display_image.PageDisplayImage(self.display_device, 'show_admin.png'),
         ]
         self.adminPages = [
@@ -266,7 +268,18 @@ class OLED:
             self._curPage.draw_page()
 
 
+    def internetPageWanted(self):
+        """Switch the internet page in or out of the status pages (globals.screen_enable):
+        in while internet sharing is on or data has been counted (2026-11-05)."""
+        try:
+            for i, p in enumerate(self.statusPages):
+                if isinstance(p, page_internet.PageInternet) and i < len(globals.screen_enable):
+                    globals.screen_enable[i] = 1 if page_internet.wanted() else 0
+        except Exception as e:
+            logging.debug("internet page check failed: %s", e)
+
     def moveForward(self):
+        self.internetPageWanted()
         with self._curPageLock:
             logging.debug("Current page is %s", self._curPage)
             if self._curPage not in self.pages:
@@ -292,6 +305,7 @@ class OLED:
             logging.debug("Transitioned to page %s", self._curPage)
 
     def moveBackward(self):
+        self.internetPageWanted()
         with self._curPageLock:
             logging.debug("Current page is %s", self._curPage)
             if self._curPage not in self.pages:

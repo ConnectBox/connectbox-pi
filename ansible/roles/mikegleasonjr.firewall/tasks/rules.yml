@@ -4,8 +4,33 @@
   register: v4_script
   when: firewall_v4_configure
 
-- name: Fix invalid parameter errors
-  command: "update-alternatives --set iptables /usr/sbin/iptables-legacy"  
+# Legacy iptables where the kernel has its tables (NanoPi NEO / Armbian, as
+#  before).  Raspberry Pi OS Trixie's kernel (6.18) has no ip_tables module,
+#  so legacy iptables cannot load any rule there ("Table does not exist") and
+#  the box ran with no firewall (2026-11-05): use the nftables-based iptables.
+- name: Check whether the kernel has the legacy iptables tables
+  command: iptables-legacy -t nat -L -n
+  register: iptables_legacy_check
+  changed_when: false
+  failed_when: false
+
+- name: Fix invalid parameter errors (legacy iptables)
+  command: "update-alternatives --set iptables /usr/sbin/iptables-legacy"
+  when: iptables_legacy_check.rc == 0
+
+- name: Use the nftables-based iptables (kernel without legacy iptables)
+  command: "update-alternatives --set {{ item }} /usr/sbin/{{ item }}-nft"
+  loop:
+    - iptables
+    - ip6tables
+  changed_when: false
+  when: iptables_legacy_check.rc != 0
+
+- name: Check whether the firewall rules are loaded
+  command: iptables -S FORWARD
+  register: forward_policy
+  changed_when: false
+  failed_when: false
 
 - name: Load v4 rules
   command: /etc/iptables.v4.generated
@@ -14,7 +39,8 @@
     v4_script_load_result.rc != 0 or
     'unknown option' in v4_script_load_result.stderr or
     'Table does not exist' in v4_script_load_result.stderr
-  when: v4_script is changed
+  # also when they were never loaded (e.g. the legacy tables were missing)
+  when: v4_script is changed or '-P FORWARD DROP' not in forward_policy.stdout
 
 - name: Generate v6 rules
   template: src=generated.v6.j2 dest=/etc/iptables.v6.generated owner=root group=root mode=755

@@ -16,14 +16,18 @@
 - name: Check if netfilter-persistent is present
   shell: which netfilter-persistent
   register: is_netfilter
-  when: v4_script is changed or v6_script is changed
   changed_when: false
   ignore_errors: yes
   check_mode: no
 
+- name: Check for saved rules
+  stat:
+    path: /etc/iptables/rules.v4
+  register: saved_rules_v4
+
 - name: Save rules (netfilter-persistent)
   command: netfilter-persistent save
-  when: not ansible_check_mode and (v4_script is changed or v6_script is changed) and is_netfilter.rc == 0
+  when: not ansible_check_mode and (v4_script is changed or v6_script is changed or v4_script_load_result is changed or not saved_rules_v4.stat.exists) and is_netfilter.rc == 0
 
 - name: Save rules (iptables-persistent)
   command: /etc/init.d/iptables-persistent save

@@ -12,6 +12,10 @@ device_type: "NEO"
 
 usbNoMount: 0
 
+# Internet sharing for phones on the ConnectBox Wi-Fi (NAT through the box's
+# uplink; admin page Advanced switch).  Off in every build and image.
+internet_sharing: 0
+
 lcd_pages_main: 1
 lcd_pages_info: 1
 lcd_pages_battery: 1

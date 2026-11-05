@@ -1220,6 +1220,21 @@ def ap_really_up(wlanx):
     if "state=ENABLED" not in out:
       logger.info("AP check: hostapd is not ENABLED on "+wlanx+": "+out.strip().replace("\n", " ")[:120])
       return False
+  # The radio itself (2026-11-05): after an 8812au driver reload hostapd said
+  # ENABLED, but iw showed no channel and txpower -100 dBm and no beacon went
+  # out until hostapd was restarted.  Only when iw answers at all.
+  if shutil.which("iw"):
+    try:
+      info = subprocess.run(["iw", "dev", wlanx, "info"], stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT, timeout=10).stdout.decode("utf-8", "replace")
+    except subprocess.TimeoutExpired:
+      return True
+    if "type AP" in info:
+      m = re.search(r"txpower (-?[0-9.]+) dBm", info)
+      if "channel " not in info or (m and float(m.group(1)) <= 0):
+        logger.info("AP check: hostapd is ENABLED on "+wlanx+" but the radio has no channel or no transmit power: " +
+                    " ".join(l.strip() for l in info.split("\n") if "channel" in l or "txpower" in l)[:120])
+        return False
   return True
 
 
@@ -2206,6 +2221,8 @@ def check_wlan_CI(CI):
     return(0)                 # wlan(CI) found... return 0
 
 
+ci_restart = [0.0]            # time of check_stat_CI's last client restart
+
 def check_stat_CI(CI):
     """
     Check the Client Interface link state and attempt recovery if it has dropped.
@@ -2234,36 +2251,38 @@ def check_stat_CI(CI):
     """
     if (check_CI() == 0):
         return(0)	      #Were ok because we have not SSID set
-    z = 0		      #If zero we  don't do anything
-    process = Popen("ifconfig", shell=False, stdout=PIPE, stderr=PIPE)
-    stdout, stderr = process.communicate()
-    net_stats = str(stdout).split("wlan"+str(CI))
-    if len(net_stats) > 1:
-        x = net_stats[1].find("inet")
-        y = net_stats[1].find("flags")
-        if (x <= 0):  z = 0
-        if (y >= 0):
-             x = net_stats[1][(y+7):].find("<")
-             if ((x >= 0) and (x > (y+7))):
-                a = net_stats[1][(y+7):(x-1)]
-                if a != '4163': z = 1
-             else:
-                 pass
-        else:
-            z = 0		#we don't have an interface for CI
-    else:
-        z = 0
-    if (z != 0):
-        try:
-            os.system("ifdown  wlan"+str(CI))
-        except:
-            pass
-        try:
-            os.system("ifup wlan"+str(CI))
-            return(0)
-        except:
-            return(1)
-    return(0)			#Nothingg wrong we have a correct status.
+    # (2026-11-05) The old test read the ifconfig flags with a slice that
+    #  never matched, so it never restarted anything; on the CM4 wlan0 stayed
+    #  down after a failed ifup at boot ("ifup: failed to bring up wlan0",
+    #  stale wpa_supplicant control socket).  Now: restart the client only
+    #  when it is administratively down or its wpa_supplicant does not answer
+    #  -- not when it is simply not connected (out of range, wrong password),
+    #  which wpa_supplicant keeps retrying by itself -- in the background and
+    #  at most every 5 minutes.
+    dev = "wlan" + str(CI)
+    try:
+        with open("/sys/class/net/" + dev + "/flags") as f:
+            flags = int(f.read().strip(), 16)
+    except (OSError, ValueError):
+        return(0)                         # no such interface: nothing to fix
+    up = bool(flags & 0x1)
+    try:
+        wpa_ok = subprocess.run(["wpa_cli", "-i", dev, "status"], stdout=PIPE, stderr=PIPE,
+                                timeout=10).returncode == 0
+    except Exception:
+        wpa_ok = True                     # cannot tell: do not restart
+    if up and wpa_ok:
+        return(0)
+    if time.time() - ci_restart[0] < 300:
+        return(1)
+    ci_restart[0] = time.time()
+    logger.info("Client " + dev + " is " + ("up" if up else "down") + (", wpa_supplicant answers" if wpa_ok else ", wpa_supplicant does not answer") + ": restarting " + dev)
+    try:
+        subprocess.Popen(["sh", "-c", "ifdown %s; rm -f /var/run/wpa_supplicant/%s; ifup %s" % (dev, dev, dev)],
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception:
+        return(1)
+    return(0)
 
 
 # ---------------------------------------------------------------------------
@@ -2565,6 +2584,368 @@ def check_known_wifi(ci):
             logger.info("Remembered Wi-Fi: could not update wpa_supplicant.conf: " + str(e))
 
 
+# ---------------------------------------------------------------------------
+# Internet sharing (2026-11-05, Kirk): an Advanced switch on the admin page
+# (brand.j2 "internet_sharing", default 0).  When it is 1, phones on the
+# ConnectBox Wi-Fi reach the internet through whichever uplink the box has
+# (eth0 or the client Wi-Fi): IPv4 forwarding on, NAT (masquerade) of the AP
+# network out of every other interface, and DNS answered by real servers
+# instead of the box's "every name is the box" answer (the captive portal
+# names wi.fi, gowifi.org, ... and connectbox still go to the box).  No filtering.
+# When it is 0 (or missing) everything is put back: forwarding off, the
+# chains removed, dnsmasq.conf as built.  Checked about every 30 s, so the
+# setting also survives reboots, and only changes what differs.
+#   iptables: chains CB_SHARE (filter, jumped to from FORWARD) and
+#   CB_SHARE_NAT (nat, from POSTROUTING); the persistent rules (FORWARD DROP)
+#   are not changed.
+#   dnsmasq.conf: address= lines that point names somewhere other than the box
+#   (address=/#/... and the phones' connectivity-check overrides) get the
+#   SHARING_TAG prefix, and a server= block from /etc/resolv.conf is added at
+#   the end; both are undone when sharing is off.
+# ---------------------------------------------------------------------------
+SHARING_KEY = 'internet_sharing'
+DNSMASQ_CONF = '/etc/dnsmasq.conf'
+SHARING_TAG = '#CB-internet-sharing# '
+SHARING_BEGIN = '# BEGIN CONNECTBOX INTERNET SHARING (PxUSBm)'
+SHARING_END = '# END CONNECTBOX INTERNET SHARING'
+SHARING_FALLBACK_DNS = ['1.1.1.1', '8.8.8.8']
+# Names that must still reach the box while sharing is on (the captive portal
+# names wi.fi, gowifi.org, ... and the box's own): the server_name lines of
+# the ConnectBox nginx sites and the box's host name, plus these in case
+# those cannot be read.
+SHARING_LOCAL_NAMES = ['wi.fi', 'gowifi.org', 'gowifi.com', 'go', 'connectbox']
+NGINX_SITES = '/etc/nginx/sites-enabled'
+sharing_state = {'on': None, 'error_logged': False}
+
+
+def brand_value(key, default=0):
+    """A brand.j2 value, key matched without regard to case."""
+    try:
+        with open('/usr/local/connectbox/brand.j2', 'r', encoding='utf-8') as f:
+            brand = json.loads(f.read())
+        for k, v in brand.items():
+            if k.lower() == key.lower():
+                return v
+    except Exception:
+        pass
+    return default
+
+
+def ap_address(dev):
+    """(address, network) of dev's own IPv4 address, e.g. ('10.129.0.1', '10.0.0.0/8'), or (None, None).
+
+    Skips labelled extra addresses such as the captive portal's
+    172.217.3.174/24 on wlan1:0: after a reboot ip listed that one first and
+    sharing was set up for 172.217.3.0/24, so phones got no NAT and the box's
+    names pointed at 172.217.3.174 (2026-11-05).  Of the box's own addresses
+    the widest network is used (10.129.0.1/8 from dhcpcd and /16 from ifupdown
+    are both there)."""
+    try:
+        import ipaddress
+        r = subprocess.run(['ip', '-4', '-o', 'addr', 'show', 'dev', dev],
+                           stdout=PIPE, stderr=PIPE, timeout=10)
+        best = None
+        for line in r.stdout.decode('utf-8', 'replace').split('\n'):
+            words = line.split('valid_lft')[0].replace('\\', ' ').split()
+            if 'inet' not in words or words.index('inet') + 1 >= len(words):
+                continue
+            if ':' in words[-1]:
+                continue                          # labelled extra address, e.g. wlan1:0
+            iface = ipaddress.ip_interface(words[words.index('inet') + 1])
+            if best is None or iface.network.prefixlen < best.network.prefixlen:
+                best = iface
+        if best is not None:
+            return str(best.ip), str(best.network)
+    except Exception:
+        pass
+    return None, None
+
+
+def upstream_dns(ap_ip):
+    """IPv4 name servers from /etc/resolv.conf (the uplink's, from DHCP),
+    without loopback or the box itself; the fallback servers if none."""
+    servers = []
+    try:
+        with open('/etc/resolv.conf', 'r') as f:
+            for line in f:
+                m = re.match(r'\s*nameserver\s+([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\s*$', line)
+                if m and not m.group(1).startswith('127.') and m.group(1) != ap_ip \
+                        and m.group(1) not in servers:
+                    servers.append(m.group(1))
+    except Exception:
+        pass
+    return servers or list(SHARING_FALLBACK_DNS)
+
+
+def box_names():
+    """Host names served by the box's nginx sites (no '_', no '.local'
+    wildcards), plus SHARING_LOCAL_NAMES; lower case, each once."""
+    names = []
+    try:
+        for fn in sorted(os.listdir(NGINX_SITES)):
+            if not fn.startswith('connectbox'):
+                continue
+            with open(os.path.join(NGINX_SITES, fn), 'r', encoding='utf-8', errors='replace') as f:
+                for m in re.finditer(r'^\s*server_name\s+([^;]*);', f.read(), re.M):
+                    names += m.group(1).split()
+    except Exception:
+        pass
+    try:
+        import socket
+        names.append(socket.gethostname())
+    except Exception:
+        pass
+    out = []
+    for n in names + SHARING_LOCAL_NAMES:
+        n = n.lower()
+        if n != '_' and not n.startswith('.') and re.match(r'^[a-z0-9.-]+$', n) and n not in out:
+            out.append(n)
+    return out
+
+
+def dnsmasq_sharing_text(text, on, ap_ip, servers, local_names=()):
+    """dnsmasq.conf text for sharing on/off (off gives back the built file)."""
+    out = []
+    inblock = False
+    for line in text.split('\n'):
+        if line.startswith(SHARING_BEGIN):
+            inblock = True
+            continue
+        if inblock:
+            if line.startswith(SHARING_END):
+                inblock = False
+            continue
+        if line.startswith(SHARING_TAG):
+            line = line[len(SHARING_TAG):]
+        out.append(line)
+    if on:
+        for i, line in enumerate(out):
+            m = re.match(r'\s*address=/([^/]*)/([^\s#]*)', line)
+            if m and (m.group(1) == '#' or m.group(2) != ap_ip):
+                out[i] = SHARING_TAG + line
+        while out and out[-1] == '':
+            out.pop()
+        out += [SHARING_BEGIN,
+                '# Internet sharing is on (admin page): names are looked up on these servers.',
+                '# PxUSBm removes this block and the ' + SHARING_TAG.strip() + ' marks when it is off.']
+        out += ['address=/%s/%s' % (n, ap_ip) for n in local_names]
+        out += ['server=' + s for s in servers]
+        out += [SHARING_END, '']
+    return '\n'.join(out)
+
+
+def ipt(args):
+    """Run iptables with args; return its exit code."""
+    try:
+        return subprocess.run(['iptables'] + args, stdout=PIPE, stderr=PIPE, timeout=15).returncode
+    except Exception:
+        return -1
+
+
+def sharing_rules_ok(on, ap, ap_net):
+    """True if the iptables state matches on/off."""
+    jumps = (ipt(['-C', 'FORWARD', '-j', 'CB_SHARE']) == 0 and
+             ipt(['-t', 'nat', '-C', 'POSTROUTING', '-j', 'CB_SHARE_NAT']) == 0)
+    if not on:
+        return not jumps and ipt(['-n', '-L', 'CB_SHARE']) != 0 and \
+            ipt(['-t', 'nat', '-n', '-L', 'CB_SHARE_NAT']) != 0
+    return jumps and \
+        ipt(['-C', 'CB_SHARE', '-i', ap, '!', '-o', ap, '-j', 'ACCEPT']) == 0 and \
+        ipt(['-C', 'CB_SHARE', '-o', ap, '-m', 'conntrack', '--ctstate', 'RELATED,ESTABLISHED', '-j', 'ACCEPT']) == 0 and \
+        ipt(['-t', 'nat', '-C', 'CB_SHARE_NAT', '-s', ap_net, '!', '-o', ap, '-j', 'MASQUERADE']) == 0
+
+
+# Data passed through internet sharing (2026-11-05, Kirk): byte counters of
+# the two CB_SHARE rules (phones -> internet = up, internet -> phones = down)
+# added to a running total in USAGE_FILE, kept across reboots.  The file also
+# keeps the counter values already counted (and the boot they belong to), so
+# a PxUSBm restart does not count them twice.  The admin page's Reset
+# (connectbox-manage) sets up/down to 0 and leaves the counter values.
+# Read by the admin page and the front panel.
+USAGE_FILE = '/usr/local/connectbox/internet_usage.json'
+
+
+def sharing_counters():
+    """(up, down) bytes of the CB_SHARE rules, or None when there are none."""
+    try:
+        r = subprocess.run(['iptables', '-L', 'CB_SHARE', '-v', '-x', '-n'],
+                           stdout=PIPE, stderr=PIPE, timeout=15)
+        if r.returncode != 0:
+            return None
+        up = down = None
+        for line in r.stdout.decode('utf-8', 'replace').split('\n')[2:]:
+            f = line.split()
+            if len(f) >= 3 and f[2] == 'ACCEPT':
+                if 'ESTABLISHED' in line:
+                    down = int(f[1])
+                else:
+                    up = int(f[1])
+        if up is None or down is None:
+            return None
+        return up, down
+    except Exception:
+        return None
+
+
+def boot_id():
+    try:
+        with open('/proc/sys/kernel/random/boot_id') as f:
+            return f.read().strip()
+    except Exception:
+        return ''
+
+
+def usage_load():
+    u = {}
+    try:
+        with open(USAGE_FILE, 'r', encoding='utf-8') as f:
+            u = json.load(f)
+    except Exception:
+        pass
+    if not isinstance(u, dict):
+        u = {}
+    for k in ('up', 'down', 'counter_up', 'counter_down'):
+        try:
+            u[k] = max(0, int(u.get(k, 0)))
+        except Exception:
+            u[k] = 0
+    u.setdefault('since', time.strftime('%Y-%m-%d %H:%M'))
+    return u
+
+
+def update_usage(counters_reset=False):
+    """Add what the CB_SHARE counters counted since last time to the total.
+    counters_reset: the rules are about to be rebuilt (their counters start
+    again at 0)."""
+    try:
+        before = None
+        if os.path.exists(USAGE_FILE):
+            with open(USAGE_FILE, 'r', encoding='utf-8') as f:
+                before = f.read()
+        u = usage_load()
+        if u.get('boot_id') != boot_id():          # new boot: the rules are new
+            u['boot_id'] = boot_id()
+            u['counter_up'] = u['counter_down'] = 0
+        c = sharing_counters()
+        if c is not None:
+            up, down = c
+            u['up'] += up - u['counter_up'] if up >= u['counter_up'] else up
+            u['down'] += down - u['counter_down'] if down >= u['counter_down'] else down
+            u['counter_up'], u['counter_down'] = up, down
+        if counters_reset or c is None:
+            u['counter_up'] = u['counter_down'] = 0
+        text = json.dumps(u, indent=1, sort_keys=True) + '\n'
+        if text != before:
+            if before is None and u['up'] == 0 and u['down'] == 0 and c is None:
+                return                              # nothing to record yet
+            write_private(USAGE_FILE, text, mode=0o644)
+    except Exception as e:
+        logger.info("Internet sharing: could not update the data total: " + str(e))
+
+
+def set_sharing_rules(on, ap, ap_net):
+    while ipt(['-D', 'FORWARD', '-j', 'CB_SHARE']) == 0:
+        pass
+    while ipt(['-t', 'nat', '-D', 'POSTROUTING', '-j', 'CB_SHARE_NAT']) == 0:
+        pass
+    for table, chain in (('filter', 'CB_SHARE'), ('nat', 'CB_SHARE_NAT')):
+        ipt(['-t', table, '-F', chain])
+        ipt(['-t', table, '-X', chain])
+    if on:
+        ipt(['-N', 'CB_SHARE'])
+        ipt(['-A', 'CB_SHARE', '-i', ap, '!', '-o', ap, '-j', 'ACCEPT'])
+        ipt(['-A', 'CB_SHARE', '-o', ap, '-m', 'conntrack', '--ctstate', 'RELATED,ESTABLISHED', '-j', 'ACCEPT'])
+        ipt(['-I', 'FORWARD', '1', '-j', 'CB_SHARE'])
+        ipt(['-t', 'nat', '-N', 'CB_SHARE_NAT'])
+        ipt(['-t', 'nat', '-A', 'CB_SHARE_NAT', '-s', ap_net, '!', '-o', ap, '-j', 'MASQUERADE'])
+        ipt(['-t', 'nat', '-I', 'POSTROUTING', '1', '-j', 'CB_SHARE_NAT'])
+
+
+def ip_forward(value=None):
+    path = '/proc/sys/net/ipv4/ip_forward'
+    try:
+        if value is not None:
+            with open(path, 'w') as f:
+                f.write('1\n' if value else '0\n')
+        with open(path, 'r') as f:
+            return f.read().strip() == '1'
+    except Exception:
+        return None
+
+
+def disconnect_ap_stations(ap):
+    """Deauthenticate every phone on the AP (they rejoin by themselves)."""
+    if not shutil.which('hostapd_cli'):
+        return
+    try:
+        r = subprocess.run(['hostapd_cli', '-i', ap, 'list_sta'], stdout=PIPE, stderr=PIPE, timeout=10)
+        macs = [l.strip() for l in r.stdout.decode('utf-8', 'replace').split('\n')
+                if re.match(r'^[0-9a-fA-F]{2}(:[0-9a-fA-F]{2}){5}$', l.strip())]
+        for mac in macs:
+            subprocess.run(['hostapd_cli', '-i', ap, 'deauthenticate', mac], stdout=PIPE, stderr=PIPE, timeout=10)
+        logger.info("Internet sharing: asked " + str(len(macs)) + " phone(s) on " + ap + " to rejoin")
+    except Exception as e:
+        logger.info("Internet sharing: could not disconnect the phones: " + str(e))
+
+
+def check_internet_sharing():
+    """Make forwarding, NAT and DNS match brand.j2 internet_sharing."""
+    st = sharing_state
+    try:
+        on = str(brand_value(SHARING_KEY, 0)).strip() in ('1', 'true', 'True')
+        ap = 'wlan' + str(get_AP())
+        ap_ip, ap_net = ap_address(ap)
+        if on and not ap_ip:
+            if not st['error_logged']:
+                logger.info("Internet sharing: " + ap + " has no IPv4 address yet; waiting")
+                st['error_logged'] = True
+            return
+        st['error_logged'] = False
+        switched = st['on'] is not None and st['on'] != on    # changed while running
+        if st['on'] != on:
+            logger.info("Internet sharing is " + ("ON: phones on the ConnectBox Wi-Fi can reach the internet through the box's uplink" if on else "off"))
+            st['on'] = on
+
+        # IPv4 forwarding
+        if on and ip_forward() is not True:
+            ip_forward(True)
+        elif not on and ip_forward() is True:
+            ip_forward(False)
+
+        # iptables (count what the rules passed before they change)
+        if not sharing_rules_ok(on, ap, ap_net):
+            update_usage(counters_reset=True)
+            set_sharing_rules(on, ap, ap_net)
+            if sharing_rules_ok(on, ap, ap_net):
+                logger.info("Internet sharing: firewall rules " + ("added for " + ap_net + " on " + ap if on else "removed"))
+                st['rules_error'] = False
+            elif not st.get('rules_error'):
+                logger.info("Internet sharing: could not set the firewall rules (iptables)")
+                st['rules_error'] = True
+        else:
+            update_usage()
+
+        # DNS
+        with open(DNSMASQ_CONF, 'r', encoding='utf-8') as f:
+            text = f.read()
+        new = dnsmasq_sharing_text(text, on, ap_ip, upstream_dns(ap_ip) if on else [],
+                                   box_names() if on else [])
+        if new != text:
+            write_private(DNSMASQ_CONF, new, like=DNSMASQ_CONF)
+            r = subprocess.run(['systemctl', 'restart', 'dnsmasq'], stdout=PIPE, stderr=PIPE, timeout=60)
+            logger.info("Internet sharing: dnsmasq.conf " + ("set to real DNS" if on else "back to offline DNS") +
+                        ", dnsmasq restarted (" + str(r.returncode) + ")")
+        if switched:
+            # Phones decide "this Wi-Fi has internet" when they join.  After
+            # sharing was turned off, an Android phone that still believed it
+            # had internet sent its traffic over mobile data and could not
+            # reach the box until it rejoined (2026-11-05): disconnect the
+            # phones so they rejoin and check again.
+            disconnect_ap_stations(ap)
+    except Exception as e:
+        logger.info("Internet sharing check failed: " + str(e))
+
+
 def checkServices():
     """
     Verify that all critical network services started correctly after boot and
@@ -2647,6 +3028,18 @@ def checkServices():
         logger.info("Networking service was running nicely")
 
     logger.info("starting to test AP services")
+    # At boot the AP's ifup (ifup@wlanX.service) runs wifi_configurator, which
+    #  scans, writes hostapd.conf and starts hostapd.  Starting hostapd here
+    #  while it scans made the scan fail ("Device or resource busy") and the
+    #  channel was chosen blind (2026-11-05): wait for that ifup first.
+    ap_unit = "ifup@wlan" + str(get_AP()) + ".service"
+    for i in range(45):
+      state = subprocess.run(["/bin/systemctl", "is-active", ap_unit], stdout=PIPE, stderr=PIPE).stdout.decode().strip()
+      if state != "activating":
+        break
+      if i == 0:
+        logger.info("Waiting for " + ap_unit + " (wifi_configurator) before checking hostapd")
+      time.sleep(2)
     process = Popen(["/bin/systemctl","status", "hostapd"], shell=False, stdout=PIPE, stderr=PIPE) 
     stdout, stderr = process.communicate()
     serva = str(stdout)
@@ -2670,6 +3063,13 @@ def checkServices():
         logger.info("hostapd may still have isseus but this is good")
       else:
         logger.info("tried to restart Hostapd but still didn't get an active service.  Don't know what to do now.")
+    # hostapd can be active and ENABLED with the radio not set up (no
+    #  channel, txpower -100 dBm, no beacon): seen after the first start at
+    #  boot on the CM4's 8812au (2026-11-05).  One restart fixes it.
+    time.sleep(5)
+    if not ap_really_up("wlan" + str(get_AP())):
+      logger.info("hostapd is running but the AP radio is not set up: restarting hostapd")
+      restart_hostapd()
     AP = "wlan"+str(get_AP())
     process = Popen(["/bin/systemctl",'status','ifup@'+AP], shell = False, stdout=PIPE, stderr=PIPE)
     stdout, stderr = process.communicate()
@@ -3187,7 +3587,7 @@ if __name__ == "__main__":
     # `while (x == x)` is an intentional infinite loop (x always equals itself).
     # x is a counter used to schedule periodic tasks at different rates:
     #   every iteration (~3 s): re-read brand.j2, run mountCheck()
-    #   every 10 iterations (~30 s): check AP mode, eth0, and CI link state
+    #   every 10 iterations (~30 s): check AP mode, eth0, CI link state and internet sharing
     #   every 20 iterations (~60 s): check wpa_supplicant country code, remembered Wi-Fi networks, check PM2
     # x is reset to 0 when it exceeds 1,000,000,000,000 to prevent integer overflow
     # over extremely long uptimes.
@@ -3227,22 +3627,27 @@ if __name__ == "__main__":
             # AP health check -- every ~30 seconds.
             # Verify the AP wlan is still in Mode:Master.  If it has dropped (can
             # happen after a kernel driver reset or power spike), attempt recovery in
-            # escalating steps: ifdown/ifup -> hostapd restart -> full getNetworkClass().
+            # escalating steps: hostapd restart -> ifdown/ifup -> full getNetworkClass().
             AP = get_AP()
             AP_up = check_iwconfig(AP)  # returns 1 if up
             logger.debug("checking AP is up "+str(x)+ " time is "+time.asctime())
             if (not AP_up):
               logger.info("AP was not up and didn't  show correctly")
-              try:
-                  os.system("ifdown wlan"+str(AP))
-              except:
-                  pass
-              try:
-                  os.system("ifup wlan"+str(AP))
-              except:
-                  pass
+              # A hostapd restart first (2026-11-05): the usual failure on the
+              # CM4 (8812au) is hostapd ENABLED with a dead radio, which one
+              # restart fixes; ifdown/ifup also reruns wifi_configurator
+              # (new scan, new channel) and restarts hostapd twice more.
+              restart_hostapd()
+              time.sleep(3)
               if not(check_iwconfig(AP)):
-                  restart_hostapd()
+                  try:
+                      os.system("ifdown wlan"+str(AP))
+                  except:
+                      pass
+                  try:
+                      os.system("ifup wlan"+str(AP))
+                  except:
+                      pass
                   if not(check_iwconfig(AP)):
                      logging.info("Still not up so having to resort to getNetworkClass")
                      getNetworkClass(1)       # try to fix the problem (shouldn't get here normally)
@@ -3253,6 +3658,11 @@ if __name__ == "__main__":
             logger.debug("checkinng Client IF " + str(x) + " time is "+time.asctime())
             CI = get_CI()
             check_stat_CI(CI)
+
+            # Internet sharing for phones on the ConnectBox Wi-Fi (admin
+            # page Advanced switch, brand.j2 internet_sharing) -- see
+            # check_internet_sharing.
+            check_internet_sharing()
 
           if ((x % 20)==0):
             logger.debug("PxUSBm Going to do a Network check " + str(x) + " time stamp " + time.asctime())
