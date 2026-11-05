@@ -540,3 +540,12 @@
   args:
     executable: python3
   ignore_errors: yes
+
+# Configuration page: "Wipe client SSID and password" button under the client
+# Wi-Fi settings (connectbox-manage do/clientwifiwipe).  See the script.
+- name: Patch connectbox-admin-ui client Wi-Fi wipe button
+  become: true
+  script: patch_admin_clientwifi_wipe.py
+  args:
+    executable: python3
+  ignore_errors: yes

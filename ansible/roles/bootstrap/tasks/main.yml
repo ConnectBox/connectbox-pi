@@ -520,6 +520,15 @@
         (reboot_required and connectbox_os == 'raspbian' and confirm_reboot.user_input == '')
   tags: reboot1
 
+# The reboot clears /run: mark the build as running again, so cron does not
+#  start PxUSBm (and PxUSBm does not remember Wi-Fi networks) for the rest of
+#  the build.
+- name: Mark that a build is running again after the reboot
+  copy:
+    dest: /run/connectbox-build
+    content: "connectbox-pi playbook running\n"
+    mode: 0644
+
 - name: Install PHP if this is an OrangePi Zero2 
   apt:
     name: php

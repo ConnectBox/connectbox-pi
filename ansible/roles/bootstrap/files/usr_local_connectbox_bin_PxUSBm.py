@@ -2109,6 +2109,19 @@ def check_CI():
 
 
 
+eth0_restart = [0.0]          # time of check_eth0's last eth0 restart
+
+def eth0_dhclient_running():
+  """True if the dhclient that ifup started for eth0 is still running."""
+  try:
+      with open('/run/dhclient.eth0.pid') as f:
+          pid = int(f.read().strip())
+      with open('/proc/%d/cmdline' % pid, 'rb') as f:
+          cmd = f.read().split(b'\0')
+      return any(c.endswith(b'dhclient') for c in cmd) and b'eth0' in cmd
+  except Exception:
+      return False
+
 def check_eth0():
   """
   Check whether eth0 is connected and has an IP address, and attempt recovery if not.
@@ -2117,8 +2130,9 @@ def check_eth0():
       - flags=4099 (UP, BROADCAST, MULTICAST but no LOWER_UP): cable unplugged --
         no action needed, return 0.
       - flags=4163 (UP, BROADCAST, RUNNING, MULTICAST): cable plugged in, but if
-        there is no "inet" address the interface failed to get a DHCP lease.  In
-        that case, issue ifdown/ifup and re-check once.
+        there is no IPv4 address the interface failed to get a DHCP lease.  If
+        no dhclient is running for eth0, restart eth0 (background, at most
+        every 5 minutes).
       - Any other flags value: unexpected state, return 1 (error).
 
   This is called on every 10th main-loop iteration (x % 10 == 0) to catch eth0
@@ -2134,39 +2148,36 @@ def check_eth0():
   net_stats = str(stdout).split("eth0")   # look for eth0 in ifconfig output
   if (len(net_stats) == 1):               # eth0 not found...  so we dont' have an issue
       return(0)
-  x = net_stats[1].find("flags=")
-  if (x>=0):
-      y = net_stats[1].find("<")
-      if (y > (x+6)):
-          a = net_stats[1][(x+6):(y-1)]
+  # The flags number, e.g. "flags=4163<UP,...": the old slice [x+6:y-1]
+  # dropped its last digit ("416"), so neither case below ever matched and
+  # check_eth0 never did anything (2026-11-05).
+  m = re.search(r'flags=(\d+)<', net_stats[1])
+  if m:
+      if True:
+          a = m.group(1)
           if a == '4099':
               return(0)				#were not connected so we just return ok
           elif a == '4163':
-             if (net_stats[1].find("inet") <= 0):
+             if has_ipv4("eth0"):
+                 return(0)                      #we have an IPv4 address so were good to go
+             # Cable in but no IPv4 address.  (2026-11-05: eth0's dhclient
+             # had died and the lease ran out overnight; the old test looked
+             # for "inet", which also matched inet6 and the lines of the
+             # interfaces after eth0, so it never saw it.)  A running dhclient
+             # is still asking for a lease: leave it.  Otherwise restart eth0
+             # in the background (ifup waits up to a minute for a lease, which
+             # would hold up the USB checks), at most every 5 minutes.
+             if eth0_dhclient_running():
+                 return(0)
+             if time.time() - eth0_restart[0] > 300:
+                 eth0_restart[0] = time.time()
+                 logger.info("eth0 is connected but has no IPv4 address and no DHCP client: restarting eth0")
                  try:
-                     os.system("ifdown eth0")
-                     os.system("ifup eth0")
-                 except:
+                     subprocess.Popen(['sh', '-c', 'ifdown eth0; ifup eth0'],
+                                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                 except Exception:
                      pass
-                 process = Popen("ifconfig", shell=False, stdout=PIPE, stderr=PIPE)
-                 stdout, stderr = process.communicate()
-                 net_stats = str(stdout).split("eth0")   # look for eth0 in ifconfig output
-                 if (len(net_stats) != 1):     # eth0 not found... restart eth0
-                     x = net_stats[1].find("flags=")
-                     if (x>=0):
-                         y = net_stats[1].find("<")
-                         if (y > (x+6)):
-                             a = net_stats[1][(x+6):(y-1)]
-                             if a == '4099':
-                                 return(0)				#were not connected so we just return ok
-                             elif a == '4163':
-                                 if (net_stats[1].find("inet") <= 0):
-                                     return(1)
-                                 else:
-                                     return(0)
-                 return(1)			#all other issues we error out.
-             else:
-                 return(0)                      #we have an ip so were good to go
+             return(1)
           return(1)				#were in some wierd mode so we error
       return(1)					#we cant find the flags
   return(1)
@@ -2253,6 +2264,305 @@ def check_stat_CI(CI):
         except:
             return(1)
     return(0)			#Nothingg wrong we have a correct status.
+
+
+# ---------------------------------------------------------------------------
+# Remembered client Wi-Fi networks (2026-11-05, Kirk)
+#
+# The admin page sets one client network: the first network={} block of
+# wpa_supplicant.conf (connectbox-manage changes only that block).  When the
+# client interface is connected to a network AND the internet works through
+# that interface, the network's block is remembered in KNOWN_WIFI_FILE (newest
+# first, at most KNOWN_WIFI_MAX; a new one drops the oldest, a known one that
+# connects again moves to the top).  The remembered networks other than the
+# admin's own are written after the KNOWN_WIFI_MARK line at the end of
+# wpa_supplicant.conf, so wpa_supplicant connects by itself to whichever of them
+# is in range.  Everything from the marker line to the end of the file is
+# rewritten by PxUSBm; everything before it is left exactly as it is.
+# Passwords (psk lines) are never logged.
+# ---------------------------------------------------------------------------
+KNOWN_WIFI_FILE = '/etc/wpa_supplicant/connectbox_known_wifi.json'   # root only (0600)
+KNOWN_WIFI_MAX = 10
+WPA_CONF = '/etc/wpa_supplicant/wpa_supplicant.conf'
+KNOWN_WIFI_MARK = '# Remembered by PxUSBm'
+BUILD_MARKER = '/run/connectbox-build'          # set while the playbook runs
+INTERNET_TEST_URL = 'http://connectivitycheck.gstatic.com/generate_204'
+INTERNET_TEST_TABLE = '129'                      # routing table used only by the test
+KNOWN_WIFI_RETRY = 300                           # seconds before testing a failed network again
+known_wifi_state = {'tested': {}, 'conf_written': 0.0, 'last_ssid': None, 'last_seen': 0.0,
+                    'dhcp_refresh': 0.0, 'stale_logged': False}
+
+
+def wpa_parse(text):
+    """Split wpa_supplicant.conf text into (own, blocks).
+
+    own is the text before the KNOWN_WIFI_MARK line (or all of it);
+    blocks is a list of the network={} blocks in own, each a list of the
+    stripped lines inside the braces, in file order."""
+    own = text.split('\n' + KNOWN_WIFI_MARK)[0] if ('\n' + KNOWN_WIFI_MARK) in text else text
+    if text.startswith(KNOWN_WIFI_MARK):
+        own = ''
+    blocks = []
+    cur = None
+    for line in own.split('\n'):
+        s = line.strip()
+        if cur is None:
+            if s.replace(' ', '').startswith('network={'):
+                cur = []
+        elif s == '}':
+            blocks.append(cur)
+            cur = None
+        elif s and not s.startswith('#'):
+            cur.append(s)
+    return own, blocks
+
+
+def wpa_block_ssid(lines):
+    """The ssid= value of a block exactly as written (e.g. '"Wilson1"'), or None."""
+    for s in lines:
+        if s.startswith('ssid='):
+            return s[5:]
+    return None
+
+
+def wpa_ssid_text(value):
+    """The SSID as wpa_cli prints it, for a quoted ssid= value (None for hex)."""
+    if value and len(value) >= 2 and value[0] == '"' and value[-1] == '"':
+        return value[1:-1]
+    return None
+
+
+def known_wifi_load():
+    try:
+        with open(KNOWN_WIFI_FILE, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        if isinstance(data, list):
+            ok = []
+            for e in data:
+                if isinstance(e, dict) and isinstance(e.get('key'), str) and isinstance(e.get('lines'), list) and \
+                        all(isinstance(l, str) and '\n' not in l and '{' not in l and '}' not in l for l in e['lines']):
+                    ok.append(e)
+            return ok
+    except Exception:
+        pass
+    return []
+
+
+def write_private(path, text, mode=0o600, like=None):
+    """Write text to path through a temporary file (no half-written file).
+    The file gets the mode of 'like' if it exists, otherwise 'mode'."""
+    tmp = path + '.pxusbm-tmp'
+    with open(tmp, 'w', encoding='utf-8') as f:
+        f.write(text)
+    if like and os.path.exists(like):
+        shutil.copymode(like, tmp)
+        st = os.stat(like)
+        os.chown(tmp, st.st_uid, st.st_gid)
+    else:
+        os.chmod(tmp, mode)
+    os.replace(tmp, path)
+
+
+def known_wifi_save(entries):
+    d = os.path.dirname(KNOWN_WIFI_FILE)
+    if not os.path.isdir(d):
+        os.makedirs(d, exist_ok=True)
+    write_private(KNOWN_WIFI_FILE, json.dumps(entries, indent=1) + '\n', mode=0o600)
+
+
+def known_wifi_conf_text(own, own_blocks, entries):
+    """wpa_supplicant.conf text: 'own' unchanged, then the remembered networks
+    that are not already in it, after the marker line."""
+    own_keys = set(wpa_block_ssid(b) for b in own_blocks)
+    extra = [e for e in entries if e['key'] not in own_keys]
+    if not extra:
+        return own.rstrip('\n') + '\n'
+    out = own.rstrip('\n') + '\n\n' + KNOWN_WIFI_MARK + \
+        ' (networks that connected with internet, newest first; rewritten automatically)\n'
+    for e in extra:
+        out += 'network={\n' + ''.join('\t' + s + '\n' for s in e['lines']) + '}\n'
+    return out
+
+
+def wpa_status(ci):
+    """wpa_cli status of wlan<ci> as a dict ({} if wpa_cli fails)."""
+    try:
+        r = subprocess.run(['wpa_cli', '-i', 'wlan' + str(ci), 'status'],
+                           stdout=PIPE, stderr=PIPE, timeout=10)
+        st = {}
+        for line in r.stdout.decode('utf-8', 'replace').split('\n'):
+            if '=' in line:
+                k, v = line.split('=', 1)
+                st[k.strip()] = v.strip()
+        return st
+    except Exception:
+        return {}
+
+
+def has_ipv4(dev):
+    """True if dev has an IPv4 address (ifconfig's 'inet' also matched inet6)."""
+    try:
+        r = subprocess.run(['ip', '-4', '-o', 'addr', 'show', 'dev', dev],
+                           stdout=PIPE, stderr=PIPE, timeout=10)
+        return ' inet ' in r.stdout.decode('utf-8', 'replace')
+    except Exception:
+        return False
+
+
+def lease_gateway(dev):
+    """The router of dev's newest dhclient lease, or None."""
+    gw = None
+    try:
+        with open('/var/lib/dhcp/dhclient.%s.leases' % dev, 'r') as f:
+            for m in re.finditer(r'option routers ([0-9.]+)', f.read()):
+                gw = m.group(1)
+    except Exception:
+        pass
+    return gw
+
+
+def internet_through(dev):
+    """True if the internet answers through dev itself.
+
+    While eth0 has the default route, the client interface has none (its
+    DHCP default route is refused as a duplicate), so a plain
+    'curl --interface' fails.  For the test only, add a default route via
+    dev's own DHCP router in a separate table, used only by sockets bound to
+    dev, and remove it afterwards.  Other traffic is not affected."""
+    gw = lease_gateway(dev)
+    if not gw:
+        logger.info("Remembered Wi-Fi: no DHCP router known for " + dev)
+        return False
+    rule = ['ip', 'rule', 'add', 'oif', dev, 'lookup', INTERNET_TEST_TABLE, 'priority', INTERNET_TEST_TABLE]
+    try:
+        subprocess.run(['ip', 'route', 'replace', 'default', 'via', gw, 'dev', dev,
+                        'table', INTERNET_TEST_TABLE], stdout=PIPE, stderr=PIPE, timeout=10)
+        subprocess.run(rule, stdout=PIPE, stderr=PIPE, timeout=10)
+        r = subprocess.run(['curl', '-s', '-m', '10', '-o', '/dev/null', '-w', '%{http_code}',
+                            '--interface', dev, INTERNET_TEST_URL],
+                           stdout=PIPE, stderr=PIPE, timeout=15)
+        return r.stdout.decode('utf-8', 'replace').strip() == '204'
+    except Exception as e:
+        logger.info("Remembered Wi-Fi: internet test failed to run: " + str(e))
+        return False
+    finally:
+        try:
+            rule[2] = 'del'
+            subprocess.run(rule, stdout=PIPE, stderr=PIPE, timeout=10)
+            subprocess.run(['ip', 'route', 'flush', 'table', INTERNET_TEST_TABLE],
+                           stdout=PIPE, stderr=PIPE, timeout=10)
+        except Exception:
+            pass
+
+
+def check_known_wifi(ci):
+    """Remember the connected client network and keep the remembered ones in
+    wpa_supplicant.conf.  Called about every 60 s from the main loop."""
+    if ci == "" or os.path.exists(BUILD_MARKER):
+        return
+    dev = 'wlan' + str(ci)
+    st = known_wifi_state
+    try:
+        with open(WPA_CONF, 'r', encoding='utf-8') as f:
+            text = f.read()
+    except Exception:
+        return
+    own, own_blocks = wpa_parse(text)
+    entries = known_wifi_load()
+    changed = False
+
+    status = wpa_status(ci)
+    ssid_now = status.get('ssid') if status.get('wpa_state') == 'COMPLETED' else None
+
+    # Moved to another network by itself: the DHCP lease is still the old
+    # network's, so renew it by restarting the interface (at most every 5 min).
+    #  Not when wpa_supplicant itself was restarted (admin page, ifup): its
+    #  ifup started a new DHCP client too.
+    try:
+        wpa_started = os.path.getmtime('/run/wpa_supplicant.%s.pid' % dev)
+    except Exception:
+        wpa_started = 0.0
+    if ssid_now and st['last_ssid'] and ssid_now != st['last_ssid'] and \
+            wpa_started < st['last_seen'] and time.time() - st['dhcp_refresh'] > 300:
+        logger.info("Client Wi-Fi moved from " + st['last_ssid'] + " to " + ssid_now + ": renewing DHCP on " + dev)
+        st['dhcp_refresh'] = time.time()
+        try:
+            subprocess.Popen(['sh', '-c', 'ifdown %s; ifup %s' % (dev, dev)],
+                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except Exception:
+            pass
+        st['last_ssid'] = ssid_now
+        return
+    if ssid_now:
+        st['last_ssid'] = ssid_now
+    st['last_seen'] = time.time()
+
+    if ssid_now:
+        # The block wpa_supplicant is using: network id N is the N-th block in
+        # the file it read.  Skip if the file changed after wpa_supplicant read
+        # it (e.g. a new password typed on the admin page and not yet applied):
+        # the block in the file may not be the one that connected.
+        loaded = max(st['conf_written'], wpa_started)
+        try:
+            fresh = os.path.getmtime(WPA_CONF) <= loaded + 1
+        except Exception:
+            fresh = False
+        _, all_blocks = wpa_parse(text.replace('\n' + KNOWN_WIFI_MARK, '\n#'))
+        block = None
+        try:
+            block = all_blocks[int(status.get('id', '-1'))]
+        except (ValueError, IndexError):
+            block = None
+        if block is not None and wpa_ssid_text(wpa_block_ssid(block)) not in (None, ssid_now):
+            block = None                       # id and SSID disagree: file changed
+        if not fresh:
+            if not st['stale_logged']:
+                logger.info("Remembered Wi-Fi: wpa_supplicant.conf changed since it was read; not learning " + ssid_now + " yet")
+                st['stale_logged'] = True
+            block = None
+        else:
+            st['stale_logged'] = False
+        if block is not None and wpa_block_ssid(block):
+            key = wpa_block_ssid(block)
+            top = entries[0] if entries else None
+            if not (top and top['key'] == key and top['lines'] == block):
+                last = st['tested'].get(key, 0)
+                if time.time() - last > KNOWN_WIFI_RETRY and has_ipv4(dev):
+                    if internet_through(dev):
+                        entries = [e for e in entries if e['key'] != key]
+                        entries.insert(0, {'key': key, 'ssid': ssid_now, 'lines': block,
+                                           'added': time.strftime('%Y-%m-%d %H:%M:%S')})
+                        dropped = entries[KNOWN_WIFI_MAX:]
+                        entries = entries[:KNOWN_WIFI_MAX]
+                        changed = True
+                        st['tested'].pop(key, None)
+                        logger.info("Remembered Wi-Fi: " + ssid_now + " connected with internet; saved at the top of the list (" + str(len(entries)) + " networks)")
+                        for e in dropped:
+                            logger.info("Remembered Wi-Fi: list full, dropped " + str(e.get('ssid')))
+                    else:
+                        st['tested'][key] = time.time()
+                        logger.info("Remembered Wi-Fi: " + ssid_now + " connected but no internet through " + dev + "; not saved")
+
+    if changed:
+        try:
+            known_wifi_save(entries)
+        except Exception as e:
+            logger.info("Remembered Wi-Fi: could not save the list: " + str(e))
+    else:
+        # Read the list again just before writing: the admin page's "wipe"
+        # (connectbox-manage) may have removed it while this check ran.
+        entries = known_wifi_load()
+    new_text = known_wifi_conf_text(own, own_blocks, entries)
+    if new_text != text and new_text.rstrip('\n') != text.rstrip('\n'):
+        try:
+            write_private(WPA_CONF, new_text, like=WPA_CONF)
+            st['conf_written'] = os.path.getmtime(WPA_CONF)
+            subprocess.run(['wpa_cli', '-i', dev, 'reconfigure'], stdout=PIPE, stderr=PIPE, timeout=10)
+            logger.info("Remembered Wi-Fi: wpa_supplicant.conf updated, " +
+                        str(len([e for e in entries if e['key'] not in set(wpa_block_ssid(b) for b in own_blocks)])) +
+                        " remembered networks after the admin's own")
+        except Exception as e:
+            logger.info("Remembered Wi-Fi: could not update wpa_supplicant.conf: " + str(e))
 
 
 def checkServices():
@@ -2878,7 +3188,7 @@ if __name__ == "__main__":
     # x is a counter used to schedule periodic tasks at different rates:
     #   every iteration (~3 s): re-read brand.j2, run mountCheck()
     #   every 10 iterations (~30 s): check AP mode, eth0, and CI link state
-    #   every 20 iterations (~60 s): check wpa_supplicant country code, check PM2
+    #   every 20 iterations (~60 s): check wpa_supplicant country code, remembered Wi-Fi networks, check PM2
     # x is reset to 0 when it exceeds 1,000,000,000,000 to prevent integer overflow
     # over extremely long uptimes.
     logger.info("Getting ready to start Mount Checks")
@@ -2963,6 +3273,14 @@ if __name__ == "__main__":
                 with open(wpa_File, 'w') as f:
                   f.write(filedata)
                 f.close()
+
+            # Remembered client Wi-Fi networks -- every ~60 seconds (see
+            # check_known_wifi): learn the connected network once the internet
+            # works through it, and keep the remembered ones in wpa_supplicant.conf.
+            try:
+                check_known_wifi(get_CI())
+            except Exception as e:
+                logger.info("Remembered Wi-Fi check failed: " + str(e))
 
           # PM2 health check -- every ~60 seconds.
           # PM2 manages the Node.js web application.  Check separately from the
