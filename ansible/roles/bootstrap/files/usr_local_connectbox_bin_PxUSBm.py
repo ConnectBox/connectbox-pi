@@ -1756,6 +1756,29 @@ def getNetworkClass(level):
 
 # fixFiles(a,c) was ported from connectbox-hat-service/cli.py
 
+def network_files_match(a):
+  """
+  True if the files fixfiles() writes all serve the AP on wlan<a>: the static
+  AP stanza in /etc/network/interfaces, dnsmasq's interface= and hostapd's
+  interface=.  wificonf.txt alone is not proof (2026-11-05: it named wlan1
+  while interfaces and dnsmasq.conf, never put in place, still named wlan0).
+  A file that cannot be read counts as not matching.
+  """
+  try:
+    with open("/etc/network/interfaces", encoding="utf-8") as f:
+      if not re.search(r"^iface wlan" + a + r" inet static", f.read(), re.M):
+        return False
+    with open("/etc/dnsmasq.conf", encoding="utf-8") as f:
+      if not re.search(r"^interface=wlan" + a + r"\s*$", f.read(), re.M):
+        return False
+    with open("/etc/hostapd/hostapd.conf", encoding="utf-8") as f:
+      if not re.search(r"^interface=wlan" + a + r"\s*$", f.read(), re.M):
+        return False
+  except OSError:
+    return False
+  return True
+
+
 def fixfiles(a, c):
     """
     Rewrite network configuration files to bind the correct wlan interface numbers
@@ -1830,7 +1853,7 @@ def fixfiles(a, c):
         f = open("/etc/hostapd/hostapd.conf","r")
         g = f.read()
         f.close()
-        if (Brand['Brand'] in g):
+        if (Brand['Brand'] in g) and network_files_match(a):
 	        logger.info("Skipped file reconfiguration as the configuration is the same")
 	        print("nothing to do")
 #        os.system("ifup wlan"+a)   # restart wlan ... other restarts needed??n
@@ -1997,32 +2020,20 @@ def fixfiles(a, c):
     g.close()
     logger.debug("We have finished the temp /etc/dhcpcd.tmp file")
 
-#  Now lets make sure we write out the configuration for future
-#  (wificonf.txt reflects contents of all files which might need changes)
-    try:
-        f = open("/usr/local/connectbox/wificonf.txt", 'w')
-        f.write("AccessPointIF=wlan"+ a +"\n")
-        if c=="":
-            f.write("ClientIF="+"\n")
-        else:
-            f.write("ClientIF=wlan"+ c +"\n")
-        f.write("####END####\n")
-        f.flush()
-        f.close()
-    except:
-        pass
-
     os.system("sync")           #we will ensure we clear all files and pending write data
 
 # Now we are done with the network/interface.tmp, dnsmasq.tmp and hostapd.tmp file creations time to put them into action.
+    # ifdown is limited to 60 s (2026-11-05): a hung `iw scan` in the AP's
+    #  ifup pre-up (wifi_configurator) held ifupdown's lock, ifdown waited for
+    #  it for good and the new files below were never put in place.
 
     if a != "":
          logger.info("taking interface down wlan"+a)
-         os.system("ifdown wlan"+a)
+         os.system("timeout 60 ifdown wlan"+a)
 
     if c != "":
          logger.info("taking interface down wlan"+c)
-         os.system("ifdown wlan"+c)
+         os.system("timeout 60 ifdown wlan"+c)
     time.sleep(10)
 
 #    logger.info("We have taken the interfaces down now")
@@ -2035,6 +2046,26 @@ def fixfiles(a, c):
     os.system("cp /etc/dnsmasq.tmp /etc/dnsmasq.conf")
     os.system("cp /etc/network/interfaces.tmp /etc/network/interfaces")
     os.system("cp /etc/dhcpcd.tmp /etc/dhcpcd.conf")
+
+#  Now lets make sure we write out the configuration for future
+#  (wificonf.txt reflects contents of all files which might need changes).
+#  Written only now, after the new files are in place (2026-11-05: it used to
+#  be written before ifdown; when ifdown hung, wificonf.txt said wlan1 while
+#  interfaces and dnsmasq.conf still served the AP on wlan0, and every later
+#  start took the "nothing to do" path, so phones got no DHCP).
+    try:
+        f = open("/usr/local/connectbox/wificonf.txt", 'w')
+        f.write("AccessPointIF=wlan"+ a +"\n")
+        if c=="":
+            f.write("ClientIF="+"\n")
+        else:
+            f.write("ClientIF=wlan"+ c +"\n")
+        f.write("####END####\n")
+        f.flush()
+        f.close()
+    except:
+        pass
+    os.system("sync")
 
     os.system("/bin/systemctl daemon-reload")             #we reload all the daemons since we changed the config.
     time.sleep(5)

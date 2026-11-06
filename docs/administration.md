@@ -29,3 +29,57 @@ If you built a Raspberry Pi version you should use (https://github.com/ConnectBo
 
 - When you insert your USB stick into the ConnectBox, content will automatically be visible in the ConnectBox web interface (this is http://connectbox unless the system name has been changed during Initial Administration)
 - To update the files on the USB stick, go to the Configure Menu in Administration area, then go to System and press "Unmount USB", then remove the USB stick from the ConnectBox
+
+# Internet connection, internet sharing and the front panel (November 2026)
+
+## Connect the box to the internet (Configuration -> Connect To Wi-Fi Hotspot)
+
+The box can use a WiFi network with internet access (a phone hotspot, a router) as
+its uplink, besides an Ethernet cable.  Open *Connect To Wi-Fi Hotspot*, scan or type
+the network name (*Client SSID*) and its *Wifi Password*, and save.
+
+- **Remembered networks:** once the box is connected to a network **and** the
+  internet answers through it, the box remembers that network (name and
+  password), up to 10, newest first; an 11th drops the oldest.  When the saved
+  network is out of range the box connects by itself to any remembered one in
+  range.  A network that connects but has no internet is not remembered.
+- **Wipe client SSID and password:** the last row of the section.  After you
+  confirm, the box sets the SSID and password back to the defaults
+  (`Default` / `Default1`), forgets all remembered networks and disconnects from the
+  internet WiFi.  Use it before handing a box on, or before making an image from it.
+
+## Advanced options
+
+*Enable Advanced Options* (Configuration page) shows the advanced settings.  The
+choice is remembered in that browser: Advanced stays on after the next login until
+you press the button again, which hides them.
+
+## Share Internet With Wi-Fi Users (Advanced)
+
+Under *Connect To Wi-Fi Hotspot*, with Advanced options on.  Off by default.  When
+it is on, phones on the ConnectBox WiFi can use the box's internet connection
+(Ethernet or the client WiFi above), IPv4 only, with no filtering.
+
+- **Metered connections:** if the box's internet is metered (mobile data, pay per
+  MB), every phone's traffic, including app and system updates, counts against it.
+- Turning it on or off disconnects the phones once; they rejoin by themselves (a
+  phone may join another known WiFi network instead).
+- While it is on, phones see a normal internet connection and do not open the
+  ConnectBox page by themselves: open **http://connectbox** (http://wi.fi and
+  http://gowifi.org still lead to the box).
+- **Data shared:** the section shows the data phones have passed through the box,
+  with download and upload, since the date shown (1 MB = 1,000,000 bytes).  It is
+  kept across reboots.  *Reset data counter* sets it back to 0.  Reload the page to
+  see the latest figures.
+- The setting survives a reboot.  Images are always made with it off.
+
+## Front panel
+
+- **Amber LED:** lit (solid, or blinking to show a low battery) only while the
+  access point is really transmitting, so phones can join it.  Off while the WiFi
+  is starting or has failed.
+- **Internet page:** a status page "Internet: ON/off" with the total, download and
+  upload data shared.  It appears in the page list (before the admin icon) while
+  sharing is on or the total is not 0.
+- **Battery pages:** on a Raspberry Pi or CM4 box with the ATtiny battery
+  controller, the multi-battery page is on by default.

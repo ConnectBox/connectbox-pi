@@ -3,7 +3,8 @@
 How the ConnectBox code is tested, what has been tested so far, and what to run
 for each change and each build. Built on 2026-11-01 from the Claude Code session
 logs of 2026-10-04 to 2026-10-08, the Claude session of 2026-10-22 to 2026-10-30
-and the fix log (`Hobby - ConnectBox\Claude\build-fixes-2026-10-22.md`, fixes 1–66).
+and the fix log (`Hobby - ConnectBox\Claude\build-fixes-2026-10-22.md`, fixes 1–72;
+records added through 2026-11-05).
 Keep it up to date: add a line under "Test record" whenever a test is run, and a
 row to the right table whenever a new test or harness is written.
 
@@ -163,6 +164,11 @@ Build history: 2026-10-23 ok (after fixes 1–11), 2026-10-24 ok (24 ignored),
 2026-10-28 two runs (resume needed; fix 45), 2026-10-28b ok (10 ignored),
 2026-10-30 ok (failed=0, 3 ignored, connectbox-pi 580ffa3, tag v20261030).
 
+Raspberry Pi OS Trixie (CM4): build with `python3 make_cb-rpi.py` (ansible-core
+2.17.14 in its own venv; `--setup` once), after `setup_raspbian_host.sh <ip> <user>`.
+Expect one reboot during the build.  First test build history: 2026-11-04, 12 runs
+to failed=0 (fix 67).
+
 ## 6. Every image
 
 1. Shrink on Rpi-Build with `shrink-image.sh` (no .sha256); check `e2fsck -fn` on the
@@ -185,11 +191,23 @@ Build history: 2026-10-23 ok (after fixes 1–11), 2026-10-24 ok (24 ignored),
 - Client Wi-Fi (`ifup@wlan1`) failing once at boot right after DHCP (2026-10-29 15:48) – cause unknown.
 - Three or more Wi-Fi adapters (PxUSBm leaves them alone; AP can end up on an MT7601U).
 - `test_connectbox_static.py` (live box) and the mediainterface spec tests.
-- wifi-configurator suite: 14 of 29 fail (2026-11-01). Most tests are out of date (old function signatures, `range` instead of a list), but they also show a real bug: `scan.get_country_rules_block` matches the country code anywhere in a line (`AU` in `AUTO-BW`, `IR` in `NO-IR`, `JP` in `DFS-JP`), so with the test regulatory database AU, NO, IR, TD, DM and DO get no channels (hostapd then gets `channel=0`), SE and ET get 1–11, JP gets another country's list. Not fixed yet.
+- wifi-configurator suite: 12 of 29 fail (2026-11-04; was 14 on 2026-11-01). The country-block bug below was fixed on 2026-11-04 (fix 67: `scan.py` matches the `country XX:` header only); the remaining failures are out-of-date tests. Earlier note: Most tests are out of date (old function signatures, `range` instead of a list), but they also show a real bug: `scan.get_country_rules_block` matches the country code anywhere in a line (`AU` in `AUTO-BW`, `IR` in `NO-IR`, `JP` in `DFS-JP`), so with the test regulatory database AU, NO, IR, TD, DM and DO get no channels (hostapd then gets `channel=0`), SE and ET get 1–11, JP gets another country's list (fixed 2026-11-04, see above).
 - hat-service repository suite: only a placeholder test (`assertTrue(True)`); the real front-panel tests are in `tests/harness/`.
 - connectbox-manage `admin_login/` with a current admin-ui build (run on 2026-11-01 with the 26 Oct build).
-- Raspberry Pi, CM4, Orange Pi Zero 2, Radxa CM3 builds on current OS releases (only
-  the NanoPi NEO on Armbian 23.02 is tested).
+- Orange Pi Zero 2, Radxa CM3 and Raspberry Pi boards other than the CM4 on current
+  OS releases (the CM4 on Raspberry Pi OS Trixie and the NanoPi NEO on Armbian 23.02
+  are tested).
+- A fresh CM4 build with `make_cb-rpi.py` after the 2026-11-04/05 fixes (fixes 67-72),
+  and a NanoPi NEO build with them (firewall role, interfaces template without the
+  `hostapd` line, internet sharing, remembered WiFi, wifi-configurator single start).
+- Auto-connect to a remembered client WiFi network when the saved one is out of range
+  (only one network, Wilson1, was available).
+- Internet sharing through the client WiFi alone (Ethernet unplugged), and a metered
+  phone hotspot as the uplink.
+- With the Ethernet cable out, the CM4 did not answer on its client WiFi address
+  either (2026-11-05 10:35) - cause not found.
+- 8812au driver reload: hostapd came up "ENABLED" with a dead radio once after
+  `modprobe -r/modprobe` (2026-11-05, before the interfaces fix) - not retried since.
 - Central server (connectbox-chathost) build on a real Ubuntu 24.04 server, and
   phone-home against it (only the mock server so far).
 - Native-speaker check of the shipped translations.
@@ -201,6 +219,19 @@ Most recent first. One line per test run: date, what, result, where it is descri
 
 | Date | Test | Result | Reference |
 |---|---|---|---|
+| 2026-11-05 | ATtiny probe for the multi-battery page default on the CM4 (bus 10: 0x14 answers, 0x15 does not) | pass | fix 72 |
+| 2026-11-05 | Amber LED with hostapd stopped for 60 s (PxUSBm paused) | LED off, then on again (Kirk) | fix 71 |
+| 2026-11-05 | AP "ENABLED" with a dead radio: ifdown/ifup wlan1 with and without the interfaces `hostapd` line; reboot | dead 2/2 with the line, 0/2 without; after the 11:46 reboot hostapd started once, no restart needed | fix 71 |
+| 2026-11-05 | Three CM4 reboots: hostapd start count, channel scan, radio state, wlan0 recovery, sharing after reboot | boot scan works, single start; dead radio caught and restarted by PxUSBm; wlan0 recovered; sharing after reboot fixed (wlan1:0 address), Kirk: internet, wi.fi, connectbox work | fix 70 |
+| 2026-11-05 | Beacon watch from the box's own client (iw scan every 5-9 s) on channels 9, 5, 4 | gaps of 10-27 s while the radio was dead; steady on channel 9 once it was set up | fix 70 |
+| 2026-11-05 | Internet sharing on the CM4 with Kirk's phone: on/off from the admin page, internet, wi.fi, gowifi.org, connectbox; DNS answers from the box; dnsmasq.conf restored byte for byte; reboot with sharing on | pass | fixes 69, 70 |
+| 2026-11-05 | Data counter (usage_test.py, offline) 9/9; on the box 5.4 MB down / 0.4 MB up after a reset; front-panel Internet page, admin total, Advanced kept after re-login | pass (Kirk) | fix 69 |
+| 2026-11-05 | Firewall role alone on the CM4 (fwtest.yml on Rpi-Build): iptables-nft, rules loaded and saved, second run unchanged; rules loaded at boot | pass | fix 69 |
+| 2026-11-05 | Remembered client WiFi: test_kw.py (offline) 18/18; on the CM4 Wilson1 learned, internet test through wlan0 (separate routing table) | pass | fix 68 |
+| 2026-11-05 | eth0 lost lease re-created (dhclient killed, IPv4 flushed) | old check_eth0 did nothing; new one restored eth0 in 85 s | fix 68 |
+| 2026-11-05 | Wipe client WiFi: connectbox-manage function on temp files (node); patch_admin_clientwifi_wipe/internet_sharing/advanced on the release bundles (idempotent, `node --check`) | pass | fixes 68, 69 |
+| 2026-11-04 | CM4 Lite on Raspberry Pi OS Trixie: test builds until failed=0 (12 runs), then boot-by-boot fixes; USB soak on DWC2 vs XHCI | failed=0; 0 RTL8812AU drops in 13 h on DWC2 (12 in 85 min on XHCI) | fix 67 |
+| 2026-11-04 | wifi-configurator suite after the country-block fix | 12 failed (out-of-date tests) instead of 14 | fix 67 |
 | 2026-11-01 | wifi-configurator `pytest` (Python 3.10, copy of the repo); hat-service `pytest tests` | wifi-configurator 11 passed, 14 failed, 4 skipped (country-block bug, see section 7); hat-service 1 passed (placeholder) | section 7 |
 | 2026-11-01 | Harnesses moved into the repositories; `run_all.sh` for hat-service and connectbox-pi and admin-ui run on the real checkouts; connectbox-manage in a test container | all pass: hat-service 138, connectbox-pi 84, connectbox-manage 25 + cbm_test 62 + admin_login 30, admin-ui 8; test_PxUSBm_mount 32/32, test_mmiLoader 317/317 | `tests/harness/README.md` in each repo |
 | 2026-10-30 | Build on fresh card (.153) | failed=0, 3 expected ignores | fix log "Build 2026-10-30" |

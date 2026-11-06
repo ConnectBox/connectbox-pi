@@ -26,12 +26,14 @@ and handles:
 | NanoPi NEO | Armbian, Debian 11 (Bullseye) - tested | `root` |
 | Orange Pi Zero 2 | Armbian | `root` |
 | Radxa CM3 | Armbian | `root` |
-| Raspberry Pi models and Compute Module 4 | Raspberry Pi OS **Lite** (Bullseye) | `pi` |
+| Raspberry Pi models and Compute Module 4 | Raspberry Pi OS **Lite**: Trixie (64-bit) tested on a CM4, Bullseye before | `root` (key from `setup_raspbian_host.sh`, see below) |
 
 The playbook knows Buster and Bullseye (see the comment at the top of
-`site.yml`).  The current test unit is a NanoPi NEO on Armbian Bullseye
-(kernel 5.15); the other boards have not been rebuilt recently, and newer
-releases (Bookworm) are untested.
+`site.yml`), and since November 2026 Raspberry Pi OS Lite **Trixie** (Debian 13,
+kernel 6.18, Python 3.13): it was built and tested on a CM4 Lite on the ConnectBox
+carrier board (see [Raspberry Pi OS Trixie](#raspberry-pi-os-trixie-cm4)).  The
+other main test unit is a NanoPi NEO on Armbian Bullseye (kernel 5.15).  Orange Pi
+Zero 2 and Radxa CM3 have not been rebuilt recently, and Bookworm is untested.
 
 Use a microSD card of at least 8 GB.  The device needs a wired (Ethernet) or
 second WiFi connection to the internet during the build, because its main WiFi
@@ -46,7 +48,9 @@ example).
 The admin back end (connectbox-manage) runs on **Node.js 22 LTS**, installed by the
 playbook from the nodejs.org tarball into `/usr/local` (Node 24 and later have no
 32-bit ARM build).  `/usr/bin/node`, `npm`, `npx` and `pm2` link there, because
-PxUSBm calls `/usr/bin/pm2`.
+PxUSBm calls `/usr/bin/pm2`.  On Raspberry Pi OS the build currently installs
+Debian's own `nodejs` package instead (20.19 on Trixie; which Node to use there is
+still open).
 
 ## 1. Prepare the device
 
@@ -63,12 +67,25 @@ PxUSBm calls `/usr/bin/pm2`.
 
 ### Raspberry Pi
 
-1. Write **Raspberry Pi OS Lite** (Bullseye) with Raspberry Pi Imager.  In the
-   Imager's settings: enable SSH, create the user **`pi`** with a password (newer
-   images no longer have a default `pi`/`raspberry` account), and set your WiFi
-   country.  If you choose another user name, add `ansible_user=<name>` to the
-   Ansible command or inventory.
-2. Boot the Pi on Ethernet and find its IP address.
+1. Write **Raspberry Pi OS Lite** (Trixie, 64-bit, for a CM4; Bullseye for older
+   builds) with Raspberry Pi Imager.  In the Imager's settings: enable SSH, create a
+   user (e.g. **`pi`**) with a password (current images have no default
+   `pi`/`raspberry` account), and set your WiFi country.  Any WiFi network you
+   enter in the Imager is removed by the build (its name and password are not left
+   in the box or an image).
+2. Plug in the WiFi hardware the box will use (on the CM4 carrier: the RTL8812AU
+   USB adapter, which becomes the access point; the CM4's built-in WiFi is the
+   client).  Boot the Pi on Ethernet and find its IP address.
+3. From the build machine give your SSH key to that user **and to root** (the
+   build logs in as root; root keeps password logins off):
+
+   ```bash
+   cd ~/connectbox/connectbox-tools/deployment
+   ./setup_raspbian_host.sh <device_ip> <user>      # user defaults to pi
+   ```
+
+   It asks for the user's password once (and sudo may ask again) and ends with
+   "Successful test".
 
 ## 2. SSH key
 
@@ -147,10 +164,53 @@ node --version          # v22.x
 
    The Box ID (Configuration → *Cloud Server Connection*) should stay the same
    after a reboot.
+4. On a box with the front panel, the amber LED is lit (solid, or blinking to show
+   a low battery) only while the access point is really transmitting, so you can
+   join it.  It is off while the WiFi is still starting or has failed.
 
 To make more units, copy the finished microSD card - there is no need to run
 the playbook again for each one (see `do_image_preparation` below for making a
 distributable image).
+
+## Raspberry Pi OS Trixie (CM4)
+
+Build Raspberry Pi OS Trixie targets with **`make_cb-rpi.py`** from connectbox-tools,
+not with the system Ansible: Raspberry Pi OS Bookworm's ansible-core 2.14 cannot run
+the playbook's downloads (`get_url`) on a target with Python 3.12 or later, so the
+build stops at the first download.  `make_cb-rpi.py` asks the same questions as
+`make_cb.py` but runs ansible-core 2.17.14 from its own virtual environment.
+
+```bash
+cd ~/connectbox/connectbox-tools/deployment
+python3 make_cb-rpi.py --setup      # once per build machine (needs internet)
+python3 make_cb-rpi.py              # answer Y to update, branch master
+```
+
+It refuses a target that is not a Raspberry Pi; NanoPi NEO builds keep using
+`make_cb.py`.  The playbook reboots the device once during the build (new interface
+names and `config.txt`), also when the build runs unattended.
+
+What the build does differently on Raspberry Pi OS Trixie:
+
+- `net.ifnames=0` in `cmdline.txt` (names `eth0`, `wlan0`, `wlan1`) and a
+  `# BEGIN/END CONNECTBOX` block in `/boot/firmware/config.txt`: on a CM4
+  `dtparam=i2c_vc=on` (front panel on I2C bus 10), `dtparam=i2c_arm=off` (the left
+  button is on GPIO3), `dtparam=ant2`, and USB on the DWC2 controller
+  (`otg_mode=0`, `dtoverlay=dwc2,dr_mode=host`: on the other controller the
+  RTL8812AU kept dropping off USB).
+- NetworkManager, netplan and cloud-init's network settings are replaced by
+  ifupdown, isc-dhcp-client and dhcpcd, as on Armbian; systemd-networkd stays off.
+- The RTL8812AU access point uses the `8812au` driver (DKMS, morrownr
+  8812au-20210820); the kernel's `rtw88_8812au` is blacklisted.
+- hostapd is not started by systemd at boot: the access point's `ifup` runs
+  wifi-configurator, which scans for free channels, writes `hostapd.conf` and starts
+  hostapd once; PxUSBm restarts it if the radio is not really transmitting.
+- The firewall uses the nftables-based `iptables` (this kernel has no legacy
+  `ip_tables`); Armbian boards keep legacy iptables.
+- The front panel uses `rpi-lgpio` instead of RPi.GPIO, and the multi-battery page
+  is on when the ATtiny battery controller answers on I2C.
+- Python packages are installed with `--break-system-packages` where the OS marks
+  Python as externally managed.
 
 ## Options
 

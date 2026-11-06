@@ -45,8 +45,12 @@ mkdir -p Images
 ssh-keygen -t ed25519            # if you have no key yet; accept the defaults
 ```
 
-Bookworm's `ansible` package (ansible-core 2.14) builds the current playbook.  On
-an older system, install Ansible from `connectbox-pi/requirements.txt` in a
+Bookworm's `ansible` package (ansible-core 2.14) builds the current playbook for
+Armbian boards.  For a **Raspberry Pi OS Trixie** target use `make_cb-rpi.py` instead
+(ansible-core 2.14 cannot run the playbook's downloads on Python 3.12+ targets; see
+[deployment.md](deployment.md#raspberry-pi-os-trixie-cm4)); run
+`python3 make_cb-rpi.py --setup` once to create its Ansible environment.  On an
+older build machine, install Ansible from `connectbox-pi/requirements.txt` in a
 virtual environment as described in [deployment.md](deployment.md#3-get-ansible).
 
 You also need a **USB** microSD card reader.  An SD-card adaptor in a laptop slot
@@ -67,13 +71,10 @@ same for `connectbox-tools`).
 3. Release builds log in as **root** with your SSH key:
 
    - **Armbian:** `ssh-copy-id root@<device_ip>`
-   - **Raspberry Pi OS:** copy the key to `pi`, then give root the same key
-     (root may log in with a key but not a password, which is the default):
-
-     ```bash
-     ssh-copy-id pi@<device_ip>
-     ssh pi@<device_ip> 'sudo mkdir -p /root/.ssh && sudo cp ~/.ssh/authorized_keys /root/.ssh/'
-     ```
+   - **Raspberry Pi OS:** run `connectbox-tools/deployment/setup_raspbian_host.sh
+     <device_ip> <user>` (the user made in Raspberry Pi Imager, default `pi`).  It
+     copies your key to that user and gives root the same key (root may log in with
+     a key but not a password, which is the default).
 
    Check that `ssh root@<device_ip>` logs in without a password.  If the device's
    IP was used by another box before, remove the old entry first:
@@ -103,13 +104,23 @@ you will publish.  The run ends with `PLAY RECAP ... failed=0` and the device
 - resets the WiFi regulatory domain;
 - deletes root's `authorized_keys`, so your key is not in the image;
 - deletes the admin session key (`/usr/local/connectbox/admin_session.key`), so
-  every box made from the image creates its own on first boot.
+  every box made from the image creates its own on first boot;
+- deletes the client WiFi networks PxUSBm remembered during the build
+  (`/etc/wpa_supplicant/connectbox_known_wifi.json` and the "Remembered by PxUSBm"
+  part of `wpa_supplicant.conf`), turns internet sharing off (`internet_sharing`
+  in `brand.j2`) and deletes the shared-data total
+  (`/usr/local/connectbox/internet_usage.json`).
+
+The client WiFi network set on the Configuration page (the first network in
+`wpa_supplicant.conf`) is **not** reset: if you set one on the build box, use the
+page's *Wipe* button before making the image.
 
 As on every normal build, sshd is turned off at the end; never build a release
 with `developer_mode=true`.
 
 **Alternative:** from `~/connectbox/connectbox-tools/deployment`, run
-`python3 make_cb.py`.  It asks whether to fetch a fresh copy of connectbox-pi
+`python3 make_cb.py` (Raspberry Pi OS Trixie: `python3 make_cb-rpi.py`, same
+questions).  It asks whether to fetch a fresh copy of connectbox-pi
 (branch or tag, default `master`), the release tag, the device IP and any extra build options (typed as on the
 command line, e.g. `-e wireless_country_code=AU`), then runs the same playbook from `ansible/` as
 root with `do_image_preparation=True`.  (Fixed in connectbox-tools `5893887`;
