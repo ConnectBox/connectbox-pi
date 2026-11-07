@@ -113,6 +113,28 @@ global max_partition
 max_partiton = 0
 
 
+def attiny_present(device):
+  """
+  True if the front panel's ATtiny battery controller answers at I2C address
+  0x14: bus 10 on a Compute Module (CM*), bus 1 on another Raspberry Pi.
+  Other boards have no ATtiny.  Uses smbus2 (installed by the build); False
+  if it is missing or the read fails.
+  """
+  if device.startswith("CM"):
+    bus = 10
+  elif device.startswith("PI") or device.startswith("Pi") or device.startswith("RPi"):
+    bus = 1
+  else:
+    return False
+  try:
+    import smbus2
+    with smbus2.SMBus(bus) as b:
+      b.read_byte(0x14)
+    return True
+  except Exception:
+    return False
+
+
 def write_brand_file(brand):
     """
     Write brand.j2 whole to a temporary file and rename it into place, so
@@ -3463,7 +3485,12 @@ if __name__ == "__main__":
       logger.info("Major type: "+a)
       if Brand["Device_type"].find(a)<=0:                    # Make sure the brand file is what we expect as were on this hardware.
         Brand["Device_type"] = '"'+a+'"'
-        Brand["lcd_pages_multi_bat"] = 0
+        # Multi-battery page: on when the front panel's ATtiny battery
+        #  controller answers (2026-11-06: this always set 0, so on every new
+        #  CM4 card the first start turned off the page the build had turned
+        #  on; Kirk: a Pi/CM4 with the ATtiny has it on by default).
+        Brand["lcd_pages_multi_bat"] = 1 if attiny_present(a) else 0
+        logger.info("Device_type set to " + a + ", multi-battery page " + str(Brand["lcd_pages_multi_bat"]))
         write_brand_file(Brand)
         os.sync()
         SSID = Brand["Brand"]

@@ -1401,12 +1401,15 @@
   when: CM4_present or (attiny_probe.rc is defined and attiny_probe.rc == 0)
 
 
+# Not on a CM4: its model string ("Raspberry Pi Compute Module 4") also
+#  matches Pi_present, and this task used to change the CM4's "CM" to "PI"
+#  (2026-11-06).
 - name: Check for device_type PI
   replace:
     path: /usr/local/connectbox/brand.j2
     regexp: '"Device_type": .*,'
     replace: '"Device_type": "PI",'
-  when: Pi_present and  ansible_os_family  == 'Debian'
+  when: Pi_present and not CM4_present and ansible_os_family  == 'Debian'
 
 - name: Check for device_type OrangePI Zero2
   replace:
