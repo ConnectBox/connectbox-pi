@@ -1041,11 +1041,30 @@
     path: /usr/local/bin/poweroff
     mode: 0655
 
+# usr_local_bin_poweroff_poweroff is a 32-bit ARM (armhf) PyInstaller build:
+#  it runs on the NEO, but a 64-bit OS has no /lib/ld-linux-armhf.so.3, so
+#  the hat service's "/usr/local/bin/poweroff/poweroff" failed with "not
+#  found" and the front-panel shutdown only showed its screen (CM4 on
+#  Raspberry Pi OS Trixie, 2026-11-09).  Elsewhere install a script that
+#  runs the same shutdown (shutdownShell.sh -> shutdown.sh: AXP209 power-off
+#  bit, then shutdown -h now).
 - name: copy content to poweroff
   copy:
     src: usr_local_bin_poweroff_poweroff
     dest: /usr/local/bin/poweroff/poweroff
     mode: 0755
+  when: ansible_architecture in ['armv7l', 'armv6l', 'armhf']
+
+- name: poweroff script for other architectures (64-bit ARM, x86)
+  copy:
+    dest: /usr/local/bin/poweroff/poweroff
+    mode: 0755
+    content: |
+      #!/bin/bash
+      # Front-panel shutdown (hat service). The PyInstaller poweroff binary is
+      # 32-bit ARM and cannot run on this architecture.
+      exec /bin/bash /usr/local/connectbox/bin/shutdownShell.sh
+  when: ansible_architecture not in ['armv7l', 'armv6l', 'armhf']
 
 - name: copy extra poweroff filesystem
   copy:
