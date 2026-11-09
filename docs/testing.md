@@ -219,6 +219,9 @@ Most recent first. One line per test run: date, what, result, where it is descri
 
 | Date | Test | Result | Reference |
 |---|---|---|---|
+| 2026-11-09 | hat-service shutdown_test.py (fix 75): failed power-off tries shutdown -h now, then "Shutdown failed" page and buttons back; old hats.py fails 11/13 (frozen) | 13/13; run_all.sh all pass (84, 23, 10, 8, 4, 9, 13) after adding page_internet to sim43's fakes | fix 75 |
+| 2026-11-09 | Power-off script on the CM4 (.29) run by hand | box powered off (Kirk); button press with the script not yet tested | fix 75 |
+| 2026-11-06 | wifi-configurator channel choice: 14 scenario checks and the 6 changed/new test_scan.py functions with the box's venv Python; on the box channel 6 kept on every AP restart | pass | fix 74 |
 | 2026-11-05 | ATtiny probe for the multi-battery page default on the CM4 (bus 10: 0x14 answers, 0x15 does not) | pass | fix 72 |
 | 2026-11-05 | Amber LED with hostapd stopped for 60 s (PxUSBm paused) | LED off, then on again (Kirk) | fix 71 |
 | 2026-11-05 | AP "ENABLED" with a dead radio: ifdown/ifup wlan1 with and without the interfaces `hostapd` line; reboot | dead 2/2 with the line, 0/2 without; after the 11:46 reboot hostapd started once, no restart needed | fix 71 |
