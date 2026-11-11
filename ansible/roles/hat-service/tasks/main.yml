@@ -407,6 +407,18 @@
 - name: Install luma.oled in hat service virtualenv
   command: "{{ hat_service_virtualenv_dir }}/bin/pip3 install luma.oled==2.4.1"
 
+# Raspberry Pi builds only: the front panel's I2C bus (OLED, AXP209, ATtiny)
+#  was found with SDA held low after a hat service restart and after a reboot
+#  (2026-11-10, CM5): nothing answered and the hat service crash-looped.  The
+#  unit runs this before the hat service starts; it clocks SCL until the
+#  device lets go.  It finds the bus's pins from the device tree.
+- name: Install the front-panel I2C bus recovery script (Raspberry Pi)
+  copy:
+    src: i2c_bus_recover.sh
+    dest: /usr/local/connectbox/bin/i2c_bus_recover.sh
+    mode: '0755'
+  when: connectbox_os == 'raspbian'
+
 - name: Copy neo battery shutdown systemd service definition
   template:
     src: "{{ hat_service_name }}.j2"

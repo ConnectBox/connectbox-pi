@@ -26,7 +26,7 @@ and handles:
 | NanoPi NEO | Armbian, Debian 11 (Bullseye) - tested | `root` |
 | Orange Pi Zero 2 | Armbian | `root` |
 | Radxa CM3 | Armbian | `root` |
-| Raspberry Pi models and Compute Module 4 | Raspberry Pi OS **Lite**: Trixie (64-bit) tested on a CM4, Bullseye before | `root` (key from `setup_raspbian_host.sh`, see below) |
+| Raspberry Pi models, Compute Module 4 and Compute Module 5 | Raspberry Pi OS **Lite**: Trixie (64-bit) tested on a CM4 and a CM5 Lite, Bullseye before | `root` (key from `setup_raspbian_host.sh`, see below) |
 
 The playbook knows Buster and Bullseye (see the comment at the top of
 `site.yml`), and since November 2026 Raspberry Pi OS Lite **Trixie** (Debian 13,
@@ -198,6 +198,11 @@ What the build does differently on Raspberry Pi OS Trixie:
   button is on GPIO3), `dtparam=ant2`, and USB on the DWC2 controller
   (`otg_mode=0`, `dtoverlay=dwc2,dr_mode=host`: on the other controller the
   RTL8812AU kept dropping off USB).
+  On a CM5 (November 2026, CM5 Lite on the same carrier) the `[cm5]` part has
+  `dtparam=i2c_csi_dsi0=on` (the front panel on GPIO38/39, which is I2C bus 10),
+  `dtparam=i2c_arm=off`, `dtparam=ant2` and `gpio=22=ip,pu` (the ATtiny's reset
+  line: without the pull-up the ATtiny does not answer); USB is already on DWC2
+  through the OS's own `[cm5]` line.  The playbook treats a CM5 like a CM4 otherwise.
 - NetworkManager, netplan and cloud-init's network settings are replaced by
   ifupdown, isc-dhcp-client and dhcpcd, as on Armbian; systemd-networkd stays off.
 - The RTL8812AU access point uses the `8812au` driver (DKMS, morrownr
@@ -209,6 +214,8 @@ What the build does differently on Raspberry Pi OS Trixie:
   `ip_tables`); Armbian boards keep legacy iptables.
 - The front panel uses `rpi-lgpio` instead of RPi.GPIO, and the multi-battery page
   is on when the ATtiny battery controller answers on I2C.
+- Before the hat service starts, `i2c_bus_recover.sh` frees the front panel's I2C
+  bus if a device is holding SDA low (seen after a restart and after a reboot).
 - Python packages are installed with `--break-system-packages` where the OS marks
   Python as externally managed.
 

@@ -8,6 +8,11 @@ Type=simple
 # Print messages as they happen, so the journal shows events in order
 # (buffered output only reached the log when the service exited)
 Environment=PYTHONUNBUFFERED=1
+{% if connectbox_os == 'raspbian' %}
+# Free the front panel's I2C bus if a device holds SDA low (bus 10 on a
+#  Compute Module, 1 on other Pis); "-" so a failure never stops the service.
+ExecStartPre=-/usr/local/connectbox/bin/i2c_bus_recover.sh {{ 10 if (CM4_present | default(false) | bool) else 1 }}
+{% endif %}
 ExecStart={{ hat_service_virtualenv_dir }}/bin/neo_batterylevelshutdown
 Restart=on-failure
 
