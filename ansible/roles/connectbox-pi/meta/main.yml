@@ -10,6 +10,8 @@ dependencies:
   - { role: enhanced-content, when: enhanced_interface | bool }
   - nginx
   - { role: kiwix, when: enhanced_interface | bool }
+  # HDMI screen: Raspberry Pi builds only (Kirk, 2026-11-11)
+  - { role: hdmi-screen, when: connectbox_os == 'raspbian' and (enhanced_interface | bool) }
   - captive-portal
   - webserver-content
   - usb-content

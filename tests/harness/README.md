@@ -28,6 +28,7 @@ loaders (30 s) have ended.
 | `test_px_status.py` | PxUSBm start-up removes /tmp/creating_menus.txt only when no loader runs | PxUSBm |
 | `test51_px.py` | `fat_needs_check` on mkfs.fat images, `run_fs_check` 120 s limit, "Checking USB" message | PxUSBm |
 | `test53.py` | dead / stacked mounts after a PxUSBm restart | PxUSBm |
+| `hdmi_test.py` | HDMI screen (2026-11-11): which files the player may play, playlist reading, HDMI port and sound card, play / back-to-playlist / splash with a fake mpv, splash picture, `patch_admin_hdmi.py` and `patch_hdmi_button.py` (once, idempotent, built-in release, unknown page; embedded script = admin-ui copy) | hdmi-screen role |
 
 Results on 2026-11-01 (connectbox-pi fc7d58c, hat-service 731a6ff): 5, 19, 7, 9, 8, 4, 21 and 11 passed, none failed.
 The repository suites `ansible/roles/bootstrap/files/test_PxUSBm_mount.py` (32) and `test_mmiLoader.py`

@@ -302,9 +302,22 @@
     regexp: '"internet_sharing":\s*[^,}]*'
     replace: '"internet_sharing": 0'
 
+- name: Turn visitor "Play on HDMI" off in the image
+  replace:
+    path: /usr/local/connectbox/brand.j2
+    regexp: '"hdmi_visitor_play":\s*[^,}]*'
+    replace: '"hdmi_visitor_play": 0'
+
 - name: Remove the internet sharing data total
   file:
     dest: /usr/local/connectbox/internet_usage.json
+    state: absent
+
+# HDMI screen (Raspberry Pi): the playlist names this box's files; a new box
+#  starts with an empty one (the splash picture is re-made at every start).
+- name: Remove the HDMI playlist
+  file:
+    dest: /usr/local/connectbox/hdmi/playlist.json
     state: absent
 
 - name: Remove .ssh authorized_keys

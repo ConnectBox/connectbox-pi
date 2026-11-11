@@ -1,0 +1,15 @@
+[Unit]
+Description=ConnectBox HDMI screen (playlist, Play on HDMI, splash)
+# The splash is drawn with the hat service's Python (Pillow); hostapd.conf
+#  gives the Wi-Fi name for it.
+After=network.target neo-battery-shutdown.service
+
+[Service]
+Type=simple
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/usr/bin/python3 /usr/local/connectbox/bin/hdmi_player.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

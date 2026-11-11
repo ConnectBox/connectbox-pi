@@ -15,6 +15,8 @@ usbNoMount: 0
 # Internet sharing for phones on the ConnectBox Wi-Fi (NAT through the box's
 # uplink; admin page Advanced switch).  Off in every build and image.
 internet_sharing: 0
+# HDMI screen (Raspberry Pi): visitors may use "Play on HDMI" (admin switch, default off)
+hdmi_visitor_play: 0
 
 lcd_pages_main: 1
 lcd_pages_info: 1

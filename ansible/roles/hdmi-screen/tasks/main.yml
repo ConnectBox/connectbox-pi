@@ -1,0 +1,70 @@
+---
+# HDMI screen on a Raspberry Pi ConnectBox (2026-11-11, Kirk's design).
+#  - hdmi_player.py (service connectbox-hdmi) drives mpv straight on the HDMI
+#    output (DRM/KMS, no desktop): loops the admin's playlist, plays an item
+#    chosen with "Play on HDMI" once, and shows a splash picture (logo, box
+#    name, Wi-Fi name; hdmi_splash.py) when there is nothing to play.
+#  - connectbox-manage src/hdmi.js is its web side (/admin/api/hdmi/...).
+#  - patch_admin_hdmi.py adds the "HDMI Screen" section (Advanced) to the
+#    Configuration page; patch_hdmi_button.py adds the "Play on HDMI" button
+#    next to the media pages' download button.  Both are idempotent and
+#    recognise releases that already have the change.
+# Raspberry Pi builds only (connectbox-pi meta).  Visitors may use "Play on
+#  HDMI" only when the admin switches it on (brand.j2 hdmi_visitor_play).
+
+- name: Install mpv (HDMI player) without the desktop extras
+  apt:
+    name: mpv
+    state: present
+    install_recommends: no
+
+- name: Install the DejaVu fonts for the splash picture
+  apt:
+    name: fonts-dejavu-core
+    state: present
+
+- name: Create the HDMI player's folder
+  file:
+    path: /usr/local/connectbox/hdmi
+    state: directory
+    mode: '0755'
+
+- name: Install the HDMI player, splash maker and control tool
+  copy:
+    src: "{{ item }}"
+    dest: "/usr/local/connectbox/bin/{{ item }}"
+    mode: '0755'
+  loop:
+    - hdmi_player.py
+    - hdmi_splash.py
+    - hdmi_ctl.py
+  notify: restart connectbox-hdmi
+
+- name: Install the connectbox-hdmi service
+  template:
+    src: connectbox-hdmi.service.j2
+    dest: /etc/systemd/system/connectbox-hdmi.service
+    mode: '0644'
+  notify: restart connectbox-hdmi
+
+- name: Enable the connectbox-hdmi service
+  systemd:
+    name: connectbox-hdmi
+    enabled: yes
+    daemon_reload: yes
+
+- name: Add the HDMI Screen section to the Configuration page
+  script: patch_admin_hdmi.py
+  args:
+    executable: python3
+  register: hdmi_admin_patch
+  changed_when: "'patched' in hdmi_admin_patch.stdout and 'already' not in hdmi_admin_patch.stdout"
+  ignore_errors: yes
+
+- name: Add the "Play on HDMI" button to the media pages
+  script: patch_hdmi_button.py
+  args:
+    executable: python3
+  register: hdmi_button_patch
+  changed_when: "': patched' in hdmi_button_patch.stdout"
+  ignore_errors: yes

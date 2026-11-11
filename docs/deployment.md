@@ -229,6 +229,11 @@ What the build does differently on Raspberry Pi OS Trixie:
   is on when the ATtiny battery controller answers on I2C.
 - Before the hat service starts, `i2c_bus_recover.sh` frees the front panel's I2C
   bus if a device is holding SDA low (seen after a restart and after a reboot).
+- **HDMI screen** (role `hdmi-screen`, Raspberry Pi only): a screen on the HDMI port
+  shows a playlist set in Configuration → Advanced → HDMI Screen, a file chosen with
+  "Play on HDMI" on a media page (visitors only if the admin allows it), or a splash
+  with the box name and Wi-Fi name.  Needs `mpv` (installed by the role) and no
+  desktop.
 - Python packages are installed with `--break-system-packages` where the OS marks
   Python as externally managed.
 
