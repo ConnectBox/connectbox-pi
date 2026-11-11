@@ -43,6 +43,15 @@ class DummyDisplay:
     def __init__(self, hat_class):
         self.display_type = 'DummyDisplay'
 
+    def __getattr__(self, name):
+        """Any other display call (wait, success, error, powering-off pages...)
+        does nothing: without this, indexing on a box with no OLED raised
+        AttributeError (DummyDisplay had no showWaitPage) and stopped the
+        service (2026-11-11)."""
+        if name.startswith("__"):
+            raise AttributeError(name)
+        return lambda *args, **kwargs: None
+
     def moveForward(self):
         pass
 
