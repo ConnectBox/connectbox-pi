@@ -11,7 +11,8 @@ usage: python3 hdmi_test.py <connectbox-pi checkout> [connectbox-admin-ui checko
 - hdmi_splash.py: draws a 1920x1080 picture (when Pillow is installed);
 - patch_admin_hdmi.py: adds the section and script once, idempotent,
   recognises a release that has it built in, fails on unknown pages; its
-  embedded script is the same as connectbox-admin-ui's hdmi_admin.js;
+  embedded script and section are the same as connectbox-admin-ui's
+  hdmi_admin.js and hdmi.html; the Play playlist button;
 - patch_hdmi_button.py: patches a bundle with the stock download button once,
   result is valid JavaScript (node --check, if node is installed).
 """
@@ -136,6 +137,15 @@ try:
     if ADMIN:
         src = os.path.join(ADMIN, "src/js/admin/hdmi_admin.js")
         check("embedded script == connectbox-admin-ui hdmi_admin.js", os.path.exists(src) and open(src, encoding="utf-8").read() == pa.JS, src)
+        sec = os.path.join(ADMIN, "src/templates/parts/admin/sections/hdmi.html")
+        check("embedded section == connectbox-admin-ui hdmi.html", os.path.exists(sec)
+              and '<div class="hidden isAdvanced" id="hdmi">' + open(sec, encoding="utf-8").read().strip() + '</div>' == pa.SECTION, sec)
+    # "Play playlist" (2026-11-11): in the section, and added by the script on a
+    #  page patched before the button existed (only the script is refreshed there)
+    check("admin page: Play playlist button in the section", pa.SECTION.count('id="hdmi-play-list"') == 1)
+    check("admin page: script adds Play playlist when the page lacks it, saves then starts the playlist",
+          "playList.id = 'hdmi-play-list'" in pa.JS and "insertBefore(playList, el('hdmi-stop'))" in pa.JS
+          and pa.JS.index("playList.onclick") < pa.JS.index("request('GET', 'hdmi/stop'") and "savePlaylist(function () {\n        request('GET', 'hdmi/stop'" in pa.JS)
     # -- media page button patch -----------------------------------------------------
     pb = load("patch_hdmi_button")
     build = os.path.join(T, "build"); os.makedirs(build)
