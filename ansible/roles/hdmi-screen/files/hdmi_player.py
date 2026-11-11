@@ -13,8 +13,9 @@ HDMI output through DRM/KMS) over mpv's JSON IPC socket, and takes commands
 from connectbox-manage over its own Unix socket, one JSON object per line:
   {"cmd": "status"}                      -> {"ok": true, "mode": ..., ...}
   {"cmd": "play", "path": "<file>"}      -> play one item now
-  {"cmd": "stop"}                        -> stop a chosen item, back to the playlist
-  {"cmd": "reload"}                      -> re-read the playlist file, re-make the splash
+  {"cmd": "stop"}                        -> stop everything, splash until "reload"
+  {"cmd": "reload"}                      -> re-read the playlist file, re-make the
+                                            splash, play the playlist from the top
 
 Files: playlist /usr/local/connectbox/hdmi/playlist.json
        {"items": [{"path": "...", "name": "..."}], "image_seconds": 10}
@@ -257,8 +258,12 @@ class Player:
         """Start with no mpv; run() starts it when a monitor is connected."""
         self.mpv = None
         self.lock = threading.RLock()
-        self.mode = "off"            # off (no monitor), splash, playlist, single
+        self.mode = "off"            # off (no monitor), splash, stopped, playlist, single
         self.single = None           # real path of a chosen item while it plays
+        # True after the admin's Stop: the splash stays up (also after a chosen
+        #  item ends) until the playlist is started or saved again.  Not kept
+        #  across a restart: a box that boots plays its playlist.
+        self.stopped = False
         self.playlist, self.image_seconds = read_playlist()
         self.make_splash()
 
@@ -272,19 +277,19 @@ class Player:
             log.warning("could not make the splash picture: %s", e)
 
     def show_playlist_or_splash(self):
-        """Loop the playlist if it has items, else show the splash picture."""
+        """Loop the playlist if it has items and was not stopped, else show the splash picture."""
         with self.lock:
             self.single = None
             if not self.mpv:
                 return
             self.mpv.command("set_property", "image-display-duration", self.image_seconds)
-            if self.playlist:
+            if self.playlist and not self.stopped:
                 self.mode = "playlist"
                 self.mpv.command("set_property", "loop-playlist", "inf")
                 for i, path in enumerate(self.playlist):
                     self.mpv.command(*load_args(path, "replace" if i == 0 else "append"))
             else:
-                self.mode = "splash"
+                self.mode = "stopped" if self.stopped else "splash"
                 self.mpv.command("set_property", "loop-playlist", "no")
                 self.mpv.command("set_property", "image-display-duration", "inf")
                 self.mpv.command("loadfile", SPLASH_FILE, "replace")
@@ -325,9 +330,17 @@ class Player:
                 return {"ok": False, "error": "no HDMI screen connected"}
             return {"ok": True, "mode": "single", "playing": real}
         if cmd == "stop":
+            # Stop everything (a chosen item and the playlist): the splash stays
+            #  up until "reload".  Before 2026-11-11 this went back to the
+            #  playlist, so the admin could not stop the screen at all.
+            self.stopped = True
             self.show_playlist_or_splash()
             return {"ok": True, "mode": self.mode}
         if cmd == "reload":
+            # Sent when the playlist is saved (and by "Play playlist", after a
+            #  "stop"): the playlist runs again from its first item, unless a
+            #  chosen item is playing - then it starts when that item ends.
+            self.stopped = False
             self.playlist, self.image_seconds = read_playlist()
             self.make_splash()
             if self.mode != "single":

@@ -110,6 +110,15 @@ try:
     p.on_event({"event": "end-file", "reason": "eof"})
     time.sleep(0.3)
     check("chosen file finished: back to the playlist", p.mode == "playlist" and p.single is None)
+    # -- Stop really stops (2026-11-11: it used to go back to the playlist) ---------
+    p.mpv.cmds = []
+    r = p.handle({"cmd": "stop"})
+    check("stop: playlist ended, splash shown, mode stopped", r["ok"] and p.mode == "stopped"
+          and ("loadfile", hp.SPLASH_FILE, "replace") in p.mpv.cmds and not any(c[0] == "loadfile" and c[1] != hp.SPLASH_FILE for c in p.mpv.cmds), (r, p.mpv.cmds))
+    p.handle({"cmd": "play", "path": link("pic.jpg")}); p.on_event({"event": "end-file", "reason": "eof"}); time.sleep(0.3)
+    check("stopped: a chosen file plays, then the splash again (playlist stays stopped)", p.mode == "stopped" and p.single is None, p.mode)
+    r = p.handle({"cmd": "reload"})
+    check("reload (playlist saved / Play playlist): playlist runs again", r["ok"] and p.mode == "playlist" and not p.stopped, r)
     json.dump({"items": []}, open(pl, "w")); p.mpv.cmds = []
     r = p.handle({"cmd": "reload"})
     check("reload with an empty playlist: splash shown for ever", r["ok"] and p.mode == "splash"
@@ -157,7 +166,8 @@ try:
     check("admin page: Play playlist button in the section", pa.SECTION.count('id="hdmi-play-list"') == 1)
     check("admin page: script adds Play playlist when the page lacks it, saves then starts the playlist",
           "playList.id = 'hdmi-play-list'" in pa.JS and "insertBefore(playList, el('hdmi-stop'))" in pa.JS
-          and pa.JS.index("playList.onclick") < pa.JS.index("request('GET', 'hdmi/stop'") and "savePlaylist(function () {\n        request('GET', 'hdmi/stop'" in pa.JS)
+          and "playList.onclick = function () {\n      request('GET', 'hdmi/stop'" in pa.JS
+          and pa.JS.index("playList.onclick") < pa.JS.index("savePlaylist(function () {\n          say(playlist.length"))
     # -- media page button patch -----------------------------------------------------
     pb = load("patch_hdmi_button")
     build = os.path.join(T, "build"); os.makedirs(build)
