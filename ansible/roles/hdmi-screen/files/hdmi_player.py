@@ -106,6 +106,45 @@ def read_playlist(path=None):
     return items, secs
 
 
+_LOADFILE_HAS_INDEX = None
+
+
+def loadfile_has_index():
+    """True when this mpv's "loadfile" takes an index before the per-file options.
+
+    mpv 0.38 changed the command from loadfile <file> <flags> <options> to
+    loadfile <file> <flags> <index> <options>.  The answer is read once from
+    "mpv --version" ("mpv v0.40.0 ..." or "mpv 0.35.1 ..."); if the version
+    cannot be read the newer form is assumed (Raspberry Pi OS Trixie has 0.40).
+    """
+    global _LOADFILE_HAS_INDEX
+    if _LOADFILE_HAS_INDEX is None:
+        _LOADFILE_HAS_INDEX = True
+        try:
+            out = subprocess.run(["mpv", "--version"], capture_output=True, text=True, timeout=20).stdout
+            parts = out.split()[1].lstrip("v").split(".")
+            _LOADFILE_HAS_INDEX = (int(parts[0]), int(parts[1])) >= (0, 38)
+        except (OSError, subprocess.SubprocessError, IndexError, ValueError):
+            pass
+    return _LOADFILE_HAS_INDEX
+
+
+def load_args(path, flag):
+    """Return the mpv "loadfile" command for one file ("replace" or "append").
+
+    Audio files get the splash as their picture (a per-file cover-art-files
+    option), so the screen shows the box name while they play.  Video and
+    picture files get no option: with the splash as cover art mpv shows it
+    in place of the file's own video.
+    """
+    if media_kind(path) != "audio":
+        return ("loadfile", path, flag)
+    options = {"cover-art-files": SPLASH_FILE}
+    if loadfile_has_index():
+        return ("loadfile", path, flag, -1, options)
+    return ("loadfile", path, flag, options)
+
+
 def connected_hdmi():
     """Return (DRM connector name, ALSA card name) of the first connected HDMI port, or None.
 
@@ -147,8 +186,11 @@ class Mpv:
                "--hwdec=auto", "--audio-device=alsa/hdmi:CARD=%s,DEV=0" % card,
                "--keep-open=no", "--osc=no", "--osd-level=0", "--input-default-bindings=no",
                "--cover-art-auto=no", "--audio-display=external-first",
-               "--cover-art-files=" + SPLASH_FILE,
                "--input-ipc-server=" + MPV_SOCKET]
+        # No --cover-art-files here: as a global option mpv added the splash to
+        #  every file as an external picture track and chose it over the file's
+        #  own video, so videos played with sound behind the splash picture
+        #  (2026-11-11, CM5).  load_args() gives it to audio files only.
         log.info("starting mpv on %s (audio %s)", connector, card)
         self.proc = subprocess.Popen(cmd, stdin=subprocess.DEVNULL)
         deadline = time.time() + 10
@@ -180,6 +222,10 @@ class Mpv:
                     continue
                 if "event" in msg:
                     self.on_event(msg)
+                elif msg.get("error", "success") != "success":
+                    # mpv refused a command (it runs --really-quiet, so this is
+                    #  the only place such an error becomes visible)
+                    log.warning("mpv refused command %s: %s", msg.get("request_id"), msg.get("error"))
 
     def command(self, *args):
         """Send one mpv command (e.g. "loadfile", path, "append"); errors are logged, not raised."""
@@ -236,7 +282,7 @@ class Player:
                 self.mode = "playlist"
                 self.mpv.command("set_property", "loop-playlist", "inf")
                 for i, path in enumerate(self.playlist):
-                    self.mpv.command("loadfile", path, "replace" if i == 0 else "append")
+                    self.mpv.command(*load_args(path, "replace" if i == 0 else "append"))
             else:
                 self.mode = "splash"
                 self.mpv.command("set_property", "loop-playlist", "no")
@@ -252,7 +298,7 @@ class Player:
             self.single = real
             self.mpv.command("set_property", "loop-playlist", "no")
             self.mpv.command("set_property", "image-display-duration", self.image_seconds)
-            self.mpv.command("loadfile", real, "replace")
+            self.mpv.command(*load_args(real, "replace"))
             return True
 
     def on_event(self, ev):

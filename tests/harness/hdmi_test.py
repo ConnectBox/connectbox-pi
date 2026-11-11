@@ -78,11 +78,23 @@ try:
         def command(self, *a): self.cmds.append(a)
         def alive(self): return True
     hp.SPLASH_MAKER = ["true"]; hp.PLAYLIST_FILE = pl
+    # The splash is given to audio files only, as a per-file option (as a global
+    #  mpv option it replaced every video's picture, 2026-11-11).  mpv >= 0.38
+    #  takes an index before the options, older ones do not.
+    hp._LOADFILE_HAS_INDEX = True
+    cover = {"cover-art-files": hp.SPLASH_FILE}
+    check("video and picture are loaded without the splash as cover art",
+          hp.load_args("/x/film.mp4", "replace") == ("loadfile", "/x/film.mp4", "replace") and hp.load_args("/x/pic.jpg", "append") == ("loadfile", "/x/pic.jpg", "append"))
+    check("audio is loaded with the splash as its picture (mpv 0.38+: index -1 first)", hp.load_args("/x/song.mp3", "append") == ("loadfile", "/x/song.mp3", "append", -1, cover))
+    hp._LOADFILE_HAS_INDEX = False
+    check("audio on mpv before 0.38: options without the index", hp.load_args("/x/song.mp3", "replace") == ("loadfile", "/x/song.mp3", "replace", cover))
+    hp._LOADFILE_HAS_INDEX = True
+    check("mpv is not started with a global --cover-art-files", '"--cover-art-files=' not in open(os.path.join(FILES, "hdmi_player.py"), encoding="utf-8").read().split("# No --cover-art-files")[0])
     json.dump({"items": [link("film.mp4"), link("song.mp3")], "image_seconds": 5}, open(pl, "w"))
     p = hp.Player(); p.mpv = FakeMpv(); p.show_playlist_or_splash()
     loads = [c for c in p.mpv.cmds if c[0] == "loadfile"]
     check("playlist mode: both files loaded, first replaces, loop on",
-          p.mode == "playlist" and [c[1:] for c in loads] == [(os.path.join(usb, "film.mp4"), "replace"), (os.path.join(usb, "song.mp3"), "append")]
+          p.mode == "playlist" and [c[1:] for c in loads] == [(os.path.join(usb, "film.mp4"), "replace"), (os.path.join(usb, "song.mp3"), "append", -1, cover)]
           and ("set_property", "loop-playlist", "inf") in p.mpv.cmds, p.mpv.cmds)
     p.mpv.cmds = []
     r = p.handle({"cmd": "play", "path": link("pic.jpg")})
