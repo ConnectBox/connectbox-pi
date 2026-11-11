@@ -119,7 +119,7 @@ scp ansible/roles/bootstrap/files/usr_local_connectbox_bin_mmiLoader.py root@<ip
 
 ## Git workflow
 
-Work on `master`. Remotes: `origin` = ConnectBox/connectbox-pi (org), `fork` = kirkdwilson/connectbox-pi. After each commit push to both: `git push origin master && git push fork master`. Use conventional messages, e.g. `fix(usb-mounter): ...`.
+Work on `master`. One remote: `origin` = ConnectBox/connectbox-pi (org); push with `git push origin master`. The personal fork (kirkdwilson/connectbox-pi) was dropped on 2026-11-11 (Kirk) - do not push to it. Use conventional messages, e.g. `fix(usb-mounter): ...`.
 
 The copy at `Documents\Hobby - ConnectBox\Antigravity\connectbox-pi` is stale — work only in this repo.
 
