@@ -39,6 +39,10 @@ Use a microSD card of at least 8 GB.  The device needs a wired (Ethernet) or
 second WiFi connection to the internet during the build, because its main WiFi
 adapter becomes the access point.
 
+A plain Raspberry Pi board without the ConnectBox front panel (OLED, buttons, AXP209
+battery board) also works: the front-panel service finds no AXP209 and runs without
+it.
+
 Use **one or two** USB WiFi adapters.  With two, PxUSBm puts the access point on the
 adapter that can run one (a Realtek RTL88xx first) and uses the other as the client;
 with three or more it leaves the configuration alone ("must be manually managed"),
@@ -143,6 +147,15 @@ The run takes a long time (much longer on a NEO or Pi Zero).  It ends with a
 `PLAY RECAP`; `failed=0` means success.  If a run fails part-way, fix the cause and
 run it again - the playbook can be re-run.
 
+If it stops at **"Download kiwix-tools"** with "checksum ... did not match", the
+Kiwix mirror was too slow and the device got a short file (November 2026: about
+10 KB/s for the 20 MB file).  The checksum itself comes from Kiwix's own `.md5`
+file.  Run the build again later, or download the file on another machine
+(`https://download.kiwix.org/release/kiwix-tools/kiwix-tools_linux-aarch64-3.8.2.tar.gz`,
+`linux-armv6` on 32-bit boards), check it against the `.md5` and copy it to `/tmp`
+on the device under the same name; the download step then finds it and goes on.
+The build's reboot empties `/tmp` on Raspberry Pi OS, so copy it after that reboot.
+
 **By default the playbook turns off sshd at the end** (production mode).  For a
 unit you will keep working on, add `-e developer_mode=true` (insecure - not for
 units going into the field).
@@ -221,7 +234,10 @@ What the build does differently on Raspberry Pi OS Trixie:
 
 ## Options
 
-Add to the inventory line, or as `-e name=value` on the command line.
+Add to the inventory line, or as `-e name=value` on the command line.  `true`/`false`
+work in either form (the playbook reads them with `| bool`; before November 2026 an
+explicit `-e developer_mode=false` or `-e do_image_preparation=False` was taken as
+true).
 
 | Option | Default | What it does |
 |--------|---------|--------------|
