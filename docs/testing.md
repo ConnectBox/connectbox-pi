@@ -219,6 +219,7 @@ Most recent first. One line per test run: date, what, result, where it is descri
 
 | Date | Test | Result | Reference |
 |---|---|---|---|
+| 2026-11-11 | `| bool` on do_image_preparation / developer_mode / enhanced_interface / shutdown_in_image_preparation conditions (fix 80): ansible-playbook --syntax-check site.yml (ansible-core 2.17.14 on RPi-Build); test play with `-e developer_mode=false -e do_image_preparation=False` -> sshd disabled, no image preparation, dnsmasq not in developer mode; `=true`/`=True` -> the opposite; JSON booleans same as plain | pass | fix 80 |
 | 2026-11-11 | hat-service nopanel_test.py (fix 79): Pi/CM with no AXP209 gets DummyHAT, LED helpers and DummyDisplay calls are no-ops, DummyHAT exits for a restart when the AXP209 answers again; old files 6/12 | 12/12; run_all.sh all pass (84, 23, 10, 8, 4, 9, 13, 12). On the CM5 (.29): q4y2018HAT detected as before; a stuck bus during running crashed the service once, ExecStartPre recovery freed it (9 pulses) and the restart came back | fix 79 |
 | 2026-11-10 | i2c_bus_recover.sh on the CM5 (.29): free bus no-op (0.27 s); --force; real stuck bus released after 9 pulses | pass; not tested on a CM4 | fix 78 |
 | 2026-11-09 | hat-service shutdown_test.py (fix 75): failed power-off tries shutdown -h now, then "Shutdown failed" page and buttons back; old hats.py fails 11/13 (frozen) | 13/13; run_all.sh all pass (84, 23, 10, 8, 4, 9, 13) after adding page_internet to sim43's fakes | fix 75 |

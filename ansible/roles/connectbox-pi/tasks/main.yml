@@ -118,10 +118,13 @@
     state: absent
   when: not (do_image_preparation | default(False) | bool)
 
+# `-e name=false` on the command line passes the TEXT "false", which a bare
+#  condition treats as true (any non-empty string); `| bool` reads it as false
+#  (2026-11-10: -e do_image_preparation=False still ran image preparation).
 - name: Schedule disabling of sshd
   set_fact:
     final_command: "systemctl disable ssh"
-  when: not developer_mode
+  when: not (developer_mode | bool)
 
 # Run the final commands in a handler so any disabling is performed right at
 #  the end of the playbook run, to extent that we can influence it. While

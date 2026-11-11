@@ -56,7 +56,7 @@ leasefile-ro
 
 domain={{ hostname }}
 
-{% if developer_mode -%}
+{% if developer_mode | bool -%}
 # Enable only dns on the external facing interface
 # We provide interface=* here because dnsmasq will refuse to start (thus
 #  causing all manner of problems) if the lan_dns_if is unavailable.

@@ -21,6 +21,6 @@
   shell: sleep 2 && /sbin/shutdown -h now
   async: 1
   poll: 0
-  when: shutdown_in_image_preparation
+  when: shutdown_in_image_preparation | bool
   tags:
   - skip_ansible_lint

@@ -7,13 +7,13 @@ dependencies:
   - { role: wifi-ap, when: not aws_instance }
   - { role: mikegleasonjr.firewall, when: not aws_instance }
 #  - { role: php, when: build_moodle}
-  - { role: enhanced-content, when: enhanced_interface}
+  - { role: enhanced-content, when: enhanced_interface | bool }
   - nginx
-  - { role: kiwix, when: enhanced_interface }
+  - { role: kiwix, when: enhanced_interface | bool }
   - captive-portal
   - webserver-content
   - usb-content
-  - { role: sample-content, when: not enhanced_interface}
+  - { role: sample-content, when: not (enhanced_interface | bool) }
   - rpi-permissions
   - { role: wlan-set, when: not aws_instance }
   - remove-lz4
