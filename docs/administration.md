@@ -73,11 +73,46 @@ it is on, phones on the ConnectBox WiFi can use the box's internet connection
   see the latest figures.
 - The setting survives a reboot.  Images are always made with it off.
 
+## HDMI Screen (Advanced, Raspberry Pi boxes)
+
+A monitor or TV on the box's HDMI port shows a playlist of the box's video, audio
+and picture files.  Sound goes out over the same HDMI cable.  With nothing to play
+the screen shows the box name and the WiFi name.
+
+- **Build the playlist:** pick a file in the list and press *Add to playlist*; use
+  ↑ ↓ ✕ to reorder or remove.  *Seconds per picture* sets how long a picture stays.
+- **Play playlist:** saves the list and starts it from the top.  It then loops for
+  ever, and starts by itself whenever the box starts.
+- **Save playlist:** saves the list and starts it, unless a *Play now* file is still
+  playing (the playlist then starts when that file ends).
+- **Play now:** plays only the file selected in the list, once, then the playlist
+  goes on.
+- **Stop:** ends whatever is playing, the playlist included, and leaves the box name
+  on the screen until *Play playlist* or *Save playlist* (or a restart of the box).
+- **Visitors can use "Play on HDMI":** when ticked, everyone on the WiFi gets a
+  screen button next to the download button on the media pages; otherwise only a
+  logged-in admin does.
+- Playlist items on a USB key are skipped while the key is out.  Images are made
+  with an empty playlist and the visitor switch off.
+
+## Host name
+
+*Configuration → Web Server → Hostname* (an Advanced option) accepts letters, digits and hyphens only (1-63, not
+starting or ending with a hyphen; no spaces).  The new name is used at once: in the
+address bar (http://name), on the front panel and on the HDMI screen.  No restart
+is needed.
+
 ## Front panel
 
 - **Amber LED:** lit (solid, or blinking to show a low battery) only while the
   access point is really transmitting, so phones can join it.  Off while the WiFi
   is starting or has failed.
+- **IP addresses page:** a status page with the box's three addresses, one per
+  line: `AP` (the WiFi the phones join), `WiFi` (the box's own connection to another
+  WiFi network) and `Eth` (the wired port).  A line reads `not connected` when the
+  interface has no address and `none` when the box has no such interface.  The WiFi
+  address changes at every start (by design), so read it here before using SSH or
+  opening the box from the other network.  It comes after the statistics pages.
 - **Internet page:** a status page "Internet: ON/off" with the total, download and
   upload data shared.  It appears in the page list (before the admin icon) while
   sharing is on or the total is not 0.

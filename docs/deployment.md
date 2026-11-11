@@ -233,7 +233,10 @@ What the build does differently on Raspberry Pi OS Trixie:
   shows a playlist set in Configuration → Advanced → HDMI Screen, a file chosen with
   "Play on HDMI" on a media page (visitors only if the admin allows it), or a splash
   with the box name and Wi-Fi name.  Needs `mpv` (installed by the role) and no
-  desktop.
+  desktop.  Sound goes to the same HDMI port.  The buttons (Play playlist, Play now,
+  Stop) are described in [administration.md](administration.md).
+- **Front panel IP addresses page:** the OLED has a page with the access point,
+  client Wi-Fi and Ethernet addresses (hat-service `page_network.py`).
 - Python packages are installed with `--break-system-packages` where the OS marks
   Python as externally managed.
 
