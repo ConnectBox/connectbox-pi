@@ -93,9 +93,14 @@
 - debug:
     msg: "machine_type['stdout_lines']: {{ machine_type['stdout_lines'] }} "
 
+# CM4_present is true for a CM4 or a CM5: both go on the ConnectBox carrier
+#  and are set up the same way (front panel on I2C bus 10, ATtiny, buttons on
+#  GPIO3/4, LED on GPIO6).  CM5_present is true only for a CM5, for the
+#  config.txt lines that differ (2026-11-10, CM5 Lite on the carrier).
 - name: Try setting up a find on text and regex on text
   set_fact:
     CM4_present: '{{ happy2 }}'
+    CM5_present: '{{ happy7 }}'
     Pi_present:  '{{ happy3 }}'
     OZ2_present: '{{ happy4 }}'
     NEO_present: '{{ happy5 }}'  
@@ -104,11 +109,12 @@
   vars:
     happy0: "stdout_lines"
     happy1: '{{ machine_type[happy0] }}|first'
-    happy2: '{{ happy1.find("Compute Module 4") > 0 }}'
+    happy2: '{{ happy1.find("Compute Module 4") > 0 or happy1.find("Compute Module 5") > 0 }}'
     happy3: '{{ (happy1.find("Raspberry Pi") >= 0) }}'
     happy4: '{{ (happy1.find("Orange") >=0 ) }}'
     happy5: '{{ (happy1.find("NEO") >=0) }}'
     happy6: '{{ (happy1.find("Radxa CM3") >= 0) }}'
+    happy7: '{{ happy1.find("Compute Module 5") > 0 }}'
 
 
 -  debug:
@@ -116,6 +122,9 @@
 
 - debug:
     msg: "search fro CM4 present : {{ CM4_present }} "
+
+- debug:
+    msg: "search for CM5 present : {{ CM5_present }} "
 
 - debug:
     msg: "search for Pi present : {{ Pi_present }}"
@@ -240,6 +249,11 @@
 #  USB on the DWC2 controller, as the Bullseye config had it: on the XHCI
 #  controller (Trixie's otg_mode=1) the RTL8812AU dropped off USB 12 times in
 #  85 minutes; on DWC2 none in the first test (2026-11-04, see the fix log).
+# CM5 (2026-11-10, CM5 Lite on the same carrier, device tree cm5l-cm5io): the
+#  front panel's pins (GPIO38/39 on a CM5) are i2c_csi_dsi0, which is
+#  /dev/i2c-10, so the software keeps using bus 10.  The ATtiny only answers
+#  with a pull-up on GPIO22 (the CM5's default there is a pull-down).  USB is
+#  already on DWC2 through the OS's own [cm5] dtoverlay=dwc2,dr_mode=host.
 - name: Add the ConnectBox lines to /boot/firmware/config.txt
   blockinfile:
     path: /boot/firmware/config.txt
@@ -251,6 +265,11 @@
       dtparam=ant2
       otg_mode=0
       dtoverlay=dwc2,dr_mode=host
+      [cm5]
+      dtparam=i2c_csi_dsi0=on
+      dtparam=i2c_arm=off
+      dtparam=ant2
+      gpio=22=ip,pu
       [all]
       dtoverlay=disable-bt
   register: firmware_config_changed
