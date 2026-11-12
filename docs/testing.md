@@ -219,6 +219,7 @@ Most recent first. One line per test run: date, what, result, where it is descri
 
 | Date | Test | Result | Reference |
 |---|---|---|---|
+| 2026-11-11 | kiwix-tools download backstop (kiwix role run alone against the CM5): dead first source then mirror; only a dead source with the archive in the build machine's cache; already installed (nothing fetched); source throttled to 50 KB/s given up after the time limit, alone (build stops with the message naming the cache folder) and followed by a mirror (installs). kiwix-serve active, /kiwix/ 200 afterwards. Not yet run inside a full build; armv6 (NEO) path not run | pass | CM5 at 192.168.1.54 |
 | 2026-11-11 | Node 22 on Raspberry Pi OS (CM5, Trixie, arm64): fresh build had Debian's Node 20.19.2; the changed enhanced-content steps run by hand on the box (purge apt nodejs/npm, nodejs.org v22.23.4 tarball with SHA-256 check, /usr/bin links): node v22.23.4, npm 10.9.9, pm2 7.1.2, connectbox-manage online on 22.23.4, HDMI status API answers, no failed units. Not yet run as a full Ansible build | pass | CM5 at 192.168.1.54 |
 | 2026-11-11 | HDMI screen (fix 81): connectbox-pi tests/harness/hdmi_test.py (player path checks, playlist, HDMI port, play / back to playlist / splash with a fake mpv, splash picture, both page patches) | 39/39; run_all.sh all pass | fix 81 |
 | 2026-11-11 | HDMI screen: connectbox-manage tests/test_hdmi.js (web paths, media list, playlist, visitor switch, admin play, player reload; fake player socket) | 30/30; run_all.sh all pass | fix 81 |

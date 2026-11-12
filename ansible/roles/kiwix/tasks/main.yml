@@ -10,13 +10,58 @@
     state: directory
     mode: 0755
 
-# Checksum is fetched from the .md5 file published next to each release
-- name: Download kiwix-tools {{ kiwix_version }}
-  get_url:
-    url: "https://download.kiwix.org/release/kiwix-tools/{{ kiwix_release }}.tar.gz"
+# --- Get the archive: build machine's copy first, then each download source ---
+# (see kiwix_sources in defaults/main.yml for why).  Nothing is fetched when
+# this release is already unpacked, so a re-run needs no network for Kiwix.
+- name: Check whether this kiwix-tools release is already installed
+  stat:
+    path: "{{ kiwix_install_dir }}/{{ kiwix_release }}/kiwix-serve"
+  register: kiwix_installed
+
+- name: Look for the kiwix-tools archive kept on the build machine
+  stat:
+    path: "{{ kiwix_cache_dir }}/{{ kiwix_release }}.tar.gz"
+  delegate_to: localhost
+  become: false
+  register: kiwix_cached
+  when: not kiwix_installed.stat.exists
+
+# A damaged copy does no harm: the download task below checks the SHA-256 of
+# the file it finds at the destination and downloads again if it is wrong.
+- name: Copy the build machine's kiwix-tools archive to the box
+  copy:
+    src: "{{ kiwix_cache_dir }}/{{ kiwix_release }}.tar.gz"
     dest: "/tmp/{{ kiwix_release }}.tar.gz"
-    checksum: "md5:https://download.kiwix.org/release/kiwix-tools/{{ kiwix_release }}.tar.gz.md5"
-    timeout: 300
+    mode: 0644
+  when: not kiwix_installed.stat.exists and kiwix_cached.stat.exists
+
+- name: Nothing downloaded yet
+  set_fact:
+    kiwix_ready: "{{ kiwix_installed.stat.exists }}"
+
+# One pass per source; every pass after the first good file is skipped
+- name: Download kiwix-tools {{ kiwix_version }} from the first source that works
+  include_tasks: download.yml
+  loop: "{{ kiwix_sources }}"
+  loop_control:
+    loop_var: kiwix_source
+
+- name: Stop if no source gave a good kiwix-tools archive
+  assert:
+    that: kiwix_ready | bool
+    fail_msg: >-
+      No source in kiwix_sources gave {{ kiwix_release }}.tar.gz with the
+      expected SHA-256.  Put the archive in {{ kiwix_cache_dir }} on the build
+      machine and run the build again.
+
+# Keep a copy for the next build (fetch does nothing when the copy is the same)
+- name: Save the kiwix-tools archive on the build machine
+  fetch:
+    src: "/tmp/{{ kiwix_release }}.tar.gz"
+    dest: "{{ kiwix_cache_dir }}/"
+    flat: yes
+  become: false
+  when: not kiwix_installed.stat.exists
 
 - name: Unpack kiwix-tools
   unarchive:

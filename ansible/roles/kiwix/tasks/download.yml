@@ -1,0 +1,23 @@
+---
+# Try one download source for the kiwix-tools archive (included once per
+# entry of kiwix_sources, as kiwix_source).  Skipped once a good file is on
+# the box.  A file already at the destination with the right SHA-256 (the
+# build machine's copy) counts as downloaded: get_url then fetches nothing.
+# async limits the whole download, so a server that answers but crawls is
+# given up after kiwix_source_seconds and the next source is tried.
+- name: "Download kiwix-tools from {{ kiwix_source }}"
+  get_url:
+    url: "{{ kiwix_source }}/{{ kiwix_release }}.tar.gz"
+    dest: "/tmp/{{ kiwix_release }}.tar.gz"
+    checksum: "sha256:{{ kiwix_sha256[kiwix_build] }}"
+    timeout: 30
+  async: "{{ kiwix_source_seconds }}"
+  poll: 5
+  register: kiwix_download
+  ignore_errors: yes
+  when: not (kiwix_ready | bool)
+
+- name: Note that the kiwix-tools archive is on the box
+  set_fact:
+    kiwix_ready: true
+  when: not (kiwix_ready | bool) and kiwix_download is succeeded

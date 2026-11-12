@@ -17,3 +17,28 @@ kiwix_builds:
   armv7l: linux-armv6
   aarch64: linux-aarch64
   x86_64: linux-x86_64
+
+# Download backstop (2026-11-11): download.kiwix.org once gave 7 KB/s and a
+# damaged file, which stopped a build.  The archive is now taken from the
+# first source that gives a file with the SHA-256 below:
+#   1. a copy kept on the build machine in kiwix_cache_dir (saved there by
+#      the first build that downloads it; can also be put there by hand)
+#   2. each address in kiwix_sources, in order (Kiwix's server, then mirrors)
+# The checksums are fixed here, so a mirror cannot hand out a changed file
+# and the check does not depend on Kiwix's server answering.  They were taken
+# from two mirrors and agree with the .md5 files on download.kiwix.org.
+# A new kiwix_version needs new values here (sha256sum of each archive).
+kiwix_sha256:
+  linux-armv6: a5f24ea7ae1e9f7bee1b1e73d14639f3b77dc9583922ab902c84856d8d567c61
+  linux-aarch64: a9898fc5363437327350db669bbc03dcc7ecfd498dae727d7184bebe77019514
+  linux-x86_64: b0ae98dd344aa0469a15ab42feff6d5aafb79541a82fb4e2647c74b073123815
+kiwix_sources:
+  - https://download.kiwix.org/release/kiwix-tools
+  - https://ftp.fau.de/kiwix/release/kiwix-tools
+  - https://ftp.nluug.nl/pub/kiwix/release/kiwix-tools
+  - https://mirror.accum.se/mirror/kiwix.org/release/kiwix-tools
+  - https://mirrors.dotsrc.org/kiwix/release/kiwix-tools
+# Longest time one source may take before the next one is tried (seconds).
+# get_url's own timeout only limits a stalled connection, not a slow one.
+kiwix_source_seconds: 240
+kiwix_cache_dir: "{{ lookup('env', 'HOME') }}/.cache/connectbox"
