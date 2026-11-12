@@ -49,12 +49,13 @@ with three or more it leaves the configuration alone ("must be manually managed"
 and the access point can end up on an adapter that cannot run one (an MT7601U, for
 example).
 
-The admin back end (connectbox-manage) runs on **Node.js 22 LTS**, installed by the
-playbook from the nodejs.org tarball into `/usr/local` (Node 24 and later have no
-32-bit ARM build).  `/usr/bin/node`, `npm`, `npx` and `pm2` link there, because
-PxUSBm calls `/usr/bin/pm2`.  On Raspberry Pi OS the build currently installs
-Debian's own `nodejs` package instead (20.19 on Trixie; which Node to use there is
-still open).
+The admin back end (connectbox-manage) runs on **Node.js 22 LTS** (v22.23.4) on
+every board.  The playbook downloads it from nodejs.org, checks it against
+nodejs.org's SHA-256 list and unpacks it into `/usr/local` (Node 24 and later have
+no 32-bit ARM build).  `/usr/bin/node`, `npm`, `npx` and `pm2` link there, because
+PxUSBm calls `/usr/bin/pm2`.  Debian's own `nodejs` and `npm` packages are removed
+if present.  Until 2026-11-11 Raspberry Pi OS builds used Debian's package instead
+(Node 20.19 on Trixie); rebuild such a box to move it to Node 22.
 
 ## 1. Prepare the device
 
@@ -147,14 +148,28 @@ The run takes a long time (much longer on a NEO or Pi Zero).  It ends with a
 `PLAY RECAP`; `failed=0` means success.  If a run fails part-way, fix the cause and
 run it again - the playbook can be re-run.
 
-If it stops at **"Download kiwix-tools"** with "checksum ... did not match", the
-Kiwix mirror was too slow and the device got a short file (November 2026: about
-10 KB/s for the 20 MB file).  The checksum itself comes from Kiwix's own `.md5`
-file.  Run the build again later, or download the file on another machine
-(`https://download.kiwix.org/release/kiwix-tools/kiwix-tools_linux-aarch64-3.8.2.tar.gz`,
-`linux-armv6` on 32-bit boards), check it against the `.md5` and copy it to `/tmp`
-on the device under the same name; the download step then finds it and goes on.
-The build's reboot empties `/tmp` on Raspberry Pi OS, so copy it after that reboot.
+**Kiwix download.**  The playbook takes the kiwix-tools archive (about 20 MB) from
+the first place that gives a file with the right SHA-256 (the checksums are fixed
+in `ansible/roles/kiwix/defaults/main.yml`):
+
+1. `~/.cache/connectbox/` on the build machine.  The first build that downloads
+   the archive saves it there, so later builds need no Kiwix server.
+2. `download.kiwix.org`, then four mirrors (`kiwix_sources`).  A source that takes
+   longer than 4 minutes (`kiwix_source_seconds`) is given up and the next one is
+   tried.  Failed sources show as red "FAILED ... ignoring" lines; that is normal.
+
+Only if every source fails does the build stop, at **"Stop if no source gave a good
+kiwix-tools archive"**.  Then download
+`kiwix-tools_linux-aarch64-3.8.2.tar.gz` (`linux-armv6` on 32-bit boards) on any
+machine, put it in `~/.cache/connectbox/` on the build machine and run the build
+again.  (Before 2026-11-11 the build used only `download.kiwix.org`, and a slow
+day there stopped it with "checksum ... did not match".)
+
+If the run stops at once with **"couldn't resolve module/action
+'authorized_key'"**, the Ansible on the build machine has no collections
+(`ansible-core` alone).  Install them with
+`ansible-galaxy collection install ansible.posix community.general`, or point
+`ANSIBLE_COLLECTIONS_PATH` at a folder that has them.
 
 **By default the playbook turns off sshd at the end** (production mode).  For a
 unit you will keep working on, add `-e developer_mode=true` (insecure - not for
