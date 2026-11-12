@@ -1,31 +1,23 @@
---- 
-- name: Set a default fact for Swap_Val
+---
+# Swap file size, as a number (bytes).  The old check took the size from
+#  "df -h /swap" (the size of the file system holding /swap, not of a swap
+#  file; /swap does not exist on most images) and compared it as text with
+#  '400M', where "1G" < "400M" and "50M" > "400M" (Kirk, 2026-11-12: compare
+#  numbers).  Now the size of /swapfile itself is read with stat (0 when there
+#  is no /swapfile) and compared with swap_min_bytes.
+- name: Size of /swapfile
+  stat:
+    path: /swapfile
+  register: swapfile_stat
+
+- name: Swap file size in bytes (0 when there is none)
   set_fact:
-     Swap_Val:  ""
+    swap_bytes: "{{ (swapfile_stat.stat.size | default(0)) if swapfile_stat.stat.exists else 0 }}"
+    swap_min_bytes: "{{ 400 * 1024 * 1024 }}"
 
-# /swap does not exist on most images (df then fails); Swap_Val keeps its
-# default "" and is set further down when the swap file is made.
-- name: Find the /swap system paramaters
-  shell: df -h /swap
-  register: swapoutput
-  failed_when: false
-
-- debug:
-    msg: "Swap system output: {{swapoutput.stdout}}"
-
-- name: Set /Swap size value into variable
-  vars:
-     swpvl:  "{{ swapoutput.stdout | regex_search('\\s*([0-9]*[KMG])', '\\1') }}" 
-  set_fact:
-     Swap_Val: "{{ swpvl[0] }}"
-     cacheable: yes
-  when: swapoutput.rc == 0 and swpvl | length > 0
-  ignore_errors: yes
- 
-- name: print the swap variables we have found on file size
+- name: print the swap file size we have found
   debug:
-    msg: "swap file size is {{ Swap_Val }}"
-  ignore_errors: yes
+    msg: "swap file /swapfile is {{ swap_bytes }} bytes (wanted at least {{ swap_min_bytes }})"
 
 # /tmp is a RAM disk (tmpfs) of a quarter of the RAM on every Raspberry Pi
 #  (CM4 and CM5 included) and 256 MB on every NanoPi NEO, also after reboots
@@ -115,35 +107,37 @@
   register: swapcreate
   when: connectbox_os != 'raspbian' 
 
-- name: fix variables if we created the swapfile
-  set_fact:
-    Swap_Val: 0M
-    cacheable: yes
-  ignore_errors: yes
-  when: swapcreate != ""
-
-- name: Turn off swap
-  command: swapoff -a
-  when: swapcreate != ""
-  ignore_errors: yes
+# Turning all swap off is commented out for now (Kirk, 2026-11-12): on a first
+#  build there is no reason for swap to be off, and on a Raspberry Pi it
+#  turned off the Pi's own swap (zram0) until the next reboot.  Note: growing
+#  an existing /swapfile that is smaller than 400 MiB and in use would need it
+#  turned off first ("swapoff /swapfile").
+#- name: Turn off swap
+#  command: swapoff -a
+#  ignore_errors: yes
 
 - name: Expand swapfile
   command: fallocate -l 400M /swapfile
   register: swap_result
   ignore_errors: yes
-  # (was missing the "and": the condition could not be evaluated, so this
-  # task always failed, ignored)
-  when: connectbox_os != "raspbian" and Swap_Val < '400M'
+  # Only when the swap file is smaller than 400 MiB, compared as numbers
+  when: connectbox_os != "raspbian" and (swap_bytes | int) < (swap_min_bytes | int)
 
 - name: show swap_result
   debug:
    msg: "output of expand swapfile is {{ swap_result }}"
 
+# Fill the swap file with zeros only when it was smaller than 400 MiB at the
+#  start (swap_bytes is read before "Expand swapfile"), i.e. when it has just
+#  been made or grown.  A /swapfile that already has its full size from an
+#  earlier build is not rewritten (Kirk, 2026-11-12: it wrote 400 MB on every
+#  non-Pi build).  The fill gives the file real blocks, since swapon refuses a
+#  file with holes.
 - name: fill swapfile
   command: dd if=/dev/zero of=/swapfile bs=1024 count=409600
   register: command_result
   ignore_errors: yes
-  when: connectbox_os != "raspbian" and Swap_Val != ""
+  when: connectbox_os != "raspbian" and (swap_bytes | int) < (swap_min_bytes | int)
 
 
 - name: change swap mode
