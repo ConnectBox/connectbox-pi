@@ -219,6 +219,7 @@ Most recent first. One line per test run: date, what, result, where it is descri
 
 | Date | Test | Result | Reference |
 |---|---|---|---|
+| 2026-11-11 | Node 22 on Raspberry Pi OS (CM5, Trixie, arm64): fresh build had Debian's Node 20.19.2; the changed enhanced-content steps run by hand on the box (purge apt nodejs/npm, nodejs.org v22.23.4 tarball with SHA-256 check, /usr/bin links): node v22.23.4, npm 10.9.9, pm2 7.1.2, connectbox-manage online on 22.23.4, HDMI status API answers, no failed units. Not yet run as a full Ansible build | pass | CM5 at 192.168.1.54 |
 | 2026-11-11 | HDMI screen (fix 81): connectbox-pi tests/harness/hdmi_test.py (player path checks, playlist, HDMI port, play / back to playlist / splash with a fake mpv, splash picture, both page patches) | 39/39; run_all.sh all pass | fix 81 |
 | 2026-11-11 | HDMI screen: connectbox-manage tests/test_hdmi.js (web paths, media list, playlist, visitor switch, admin play, player reload; fake player socket) | 30/30; run_all.sh all pass | fix 81 |
 | 2026-11-11 | HDMI "Play playlist" button: hdmi_test.py on a Windows PC (3 new checks: button in the section, script adds it to an already patched page, section equals the admin-ui copy) | 34 pass, 8 fail; the 8 are Windows-only (no `os.chown`, `/` in the test's expected paths) - re-run on Linux; not tried on a box | fix 81 |

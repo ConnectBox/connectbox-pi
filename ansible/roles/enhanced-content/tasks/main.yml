@@ -67,24 +67,27 @@
 # official tarball is used, checked against nodejs.org's SHA-256 list, and
 # unpacked into /usr/local (node, npm, npx in /usr/local/bin).  Tested on the
 # NEO (Armbian 23.02, armv7l) 2026-10-29: connectbox-manage, pm2 7.1.1.
+# Every board gets this build (2026-11-11).  Before, only Armbian did and
+# Raspberry Pi OS took Debian's nodejs package (Node 20, end of life 2026-04),
+# so the Pi boxes ran a different Node from the one tested.
 - name: Choose the Node.js build for this CPU
   set_fact:
     node_dist: "node-{{ node_version }}-linux-{{ {'armv7l': 'armv7l', 'aarch64': 'arm64', 'x86_64': 'x64'}[ansible_architecture] }}"
   vars:
     node_version: v22.23.4
-  when: connectbox_os == 'armbian'
 
 - name: Remove NodeSource's apt source (it supplied Node 16)
   file:
     path: /etc/apt/sources.list.d/nodesource.list
     state: absent
-  when: connectbox_os == 'armbian'
 
-- name: Remove the apt Node.js package if present (Node 16 from NodeSource)
+# Debian's nodejs and npm own /usr/bin/node and /usr/bin/npm, which the links
+# made below replace; npm depends on nodejs, so both go.
+- name: Remove the apt Node.js and npm packages if present (NodeSource's Node 16, Debian's Node 20)
   apt:
-    name: nodejs
+    name: [nodejs, npm]
     state: absent
-  when: connectbox_os == 'armbian'
+    purge: yes
 
 - name: Download Node.js from nodejs.org, checked against its SHA-256 list
   get_url:
@@ -92,25 +95,16 @@
     checksum: "sha256:https://nodejs.org/dist/{{ node_dist.split('-')[1] }}/SHASUMS256.txt"
     dest: "/root/{{ node_dist }}.tar.xz"
     mode: '0644'
-  when: connectbox_os == 'armbian'
 
 - name: Unpack Node.js into /usr/local
   command: >
     tar -xJf /root/{{ node_dist }}.tar.xz -C /usr/local --strip-components=1
     --no-same-owner --exclude=CHANGELOG.md --exclude=LICENSE --exclude=README.md
-  when: connectbox_os == 'armbian'
 
 - name: Remove the downloaded Node.js archive
   file:
     path: "/root/{{ node_dist }}.tar.xz"
     state: absent
-  when: connectbox_os == 'armbian'
-
-- name: Install nodejs for connectbox-manage when not armbian
-  apt:
-    name: nodejs
-    state: present
-  when: connectbox_os != 'armbian'
 
 - name: show the node version that we instailled
   command: node --version
@@ -124,13 +118,6 @@
   assert:
     that: node_ver.stdout == node_dist.split('-')[1]
     fail_msg: "node --version gave {{ node_ver.stdout }}, expected {{ node_dist.split('-')[1] }} (an older node earlier in PATH?)"
-  when: connectbox_os == 'armbian'
-
-- name: make sure npm is instailled
-  apt:
-    name: npm
-    state: present
-  when: connectbox_os != "armbian"
 
 - name: Install pm2 -- node process manager for connectbox-manage
   community.general.npm:
@@ -150,20 +137,6 @@
     state: link
     force: yes
   loop: [node, npm, npx, pm2, pm2-dev, pm2-docker, pm2-runtime]
-  when: connectbox_os == 'armbian'
-
-# Elsewhere (Raspberry Pi OS) node and npm are Debian's in /usr/bin, but npm
-#  puts pm2 in /usr/local/bin: link the pm2 commands, or PxUSBm's check_PM2
-#  (/usr/bin/pm2) crashes at every start and takes the Wi-Fi down each time
-#  (CM4 on Trixie, 2026-11-04; fix 60b on the NEO).
-- name: Link /usr/bin/pm2 to npm's pm2 in /usr/local/bin (not Armbian)
-  file:
-    src: "/usr/local/bin/{{ item }}"
-    dest: "/usr/bin/{{ item }}"
-    state: link
-    force: yes
-  loop: [pm2, pm2-dev, pm2-docker, pm2-runtime]
-  when: connectbox_os != 'armbian'
 
 - name: get the pm2 version we loaded
   command: pm2 --version
