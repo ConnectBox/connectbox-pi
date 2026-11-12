@@ -886,9 +886,15 @@
     mode: preserve
   when: connectbox_os == 'ubuntu'
 
+# Armbian's own first-boot SD card resize (PxUSBm does the resize).  Only
+#  Armbian/Ubuntu images have this unit; on Raspberry Pi OS it always failed
+#  with "does not exist" (2026-11-12), and a missing unit is fine anywhere.
 - name: dissable armbian-resize-filesystem service
   command: systemctl disable armbian-resize-filesystem
+  register: armbian_resize_off
+  failed_when: armbian_resize_off.rc != 0 and 'does not exist' not in armbian_resize_off.stderr
   ignore_errors: yes
+  when: connectbox_os in ['armbian', 'ubuntu']
 
 # See if we need to create a wlan0 interface when we're running in a sim
 #  environment i.e. running virtualised

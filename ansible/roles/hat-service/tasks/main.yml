@@ -1,13 +1,7 @@
 --- 
-- name: Find the /tmp  system paramaters
-  shell: df -h /tmp
-  register: tempoutput
-  ignore_errors: yes
-
 - name: Set a default fact for Swap_Val
   set_fact:
      Swap_Val:  ""
-     Temp_Val:  ""
 
 # /swap does not exist on most images (df then fails); Swap_Val keeps its
 # default "" and is set further down when the swap file is made.
@@ -19,15 +13,6 @@
 - debug:
     msg: "Swap system output: {{swapoutput.stdout}}"
 
-- name: Set /TMP size value into variable
-  vars:
-     tmpvl: "{{ tempoutput.stdout | regex_search('tmpfs\\s*([0-9]*[KMG])', '\\1') }}" 
-  set_fact:
-     Temp_Val: "{{ tmpvl[0] }}"
-     cacheable: yes
-  when: tempoutput != ""   
-  ignore_errors: yes
-
 - name: Set /Swap size value into variable
   vars:
      swpvl:  "{{ swapoutput.stdout | regex_search('\\s*([0-9]*[KMG])', '\\1') }}" 
@@ -37,25 +22,86 @@
   when: swapoutput.rc == 0 and swpvl | length > 0
   ignore_errors: yes
  
-- name: Print the temp variables we have found on file size
-  debug:
-    msg: "temp file size is {{ Temp_Val }}"
-  ignore_errors: yes
-
 - name: print the swap variables we have found on file size
   debug:
     msg: "swap file size is {{ Swap_Val }}"
   ignore_errors: yes
 
-- name: Expand Temp directory otherwise we will run out of space
-  command: umount /tmp
-  ignore_errors: yes
-  when: connectbox_os != "raspbian" and Temp_Val != "" and Temp_Val < '400M'
+# /tmp is a RAM disk (tmpfs) of a quarter of the RAM on every Raspberry Pi
+#  (CM4 and CM5 included) and 256 MB on every NanoPi NEO, also after reboots
+#  (Kirk, 2026-11-12; other boards are left as they are).  On a Pi: 2 GB RAM
+#  -> 512 MB, 4 GB -> 1 GB, 8 GB -> 2 GB; tmpfs's own "size=25%" keeps it a
+#  quarter of whatever RAM the board has.  A quarter of the NEO's 512 MB
+#  (128 MB) was thought too small for a build (the old check gave it 400 MB
+#  during the build), so the NEO gets a fixed 256 MB; tmpfs only uses RAM
+#  for what is actually stored in /tmp.  Set where /tmp is defined: its /etc/fstab line
+#  if there is one, otherwise a drop-in for systemd's tmp.mount (Raspberry Pi
+#  OS Trixie gives /tmp half the RAM there).  Then applied at once with a
+#  remount (contents kept).  Replaces the old build-only check, which read the
+#  size from "df -h" with a pattern that missed sizes like "3.9G" (it failed on
+#  every Raspberry Pi OS build), compared sizes as text, and remounted an
+#  empty 400 MB /tmp for the build only.  A /tmp that is not a tmpfs at all is
+#  left as it is.
+- name: /tmp size (Raspberry Pi and NanoPi NEO only)
+  when: Pi_present | bool or NEO_present | bool
+  vars:
+    tmp_size: "{{ '256M' if (NEO_present | bool) else '25%' }}"
+  block:
+    - name: Look for a /tmp line in /etc/fstab
+      command: grep -Eq '^[^#[:space:]]+[[:space:]]+/tmp[[:space:]]+tmpfs[[:space:]]' /etc/fstab
+      register: tmp_in_fstab
+      changed_when: false
+      failed_when: false
 
-- name: recreate the Temp directory
-  command: mount -t tmpfs -o size=400M tmpfs /tmp
-  ignore_errors: yes
-  when: connectbox_os != "raspbian" and Temp_Val != "" and Temp_Val < '400M'
+    - name: /tmp size (/etc/fstab)
+      lineinfile:
+        path: /etc/fstab
+        regexp: '^[^#\s]+\s+/tmp\s+tmpfs\s'
+        line: "tmpfs /tmp tmpfs defaults,nosuid,nodev,mode=1777,size={{ tmp_size }} 0 0"
+      when: tmp_in_fstab.rc == 0
+
+    - name: /tmp size (tmp.mount drop-in folder)
+      file:
+        path: /etc/systemd/system/tmp.mount.d
+        state: directory
+        mode: '0755'
+      when: tmp_in_fstab.rc != 0
+
+    # "%%" is a single "%" in a systemd unit file, hence the replace
+    - name: /tmp size (tmp.mount drop-in)
+      copy:
+        dest: /etc/systemd/system/tmp.mount.d/connectbox-size.conf
+        mode: '0644'
+        content: |
+          # ConnectBox: /tmp size set by the hat-service role
+          [Mount]
+          Options=mode=1777,strictatime,nosuid,nodev,size={{ tmp_size | replace('%', '%%') }},nr_inodes=1m
+      register: tmp_dropin
+      when: tmp_in_fstab.rc != 0
+
+    - name: Reload systemd after the tmp.mount change
+      systemd:
+        daemon_reload: yes
+      when: tmp_dropin is changed
+
+    - name: Is /tmp a tmpfs now?
+      command: findmnt -n -o FSTYPE /tmp
+      register: tmp_fstype
+      changed_when: false
+      failed_when: false
+
+    - name: Apply the /tmp size now (contents kept)
+      command: mount -o remount,size={{ tmp_size }} /tmp
+      when: tmp_fstype.stdout | trim == 'tmpfs'
+
+    - name: Show the /tmp size
+      command: df -h /tmp
+      register: tmp_now
+      changed_when: false
+      failed_when: false
+
+    - debug:
+        msg: "/tmp is now {{ tmp_now.stdout_lines[-1] | default('unknown') }} (RAM {{ ansible_memtotal_mb | default('?') }} MB)"
 
 #original swapfile on NEO is /dev/zram0 if size 121968 and priority 5 but not for Buster
 
