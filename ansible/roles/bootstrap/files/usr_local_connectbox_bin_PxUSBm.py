@@ -54,6 +54,8 @@ import shutil
 import io
 import json
 import sys
+import signal
+import threading
 
 # globals for Partion expansion
 progress_file = '/usr/local/connectbox/expand_progress.txt'
@@ -2275,6 +2277,111 @@ def check_wlan_CI(CI):
 
 
 ci_restart = [0.0]            # time of check_stat_CI's last client restart
+PROC_DIR = '/proc'            # where wpa_supplicant processes are looked up (tests point it elsewhere)
+WPA_CTRL_DIR = '/var/run/wpa_supplicant'   # wpa_supplicant control sockets
+
+
+def wpa_supplicant_pids(dev):
+    """
+    Process ids of every wpa_supplicant running for interface dev.
+
+    (2026-11-13) A restart used to delete the control socket of a
+    wpa_supplicant that was still running; the next ifup then started a second
+    one on the same interface, the two fought over wlan0 ("Failed to initiate
+    sched scan" every few seconds, no connection) and wpa_cli reached neither
+    reliably, so the next check restarted again.  This finds them all so the
+    restart can stop them first.
+
+    A process counts when its program (argv[0]) is wpa_supplicant and it was
+    given the interface as "-i dev" or "-idev".  The global control instance of
+    wpa_supplicant.service (no -i) and processes for other interfaces are left
+    alone; shells whose command line merely mentions wpa_supplicant do not
+    match because argv[0] is the shell.
+    """
+    pids = []
+    try:
+        entries = os.listdir(PROC_DIR)
+    except OSError:
+        return pids
+    # Walk every numeric entry of /proc and read its command line (NUL-separated)
+    for entry in entries:
+        if not entry.isdigit():
+            continue
+        try:
+            with open(os.path.join(PROC_DIR, entry, 'cmdline'), 'rb') as f:
+                argv = f.read().decode('utf-8', 'replace').split('\0')
+        except OSError:
+            continue                      # process ended while we looked
+        if not argv or os.path.basename(argv[0]) != 'wpa_supplicant':
+            continue
+        # Look for the interface option in either of its two spellings
+        for i, a in enumerate(argv):
+            if (a == '-i' and i + 1 < len(argv) and argv[i + 1] == dev) or a == '-i' + dev:
+                pids.append(int(entry))
+                break
+    return pids
+
+
+def stop_wpa_supplicants(dev, wait_secs=5.0):
+    """
+    Stop every wpa_supplicant running for interface dev; return the pids found.
+
+    Each one gets SIGTERM (it then removes its own control socket), and any
+    still running after wait_secs gets SIGKILL.  Called by restart_client()
+    after ifdown, which stops only the process named in the pid file and does
+    nothing when ifupdown thinks the interface is already down.
+    """
+    pids = wpa_supplicant_pids(dev)
+    # First ask each one to finish cleanly
+    for pid in pids:
+        try:
+            os.kill(pid, signal.SIGTERM)
+        except OSError:
+            pass                          # already gone
+    # Then wait for them to go, and kill whatever is left
+    deadline = time.time() + wait_secs
+    left = [p for p in pids if p in wpa_supplicant_pids(dev)]
+    while left and time.time() < deadline:
+        time.sleep(0.2)
+        left = [p for p in left if p in wpa_supplicant_pids(dev)]
+    for pid in left:
+        try:
+            os.kill(pid, signal.SIGKILL)
+        except OSError:
+            pass
+    return pids
+
+
+def restart_client(dev):
+    """
+    Restart the client Wi-Fi interface dev: ifdown, stop every wpa_supplicant
+    on it, remove its leftover control sockets, ifup.
+
+    Runs in a background thread (started by check_stat_CI) because ifdown and
+    ifup can take up to a minute (dhclient) and the main loop must keep
+    watching USB and the access point meanwhile.  The sockets are removed only
+    once no wpa_supplicant owns them, so a restart can never leave a running
+    wpa_supplicant without its socket, or two on one interface.
+    """
+    # ifdown first: it stops dhclient and the wpa_supplicant ifupdown knows about
+    try:
+        subprocess.run(['ifdown', dev], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=90)
+    except Exception:
+        pass
+    stopped = stop_wpa_supplicants(dev)
+    if stopped:
+        logger.info(time.strftime('%Y-%m-%d %H:%M:%S') + ' Client ' + dev + ': stopped wpa_supplicant ' + ' '.join(str(p) for p in stopped))
+    # Sockets left by a process that was killed or crashed would make ifup's new one fail to bind
+    for name in (dev, 'p2p-dev-' + dev):
+        try:
+            os.remove(os.path.join(WPA_CTRL_DIR, name))
+        except OSError:
+            pass
+    try:
+        subprocess.run(['ifup', dev], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=120)
+    except Exception:
+        pass
+
 
 def check_stat_CI(CI):
     """
@@ -2329,10 +2436,11 @@ def check_stat_CI(CI):
     if time.time() - ci_restart[0] < 300:
         return(1)
     ci_restart[0] = time.time()
-    logger.info("Client " + dev + " is " + ("up" if up else "down") + (", wpa_supplicant answers" if wpa_ok else ", wpa_supplicant does not answer") + ": restarting " + dev)
+    logger.info(time.strftime('%Y-%m-%d %H:%M:%S') + " Client " + dev + " is " + ("up" if up else "down") + (", wpa_supplicant answers" if wpa_ok else ", wpa_supplicant does not answer") + ": restarting " + dev)
+    # In the background (ifdown/ifup can take a minute); restart_client stops
+    #  every wpa_supplicant on dev before removing its socket (2026-11-13)
     try:
-        subprocess.Popen(["sh", "-c", "ifdown %s; rm -f /var/run/wpa_supplicant/%s; ifup %s" % (dev, dev, dev)],
-                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        threading.Thread(target=restart_client, args=(dev,), daemon=True).start()
     except Exception:
         return(1)
     return(0)

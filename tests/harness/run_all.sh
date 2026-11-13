@@ -30,6 +30,7 @@ for i in $(seq 60); do pgrep -f "mmiLoader[.]py" > /dev/null || break; sleep 1; 
 run "test_px_status (start-up status file)"        "$HERE/test_px_status.py" px.py
 run "test51_px (FAT check before mounting)"        "$HERE/test51_px.py" px.py
 run "test53 (dead / stacked mounts)"               "$HERE/test53.py" px.py
+run "test_ci_restart (client Wi-Fi restart)"     "$HERE/test_ci_restart.py" px.py
 ADMIN_UI=$(realpath "$PI/../connectbox-admin-ui" 2>/dev/null); [ -f "$ADMIN_UI/src/js/admin/hdmi_admin.js" ] || ADMIN_UI=""
 run "hdmi_test (HDMI player, splash, page patches)" "$HERE/hdmi_test.py" "$PI" $ADMIN_UI
 [ $FAILED = 0 ] && echo "ALL PASSED" || echo "SOME TESTS FAILED"; exit $FAILED
