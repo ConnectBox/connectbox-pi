@@ -3453,7 +3453,7 @@ if __name__ == "__main__":
             "lcd_pages_stats_month_one": 1,
             "lcd_pages_stats_month_two": 1,
             "lcd_pages_network": 1,     # IP addresses page (2026-11-13)
-            "lcd_pages_internet": 1,    # Internet data page, when in use (2026-11-13)
+            "lcd_pages_internet": 0,    # Internet data page: follows internet sharing (2026-11-13)
             "lcd_pages_admin": 0,
             "Enable_MassStorage": "",
             "g_device": "g_serial",

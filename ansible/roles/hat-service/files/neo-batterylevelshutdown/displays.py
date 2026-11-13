@@ -281,17 +281,21 @@ class OLED:
 
     def internetPageWanted(self):
         """Switch the internet page in or out of the status pages (globals.screen_enable):
-        in while internet sharing is on or data has been counted (2026-11-05),
-        and only while the admin switch lcd_pages_internet is on (2026-11-13)."""
-        # Admin switch (brand.j2 lcd_pages_internet, 2026-11-13): 0 keeps the
-        #  page hidden even while it is wanted; missing (older globals.py or
-        #  brand.j2) means on.
-        switch = str(getattr(globals, 'lcd_pages_internet', 1)).strip().lower()
-        switched_on = switch not in ("0", "false", "off")
+        in exactly while the admin switch lcd_pages_internet is on (Kirk,
+        2026-11-13).  The switch is off by default; connectbox-manage turns it
+        on with internet sharing and off again unless the admin set it by hand.
+        (2026-11-05 to 11-13 the page followed page_internet.wanted(): sharing
+        on or data counted.)  An older globals.py without the switch falls back
+        to wanted()."""
         try:
+            if hasattr(globals, 'lcd_pages_internet'):
+                switch = str(globals.lcd_pages_internet).strip().lower()
+                show = switch in ("1", "true", "on")
+            else:
+                show = page_internet.wanted()
             for i, p in enumerate(self.statusPages):
                 if isinstance(p, page_internet.PageInternet) and i < len(globals.screen_enable):
-                    globals.screen_enable[i] = 1 if (switched_on and page_internet.wanted()) else 0
+                    globals.screen_enable[i] = 1 if show else 0
         except Exception as e:
             logging.debug("internet page check failed: %s", e)
 

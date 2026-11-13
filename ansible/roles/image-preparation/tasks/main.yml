@@ -302,6 +302,13 @@
     regexp: '"internet_sharing":\s*[^,}]*'
     replace: '"internet_sharing": 0'
 
+# The front panel's Internet Data page follows sharing (2026-11-13): off too
+- name: Turn the Internet Data page off with sharing
+  replace:
+    path: /usr/local/connectbox/brand.j2
+    regexp: '"lcd_pages_internet(_auto)?":\s*[^,}]*'
+    replace: '"lcd_pages_internet\1": 0'
+
 - name: Turn visitor "Play on HDMI" off in the image
   replace:
     path: /usr/local/connectbox/brand.j2
