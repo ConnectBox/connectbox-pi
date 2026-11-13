@@ -155,6 +155,11 @@ try:
     check("admin page: release with the section built in is left alone", r.returncode == 0 and "built into this release" in r.stdout, r.stdout)
     open(os.path.join(dist, "index.html"), "w").write("<html>other</html>")
     check("admin page: unknown page -> exit 1, unchanged", run(dist).returncode == 1 and open(os.path.join(dist, "index.html")).read() == "<html>other</html>")
+    # Language made visible (Kirk, 2026-11-13): chooser groups "Language: xxx",
+    #  playlist entries "name (kind) . Language: " + the language underlined
+    check("chooser group headings read 'Language: xxx'", "groups[m.lang].label = 'Language: ' + m.lang;" in pa.JS)
+    check("playlist entries: 'Language: ' then the language in <u>",
+          "Language: '));" in pa.JS and "document.createElement('u')" in pa.JS and "u.textContent = media[i].lang;" in pa.JS)
     if ADMIN:
         src = os.path.join(ADMIN, "src/js/admin/hdmi_admin.js")
         check("embedded script == connectbox-admin-ui hdmi_admin.js", os.path.exists(src) and open(src, encoding="utf-8").read() == pa.JS, src)
