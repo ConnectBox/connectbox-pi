@@ -32,6 +32,11 @@ lcd_pages_stats_week_one: 1
 lcd_pages_stats_week_two: 1
 lcd_pages_stats_month_one: 1
 lcd_pages_stats_month_two: 1
+# Front-panel IP addresses page and Internet data page (admin switches, on by
+#  default; the Internet page still shows only while internet sharing is on or
+#  data has been counted) - 2026-11-13
+lcd_pages_network: 1
+lcd_pages_internet: 1
 lcd_pages_admin: 0
 
 # 0, 1 or "none" with 0 being logic invert on the signal line or "both" for full time otg mode

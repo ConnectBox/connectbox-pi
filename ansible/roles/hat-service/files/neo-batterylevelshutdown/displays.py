@@ -281,11 +281,17 @@ class OLED:
 
     def internetPageWanted(self):
         """Switch the internet page in or out of the status pages (globals.screen_enable):
-        in while internet sharing is on or data has been counted (2026-11-05)."""
+        in while internet sharing is on or data has been counted (2026-11-05),
+        and only while the admin switch lcd_pages_internet is on (2026-11-13)."""
+        # Admin switch (brand.j2 lcd_pages_internet, 2026-11-13): 0 keeps the
+        #  page hidden even while it is wanted; missing (older globals.py or
+        #  brand.j2) means on.
+        switch = str(getattr(globals, 'lcd_pages_internet', 1)).strip().lower()
+        switched_on = switch not in ("0", "false", "off")
         try:
             for i, p in enumerate(self.statusPages):
                 if isinstance(p, page_internet.PageInternet) and i < len(globals.screen_enable):
-                    globals.screen_enable[i] = 1 if page_internet.wanted() else 0
+                    globals.screen_enable[i] = 1 if (switched_on and page_internet.wanted()) else 0
         except Exception as e:
             logging.debug("internet page check failed: %s", e)
 
