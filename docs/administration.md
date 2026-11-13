@@ -164,6 +164,19 @@ the page does not stop a copy.
   Raspberry Pi with no front panel the copies work the same way (no battery
   check).
 
+Tips for large copies (from tests on a Raspberry Pi CM5, 2026-11-13):
+
+- A large copy takes a while: a key was copied to the box at about 25 MB/s
+  (about 20 minutes for 30 GB); the box's content was copied to an NTFS key at
+  4-20 MB/s (about 40 minutes for 31 GB).  Leave the key in until the page or
+  the panel asks for it to be taken out.
+- Some very small keys (a SanDisk Ultra Fit in the tests) get hot during a long
+  copy and stop answering; the copy then ends with *Failed Copy*.  Use a
+  full-size key for large copies and start the copy again after a failure.
+- If a key dropped out even briefly while content was being copied onto it,
+  the copy can still finish but some writes may be lost: check the key on a
+  computer before relying on it.
+
 ## Wipe All Storage (Advanced)
 
 For emergencies, when the box is found and its content could put people in
