@@ -102,7 +102,7 @@ On Linux file systems, files keep the owner and permissions of the computer that
 
 ### The box's own content (internal storage)
 
-The front panel's **Copy from USB** copies a stick's `content/` to the box's SD card (`/media/usb0/content`), so the box keeps serving it without a stick. A stick plugged in later is shown instead of the box's own content; when it is pulled out the box re-indexes and goes back to its own content. While copying, the panel shows `Copying 45%` and the size; after a copy or erase that changes the content, it shows the indexing progress and then a single checkmark.
+The front panel's **Copy from USB** copies a stick's `content/` to the box's SD card (`/media/usb0/content`), so the box keeps serving it without a stick. A stick plugged in later is shown instead of the box's own content; when it is pulled out the box re-indexes and goes back to its own content. While copying, the panel shows `Copying 45%` and the size; after a copy or erase that changes the content, it shows the indexing progress and then a single checkmark. The same two copies are on the admin page under Advanced → **Box Content** (copy a USB key to the box / the box's content to a key), with the same steps shown on the page and the panel.
 
 ## Configuration (admin) login
 

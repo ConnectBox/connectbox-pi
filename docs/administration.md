@@ -72,6 +72,9 @@ it is on, phones on the ConnectBox WiFi can use the box's internet connection
   kept across reboots.  *Reset data counter* sets it back to 0.  Reload the page to
   see the latest figures.
 - The setting survives a reboot.  Images are always made with it off.
+- Turning sharing on also turns on the front panel's *Internet Data* page (see
+  *LCD Interface* below); turning it off turns that page off again, unless you
+  had switched the page on yourself.
 
 ## HDMI Screen (Advanced, Raspberry Pi boxes)
 
@@ -80,7 +83,10 @@ and picture files.  Sound goes out over the same HDMI cable.  With nothing to pl
 the screen shows the box name and the WiFi name.
 
 - **Build the playlist:** pick a file in the list and press *Add to playlist*; use
-  ↑ ↓ ✕ to reorder or remove.  *Seconds per picture* sets how long a picture stays.
+  ↑ ↓ ✕ to reorder or remove.  The list groups the files under **Language: xxx**
+  headings, and each playlist entry shows its language in bold and underlined
+  (e.g. *Intro video (video) · **Language: English***).  *Seconds per picture*
+  sets how long a picture stays.
 - **Play playlist:** saves the list and starts it from the top.  It then loops for
   ever, and starts by itself whenever the box starts.
 - **Save playlist:** saves the list and starts it, unless a *Play now* file is still
@@ -89,9 +95,9 @@ the screen shows the box name and the WiFi name.
   goes on.
 - **Stop:** ends whatever is playing, the playlist included, and leaves the box name
   on the screen until *Play playlist* or *Save playlist* (or a restart of the box).
-- **Visitors can use "Play on HDMI":** when ticked, everyone on the WiFi gets a
-  screen button next to the download button on the media pages; otherwise only a
-  logged-in admin does.
+- **Visitors can use "Play on HDMI":** a switch (off by default).  When it is on,
+  everyone on the WiFi gets a screen button next to the download button on the
+  media pages; otherwise only a logged-in admin does.
 - Playlist items on a USB key are skipped while the key is out.  Images are made
   with an empty playlist and the visitor switch off.
 
@@ -113,8 +119,73 @@ is needed.
   interface has no address and `none` when the box has no such interface.  The WiFi
   address changes at every start (by design), so read it here before using SSH or
   opening the box from the other network.  It comes after the statistics pages.
-- **Internet page:** a status page "Internet: ON/off" with the total, download and
-  upload data shared.  It appears in the page list (before the admin icon) while
-  sharing is on or the total is not 0.
+- **Internet Data page:** a status page "Internet: ON/off" with the total, download
+  and upload data shared, before the admin icon.  It is shown while its switch in
+  *LCD Interface* is on: off by default, turned on and off with internet sharing
+  (see below).
 - **Battery pages:** on a Raspberry Pi or CM4 box with the ATtiny battery
   controller, the multi-battery page is on by default.
+
+## LCD Interface (Advanced)
+
+Switches for the front panel's pages: *Main*, *Info*, *Battery*, *Battery Details*,
+*Memory*, *Stats*, *Admin*, and since November 2026:
+
+- **Show LCD IP Addresses Page:** on by default (also on a box set up before the
+  switch existed).
+- **Show LCD Internet Data Page:** off by default.  Turning *Share Internet With
+  Wi-Fi Users* on turns it on; turning sharing off turns it off again, unless you
+  switched it on yourself - your own choice is never undone (on or off).  When it
+  is on, the page is shown even with no data counted.  After you change the
+  sharing switch the page shows this switch's new state without a reload.
+
+## Box Content (Advanced)
+
+Copies the box's own content (on its SD card) to or from a USB key - the same as
+the front panel's admin menu, so the panel shows the same pages while it runs.
+Each item explains itself and asks before it starts.  The status line under it
+follows the copy every 2 seconds: *Put the USB key in* (if none is in; it waits up
+to 5 minutes), *Copying 45% of 22431 MB*, *Copied: take the USB key out*, then
+*Done - the menus are being rebuilt* or *Failed: ...*.  One copy runs at a time,
+from the page or the panel; a copy started on the panel shows here too.  Leaving
+the page does not stop a copy.
+
+- **Copy USB key to the box:** replaces the box's own content with the key's
+  `content` folder, then rebuilds the menus once the key is taken out.  The box's
+  current content is deleted first, once the check shows there is room.  If the
+  copy fails part way (e.g. the key is pulled or drops out), the part already
+  copied stays on the box.
+- **Copy box content to a USB key:** replaces the key's `content` folder with the
+  box's own content.  A FAT32 key cannot take a file of 4 GB or more (large ZIM
+  files): the copy says *File over 4GB* before it starts.
+- Errors (shown on the page and the panel): *No content dir* (the key has no
+  `content` folder), *Not enough room*, *Nothing to copy*, *Remove 2nd USB*,
+  *File over 4GB*, *USB not mounted*, *Failed Copy*, *Battery low*.  On a
+  Raspberry Pi with no front panel the copies work the same way (no battery
+  check).
+
+## Wipe All Storage (Advanced)
+
+For emergencies, when the box is found and its content could put people in
+danger.  Enter the **admin password** and press the play button; a wrong password
+wipes nothing.  The page then says *The media on this box and all USB keys are
+being wiped. The Wi-Fi will go off.*
+
+1. Within about 2 seconds the box stops serving: the WiFi (access point), the web
+   pages, the chat and the content loader stop and stay off.
+2. Within seconds **every USB key** is made unreadable (partition table, file
+   systems and the start of every partition overwritten, plus the key's own erase
+   where it has one), then on the **SD card** the media and everything that names
+   or shows it is deleted: the box's own content, the menus and thumbnails, the
+   ZIM (Kiwix) list, the HDMI playlist, the chat, every log including the usage
+   statistics, and swap (overwritten).  The card is told to erase the freed space.
+3. Then, for as long as the box has power, the USB keys and the card's free space
+   are overwritten with random data, pass after pass (at low priority, so the
+   front panel stays usable).  A key plugged in during this is destroyed too.
+
+The system on the SD card is kept: after the power is cut and the box restarts it
+works as before, with empty menus and the WiFi on.  A wiped USB key has to be
+formatted again (FAT32 or exFAT) before it can be used.  Left on the box: its name
+and WiFi name, the operator details and the client WiFi settings in the
+configuration, and the system's own records in memory until the power goes.
+
