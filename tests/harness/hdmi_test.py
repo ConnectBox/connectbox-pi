@@ -160,6 +160,13 @@ try:
     check("chooser group headings read 'Language: xxx'", "groups[m.lang].label = 'Language: ' + m.lang;" in pa.JS)
     check("playlist entries: 'Language: ' then the language in <u>",
           "createTextNode('Language: ')" in pa.JS and "document.createElement('u')" in pa.JS and "u.textContent = media[i].lang;" in pa.JS)
+    # Visitor "Play on HDMI" is the page's toggle switch (2026-11-13), not a checkbox
+    check("visitor setting is a toggle switch in the section",
+          'id="hdmi_visitor_play-switch"' in pa.SECTION and 'data-input-name="hdmi_visitor_play"' in pa.SECTION
+          and 'class="d-none" type="checkbox" id="hdmi_visitor_play-input"' in pa.SECTION)
+    check("script saves the toggle after its click and keeps the old checkbox working",
+          "addEventListener('click', function () { setTimeout(saveVisitorPlay, 0); })" in pa.JS
+          and "el('hdmi_visitor_play-input').onchange = saveVisitorPlay;" in pa.JS)
     check("language labels in bold (playlist <b>, chooser group headings)",
           "document.createElement('b')" in pa.JS and "groups[m.lang].style.fontWeight = 'bold';" in pa.JS)
     if ADMIN:
