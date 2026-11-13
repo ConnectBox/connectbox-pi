@@ -159,7 +159,9 @@ try:
     #  playlist entries "name (kind) . Language: " + the language underlined
     check("chooser group headings read 'Language: xxx'", "groups[m.lang].label = 'Language: ' + m.lang;" in pa.JS)
     check("playlist entries: 'Language: ' then the language in <u>",
-          "Language: '));" in pa.JS and "document.createElement('u')" in pa.JS and "u.textContent = media[i].lang;" in pa.JS)
+          "createTextNode('Language: ')" in pa.JS and "document.createElement('u')" in pa.JS and "u.textContent = media[i].lang;" in pa.JS)
+    check("language labels in bold (playlist <b>, chooser group headings)",
+          "document.createElement('b')" in pa.JS and "groups[m.lang].style.fontWeight = 'bold';" in pa.JS)
     if ADMIN:
         src = os.path.join(ADMIN, "src/js/admin/hdmi_admin.js")
         check("embedded script == connectbox-admin-ui hdmi_admin.js", os.path.exists(src) and open(src, encoding="utf-8").read() == pa.JS, src)
