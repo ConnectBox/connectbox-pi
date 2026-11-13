@@ -809,19 +809,9 @@ function openwell_usb () {
 }
 
 # Added by Derek Maxson 20210629
-function wipeSDCard () {
-  # Schedule a shutdown then wipe the card
-  if [ ${val} == "wipethebox" ]
-  then
-    local channel=`sudo nginx -s stop`
-    local channel=`sudo systemctl stop hostapd`
-    local channel=`sudo dd if=/dev/urandom of=/dev/mmcblk0 bs=1M &`
-    local channel=`sudo rm -rf /`
-    success
-  else
-    failure
-  fi
-}
+# (The "wipe" command was removed 2026-11-13: the emergency wipe is started
+#  only from the admin page, connectbox-manage set.wipe -> src/scripts/wipe.sh.
+#  The commands that were here never wiped anything.)
 
 # Added by Derek Maxson 20211102
 # This supports all root level elements of /usr/local/connectbox/brand.txt 
@@ -1040,12 +1030,6 @@ elif [ "$action" = "set" ]; then
     "openwell-download")
       # Added by Derek Maxson 20211104
       set_openwell_download
-      exit 0;
-      ;;
-
-    "wipe")
-      # Added by Derek Maxson 20210629
-      wipeSDCard
       exit 0;
       ;;
 
