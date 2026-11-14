@@ -192,6 +192,14 @@
     rtl8812au_commit: 4722250273e4316daf9d8688e9916ea94c36a5ff
     rtl8812au_version: 5.13.6-23
     kernel_flavour: "{{ kernel_num.stdout.split('+rpt-')[-1] }}"
+    # One image for every 64-bit board (2026-11-14): Raspberry Pi OS 64-bit
+    #  carries two kernels and the firmware picks one per board - the Pi 5 and
+    #  CM5 boot kernel_2712.img (flavour rpi-2712), the Pi 4, Pi 3, Zero 2 W and
+    #  CM4 boot kernel8.img (rpi-v8).  The build box runs only one of them, and
+    #  the 8812au driver used to be built only for that one, so an image made on
+    #  a CM5 had no AP driver on a CM4 or Pi 4 (and the other way round).  The
+    #  driver is now also built for the other flavour of the same kernel version.
+    other_kernels: "{{ ['rpi-v8', 'rpi-2712'] | map('regex_replace', '^', kernel_num.stdout.split('rpi-')[0]) | reject('equalto', kernel_num.stdout) | list if ansible_architecture == 'aarch64' else [] }}"
   block:
     - name: Install DKMS and the kernel headers for the 8812au driver
       apt:
@@ -200,6 +208,15 @@
           - "linux-headers-{{ kernel_num.stdout }}"
           - "linux-headers-{{ kernel_flavour }}"
         state: present
+
+    # Headers for the other flavour of this kernel version (needed to build the
+    #  driver for it), and its headers meta-package so later kernel upgrades
+    #  keep both flavours' headers installed
+    - name: Install the kernel headers of the other 64-bit kernel flavour
+      apt:
+        name: "{{ other_kernels | map('regex_replace', '^', 'linux-headers-') | list + (other_kernels | map('regex_replace', '^.*\\+rpt-', 'linux-headers-') | list) }}"
+        state: present
+      when: other_kernels | length > 0
 
     - name: Get the 8812au driver source (tested commit)
       git:
@@ -217,6 +234,16 @@
       command: dkms install -m rtl8812au -v {{ rtl8812au_version }} -k {{ kernel_num.stdout }}
       register: dkms_8812au
       changed_when: "'already installed' not in (dkms_8812au.stdout + dkms_8812au.stderr)"
+
+    # Same driver for the other flavour (rpi-v8 on a CM5 build, rpi-2712 on a
+    #  CM4 build), so the image's AP adapter works whichever kernel the board
+    #  boots.  Only this kernel version: older kernels left on the card are not
+    #  booted and would add ~10 minutes each.
+    - name: Build and install the 8812au driver for the other kernel flavour
+      command: dkms install -m rtl8812au -v {{ rtl8812au_version }} -k {{ item }}
+      loop: "{{ other_kernels }}"
+      register: dkms_8812au_other
+      changed_when: "'already installed' not in (dkms_8812au_other.stdout + dkms_8812au_other.stderr)"
 
     - name: Blacklist the kernel's rtw88_8812au driver
       copy:
