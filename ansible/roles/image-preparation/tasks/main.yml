@@ -340,6 +340,39 @@
     dest: /usr/local/connectbox/admin_session.key
     state: absent
 
+# Raspberry Pi Imager's settings (2026-11-14): a card set up by a newer
+#  Raspberry Pi Imager carries user-data and meta-data on the boot partition,
+#  and "ds=nocloud;i=rpi-imager-..." on the kernel command line, for its
+#  first boot through cloud-init.  user-data holds the builder's user name and
+#  a hash of the password typed into Imager.  The bootstrap role has already
+#  disabled cloud-init and set the ConnectBox passwords, so these do nothing
+#  on an image-made box; they are removed so a released image does not carry
+#  the builder's settings.  (network-config is removed by network-interfaces.)
+- name: Remove Raspberry Pi Imager's cloud-init settings from the boot partition
+  file:
+    path: "/boot/firmware/{{ item }}"
+    state: absent
+  loop:
+    - user-data
+    - meta-data
+    - network-config
+  when: connectbox_os == "raspbian"
+
+- name: Check for the kernel command line on the boot partition
+  stat:
+    path: /boot/firmware/cmdline.txt
+  register: imager_cmdline
+  when: connectbox_os == "raspbian"
+
+# Drops only the cloud-init data source; the rest of the line (root=, the
+#  regulatory domain, net.ifnames=0) stays as the build left it
+- name: Remove the cloud-init data source from the kernel command line
+  replace:
+    path: /boot/firmware/cmdline.txt
+    regexp: ' ?ds=nocloud;i=[^ ]*'
+    replace: ''
+  when: connectbox_os == "raspbian" and imager_cmdline.stat.exists | default(false)
+
 - name: Schedule Final Handlers
   assert:
     that: True
