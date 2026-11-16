@@ -14,7 +14,8 @@ from scratch as below.
 
 `sshd` is off on release images.  To turn it on, create a folder `.connectbox`
 on a USB stick with an empty file `enable-ssh` in it and insert the stick; you can
-then log in as `root` / `connectbox`.  Change the root password straight away.
+then log in as `root` / `connectbox` (`pi` has the same password on Raspberry Pi
+images).  Change the password straight away.
 
 ## Supported devices and operating systems
 
@@ -26,7 +27,7 @@ and handles:
 | NanoPi NEO | Armbian, Debian 11 (Bullseye) - tested | `root` |
 | Orange Pi Zero 2 | Armbian | `root` |
 | Radxa CM3 | Armbian | `root` |
-| Raspberry Pi models, Compute Module 4 and Compute Module 5 | Raspberry Pi OS **Lite**: Trixie (64-bit) tested on a CM4 and a CM5 Lite, Bullseye before | `root` (key from `setup_raspbian_host.sh`, see below) |
+| Raspberry Pi models, Compute Module 4 and Compute Module 5 | Raspberry Pi OS **Lite (64-bit)**: Trixie tested on a CM4 and a CM5 Lite, Bullseye before.  The 32-bit Raspberry Pi OS does not build (see below) | `root` (key from `setup_raspbian_host.sh`, see below) |
 
 The playbook knows Buster and Bullseye (see the comment at the top of
 `site.yml`), and since November 2026 Raspberry Pi OS Lite **Trixie** (Debian 13,
@@ -34,6 +35,14 @@ kernel 6.18, Python 3.13): it was built and tested on a CM4 Lite on the ConnectB
 carrier board (see [Raspberry Pi OS Trixie](#raspberry-pi-os-trixie-cm4)).  The
 other main test unit is a NanoPi NEO on Armbian Bullseye (kernel 5.15).  Orange Pi
 Zero 2 and Radxa CM3 have not been rebuilt recently, and Bookworm is untested.
+
+**One 64-bit Raspberry Pi image for several boards** (2026-11-14): Raspberry Pi OS
+64-bit carries two kernels, and the firmware picks one per board - the Pi 5 and CM5
+boot `kernel_2712.img`, the Pi 4, Pi 3, Zero 2 W and CM4 boot `kernel8.img`.  The
+build makes the RTL8812AU driver for both (fix 91), so an image made on a CM5 also
+has the access-point driver on a CM4 or Pi 4.  Images built before that (up to
+`Connectbox_Rpi-CM5-CM4-261113.img`) have it for the build board's kernel only.  A CM4
+or Pi 4 has not yet been booted from a two-kernel image.
 
 Use a microSD card of at least 8 GB.  The device needs a wired (Ethernet) or
 second WiFi connection to the internet during the build, because its main WiFi
@@ -72,12 +81,24 @@ if present.  Until 2026-11-11 Raspberry Pi OS builds used Debian's package inste
 
 ### Raspberry Pi
 
-1. Write **Raspberry Pi OS Lite** (Trixie, 64-bit, for a CM4; Bullseye for older
-   builds) with Raspberry Pi Imager.  In the Imager's settings: enable SSH, create a
-   user (e.g. **`pi`**) with a password (current images have no default
-   `pi`/`raspberry` account), and set your WiFi country.  Any WiFi network you
-   enter in the Imager is removed by the build (its name and password are not left
-   in the box or an image).
+1. Write **Raspberry Pi OS Lite (64-bit)**, Trixie, with Raspberry Pi Imager (CM4,
+   CM5, Pi 4, Pi 5; Bullseye for older builds).  In the Imager it is under
+   *Raspberry Pi OS (other)*; the entry **without** "(64-bit)" is the 32-bit
+   system, which does not build: on 2026-11-14 the front panel's `luma.oled`
+   install failed there (a new `cbor2` has no 32-bit wheel and needs a Rust
+   compiler), and a 32-bit system cannot compile the RTL8812AU driver for the
+   64-bit kernel it boots.  A 64-bit card reports `arm64` from
+   `dpkg --print-architecture` and "Debian GNU/Linux 13" in `/etc/os-release`.
+   In the Imager's settings: enable SSH, create a user (e.g. **`pi`**) with a
+   password (current images have no default `pi`/`raspberry` account), and set your
+   WiFi country.  Any WiFi network you enter in the Imager is removed by the build
+   (its name and password are not left in the box or an image), and so are the
+   Imager's first-boot settings (`user-data`, `meta-data` and the `ds=nocloud` entry
+   on the kernel command line, which hold the user name and a hash of the password;
+   fix 92).
+   **The password you set in the Imager stops working during the build:** the
+   bootstrap role sets `pi` and `root` to `connectbox_system_password` from
+   `ansible/group_vars/all`.  SSH keys keep working.
 2. Plug in the WiFi hardware the box will use (on the CM4 carrier: the RTL8812AU
    USB adapter, which becomes the access point; the CM4's built-in WiFi is the
    client).  Boot the Pi on Ethernet and find its IP address.

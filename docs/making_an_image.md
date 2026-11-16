@@ -103,6 +103,11 @@ you will publish.  The run ends with `PLAY RECAP ... failed=0` and the device
   not need (smaller image);
 - resets the WiFi regulatory domain;
 - deletes root's `authorized_keys`, so your key is not in the image;
+- on Raspberry Pi OS, deletes Raspberry Pi Imager's first-boot settings from the boot
+  partition (`user-data`, `meta-data`, `network-config`) and the `ds=nocloud;i=...`
+  entry from `cmdline.txt`: a card set up by a newer Imager keeps the builder's user
+  name and a hash of the Imager password in `user-data` (fix 92, 2026-11-14;
+  cloud-init itself is disabled by the bootstrap role);
 - deletes the admin session key (`/usr/local/connectbox/admin_session.key`), so
   every box made from the image creates its own on first boot;
 - deletes the client WiFi networks PxUSBm remembered during the build
@@ -148,12 +153,30 @@ earlier versions ran it from the wrong folder and mangled the options.)
 
    The script refuses non-removable disks and mounted cards, checks the file
    systems, shrinks them to their minimum size and copies just that part of the
-   card (10-20 minutes).  It handles cards with 1, 2 or 3 partitions.
-4. Compress it (keeps the `.img`):
+   card (10-20 minutes).  It handles cards with 1, 2 or 3 partitions.  After
+   shrinking a partition it reads the partition table back: the log shows
+   "partition N of /dev/sdX now ends at sector ...", and if the partition did not
+   end where it should, the script stops with `ERROR: ... image not made` (fix 90,
+   2026-11-14).  Before that fix, a run without a terminal (`nohup`, a script) left
+   parted's "Shrinking a partition can cause data loss" question unanswered: the
+   file system was shrunk but the partition table still claimed the whole card, and
+   such an image points past the end of any smaller card.  To check an image:
+   `sudo fdisk -l <image>` - the last partition must end at the image's last sector
+   (file size / 512 - 1).
+4. Compress it (keeps the `.img`) and write its checksum:
 
    ```bash
-   xz -k -T0 Images/connectbox-neo-v$(date +%Y%m%d).img
+   cd Images
+   xz -k -T4 -3 --memlimit-compress=380MiB connectbox-neo-v$(date +%Y%m%d).img
+   sha256sum connectbox-neo-v$(date +%Y%m%d).img.xz > connectbox-neo-v$(date +%Y%m%d).img.xz.sha256
    ```
+
+   On Rpi-Build (906 MB RAM) `xz -T0` at the default level drops to one thread
+   ("Reduced the number of threads from 4 to 1 to not exceed the memory usage
+   limit") and takes hours; `-T4 -3` with the memory limit uses all four cores: an
+   8.4 GB Raspberry Pi image took about 20 minutes (1.6 GB out), a 3.3 GB NanoPi NEO
+   image 9.5 minutes (0.76 GB out).  Ship the `.sha256` with the `.img.xz` so a copy
+   can be checked (`sha256sum -c`).
 
 Name images by board and date, e.g. `connectbox-neo-v20261006.img.xz`.
 

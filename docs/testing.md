@@ -162,17 +162,26 @@ Run the relevant rows after a change in that area, and all of them on a release 
 
 Build history: 2026-10-23 ok (after fixes 1–11), 2026-10-24 ok (24 ignored),
 2026-10-28 two runs (resume needed; fix 45), 2026-10-28b ok (10 ignored),
-2026-10-30 ok (failed=0, 3 ignored, connectbox-pi 580ffa3, tag v20261030).
+2026-10-30 ok (failed=0, 3 ignored, connectbox-pi 580ffa3, tag v20261030),
+2026-11-15 ok (failed=0, 3 ignored, 84 minutes, connectbox-pi 4da6905, tag v20261115).
 
 Raspberry Pi OS Trixie (CM4): build with `python3 make_cb-rpi.py` (ansible-core
 2.17.14 in its own venv; `--setup` once), after `setup_raspbian_host.sh <ip> <user>`.
 Expect one reboot during the build.  First test build history: 2026-11-04, 12 runs
-to failed=0 (fix 67).
+to failed=0 (fix 67).  CM5 builds: 2026-11-12, 2026-11-13 and 2026-11-14 ok
+(failed=0, 5 rescued pip installs, 2 ignored, about 20 minutes).  Use the 64-bit
+Raspberry Pi OS: the 32-bit one fails at the hat-service `luma.oled` install
+(2026-11-14).
 
 ## 6. Every image
 
-1. Shrink on Rpi-Build with `shrink-image.sh` (no .sha256); check `e2fsck -fn` on the
-   image is clean and the partition table is as expected.
+1. Shrink on Rpi-Build with `shrink-image.sh`; check `e2fsck -fn` on the image is
+   clean and that the last partition ends at the image's last sector
+   (`fdisk -l`; the script now checks this itself, fix 90).  Compress with
+   `xz -k -T4 -3 --memlimit-compress=380MiB` and write a `.sha256` next to the `.img.xz`.
+   Raspberry Pi images: no `user-data`/`meta-data` on the boot partition and no
+   `ds=nocloud` in `cmdline.txt` (fix 92); `8812au.ko` under both
+   `/lib/modules/*-rpi-2712/` and `/lib/modules/*-rpi-v8/` (fix 91).
 2. Flash to a **different** card and boot:
    - first boot expands the file system in up to 3 short boots, with no
      "A stop job is running for ifup…" wait (fix 50);
@@ -185,7 +194,10 @@ to failed=0 (fix 67).
 
 ## 7. Not tested yet / to add
 
-- The 2026-10-30 image (not made yet) and its first boot.
+- First boot from `Connectbox_Rpi-CM5-CM4-261114.img.xz` and
+  `Connectbox_NanoPiNeo-261115.img.xz` (both checked as files only).
+- A CM4, Pi 4 or Pi 5 booted from a two-kernel Raspberry Pi image (fix 91; only the
+  CM5 has booted one).
 - Kirk's admin login and settings changes under Node 22 in a browser.
 - Own content: plug a key in and pull it out by hand (fix 29).
 - Client Wi-Fi (`ifup@wlan1`) failing once at boot right after DHCP (2026-10-29 15:48) – cause unknown.
@@ -219,6 +231,13 @@ Most recent first. One line per test run: date, what, result, where it is descri
 
 | Date | Test | Result | Reference |
 |---|---|---|---|
+| 2026-11-15 | NanoPi NEO build on a fresh Armbian 23.02.2 card (.157, `make_cb.py`, connectbox-pi 4da6905): ok=512 failed=0 ignored=3 (no cached Wi-Fi driver x2, hostapd reload without adapter, as on 2026-10-30); the 32-bit Kiwix download (backstop) worked; `luma.oled` installed on Python 3.9.  Image `Connectbox_NanoPiNeo-261115.img` with the fixed `shrink-image.sh`: partition 1 ends at the last sector without help, `e2fsck -fn` clean, no session key, no SSH keys; `.img.xz` 756,902,040 bytes, sha256 c0a75f8f…263d, Desktop copy matches | pass (file checks); first boot from the image not yet tested | fixes 90, 91 |
+| 2026-11-14 | CM5 build on a 64-bit Trixie card: ok=530 failed=0; `8812au.ko` built for 6.18.60+rpt-rpi-2712 and -rpi-v8 (vermagic matches).  Image `Connectbox_Rpi-CM5-CM4-261114.img` shrunk with the fixed script (partition 2 ends at the last sector); Imager's `user-data` (password hash) and `meta-data` removed and `ds=nocloud` dropped by hand, then image-preparation tasks for that tested with ansible-core 2.17 on three boot folders; `.img.xz` 1,617,583,752 bytes, sha256 58e794fd…2b65, Desktop copy matches | pass (file checks); first boot from the image not yet tested | fixes 90, 91, 92 |
+| 2026-11-14 | Same day, first card: 32-bit Raspberry Pi OS (armhf userland, kernel rpi-v8) - hung once on the bootstrap reboot, then the hat-service `luma.oled` install failed (`cbor2` 6.3.0 has no 32-bit wheel and needs Rust) | fail (wrong OS; use 64-bit) | - |
+| 2026-11-14 | `shrink-image.sh` fix 90: `resize_partition()` on a scratch image on Rpi-Build without a terminal: old parted call leaves the partition unchanged (reproduces the 261113 image fault), new call shrinks it, impossible end stops with exit 1 | pass | fix 90 |
+| 2026-11-14 | HDMI playlist "Save failed 0" and Stop with no effect (CM5 at .160): playlist save and player status run on the box (save written in 0.9 s, player answers in 11 ms); Save and Stop sent through nginx with Kirk's admin session from a new Chrome tab: 200 in 0.9 s and 15 ms, player stopped; the failing admin tab most likely pointed at the box's old address | box side pass; Kirk's tab not rechecked | - |
+| 2026-11-14 | First-visit language with the box's own app copied into headless Chromium: zh-CN, vi and en-US each open in their language with their menu | pass; Kirk to retest in a private window | - |
+| 2026-11-13 | Client Wi-Fi restart (fix 89): installed on the CM5 (.44) and PxUSBm restarted; just before shutdown one wpa_supplicant on wlan0, AP up on wlan1 channel 11 | pass | fix 89 |
 | 2026-11-13 | PxUSBm client Wi-Fi restart (fix 89): two wpa_supplicants found on wlan0 of the CM5 (.44; pid file named one, control socket owned by the other, "Failed to initiate sched scan" every 8 s, wlan0 stuck scanning) after five "does not answer: restarting wlan0" restarts. New tests/harness/test_ci_restart.py (fake /proc and socket folder): finds -i wlan0 / -iwlan0 only, SIGTERM then SIGKILL, sockets removed only afterwards, ifdown before and ifup after, restart in a thread, 5-minute limit; fails on the old code. run_all.sh ALL PASSED (test_ci_restart 14/14), test_PxUSBm_mount 32/32; wpa_supplicant_pids() on the box's real /proc finds just the one wlan0 process | pass; not yet installed on a box | fix 89 |
 | 2026-11-13 | Box Content on the CM5 (.44), started from the admin page: copy USB key to the box twice with a SanDisk Ultra Fit (MISC, 30 GB) - failed both times when the key stopped answering on the bus (port 4 after a minute, port 3 after 15 min at 25 MB/s, error -110/-71; Kirk: that key is known to overheat); "Failed Copy" on page and panel, AP stayed up. Copy box content to a USB key (SanDisk 3.2Gen1, 57 GB NTFS, 600 files, 30.96 GB): one drop 26 s in (12 writes lost, key came back by itself), then 38 min at 4-21 MB/s to Done; Kirk compared the copy on his PC | copy to USB pass (Kirk 15:09); copy from USB still to repeat with a key that does not overheat | fix 88 |
 | 2026-11-13 | Emergency wipe, REAL run on the CM5 (.36) with a 57 GB scratch USB key (Kirk approved), started from the admin page with the admin password. 1st try 09:56: services stopped, then the script was killed with pm2-root (KillMode=control-group), nothing destroyed -> started with systemd-run (connectbox-manage ecaff02). 2nd try 10:01:54: fast step done within ~24 s; key: first-MiB fingerprint changed, no partition table or file system left; card: /media/usb0, assets/content (32 files), Kiwix list, all 41 log files, chat db, HDMI playlist gone; Wi-Fi off (hostapd stopped, both adapters managed); system intact (programs, front panel, SSH). Full pass: fill file at ~34 MB/s with the key overwritten alongside; SSH and the front panel very slow -> overwrite now at idle priority (not yet re-run) | pass | fix 87 |
