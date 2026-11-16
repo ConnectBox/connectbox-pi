@@ -27,7 +27,7 @@ and handles:
 | NanoPi NEO | Armbian, Debian 11 (Bullseye) - tested | `root` |
 | Orange Pi Zero 2 | Armbian | `root` |
 | Radxa CM3 | Armbian | `root` |
-| Raspberry Pi 3, 4 and 5, Compute Module 3/3+, 4 and 5 (not the Pi Zero boards, dropped 2026-11-16) | Raspberry Pi OS **Lite (64-bit)**: Trixie tested on a CM4 and a CM5 Lite, Bullseye before.  The 32-bit Raspberry Pi OS does not build (see below) | `root` (key from `setup_raspbian_host.sh`, see below) |
+| Raspberry Pi 3, 4 and 5, Zero 2 W, Compute Module 3/3+, 4 and 5 (not the original Pi Zero or Zero W, dropped 2026-11-16) | Raspberry Pi OS **Lite (64-bit)**: Trixie tested on a CM4 and a CM5 Lite, Bullseye before.  The 32-bit Raspberry Pi OS does not build (see below) | `root` (key from `setup_raspbian_host.sh`, see below) |
 
 The playbook knows Buster and Bullseye (see the comment at the top of
 `site.yml`), and since November 2026 Raspberry Pi OS Lite **Trixie** (Debian 13,
@@ -38,17 +38,19 @@ Zero 2 and Radxa CM3 have not been rebuilt recently, and Bookworm is untested.
 
 **One 64-bit Raspberry Pi image for several boards** (2026-11-14): Raspberry Pi OS
 64-bit carries two kernels, and the firmware picks one per board - the Pi 5 and CM5
-boot `kernel_2712.img`, the Pi 4, Pi 3, CM3/CM3+ and CM4 boot `kernel8.img`.  The
+boot `kernel_2712.img`, the Pi 4, Pi 3, Zero 2 W, CM3/CM3+ and CM4 boot `kernel8.img`.  The
 build makes the RTL8812AU driver for both (fix 91), so an image made on a CM5 also
 has the access-point driver on a CM4 or Pi 4.  Images built before that (up to
 `Connectbox_Rpi-CM5-CM4-261113.img`) have it for the build board's kernel only.  A CM4
 or Pi 4 has not yet been booted from a two-kernel image.
 
-A **CM3 or CM3+** is handled as a plain Raspberry Pi: `site.yml` and the bootstrap
+A **Zero 2 W, CM3 or CM3+** is handled as a plain Raspberry Pi: `site.yml` and the bootstrap
 role recognise "Compute Module 4" and "Compute Module 5" only, and give just those the
 ConnectBox carrier settings (front panel on I2C bus 10, ATtiny, buttons on GPIO3/4,
-LED on GPIO6).  A CM3/CM3+ has not been built or tested on Trixie (the last CM3+
-image, `Connectbox_Rpi3+_CM3+_-261112`, predates the 64-bit-only change).
+LED on GPIO6).  None of them has been built or tested on Trixie (the last CM3+ image,
+`Connectbox_Rpi3+_CM3+_-261112`, predates the 64-bit-only change).  The Zero 2 W has
+512 MB of RAM and a single micro-USB data port, so the RTL8812AU and a USB key need a
+USB hub on it, and a build will take a long time.
 
 Use a microSD card of at least 8 GB.  The device needs a wired (Ethernet) or
 second WiFi connection to the internet during the build, because its main WiFi
