@@ -27,7 +27,7 @@ and handles:
 | NanoPi NEO | Armbian, Debian 11 (Bullseye) - tested | `root` |
 | Orange Pi Zero 2 | Armbian | `root` |
 | Radxa CM3 | Armbian | `root` |
-| Raspberry Pi models, Compute Module 4 and Compute Module 5 | Raspberry Pi OS **Lite (64-bit)**: Trixie tested on a CM4 and a CM5 Lite, Bullseye before.  The 32-bit Raspberry Pi OS does not build (see below) | `root` (key from `setup_raspbian_host.sh`, see below) |
+| Raspberry Pi 3, 4 and 5, Compute Module 4 and Compute Module 5 (not the Pi Zero boards, dropped 2026-11-16) | Raspberry Pi OS **Lite (64-bit)**: Trixie tested on a CM4 and a CM5 Lite, Bullseye before.  The 32-bit Raspberry Pi OS does not build (see below) | `root` (key from `setup_raspbian_host.sh`, see below) |
 
 The playbook knows Buster and Bullseye (see the comment at the top of
 `site.yml`), and since November 2026 Raspberry Pi OS Lite **Trixie** (Debian 13,
@@ -165,7 +165,7 @@ device on one line with its options, and use `-i inventory`:
 **Set `wireless_country_code`** to your two-letter country code (it decides the
 legal WiFi channels and power; default `US`).
 
-The run takes a long time (much longer on a NEO or Pi Zero).  It ends with a
+The run takes a long time (much longer on a NEO).  It ends with a
 `PLAY RECAP`; `failed=0` means success.  If a run fails part-way, fix the cause and
 run it again - the playbook can be re-run.
 
